@@ -13,6 +13,9 @@
 @interface AWEFeedContainerContentView : UIView
 @end
 
+@interface AWELeftSideBarEntranceView : UIView
+@end
+
 @interface AWEDanmakuContentLabel : UILabel
 - (UIColor *)colorFromHexString:(NSString *)hexString baseColor:(UIColor *)baseColor;
 @end
@@ -173,6 +176,35 @@
 }
 %end
 
+%hook AWENormalModeTabBarGeneralButton
+
+- (void)layoutSubviews {
+    %orig;
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenBottomDot"]) {
+        for (UIView *subview in [self subviews]) {
+            if ([subview isKindOfClass:NSClassFromString(@"DUXBadge")]) {
+                [subview setHidden:YES];
+            }
+        }
+    }
+}
+
+%end
+
+%hook AWELeftSideBarEntranceView
+
+- (void)layoutSubviews {
+    %orig;
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenSidebarDot"]) {
+        for (UIView *subview in [self subviews]) {
+            if ([subview isKindOfClass:NSClassFromString(@"DUXBadge")]) {
+                subview.hidden = YES;
+            }
+        }
+    }
+}
+
+%end
 //%ctor {
 //    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
 //        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];

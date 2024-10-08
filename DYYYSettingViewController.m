@@ -1,10 +1,3 @@
-//
-//  DYYY
-//
-//  Copyright (c) 2024 huami. All rights reserved.
-//  Channel: @huamidev
-//  Created on: 2024/10/04
-//
 #import "DYYYSettingViewController.h"
 
 @interface DYYYSettingViewController () <UITableViewDelegate, UITableViewDataSource>
@@ -17,6 +10,8 @@
 @property (nonatomic, strong) UITextField *topBarTransparentField;
 @property (nonatomic, strong) UITextField *globalTransparencyField;
 @property (nonatomic, strong) UILabel *footerLabel;
+@property (nonatomic, strong) UISwitch *hideBottomDotSwitch;
+@property (nonatomic, strong) UISwitch *hideSidebarDotSwitch;
 
 @end
 
@@ -44,6 +39,7 @@
     self.tableView.dataSource = self;
     self.tableView.backgroundColor = [UIColor systemBackgroundColor];
     self.tableView.separatorInset = UIEdgeInsetsMake(0, 20, 0, 20);
+    self.tableView.contentInset = UIEdgeInsetsMake(10, 0, 0, 0);
     [self.view addSubview:self.tableView];
 }
 
@@ -67,7 +63,7 @@
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableDanmuColor"] ? 6 : 5;
+    return [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableDanmuColor"] ? 8 : 7;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -94,12 +90,16 @@
             [self configureHidePlusSwitchCell:cell];
             break;
         case 4:
-            [self configureEnableDanmuColorSwitchCell:cell];
+            [self configureHideBottomDotSwitchCell:cell];
             break;
         case 5:
-            if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableDanmuColor"]) {
-                [self configureDanmuColorFieldCell:cell];
-            }
+            [self configureHideSidebarDotSwitchCell:cell];
+            break;
+        case 6:
+            [self configureEnableDanmuColorSwitchCell:cell];
+            break;
+        case 7:
+            [self configureDanmuColorFieldCell:cell];
             break;
         default:
             break;
@@ -147,9 +147,8 @@
     [gradient addAnimation:colorChange forKey:@"colorChangeAnimation"];
 }
 
-// 新增的全局透明度设置行
 - (void)configureGlobalTransparencyFieldCell:(UITableViewCell *)cell {
-    cell.textLabel.text = @"设置全局透明度";
+    cell.textLabel.text = @"设置全局透明";
     self.globalTransparencyField = [[UITextField alloc] initWithFrame:CGRectMake(0, 0, 150, 30)];
     self.globalTransparencyField.borderStyle = UITextBorderStyleRoundedRect;
     self.globalTransparencyField.placeholder = @"输入0-1的小数";
@@ -194,11 +193,31 @@
     cell.accessoryView = self.danmuColorField;
 }
 
+- (void)configureHideBottomDotSwitchCell:(UITableViewCell *)cell {
+    cell.textLabel.text = @"隐藏底栏红点";
+    self.hideBottomDotSwitch = [[UISwitch alloc] init];
+    [self.hideBottomDotSwitch setOn:[[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenBottomDot"]];
+    [self.hideBottomDotSwitch addTarget:self action:@selector(switchToggled:) forControlEvents:UIControlEventValueChanged];
+    cell.accessoryView = self.hideBottomDotSwitch;
+}
+
+- (void)configureHideSidebarDotSwitchCell:(UITableViewCell *)cell {
+    cell.textLabel.text = @"隐藏侧栏红点";
+    self.hideSidebarDotSwitch = [[UISwitch alloc] init];
+    [self.hideSidebarDotSwitch setOn:[[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenSidebarDot"]];
+    [self.hideSidebarDotSwitch addTarget:self action:@selector(switchToggled:) forControlEvents:UIControlEventValueChanged];
+    cell.accessoryView = self.hideSidebarDotSwitch;
+}
+
 - (void)switchToggled:(UISwitch *)sender {
     if (sender == self.hidePlusSwitch) {
         [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:@"DYYYisHiddenJia"];
     } else if (sender == self.hideEntryView) {
         [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:@"DYYYisHiddenEntry"];
+    } else if (sender == self.hideBottomDotSwitch) {
+        [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:@"DYYYisHiddenBottomDot"];
+    } else if (sender == self.hideSidebarDotSwitch) {
+        [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:@"DYYYisHiddenSidebarDot"];
     }
     [[NSUserDefaults standardUserDefaults] synchronize];
 }
@@ -221,6 +240,5 @@
     [[NSUserDefaults standardUserDefaults] setObject:textField.text forKey:key];
     [[NSUserDefaults standardUserDefaults] synchronize];
 }
-
 
 @end
