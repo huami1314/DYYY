@@ -26,6 +26,9 @@
 @interface AWEPlayInteractionViewController : UIViewController
 @end
 
+@interface AWEFeedVideoButton : UIButton
+@end
+
 %hook AWENormalModeTabBarGeneralPlusButton
 + (id)button {
     BOOL isHiddenJia = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenJia"];
@@ -92,6 +95,32 @@
 }
 %end
 
+//%hook UIWindow
+//- (instancetype)initWithFrame:(CGRect)frame {
+//    UIWindow *window = %orig(frame);
+//    if (window) {
+//        UITapGestureRecognizer *doubleTapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleDoubleTapGesture:)];
+//        doubleTapGesture.numberOfTapsRequired = 1;
+//        doubleTapGesture.numberOfTouchesRequired = 3;
+//        [window addGestureRecognizer:doubleTapGesture];
+//    }
+//    return window;
+//}
+//
+//%new
+//- (void)handleDoubleTapGesture:(UITapGestureRecognizer *)gesture {
+//    if (gesture.state == UIGestureRecognizerStateRecognized) {
+//        UIViewController *rootViewController = self.rootViewController;
+//        if (rootViewController) {
+//            UIViewController *settingVC = [[NSClassFromString(@"DYYYSettingViewController") alloc] init];
+//            if (settingVC) {
+//                [rootViewController presentViewController:settingVC animated:YES completion:nil];
+//            }
+//        }
+//    }
+//}
+//%end
+
 %hook UIWindow
 - (instancetype)initWithFrame:(CGRect)frame {
     UIWindow *window = %orig(frame);
@@ -110,13 +139,29 @@
         UIViewController *rootViewController = self.rootViewController;
         if (rootViewController) {
             UIViewController *settingVC = [[NSClassFromString(@"DYYYSettingViewController") alloc] init];
+            
             if (settingVC) {
+                // 设置全屏显示
+                settingVC.modalPresentationStyle = UIModalPresentationFullScreen;
+                
+                // 添加关闭按钮
+                UIButton *closeButton = [UIButton buttonWithType:UIButtonTypeSystem];
+                [closeButton setTitle:@"关闭" forState:UIControlStateNormal];
+                closeButton.frame = CGRectMake(20, 40, 60, 30);  // 设置按钮位置和大小
+                [closeButton addTarget:self action:@selector(closeSettings:) forControlEvents:UIControlEventTouchUpInside];
+                [settingVC.view addSubview:closeButton];
+                
                 [rootViewController presentViewController:settingVC animated:YES completion:nil];
             }
         }
     }
 }
+%new
+- (void)closeSettings:(UIButton *)button {
+    [button.superview.window.rootViewController dismissViewControllerAnimated:YES completion:nil];
+}
 %end
+
 
 %hook AWELongVideoControlModel
 - (bool)allowDownload {
@@ -174,6 +219,15 @@
         self.view.alpha = 1.0;
     }
 }
+
+- (void)updateProgressSliderWithTime:(CGFloat)time totalDuration:(CGFloat)totalDuration {
+    // 打印参数信息
+    NSLog(@"[Hooked] updateProgressSliderWithTime: %.2f, totalDuration: %.2f", time, totalDuration);
+
+    // 调用原方法
+    %orig;
+}
+
 %end
 
 %hook AWENormalModeTabBarGeneralButton
@@ -205,6 +259,51 @@
 }
 
 %end
+
+
+%hook AWEFeedVideoButton
+
+- (void)layoutSubviews {
+    %orig;
+
+    BOOL hideLikeButton = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLikeButton"];
+    BOOL hideCommentButton = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentButton"];
+    BOOL hideCollectButton = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCollectButton"];
+    BOOL hideShareButton = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShareButton"];
+
+    NSString *accessibilityLabel = self.accessibilityLabel;
+
+//    NSLog(@"Accessibility Label: %@", accessibilityLabel);
+
+    if ([accessibilityLabel isEqualToString:@"点赞"]) {
+        if (hideLikeButton) {
+            [self removeFromSuperview];
+            return;
+        }
+    } else if ([accessibilityLabel isEqualToString:@"评论"]) {
+        if (hideCommentButton) {
+            [self removeFromSuperview];
+            return;
+        }
+    } else if ([accessibilityLabel isEqualToString:@"分享"]) {
+        if (hideShareButton) {
+            [self removeFromSuperview];
+            return;
+        }
+    } else if ([accessibilityLabel isEqualToString:@"收藏"]) {
+        if (hideCollectButton) {
+            [self removeFromSuperview];
+            return;
+        }
+    }
+
+}
+
+%end
+
+
+
+
 //%ctor {
 //    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
 //        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];

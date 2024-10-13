@@ -13,6 +13,12 @@
 @property (nonatomic, strong) UISwitch *hideBottomDotSwitch;
 @property (nonatomic, strong) UISwitch *hideSidebarDotSwitch;
 
+// 添加新的 UISwitch 属性
+@property (nonatomic, strong) UISwitch *hideLikeButtonSwitch;
+@property (nonatomic, strong) UISwitch *hideCommentButtonSwitch;
+@property (nonatomic, strong) UISwitch *hideCollectButtonSwitch;
+@property (nonatomic, strong) UISwitch *hideShareButtonSwitch;
+
 @end
 
 @implementation DYYYSettingViewController
@@ -33,8 +39,7 @@
 }
 
 - (void)setupTableView {
-    CGFloat tableHeight = self.view.bounds.size.height - 100;
-    self.tableView = [[UITableView alloc] initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width, tableHeight) style:UITableViewStyleGrouped];
+    self.tableView = [[UITableView alloc] initWithFrame:self.view.bounds style:UITableViewStyleGrouped];
     self.tableView.delegate = self;
     self.tableView.dataSource = self;
     self.tableView.backgroundColor = [UIColor systemBackgroundColor];
@@ -63,7 +68,7 @@
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableDanmuColor"] ? 8 : 7;
+    return [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableDanmuColor"] ? 12 : 11; // 更新行数
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -96,9 +101,21 @@
             [self configureHideSidebarDotSwitchCell:cell];
             break;
         case 6:
-            [self configureEnableDanmuColorSwitchCell:cell];
+            [self configureHideLikeButtonSwitchCell:cell];
             break;
         case 7:
+            [self configureHideCommentButtonSwitchCell:cell];
+            break;
+        case 8:
+            [self configureHideCollectButtonSwitchCell:cell];
+            break;
+        case 9:
+            [self configureHideShareButtonSwitchCell:cell];
+            break;
+        case 10:
+            [self configureEnableDanmuColorSwitchCell:cell];
+            break;
+        case 11:
             [self configureDanmuColorFieldCell:cell];
             break;
         default:
@@ -106,6 +123,39 @@
     }
     
     return cell;
+}
+
+
+- (void)configureHideLikeButtonSwitchCell:(UITableViewCell *)cell {
+    cell.textLabel.text = @"隐藏点赞按钮";
+    self.hideLikeButtonSwitch = [[UISwitch alloc] init];
+    [self.hideLikeButtonSwitch setOn:[[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLikeButton"]];
+    [self.hideLikeButtonSwitch addTarget:self action:@selector(switchToggled:) forControlEvents:UIControlEventValueChanged];
+    cell.accessoryView = self.hideLikeButtonSwitch;
+}
+
+- (void)configureHideCommentButtonSwitchCell:(UITableViewCell *)cell {
+    cell.textLabel.text = @"隐藏评论按钮";
+    self.hideCommentButtonSwitch = [[UISwitch alloc] init];
+    [self.hideCommentButtonSwitch setOn:[[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentButton"]];
+    [self.hideCommentButtonSwitch addTarget:self action:@selector(switchToggled:) forControlEvents:UIControlEventValueChanged];
+    cell.accessoryView = self.hideCommentButtonSwitch;
+}
+
+- (void)configureHideCollectButtonSwitchCell:(UITableViewCell *)cell {
+    cell.textLabel.text = @"隐藏收藏按钮";
+    self.hideCollectButtonSwitch = [[UISwitch alloc] init];
+    [self.hideCollectButtonSwitch setOn:[[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCollectButton"]];
+    [self.hideCollectButtonSwitch addTarget:self action:@selector(switchToggled:) forControlEvents:UIControlEventValueChanged];
+    cell.accessoryView = self.hideCollectButtonSwitch;
+}
+
+- (void)configureHideShareButtonSwitchCell:(UITableViewCell *)cell {
+    cell.textLabel.text = @"隐藏分享按钮";
+    self.hideShareButtonSwitch = [[UISwitch alloc] init];
+    [self.hideShareButtonSwitch setOn:[[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShareButton"]];
+    [self.hideShareButtonSwitch addTarget:self action:@selector(switchToggled:) forControlEvents:UIControlEventValueChanged];
+    cell.accessoryView = self.hideShareButtonSwitch;
 }
 
 - (void)configureTopBarTransparentFieldCell:(UITableViewCell *)cell {
@@ -218,6 +268,14 @@
         [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:@"DYYYisHiddenBottomDot"];
     } else if (sender == self.hideSidebarDotSwitch) {
         [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:@"DYYYisHiddenSidebarDot"];
+    } else if (sender == self.hideLikeButtonSwitch) {
+        [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:@"DYYYHideLikeButton"];
+    } else if (sender == self.hideCommentButtonSwitch) {
+        [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:@"DYYYHideCommentButton"];
+    } else if (sender == self.hideCollectButtonSwitch) {
+        [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:@"DYYYHideCollectButton"];
+    } else if (sender == self.hideShareButtonSwitch) {
+        [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:@"DYYYHideShareButton"];
     }
     [[NSUserDefaults standardUserDefaults] synchronize];
 }
