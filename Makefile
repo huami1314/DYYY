@@ -8,9 +8,10 @@
 TARGET := iphone:clang:latest:14.0
 INSTALL_TARGET_PROCESSES = Aweme
 
+
 include $(THEOS)/makefiles/common.mk
 
-TWEAK_NAME = dyyy
+TWEAK_NAME = DYYY
 
 DYYY_FILES = DYYY.x
 DYYY_CFLAGS = -fobjc-arc
