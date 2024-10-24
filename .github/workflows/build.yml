@@ -30,8 +30,8 @@ jobs:
           rm -f packages/*
           make package FINALPACKAGE=1
 
-      - name: Upload package
-        uses: actions/upload-artifact@v3
+      - name: Upload specific Deb package
+        uses: actions/upload-artifact@v4.3.3
         with:
-          name: "Package built by macOS"
-          path: ${{ github.workspace }}/packages/*.deb
+          name: com.huami.dyyy_1.2_iphoneos-arm.deb
+          path: ${{ github.workspace }}/packages/com.huami.dyyy_1.2_iphoneos-arm.deb
