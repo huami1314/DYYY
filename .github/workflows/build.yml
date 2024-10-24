@@ -4,10 +4,7 @@ on: [push]
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [macos-latest, ubuntu-latest]
+    runs-on: macos-latest
 
     steps:
       - uses: actions/checkout@v3
@@ -26,7 +23,6 @@ jobs:
           key: ${{ runner.os }}-${{ env.upstream_heads }}
 
       - name: Prepare Theos
-        # Don't use @main in production, this repo is specifically for testing it.
         uses: Randomblock1/theos-action@main
 
       - name: Build package
@@ -37,5 +33,5 @@ jobs:
       - name: Upload package
         uses: actions/upload-artifact@v3
         with:
-          name: "Package built by ${{ matrix.os }}"
+          name: "Package built by macOS"
           path: ${{ github.workspace }}/packages/*.deb
