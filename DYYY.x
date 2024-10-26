@@ -10,7 +10,7 @@
 @interface AWENormalModeTabBarGeneralButton : UIButton
 @end
 
-@interface AWENormalModeTabBarBadgeContainerView : UIViewController
+@interface AWENormalModeTabBarBadgeContainerView : UIView
 
 @end
 
