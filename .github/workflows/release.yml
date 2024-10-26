@@ -36,20 +36,3 @@ jobs:
         with:
           name: DYYY
           path: ${{ github.workspace }}/packages/*.deb
-
-      - name: Create Release v1.6
-        id: create_release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag: v1.6
-          files: ${{ github.workspace }}/packages/*.deb
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create Tag
-        run: |
-          git tag v1.6
-          git push origin v1.6
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        if: github.ref == 'refs/heads/main'  # Adjust this condition based on your branch strategy
