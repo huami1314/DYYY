@@ -1,0 +1,46 @@
+name: CI
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      - name: Check cache
+        run: |
+          echo upstream_heads=`git ls-remote https://github.com/theos/theos | head -n 1 | cut -f 1`-`git ls-remote https://github.com/theos/sdks | head -n 1 | cut -f 1` >> $GITHUB_ENV
+
+      - name: Use cache
+        id: cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ github.workspace }}/theos
+          key: ${{ runner.os }}-${{ env.upstream_heads }}
+
+      - name: Prepare Theos
+        uses: Randomblock1/theos-action@main
+
+      - name: Build package
+        run: |
+          rm -f packages/*
+          make package FINALPACKAGE=1
+          make package THEOS_PACKAGE_SCHEME=rootless
+
+      - name: Upload specific Deb packages
+        uses: actions/upload-artifact@v4.3.3
+        with:
+          name: DYYY
+          path: ${{ github.workspace }}/packages/*.deb
+
+      - name: Create Release v1.6
+        uses: softprops/action-gh-release@v1
+        with:
+          tag: v1.6
+          files: ${{ github.workspace }}/packages/*.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
