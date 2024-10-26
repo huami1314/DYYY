@@ -1,14 +1,10 @@
 #import "DYYYSettingViewController.h"
 
-@interface DYYYSettingViewController () <UITableViewDelegate, UITableViewDataSource, UITextFieldDelegate>
-
+@@interface DYYYSettingViewController ()
 @property (nonatomic, strong) UITableView *tableView;
 @property (nonatomic, strong) NSArray<NSArray<DYYYSettingItem *> *> *settingSections;
 @property (nonatomic, strong) UILabel *footerLabel;
-@property (nonatomic, strong) UIToolbar *inputAccessoryToolbar;
-@property (nonatomic, weak) UITextField *activeTextField;
-@property (nonatomic, strong) NSArray<UITextField *> *allTextFields;
-
+@property (nonatomic, assign) BOOL isDanmuColorEnabled; // 新增属性
 @end
 
 @implementation DYYYSettingViewController
@@ -20,128 +16,76 @@
     [self setupTableView];
     [self setupSettingItems];
     [self setupFooterLabel];
-    [self setupInputAccessoryView];
     [self addTitleGradientAnimation];
+
+    // 添加键盘事件监听
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillShow:) name:UIKeyboardWillShowNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillHide:) name:UIKeyboardWillHideNotification object:nil];
 }
 
-- (void)setupInputAccessoryView {
-    self.inputAccessoryToolbar = [[UIToolbar alloc] init];
-    [self.inputAccessoryToolbar sizeToFit];
-    
-    UIBarButtonItem *previousButton = [[UIBarButtonItem alloc] initWithTitle:@"上一个" style:UIBarButtonItemStylePlain target:self action:@selector(previousInputField)];
-    UIBarButtonItem *nextButton = [[UIBarButtonItem alloc] initWithTitle:@"下一个" style:UIBarButtonItemStylePlain target:self action:@selector(nextInputField)];
-    UIBarButtonItem *flexSpace = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:nil];
-    UIBarButtonItem *doneButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(doneEditing)];
-    
-    self.inputAccessoryToolbar.items = @[previousButton, nextButton, flexSpace, doneButton];
-    self.inputAccessoryToolbar.barTintColor = [UIColor darkGrayColor];
-    self.inputAccessoryToolbar.tintColor = [UIColor whiteColor];
+- (void)dealloc {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
-- (void)previousInputField {
-    NSInteger currentIndex = [self.allTextFields indexOfObject:self.activeTextField];
-    if (currentIndex > 0) {
-        [self.allTextFields[currentIndex - 1] becomeFirstResponder];
+- (void)keyboardWillShow:(NSNotification *)notification {
+    CGRect keyboardFrame = [notification.userInfo[UIKeyboardFrameEndUserInfoKey] CGRectValue];
+    UIEdgeInsets contentInsets = UIEdgeInsetsMake(0.0, 0.0, keyboardFrame.size.height, 0.0);
+    self.tableView.contentInset = contentInsets;
+    self.tableView.scrollIndicatorInsets = contentInsets;
+}
+
+- (void)keyboardWillHide:(NSNotification *)notification {
+    UIEdgeInsets contentInsets = UIEdgeInsetsZero;
+    self.tableView.contentInset = contentInsets;
+    self.tableView.scrollIndicatorInsets = contentInsets;
+}
+
+- (void)setupSettingItems {
+    self.isDanmuColorEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableDanmuColor"];
+    
+    self.settingSections = @[
+        @[
+            [DYYYSettingItem itemWithTitle:@"设置顶栏透明" key:@"DYYYtopbartransparent" type:DYYYSettingItemTypeTextField placeholder:@"输入0-1的小数"],
+            [DYYYSettingItem itemWithTitle:@"设置全局透明" key:@"DYYYGlobalTransparency" type:DYYYSettingItemTypeTextField placeholder:@"输入0-1的小数"],
+            [DYYYSettingItem itemWithTitle:@"设置默认倍速" key:@"DYYYDefaultSpeed" type:DYYYSettingItemTypeSpeedPicker]
+        ],
+        @[
+            [DYYYSettingItem itemWithTitle:@"隐藏全屏观看" key:@"DYYYisHiddenEntry" type:DYYYSettingItemTypeSwitch],
+            [DYYYSettingItem itemWithTitle:@"隐藏底栏加号" key:@"DYYYisHiddenJia" type:DYYYSettingItemTypeSwitch],
+            [DYYYSettingItem itemWithTitle:@"隐藏底栏红点" key:@"DYYYisHiddenBottomDot" type:DYYYSettingItemTypeSwitch],
+            [DYYYSettingItem itemWithTitle:@"隐藏侧栏红点" key:@"DYYYisHiddenSidebarDot" type:DYYYSettingItemTypeSwitch]
+        ],
+        @[
+            [DYYYSettingItem itemWithTitle:@"隐藏点赞按钮" key:@"DYYYHideLikeButton" type:DYYYSettingItemTypeSwitch],
+            [DYYYSettingItem itemWithTitle:@"隐藏评论按钮" key:@"DYYYHideCommentButton" type:DYYYSettingItemTypeSwitch],
+            [DYYYSettingItem itemWithTitle:@"隐藏收藏按钮" key:@"DYYYHideCollectButton" type:DYYYSettingItemTypeSwitch],
+            [DYYYSettingItem itemWithTitle:@"隐藏分享按钮" key:@"DYYYHideShareButton" type:DYYYSettingItemTypeSwitch]
+        ],
+        @[
+            [DYYYSettingItem itemWithTitle:@"开启弹幕改色" key:@"DYYYEnableDanmuColor" type:DYYYSettingItemTypeSwitch],
+            self.isDanmuColorEnabled ? [DYYYSettingItem itemWithTitle:@"修改弹幕颜色" key:@"DYYYdanmuColor" type:DYYYSettingItemTypeTextField placeholder:@"十六进制颜色"] : nil
+        ]
+    ].mutableCopy;
+    
+    // 移除nil值
+    for (NSMutableArray *section in self.settingSections) {
+        [section removeObjectIdenticalTo:[NSNull null]];
     }
 }
 
-- (void)nextInputField {
-    NSInteger currentIndex = [self.allTextFields indexOfObject:self.activeTextField];
-    if (currentIndex < self.allTextFields.count - 1) {
-        [self.allTextFields[currentIndex + 1] becomeFirstResponder];
-    }
-}
+#pragma mark - UITableViewDelegate
 
-- (void)doneEditing {
-    [self.activeTextField resignFirstResponder];
-}
-
-- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+- (void)switchToggled:(UISwitch *)sender {
+    NSIndexPath *indexPath = [NSIndexPath indexPathForRow:sender.tag % 1000 inSection:sender.tag / 1000];
     DYYYSettingItem *item = self.settingSections[indexPath.section][indexPath.row];
-    
-    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"SettingCell"];
-    if (!cell) {
-        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"SettingCell"];
-        cell.selectionStyle = UITableViewCellSelectionStyleNone;
-    }
-    
-    cell.textLabel.text = item.title;
-    cell.textLabel.textColor = [UIColor whiteColor];
-    cell.backgroundColor = [UIColor colorWithWhite:0.1 alpha:1.0];
-    
-    if (item.type == DYYYSettingItemTypeSwitch) {
-        UISwitch *switchView = [[UISwitch alloc] init];
-        switchView.onTintColor = [UIColor systemBlueColor];
-        [switchView setOn:[[NSUserDefaults standardUserDefaults] boolForKey:item.key]];
-        [switchView addTarget:self action:@selector(switchToggled:) forControlEvents:UIControlEventValueChanged];
-        switchView.tag = indexPath.section * 1000 + indexPath.row;
-        cell.accessoryView = switchView;
-    } else if (item.type == DYYYSettingItemTypeTextField) {
-        UITextField *textField = [[UITextField alloc] initWithFrame:CGRectMake(0, 0, 120, 30)];
-        textField.borderStyle = UITextBorderStyleRoundedRect;
-        textField.placeholder = item.placeholder;
-        textField.text = [[NSUserDefaults standardUserDefaults] objectForKey:item.key];
-        textField.textAlignment = NSTextAlignmentRight;
-        textField.backgroundColor = [UIColor colorWithWhite:0.2 alpha:1.0];
-        textField.textColor = [UIColor whiteColor];
-        textField.delegate = self;
-        textField.inputAccessoryView = self.inputAccessoryToolbar;
-        textField.tag = indexPath.section * 1000 + indexPath.row;
-        cell.accessoryView = textField;
-    } else if (item.type == DYYYSettingItemTypeSpeedPicker) {
-        cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-        UITextField *speedField = [[UITextField alloc] initWithFrame:CGRectMake(0, 0, 80, 30)];
-        speedField.text = [NSString stringWithFormat:@"%.2fx", [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYDefaultSpeed"]];
-        speedField.textColor = [UIColor whiteColor];
-        speedField.borderStyle = UITextBorderStyleNone;
-        speedField.backgroundColor = [UIColor clearColor];
-        speedField.textAlignment = NSTextAlignmentRight;
-        speedField.enabled = NO;
-        speedField.tag = 999;
-        cell.accessoryView = speedField;
-    }
-    
-    return cell;
-}
-
-#pragma mark - UITextFieldDelegate
-
-- (void)textFieldDidBeginEditing:(UITextField *)textField {
-    self.activeTextField = textField;
-}
-
-- (void)textFieldDidEndEditing:(UITextField *)textField {
-    NSIndexPath *indexPath = [NSIndexPath indexPathForRow:textField.tag % 1000 inSection:textField.tag / 1000];
-    DYYYSettingItem *item = self.settingSections[indexPath.section][indexPath.row];
-    [[NSUserDefaults standardUserDefaults] setObject:textField.text forKey:item.key];
+    [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:item.key];
     [[NSUserDefaults standardUserDefaults] synchronize];
-}
-
-- (BOOL)textFieldShouldReturn:(UITextField *)textField {
-    [textField resignFirstResponder];
-    return YES;
-}
-
-- (void)reloadAllTextFields {
-    NSMutableArray *textFields = [NSMutableArray array];
-    for (NSArray *section in self.settingSections) {
-        for (DYYYSettingItem *item in section) {
-            if (item.type == DYYYSettingItemTypeTextField) {
-                for (UITableViewCell *cell in self.tableView.visibleCells) {
-                    UITextField *textField = (UITextField *)cell.accessoryView;
-                    if ([textField isKindOfClass:[UITextField class]]) {
-                        [textFields addObject:textField];
-                    }
-                }
-            }
-        }
+    
+    if ([item.key isEqualToString:@"DYYYEnableDanmuColor"]) {
+        self.isDanmuColorEnabled = sender.isOn;
+        [self setupSettingItems];
+        [self.tableView reloadData];
     }
-    self.allTextFields = [textFields copy];
-}
-
-- (void)viewWillAppear:(BOOL)animated {
-    [super viewWillAppear:animated];
-    [self reloadAllTextFields];
 }
 
 @end
