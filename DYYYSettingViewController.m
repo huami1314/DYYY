@@ -1,23 +1,45 @@
 #import "DYYYSettingViewController.h"
 
+typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
+    DYYYSettingItemTypeSwitch,
+    DYYYSettingItemTypeTextField,
+    DYYYSettingItemTypeSpeedPicker // 新增的类型
+};
+
+@interface DYYYSettingItem : NSObject
+
+@property (nonatomic, copy) NSString *title;
+@property (nonatomic, copy) NSString *key;
+@property (nonatomic, assign) DYYYSettingItemType type;
+@property (nonatomic, copy, nullable) NSString *placeholder;
+
++ (instancetype)itemWithTitle:(NSString *)title key:(NSString *)key type:(DYYYSettingItemType)type;
++ (instancetype)itemWithTitle:(NSString *)title key:(NSString *)key type:(DYYYSettingItemType)type placeholder:(nullable NSString *)placeholder;
+
+@end
+
+@implementation DYYYSettingItem
+
++ (instancetype)itemWithTitle:(NSString *)title key:(NSString *)key type:(DYYYSettingItemType)type {
+    return [self itemWithTitle:title key:key type:type placeholder:nil];
+}
+
++ (instancetype)itemWithTitle:(NSString *)title key:(NSString *)key type:(DYYYSettingItemType)type placeholder:(nullable NSString *)placeholder {
+    DYYYSettingItem *item = [[DYYYSettingItem alloc] init];
+    item.title = title;
+    item.key = key;
+    item.type = type;
+    item.placeholder = placeholder;
+    return item;
+}
+
+@end
+
 @interface DYYYSettingViewController () <UITableViewDelegate, UITableViewDataSource>
 
 @property (nonatomic, strong) UITableView *tableView;
-@property (nonatomic, strong) UISwitch *hidePlusSwitch;
-@property (nonatomic, strong) UISwitch *hideEntryView;
-@property (nonatomic, strong) UISwitch *enableDanmuColorSwitch;
-@property (nonatomic, strong) UITextField *danmuColorField;
-@property (nonatomic, strong) UITextField *topBarTransparentField;
-@property (nonatomic, strong) UITextField *globalTransparencyField;
+@property (nonatomic, strong) NSArray<NSArray<DYYYSettingItem *> *> *settingSections;
 @property (nonatomic, strong) UILabel *footerLabel;
-@property (nonatomic, strong) UISwitch *hideBottomDotSwitch;
-@property (nonatomic, strong) UISwitch *hideSidebarDotSwitch;
-
-// 添加新的 UISwitch 属性
-@property (nonatomic, strong) UISwitch *hideLikeButtonSwitch;
-@property (nonatomic, strong) UISwitch *hideCommentButtonSwitch;
-@property (nonatomic, strong) UISwitch *hideCollectButtonSwitch;
-@property (nonatomic, strong) UISwitch *hideShareButtonSwitch;
 
 @end
 
@@ -29,23 +51,53 @@
     self.title = @"设置";
     [self setupAppearance];
     [self setupTableView];
+    [self setupSettingItems];
     [self setupFooterLabel];
     [self addTitleGradientAnimation];
 }
 
 - (void)setupAppearance {
-    self.view.backgroundColor = [UIColor systemBackgroundColor];
-    self.navigationController.navigationBar.titleTextAttributes = @{NSForegroundColorAttributeName: [UIColor labelColor], NSFontAttributeName: [UIFont systemFontOfSize:20 weight:UIFontWeightMedium]};
+    self.view.backgroundColor = [UIColor blackColor];
+    self.navigationController.navigationBar.barTintColor = [UIColor blackColor];
+    self.navigationController.navigationBar.tintColor = [UIColor whiteColor];
+    self.navigationController.navigationBar.largeTitleTextAttributes = @{NSForegroundColorAttributeName: [UIColor whiteColor]};
+    self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeAlways;
+    self.navigationController.navigationBar.prefersLargeTitles = YES;
 }
 
 - (void)setupTableView {
-    self.tableView = [[UITableView alloc] initWithFrame:self.view.bounds style:UITableViewStyleGrouped];
+    self.tableView = [[UITableView alloc] initWithFrame:self.view.bounds style:UITableViewStyleInsetGrouped];
     self.tableView.delegate = self;
     self.tableView.dataSource = self;
-    self.tableView.backgroundColor = [UIColor systemBackgroundColor];
-    self.tableView.separatorInset = UIEdgeInsetsMake(0, 20, 0, 20);
-    self.tableView.contentInset = UIEdgeInsetsMake(10, 0, 0, 0);
+    self.tableView.backgroundColor = [UIColor blackColor];
+    self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
     [self.view addSubview:self.tableView];
+}
+
+- (void)setupSettingItems {
+    self.settingSections = @[
+        @[
+            [DYYYSettingItem itemWithTitle:@"设置顶栏透明" key:@"DYYYtopbartransparent" type:DYYYSettingItemTypeTextField placeholder:@"输入0-1的小数"],
+            [DYYYSettingItem itemWithTitle:@"设置全局透明" key:@"DYYYGlobalTransparency" type:DYYYSettingItemTypeTextField placeholder:@"输入0-1的小数"],
+            [DYYYSettingItem itemWithTitle:@"设置默认倍速" key:@"DYYYDefaultSpeed" type:DYYYSettingItemTypeSpeedPicker]
+        ],
+        @[
+            [DYYYSettingItem itemWithTitle:@"隐藏全屏观看" key:@"DYYYisHiddenEntry" type:DYYYSettingItemTypeSwitch],
+            [DYYYSettingItem itemWithTitle:@"隐藏底栏加号" key:@"DYYYisHiddenJia" type:DYYYSettingItemTypeSwitch],
+            [DYYYSettingItem itemWithTitle:@"隐藏底栏红点" key:@"DYYYisHiddenBottomDot" type:DYYYSettingItemTypeSwitch],
+            [DYYYSettingItem itemWithTitle:@"隐藏侧栏红点" key:@"DYYYisHiddenSidebarDot" type:DYYYSettingItemTypeSwitch]
+        ],
+        @[
+            [DYYYSettingItem itemWithTitle:@"隐藏点赞按钮" key:@"DYYYHideLikeButton" type:DYYYSettingItemTypeSwitch],
+            [DYYYSettingItem itemWithTitle:@"隐藏评论按钮" key:@"DYYYHideCommentButton" type:DYYYSettingItemTypeSwitch],
+            [DYYYSettingItem itemWithTitle:@"隐藏收藏按钮" key:@"DYYYHideCollectButton" type:DYYYSettingItemTypeSwitch],
+            [DYYYSettingItem itemWithTitle:@"隐藏分享按钮" key:@"DYYYHideShareButton" type:DYYYSettingItemTypeSwitch]
+        ],
+        @[
+            [DYYYSettingItem itemWithTitle:@"开启弹幕改色" key:@"DYYYEnableDanmuColor" type:DYYYSettingItemTypeSwitch],
+            [DYYYSettingItem itemWithTitle:@"修改弹幕颜色" key:@"DYYYdanmuColor" type:DYYYSettingItemTypeTextField placeholder:@"十六进制颜色"]
+        ]
+    ];
 }
 
 - (void)setupFooterLabel {
@@ -53,120 +105,8 @@
     self.footerLabel.text = @"Developer By @huamidev";
     self.footerLabel.textAlignment = NSTextAlignmentCenter;
     self.footerLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightRegular];
-    self.footerLabel.textColor = [UIColor secondaryLabelColor];
-    self.footerLabel.alpha = 0;
-    
-    [UIView animateWithDuration:1.0 delay:0.3 options:UIViewAnimationOptionCurveEaseInOut animations:^{
-        self.footerLabel.alpha = 1.0;
-    } completion:nil];
-    
+    self.footerLabel.textColor = [UIColor colorWithRed:173/255.0 green:216/255.0 blue:230/255.0 alpha:1.0];
     self.tableView.tableFooterView = self.footerLabel;
-}
-
-- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-    return 1;
-}
-
-- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableDanmuColor"] ? 12 : 11; // 更新行数
-}
-
-- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    static NSString *identifier = @"SettingCell";
-    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifier];
-    if (!cell) {
-        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifier];
-        cell.backgroundColor = [UIColor secondarySystemBackgroundColor];
-        cell.textLabel.textColor = [UIColor labelColor];
-        cell.selectionStyle = UITableViewCellSelectionStyleNone;
-    }
-
-    switch (indexPath.row) {
-        case 0:
-            [self configureTopBarTransparentFieldCell:cell];
-            break;
-        case 1:
-            [self configureGlobalTransparencyFieldCell:cell];
-            break;
-        case 2:
-            [self configureHideEntryViewCell:cell];
-            break;
-        case 3:
-            [self configureHidePlusSwitchCell:cell];
-            break;
-        case 4:
-            [self configureHideBottomDotSwitchCell:cell];
-            break;
-        case 5:
-            [self configureHideSidebarDotSwitchCell:cell];
-            break;
-        case 6:
-            [self configureHideLikeButtonSwitchCell:cell];
-            break;
-        case 7:
-            [self configureHideCommentButtonSwitchCell:cell];
-            break;
-        case 8:
-            [self configureHideCollectButtonSwitchCell:cell];
-            break;
-        case 9:
-            [self configureHideShareButtonSwitchCell:cell];
-            break;
-        case 10:
-            [self configureEnableDanmuColorSwitchCell:cell];
-            break;
-        case 11:
-            [self configureDanmuColorFieldCell:cell];
-            break;
-        default:
-            break;
-    }
-    
-    return cell;
-}
-
-
-- (void)configureHideLikeButtonSwitchCell:(UITableViewCell *)cell {
-    cell.textLabel.text = @"隐藏点赞按钮";
-    self.hideLikeButtonSwitch = [[UISwitch alloc] init];
-    [self.hideLikeButtonSwitch setOn:[[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLikeButton"]];
-    [self.hideLikeButtonSwitch addTarget:self action:@selector(switchToggled:) forControlEvents:UIControlEventValueChanged];
-    cell.accessoryView = self.hideLikeButtonSwitch;
-}
-
-- (void)configureHideCommentButtonSwitchCell:(UITableViewCell *)cell {
-    cell.textLabel.text = @"隐藏评论按钮";
-    self.hideCommentButtonSwitch = [[UISwitch alloc] init];
-    [self.hideCommentButtonSwitch setOn:[[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentButton"]];
-    [self.hideCommentButtonSwitch addTarget:self action:@selector(switchToggled:) forControlEvents:UIControlEventValueChanged];
-    cell.accessoryView = self.hideCommentButtonSwitch;
-}
-
-- (void)configureHideCollectButtonSwitchCell:(UITableViewCell *)cell {
-    cell.textLabel.text = @"隐藏收藏按钮";
-    self.hideCollectButtonSwitch = [[UISwitch alloc] init];
-    [self.hideCollectButtonSwitch setOn:[[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCollectButton"]];
-    [self.hideCollectButtonSwitch addTarget:self action:@selector(switchToggled:) forControlEvents:UIControlEventValueChanged];
-    cell.accessoryView = self.hideCollectButtonSwitch;
-}
-
-- (void)configureHideShareButtonSwitchCell:(UITableViewCell *)cell {
-    cell.textLabel.text = @"隐藏分享按钮";
-    self.hideShareButtonSwitch = [[UISwitch alloc] init];
-    [self.hideShareButtonSwitch setOn:[[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShareButton"]];
-    [self.hideShareButtonSwitch addTarget:self action:@selector(switchToggled:) forControlEvents:UIControlEventValueChanged];
-    cell.accessoryView = self.hideShareButtonSwitch;
-}
-
-- (void)configureTopBarTransparentFieldCell:(UITableViewCell *)cell {
-    cell.textLabel.text = @"设置顶栏透明";
-    self.topBarTransparentField = [[UITextField alloc] initWithFrame:CGRectMake(0, 0, 150, 30)];
-    self.topBarTransparentField.borderStyle = UITextBorderStyleRoundedRect;
-    self.topBarTransparentField.placeholder = @"输入0-1的小数";
-    self.topBarTransparentField.text = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYtopbartransparent"] ?: @"1";
-    self.topBarTransparentField.textAlignment = NSTextAlignmentRight;
-    [self.topBarTransparentField addTarget:self action:@selector(textFieldDidChange:) forControlEvents:UIControlEventEditingDidEnd];
-    cell.accessoryView = self.topBarTransparentField;
 }
 
 - (void)addTitleGradientAnimation {
@@ -197,105 +137,117 @@
     [gradient addAnimation:colorChange forKey:@"colorChangeAnimation"];
 }
 
-- (void)configureGlobalTransparencyFieldCell:(UITableViewCell *)cell {
-    cell.textLabel.text = @"设置全局透明";
-    self.globalTransparencyField = [[UITextField alloc] initWithFrame:CGRectMake(0, 0, 150, 30)];
-    self.globalTransparencyField.borderStyle = UITextBorderStyleRoundedRect;
-    self.globalTransparencyField.placeholder = @"输入0-1的小数";
-    self.globalTransparencyField.text = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYGlobalTransparency"] ?: @"1";
-    self.globalTransparencyField.textAlignment = NSTextAlignmentRight;
-    [self.globalTransparencyField addTarget:self action:@selector(textFieldDidChange:) forControlEvents:UIControlEventEditingDidEnd];
-    cell.accessoryView = self.globalTransparencyField;
+#pragma mark - UITableViewDataSource
+
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+    return self.settingSections.count;
 }
 
-- (void)configureHidePlusSwitchCell:(UITableViewCell *)cell {
-    cell.textLabel.text = @"隐藏底栏加号";
-    self.hidePlusSwitch = [[UISwitch alloc] init];
-    [self.hidePlusSwitch setOn:[[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenJia"]];
-    [self.hidePlusSwitch addTarget:self action:@selector(switchToggled:) forControlEvents:UIControlEventValueChanged];
-    cell.accessoryView = self.hidePlusSwitch;
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return self.settingSections[section].count;
 }
 
-- (void)configureHideEntryViewCell:(UITableViewCell *)cell {
-    cell.textLabel.text = @"隐藏全屏观看";
-    self.hideEntryView = [[UISwitch alloc] init];
-    [self.hideEntryView setOn:[[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenEntry"]];
-    [self.hideEntryView addTarget:self action:@selector(switchToggled:) forControlEvents:UIControlEventValueChanged];
-    cell.accessoryView = self.hideEntryView;
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    DYYYSettingItem *item = self.settingSections[indexPath.section][indexPath.row];
+    
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"SettingCell"];
+    if (!cell) {
+        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"SettingCell"];
+    }
+    
+    cell.textLabel.text = item.title;
+    cell.textLabel.textColor = [UIColor whiteColor];
+    cell.backgroundColor = [UIColor colorWithRed:28/255.0 green:28/255.0 blue:29/255.0 alpha:1.0];
+    
+    if (item.type == DYYYSettingItemTypeSwitch) {
+        UISwitch *switchView = [[UISwitch alloc] init];
+        [switchView setOn:[[NSUserDefaults standardUserDefaults] boolForKey:item.key]];
+        [switchView addTarget:self action:@selector(switchToggled:) forControlEvents:UIControlEventValueChanged];
+        switchView.tag = indexPath.section * 1000 + indexPath.row;
+        cell.accessoryView = switchView;
+    } else if (item.type == DYYYSettingItemTypeTextField) {
+        UITextField *textField = [[UITextField alloc] initWithFrame:CGRectMake(0, 0, 100, 30)];
+        textField.borderStyle = UITextBorderStyleRoundedRect;
+        textField.placeholder = item.placeholder;
+        textField.text = [[NSUserDefaults standardUserDefaults] objectForKey:item.key];
+        textField.textAlignment = NSTextAlignmentRight;
+        textField.backgroundColor = [UIColor darkGrayColor];
+        textField.textColor = [UIColor whiteColor];
+        
+        [textField addTarget:self action:@selector(textFieldDidChange:) forControlEvents:UIControlEventEditingDidEnd];
+        textField.tag = indexPath.section * 1000 + indexPath.row;
+        cell.accessoryView = textField;
+    } else if (item.type == DYYYSettingItemTypeSpeedPicker) {
+        cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+
+        UITextField *speedField = [[UITextField alloc] initWithFrame:CGRectMake(0, 0, 80, 30)];
+        speedField.text = [NSString stringWithFormat:@"%.2f", [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYDefaultSpeed"]];
+        speedField.textColor = [UIColor whiteColor];
+        speedField.borderStyle = UITextBorderStyleNone;
+        speedField.backgroundColor = [UIColor clearColor];
+        speedField.textAlignment = NSTextAlignmentRight;
+        speedField.enabled = NO;
+        
+        speedField.tag = 999;
+        cell.accessoryView = speedField;
+    }
+    
+    return cell;
 }
 
-- (void)configureEnableDanmuColorSwitchCell:(UITableViewCell *)cell {
-    cell.textLabel.text = @"开启弹幕改色";
-    self.enableDanmuColorSwitch = [[UISwitch alloc] init];
-    [self.enableDanmuColorSwitch setOn:[[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableDanmuColor"]];
-    [self.enableDanmuColorSwitch addTarget:self action:@selector(enableDanmuSwitchToggled:) forControlEvents:UIControlEventValueChanged];
-    cell.accessoryView = self.enableDanmuColorSwitch;
+
+#pragma mark - UITableViewDelegate
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    DYYYSettingItem *item = self.settingSections[indexPath.section][indexPath.row];
+    if (item.type == DYYYSettingItemTypeSpeedPicker) {
+        [self showSpeedPicker];
+    }
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
 }
 
-- (void)configureDanmuColorFieldCell:(UITableViewCell *)cell {
-    cell.textLabel.text = @"修改弹幕颜色";
-    self.danmuColorField = [[UITextField alloc] initWithFrame:CGRectMake(0, 0, 150, 30)];
-    self.danmuColorField.borderStyle = UITextBorderStyleRoundedRect;
-    self.danmuColorField.placeholder = @"十六进制颜色";
-    self.danmuColorField.text = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYdanmuColor"] ?: @"#FFFFFF";
-    self.danmuColorField.textAlignment = NSTextAlignmentRight;
-    [self.danmuColorField addTarget:self action:@selector(textFieldDidChange:) forControlEvents:UIControlEventEditingDidEnd];
-    cell.accessoryView = self.danmuColorField;
+- (void)showSpeedPicker {
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"选择倍速"
+                                                                   message:nil
+                                                            preferredStyle:UIAlertControllerStyleActionSheet];
+    
+    NSArray *speeds = @[@0.75, @1.0, @1.5, @2.0, @2.5, @3.0];
+    for (NSNumber *speed in speeds) {
+        UIAlertAction *action = [UIAlertAction actionWithTitle:[NSString stringWithFormat:@"%.2f", speed.floatValue]
+                                                        style:UIAlertActionStyleDefault
+                                                      handler:^(UIAlertAction * _Nonnull action) {
+            [[NSUserDefaults standardUserDefaults] setFloat:speed.floatValue forKey:@"DYYYDefaultSpeed"];
+            [[NSUserDefaults standardUserDefaults] synchronize];
+            
+            NSIndexPath *indexPath = [NSIndexPath indexPathForRow:2 inSection:0];
+            UITableViewCell *cell = [self.tableView cellForRowAtIndexPath:indexPath];
+            UITextField *speedField = [cell.accessoryView viewWithTag:999];
+            speedField.text = [NSString stringWithFormat:@"%.2f", speed.floatValue];
+        }];
+        [alert addAction:action];
+    }
+    
+    UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil];
+    [alert addAction:cancelAction];
+    
+    [self presentViewController:alert animated:YES completion:nil];
 }
 
-- (void)configureHideBottomDotSwitchCell:(UITableViewCell *)cell {
-    cell.textLabel.text = @"隐藏底栏红点";
-    self.hideBottomDotSwitch = [[UISwitch alloc] init];
-    [self.hideBottomDotSwitch setOn:[[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenBottomDot"]];
-    [self.hideBottomDotSwitch addTarget:self action:@selector(switchToggled:) forControlEvents:UIControlEventValueChanged];
-    cell.accessoryView = self.hideBottomDotSwitch;
-}
 
-- (void)configureHideSidebarDotSwitchCell:(UITableViewCell *)cell {
-    cell.textLabel.text = @"隐藏侧栏红点";
-    self.hideSidebarDotSwitch = [[UISwitch alloc] init];
-    [self.hideSidebarDotSwitch setOn:[[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenSidebarDot"]];
-    [self.hideSidebarDotSwitch addTarget:self action:@selector(switchToggled:) forControlEvents:UIControlEventValueChanged];
-    cell.accessoryView = self.hideSidebarDotSwitch;
-}
+
+#pragma mark - Actions
 
 - (void)switchToggled:(UISwitch *)sender {
-    if (sender == self.hidePlusSwitch) {
-        [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:@"DYYYisHiddenJia"];
-    } else if (sender == self.hideEntryView) {
-        [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:@"DYYYisHiddenEntry"];
-    } else if (sender == self.hideBottomDotSwitch) {
-        [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:@"DYYYisHiddenBottomDot"];
-    } else if (sender == self.hideSidebarDotSwitch) {
-        [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:@"DYYYisHiddenSidebarDot"];
-    } else if (sender == self.hideLikeButtonSwitch) {
-        [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:@"DYYYHideLikeButton"];
-    } else if (sender == self.hideCommentButtonSwitch) {
-        [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:@"DYYYHideCommentButton"];
-    } else if (sender == self.hideCollectButtonSwitch) {
-        [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:@"DYYYHideCollectButton"];
-    } else if (sender == self.hideShareButtonSwitch) {
-        [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:@"DYYYHideShareButton"];
-    }
+    NSIndexPath *indexPath = [NSIndexPath indexPathForRow:sender.tag % 1000 inSection:sender.tag / 1000];
+    DYYYSettingItem *item = self.settingSections[indexPath.section][indexPath.row];
+    [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:item.key];
     [[NSUserDefaults standardUserDefaults] synchronize];
-}
-
-- (void)enableDanmuSwitchToggled:(UISwitch *)sender {
-    [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:@"DYYYEnableDanmuColor"];
-    [[NSUserDefaults standardUserDefaults] synchronize];
-    [self.tableView reloadData];
 }
 
 - (void)textFieldDidChange:(UITextField *)textField {
-    NSString *key;
-    if (textField == self.danmuColorField) {
-        key = @"DYYYdanmuColor";
-    } else if (textField == self.topBarTransparentField) {
-        key = @"DYYYtopbartransparent";
-    } else if (textField == self.globalTransparencyField) {
-        key = @"DYYYGlobalTransparency";
-    }
-    [[NSUserDefaults standardUserDefaults] setObject:textField.text forKey:key];
+    NSIndexPath *indexPath = [NSIndexPath indexPathForRow:textField.tag % 1000 inSection:textField.tag / 1000];
+    DYYYSettingItem *item = self.settingSections[indexPath.section][indexPath.row];
+    [[NSUserDefaults standardUserDefaults] setObject:textField.text forKey:item.key];
     [[NSUserDefaults standardUserDefaults] synchronize];
 }
 

@@ -29,6 +29,30 @@
 @interface AWEFeedVideoButton : UIButton
 @end
 
+@interface AWEAwemePlayVideoViewController : UIViewController
+
+- (void)setVideoControllerPlaybackRate:(double)arg0;
+
+@end
+
+
+%hook AWEAwemePlayVideoViewController
+
+- (void)setIsAutoPlay:(BOOL)arg0 {
+    float defaultSpeed = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYDefaultSpeed"];
+    
+    if (defaultSpeed > 0) {
+        [self setVideoControllerPlaybackRate:defaultSpeed];
+    } else {
+        [self setVideoControllerPlaybackRate:1.0];
+    }
+    
+    %orig(arg0);
+}
+
+%end
+
+
 %hook AWENormalModeTabBarGeneralPlusButton
 + (id)button {
     BOOL isHiddenJia = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenJia"];
@@ -59,8 +83,8 @@
 - (void)setTextColor:(UIColor *)textColor {
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableDanmuColor"]) {
         NSString *danmuColor = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYdanmuColor"];
-
-        if ([danmuColor.lowercaseString isEqualToString:@"random"]) {
+        
+        if ([danmuColor.lowercaseString isEqualToString:@"random"] || [danmuColor.lowercaseString isEqualToString:@"#random"]) {
             textColor = [UIColor colorWithRed:(arc4random_uniform(256)) / 255.0
                                         green:(arc4random_uniform(256)) / 255.0
                                          blue:(arc4random_uniform(256)) / 255.0
@@ -125,31 +149,37 @@
 - (instancetype)initWithFrame:(CGRect)frame {
     UIWindow *window = %orig(frame);
     if (window) {
-        UITapGestureRecognizer *doubleTapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleDoubleTapGesture:)];
-        doubleTapGesture.numberOfTapsRequired = 1;
-        doubleTapGesture.numberOfTouchesRequired = 3;
-        [window addGestureRecognizer:doubleTapGesture];
+        UILongPressGestureRecognizer *doubleFingerLongPressGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handleDoubleFingerLongPressGesture:)];
+        doubleFingerLongPressGesture.numberOfTouchesRequired = 2;
+        [window addGestureRecognizer:doubleFingerLongPressGesture];
     }
     return window;
 }
 
 %new
-- (void)handleDoubleTapGesture:(UITapGestureRecognizer *)gesture {
-    if (gesture.state == UIGestureRecognizerStateRecognized) {
+- (void)handleDoubleFingerLongPressGesture:(UILongPressGestureRecognizer *)gesture {
+    if (gesture.state == UIGestureRecognizerStateBegan) {
         UIViewController *rootViewController = self.rootViewController;
         if (rootViewController) {
             UIViewController *settingVC = [[NSClassFromString(@"DYYYSettingViewController") alloc] init];
             
             if (settingVC) {
-                // 设置全屏显示
                 settingVC.modalPresentationStyle = UIModalPresentationFullScreen;
                 
-                // 添加关闭按钮
                 UIButton *closeButton = [UIButton buttonWithType:UIButtonTypeSystem];
                 [closeButton setTitle:@"关闭" forState:UIControlStateNormal];
-                closeButton.frame = CGRectMake(20, 40, 60, 30);  // 设置按钮位置和大小
-                [closeButton addTarget:self action:@selector(closeSettings:) forControlEvents:UIControlEventTouchUpInside];
+                closeButton.translatesAutoresizingMaskIntoConstraints = NO;
+                
                 [settingVC.view addSubview:closeButton];
+                
+                [NSLayoutConstraint activateConstraints:@[
+                    [closeButton.trailingAnchor constraintEqualToAnchor:settingVC.view.trailingAnchor constant:-10],
+                    [closeButton.topAnchor constraintEqualToAnchor:settingVC.view.topAnchor constant:40],
+                    [closeButton.widthAnchor constraintEqualToConstant:80],
+                    [closeButton.heightAnchor constraintEqualToConstant:40]
+                ]];
+                
+                [closeButton addTarget:self action:@selector(closeSettings:) forControlEvents:UIControlEventTouchUpInside];
                 
                 [rootViewController presentViewController:settingVC animated:YES completion:nil];
             }
@@ -161,6 +191,7 @@
     [button.superview.window.rootViewController dismissViewControllerAnimated:YES completion:nil];
 }
 %end
+
 
 
 %hook AWELongVideoControlModel
@@ -186,49 +217,53 @@
 %end
 
 %hook AWEPlayInteractionViewController
+
 - (void)viewDidAppear:(BOOL)animated {
     NSString *transparentValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYGlobalTransparency"];
     if (transparentValue) {
         CGFloat alphaValue = [transparentValue floatValue];
-        if (alphaValue >= 0.0 && alphaValue <= 1.0) {
+        if (alphaValue == 1.0) {
+            %orig(animated);
+        } else if (alphaValue >= 0.0 && alphaValue < 1.0) {
             %orig(animated);
             self.view.alpha = alphaValue;
         } else {
             %orig(animated);
-            self.view.alpha = 1.0;
         }
     } else {
         %orig(animated);
-        self.view.alpha = 1.0;
     }
+
 }
 
 - (void)viewWillLayoutSubviews {
     NSString *transparentValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYGlobalTransparency"];
     if (transparentValue) {
         CGFloat alphaValue = [transparentValue floatValue];
-        if (alphaValue >= 0.0 && alphaValue <= 1.0) {
+        if (alphaValue == 1.0) {
+            %orig;
+        } else if (alphaValue >= 0.0 && alphaValue < 1.0) {
             %orig;
             self.view.alpha = alphaValue;
         } else {
             %orig;
-            self.view.alpha = 1.0;
         }
     } else {
         %orig;
-        self.view.alpha = 1.0;
     }
-}
 
-- (void)updateProgressSliderWithTime:(CGFloat)time totalDuration:(CGFloat)totalDuration {
-    // 打印参数信息
-    NSLog(@"[Hooked] updateProgressSliderWithTime: %.2f, totalDuration: %.2f", time, totalDuration);
-
-    // 调用原方法
-    %orig;
 }
 
 %end
+
+%hook AWEAwemeModel
+
+- (void)setIsAds:(BOOL)isAds {
+    %orig(NO);
+}
+
+%end
+
 
 %hook AWENormalModeTabBarGeneralButton
 
