@@ -265,7 +265,7 @@
 %end
 
 
-%hook AWENormalModeTabBarGeneralButton
+%hook AWENormalModeTabBarBadgeContainerView
 
 - (void)layoutSubviews {
     %orig;
