@@ -39,16 +39,19 @@
 
 @end
 
+@interface AWEDanmakuItemTextInfo : NSObject
+- (void)setDanmakuTextColor:(id)arg1;
+- (UIColor *)colorFromHexStringForTextInfo:(NSString *)hexString;
+@end
+
 
 %hook AWEAwemePlayVideoViewController
 
 - (void)setIsAutoPlay:(BOOL)arg0 {
     float defaultSpeed = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYDefaultSpeed"];
     
-    if (defaultSpeed > 0) {
+    if (defaultSpeed > 0 && defaultSpeed != 1) {
         [self setVideoControllerPlaybackRate:defaultSpeed];
-    } else {
-        [self setVideoControllerPlaybackRate:1.0];
     }
     
     %orig(arg0);
@@ -120,6 +123,57 @@
     [[NSScanner scannerWithString:[hexString substringWithRange:NSMakeRange(2, 2)]] scanHexInt:&green];
     [[NSScanner scannerWithString:[hexString substringWithRange:NSMakeRange(4, 2)]] scanHexInt:&blue];
     return [UIColor colorWithRed:(red / 255.0) green:(green / 255.0) blue:(blue / 255.0) alpha:CGColorGetAlpha(baseColor.CGColor)];
+}
+%end
+
+%hook UITextInputTraits
+- (void)setKeyboardAppearance:(UIKeyboardAppearance)appearance {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisDarkKeyBoard"]) {
+        %orig(UIKeyboardAppearanceDark);
+    }else {
+        %orig;
+    }
+}
+%end
+
+%hook AWEDanmakuItemTextInfo
+- (void)setDanmakuTextColor:(id)arg1 {
+    NSLog(@"Original Color: %@", arg1);
+    
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableDanmuColor"]) {
+        NSString *danmuColor = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYdanmuColor"];
+        
+        if ([danmuColor.lowercaseString isEqualToString:@"random"] || [danmuColor.lowercaseString isEqualToString:@"#random"]) {
+            arg1 = [UIColor colorWithRed:(arc4random_uniform(256)) / 255.0
+                                   green:(arc4random_uniform(256)) / 255.0
+                                    blue:(arc4random_uniform(256)) / 255.0
+                                   alpha:1.0];
+            NSLog(@"Random Color: %@", arg1);
+        } else if ([danmuColor hasPrefix:@"#"]) {
+            arg1 = [self colorFromHexStringForTextInfo:danmuColor];
+            NSLog(@"Custom Hex Color: %@", arg1);
+        } else {
+            arg1 = [self colorFromHexStringForTextInfo:@"#FFFFFF"];
+            NSLog(@"Default White Color: %@", arg1);
+        }
+    }
+
+    %orig(arg1);
+}
+
+%new
+- (UIColor *)colorFromHexStringForTextInfo:(NSString *)hexString {
+    if ([hexString hasPrefix:@"#"]) {
+        hexString = [hexString substringFromIndex:1];
+    }
+    if ([hexString length] != 6) {
+        return [UIColor whiteColor];
+    }
+    unsigned int red, green, blue;
+    [[NSScanner scannerWithString:[hexString substringWithRange:NSMakeRange(0, 2)]] scanHexInt:&red];
+    [[NSScanner scannerWithString:[hexString substringWithRange:NSMakeRange(2, 2)]] scanHexInt:&green];
+    [[NSScanner scannerWithString:[hexString substringWithRange:NSMakeRange(4, 2)]] scanHexInt:&blue];
+    return [UIColor colorWithRed:(red / 255.0) green:(green / 255.0) blue:(blue / 255.0) alpha:1.0];
 }
 %end
 

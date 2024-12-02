@@ -3,7 +3,7 @@
 typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
     DYYYSettingItemTypeSwitch,
     DYYYSettingItemTypeTextField,
-    DYYYSettingItemTypeSpeedPicker // 新增的类型
+    DYYYSettingItemTypeSpeedPicker
 };
 
 @interface DYYYSettingItem : NSObject
@@ -78,7 +78,8 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
     self.settingSections = @[
         @[
             [DYYYSettingItem itemWithTitle:@"开启弹幕改色" key:@"DYYYEnableDanmuColor" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"修改弹幕颜色" key:@"DYYYdanmuColor" type:DYYYSettingItemTypeTextField placeholder:@"十六进制"]
+            [DYYYSettingItem itemWithTitle:@"修改弹幕颜色" key:@"DYYYdanmuColor" type:DYYYSettingItemTypeTextField placeholder:@"十六进制"],
+            [DYYYSettingItem itemWithTitle:@"启用深色键盘" key:@"DYYYisDarkKeyBoard" type:DYYYSettingItemTypeSwitch]
         ],
         @[
             [DYYYSettingItem itemWithTitle:@"设置顶栏透明" key:@"DYYYtopbartransparent" type:DYYYSettingItemTypeTextField placeholder:@"输入0-1的小数"],

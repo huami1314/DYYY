@@ -1,6 +1,6 @@
 Package: com.huami.dyyy
 Name: DYYY
-Version: 1.6-2
+Version: 1.7
 Description: 仅供学习交流，请在24内小时内自觉删除
 Section: Tweaks
 Depends: firmware (>= 5.0), mobilesubstrate
