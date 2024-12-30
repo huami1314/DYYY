@@ -8,7 +8,7 @@
 
 ### 免责声明
 
-本项目仅供学习与交流使用，任何用户在使用过程中，需严格遵守 [MIT 许可协议]([https://opensource.org/licenses/MIT](https://github.com/huami1314/DYYY?tab=MIT-1-ov-file))  
+本项目仅供学习与交流使用，任何用户在使用过程中，需严格遵守 [MIT 许可协议](https://github.com/huami1314/DYYY?tab=MIT-1-ov-file)  
 
 - **本项目开发者不对任何使用者的行为负责，任何使用本项目所产生的后果均与本项目无关。**  
 - **使用者需确保使用本项目时符合其所在国家或地区的相关法律法规。**  
