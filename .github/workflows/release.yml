@@ -29,8 +29,8 @@ jobs:
         run: |
           rm -f packages/*
           make package FINALPACKAGE=1
-          make package THEOS_PACKAGE_SCHEME = rootless FINALPACKAGE=1
-          make package THEOS_PACKAGE_SCHEME = roothide FINALPACKAGE=1
+          make package THEOS_PACKAGE_SCHEME=rootless FINALPACKAGE=1
+          make package THEOS_PACKAGE_SCHEME=roothide FINALPACKAGE=1
 
       - name: Upload specific Deb packages
         uses: actions/upload-artifact@v4.3.3
