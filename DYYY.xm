@@ -6,6 +6,7 @@
 //  Created on: 2024/10/04
 //
 #import <UIKit/UIKit.h>
+#import <objc/runtime.h>
 
 @interface AWENormalModeTabBarGeneralButton : UIButton
 @end
@@ -44,6 +45,25 @@
 - (UIColor *)colorFromHexStringForTextInfo:(NSString *)hexString;
 @end
 
+@interface AWECommentMiniEmoticonPanelView : UIView
+
+@end
+
+@interface AWEBaseElementView : UIView
+
+@end
+
+@interface AWETextViewInternal : UITextView
+
+@end
+
+@interface AWECommentPublishGuidanceView : UIView
+
+@end
+
+@interface AWEPlayInteractionFollowPromptView : UIView
+
+@end
 
 %hook AWEAwemePlayVideoViewController
 
@@ -123,16 +143,6 @@
     [[NSScanner scannerWithString:[hexString substringWithRange:NSMakeRange(2, 2)]] scanHexInt:&green];
     [[NSScanner scannerWithString:[hexString substringWithRange:NSMakeRange(4, 2)]] scanHexInt:&blue];
     return [UIColor colorWithRed:(red / 255.0) green:(green / 255.0) blue:(blue / 255.0) alpha:CGColorGetAlpha(baseColor.CGColor)];
-}
-%end
-
-%hook UITextInputTraits
-- (void)setKeyboardAppearance:(UIKeyboardAppearance)appearance {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisDarkKeyBoard"]) {
-        %orig(UIKeyboardAppearanceDark);
-    }else {
-        %orig;
-    }
 }
 %end
 
@@ -322,7 +332,6 @@
 
 %end
 
-
 %hook AWENormalModeTabBarBadgeContainerView
 
 - (void)layoutSubviews {
@@ -352,7 +361,6 @@
 }
 
 %end
-
 
 %hook AWEFeedVideoButton
 
@@ -394,9 +402,240 @@
 
 %end
 
+%hook UITextInputTraits
+- (void)setKeyboardAppearance:(UIKeyboardAppearance)appearance {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisDarkKeyBoard"]) {
+        %orig(UIKeyboardAppearanceDark);
+    }else {
+        %orig;
+    }
+}
+%end
+
+%hook AWECommentMiniEmoticonPanelView
+
+- (void)layoutSubviews {
+    %orig;
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisDarkKeyBoard"]) {
+        
+        for (UIView *subview in self.subviews) {
+            if ([subview isKindOfClass:[UICollectionView class]]) {
+                subview.backgroundColor = [UIColor colorWithRed:115/255.0 green:115/255.0 blue:115/255.0 alpha:1.0];
+            }
+        }
+    }
+}
+%end
+
+%hook AWECommentPublishGuidanceView
+
+- (void)layoutSubviews {
+    %orig;
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisDarkKeyBoard"]) {
+        
+        for (UIView *subview in self.subviews) {
+            if ([subview isKindOfClass:[UICollectionView class]]) {
+                subview.backgroundColor = [UIColor colorWithRed:115/255.0 green:115/255.0 blue:115/255.0 alpha:1.0];
+            }
+        }
+    }
+}
+%end
+
+%hook AWECommentInputViewSwiftImpl.CommentInputViewMiddleContainer
+- (instancetype)initWithFrame:(CGRect)frame {
+    self = %orig(frame);
+    if (self) {
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisDarkKeyBoard"]) {
+            
+            UIView *view = (UIView *)self;
+            view.backgroundColor = [UIColor colorWithRed:40/255.0 green:40/255.0 blue:40/255.0 alpha:1.0];
+        }
+    }
+    return self;
+}
+
+%end
+
+%hook UIView
+- (void)layoutSubviews {
+    %orig;
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisDarkKeyBoard"]) {
+        
+        for (UIView *subview in self.subviews) {
+            
+            if ([subview isKindOfClass:NSClassFromString(@"AWECommentInputViewSwiftImpl.CommentInputViewMiddleContainer")]) {
+                for (UIView *innerSubview in subview.subviews) {
+                    if ([innerSubview isKindOfClass:[UIView class]]) {
+                        innerSubview.backgroundColor = [UIColor colorWithRed:31/255.0 green:33/255.0 blue:35/255.0 alpha:1.0];
+                        break;
+                    }
+                }
+            }
+            if ([subview isKindOfClass:NSClassFromString(@"AWEIMEmoticonPanelBoxView")]) {
+                subview.backgroundColor = [UIColor colorWithRed:33/255.0 green:33/255.0 blue:33/255.0 alpha:1.0];
+            }
+            
+        }
+    }
+}
+%end
+
+%hook UILabel
+
+- (void)setText:(NSString *)text {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisDarkKeyBoard"]) {
+        if ([text hasPrefix:@"善语"] || [text hasPrefix:@"友爱评论"] || [text hasPrefix:@"回复"]) {
+            self.textColor = [UIColor colorWithRed:125/255.0 green:125/255.0 blue:125/255.0 alpha:0.6];
+        }
+    }
+    %orig;
+}
+
+%end
+
+%hook UIButton
+
+- (void)setImage:(UIImage *)image forState:(UIControlState)state {
+    NSString *label = self.accessibilityLabel;
+//    NSLog(@"Label -> %@",accessibilityLabel);
+    if ([label isEqualToString:@"表情"] || [label isEqualToString:@"at"] || [label isEqualToString:@"图片"] || [label isEqualToString:@"键盘"]) {
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisDarkKeyBoard"]) {
+            
+            UIImage *whiteImage = [image imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+            
+            self.tintColor = [UIColor whiteColor];
+            
+            %orig(whiteImage, state);
+        }else {
+            %orig(image, state);
+        }
+    } else {
+        %orig(image, state);
+    }
+}
+
+%end
+
+%hook AWETextViewInternal
+
+- (void)drawRect:(CGRect)rect {
+    %orig(rect);
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisDarkKeyBoard"]) {
+        
+        self.textColor = [UIColor whiteColor];
+    }
+}
+
+- (double)lineSpacing {
+    double r = %orig;
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisDarkKeyBoard"]) {
+        
+        self.textColor = [UIColor whiteColor];
+    }
+    return r;
+}
+
+%end
+
+%hook AWEPlayInteractionUserAvatarElement
+
+- (void)onFollowViewClicked:(UITapGestureRecognizer *)gesture {
+//    NSLog(@"拦截到关注按钮点击");
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYfollowTips"]) {
+        
+        dispatch_async(dispatch_get_main_queue(), ^{
+            UIAlertController *alertController = [UIAlertController
+                                                  alertControllerWithTitle:@"关注确认"
+                                                  message:@"是否确认关注？"
+                                                  preferredStyle:UIAlertControllerStyleAlert];
+            
+            UIAlertAction *cancelAction = [UIAlertAction
+                                           actionWithTitle:@"取消"
+                                           style:UIAlertActionStyleCancel
+                                           handler:nil];
+            
+            UIAlertAction *confirmAction = [UIAlertAction
+                                            actionWithTitle:@"确定"
+                                            style:UIAlertActionStyleDefault
+                                            handler:^(UIAlertAction * _Nonnull action) {
+                %orig(gesture);
+            }];
+            
+            [alertController addAction:cancelAction];
+            [alertController addAction:confirmAction];
+            
+            UIViewController *topController = [UIApplication sharedApplication].keyWindow.rootViewController;
+            while (topController.presentedViewController) {
+                topController = topController.presentedViewController;
+            }
+            [topController presentViewController:alertController animated:YES completion:nil];
+        });
+    }else {
+        %orig;
+    }
+}
+
+%end
+
+%hook AWEFeedVideoButton
+- (id)touchUpInsideBlock {
+    id r = %orig;
+    
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYcollectTips"] && [self.accessibilityLabel isEqualToString:@"收藏"]) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            UIAlertController *alertController = [UIAlertController
+                                                  alertControllerWithTitle:@"收藏确认"
+                                                  message:@"是否[确认/取消]收藏？"
+                                                  preferredStyle:UIAlertControllerStyleAlert];
+
+            UIAlertAction *cancelAction = [UIAlertAction
+                                           actionWithTitle:@"取消"
+                                           style:UIAlertActionStyleCancel
+                                           handler:nil];
+
+            UIAlertAction *confirmAction = [UIAlertAction
+                                            actionWithTitle:@"确定"
+                                            style:UIAlertActionStyleDefault
+                                            handler:^(UIAlertAction * _Nonnull action) {
+                if (r && [r isKindOfClass:NSClassFromString(@"NSBlock")]) {
+                    ((void(^)(void))r)();
+                }
+            }];
+
+            [alertController addAction:cancelAction];
+            [alertController addAction:confirmAction];
+
+            UIViewController *topController = [UIApplication sharedApplication].keyWindow.rootViewController;
+            while (topController.presentedViewController) {
+                topController = topController.presentedViewController;
+            }
+            [topController presentViewController:alertController animated:YES completion:nil];
+        });
+
+        return nil; // 阻止原始 block 立即执行
+    }
+
+    return r;
+}
+%end
 
 
+%hook AWEFeedProgressSlider
 
+- (void)setAlpha:(CGFloat)alpha {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisShowSchedule"]) {
+        
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"SuAwemeHookAlwaysShowProgress"]) {
+            alpha = 1.0;
+        }
+        %orig(alpha);
+    }else {
+        %orig;
+    }
+}
+
+%end
 //%ctor {
 //    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
 //        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
@@ -433,3 +672,4 @@
 //        }
 //    });
 //}
+
