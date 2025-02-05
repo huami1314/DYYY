@@ -15,7 +15,7 @@ include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = DYYY
 
-DYYY_FILES = Tweak.xm
+DYYY_FILES = DYYY.xm
 DYYY_CFLAGS = -fobjc-arc
 
 DYYY_SOURCES = DYYYSettingViewController.m
