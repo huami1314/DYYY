@@ -65,6 +65,11 @@
 
 @end
 
+@interface AWENormalModeTabBarTextView : UIView
+
+@end
+
+
 %hook AWEAwemePlayVideoViewController
 
 - (void)setIsAutoPlay:(BOOL)arg0 {
@@ -621,6 +626,49 @@
 }
 
 %end
+
+%hook AWENormalModeTabBarTextView
+
+- (void)layoutSubviews {
+	%orig;
+	
+	NSString *indexTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYIndexTitle"];
+	NSString *friendsTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYFriendsTitle"];
+	NSString *msgTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYMsgTitle"];
+	NSString *selfTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYSelfTitle"];
+	
+	for (UIView *subview in [self subviews]) {
+		if ([subview isKindOfClass:[UILabel class]]) {
+			UILabel *label = (UILabel *)subview;
+			if ([label.text isEqualToString:@"首页"]) {
+				if (indexTitle.length > 0) {
+					[label setText:indexTitle];
+					[self setNeedsLayout];
+				}
+			}
+			if ([label.text isEqualToString:@"朋友"]) {
+				if (friendsTitle.length > 0) {
+					[label setText:friendsTitle];
+					[self setNeedsLayout];
+				}
+			}
+			if ([label.text isEqualToString:@"消息"]) {
+				if (msgTitle.length > 0) {
+					[label setText:msgTitle];
+					[self setNeedsLayout];
+				}
+			}
+			if ([label.text isEqualToString:@"我"]) {
+				if (selfTitle.length > 0) {
+					[label setText:selfTitle];
+					[self setNeedsLayout];
+				}
+			}
+		}
+	}
+}
+%end
+
 //%ctor {
 //    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
 //        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
