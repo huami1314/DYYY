@@ -77,13 +77,17 @@
 
 @end
 
-@interface AWEPlayInteractionUserAvatarView : UIView
-
+@interface AWEPlayInteractionProgressController : UIView
+- (UIViewController *)findClosestFeedTableViewController:(UIViewController *)vc;
 @end
 
 @interface AWEAdAvatarView : UIView
 
 @end
+
+@interface AWEPlayInteractionListenFeedView : UIView
+@end
+
 %hook AWEAwemePlayVideoViewController
 
 - (void)setIsAutoPlay:(BOOL)arg0 {
@@ -310,7 +314,7 @@
     
     if ([vc isKindOfClass:%c(AWEPlayInteractionViewController)]) {
         NSString *transparentValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYGlobalTransparency"];
-        if (transparentValue) {
+        if (transparentValue && [transparentValue length] > 0) {
             CGFloat alphaValue = [transparentValue floatValue];
             if (alphaValue >= 0.0 && alphaValue < 1.0) {
                 %orig(alphaValue);
@@ -432,6 +436,17 @@
     }
 }
 
+%end
+
+%hook AWEPlayInteractionListenFeedView
+- (void)layoutSubviews {
+    %orig;
+    BOOL hideMusicButton = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMusicButton"];
+    if (hideMusicButton) {
+        [self removeFromSuperview];
+        return;
+    }
+}
 %end
 
 %hook AWEPlayInteractionFollowPromptView
@@ -727,6 +742,53 @@
             }
         }
     }
+}
+%end
+
+%hook AWEPlayInteractionProgressController
+- (void)updateProgressSliderWithTime:(CGFloat)arg1 totalDuration:(CGFloat)arg2 {
+    %orig;
+    
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableAutoPlay"]) {
+        //    NSLog(@"%.2f,%.2f",arg1,arg2);
+        BOOL isTotalDurationInteger = (arg2 == floor(arg2));
+        
+        CGFloat tolerance = isTotalDurationInteger ? 1.0 : 0.3;
+        
+        if (fabs(arg1 - arg2) <= tolerance) {
+            //        NSLog(@"[%@] 播放完成，尝试滚动到下一个视频", @"AWEPlayInteractionProgressController");
+            
+            Class FeedTableVC = NSClassFromString(@"AWEFeedTableViewController");
+            if (FeedTableVC) {
+                NSArray *windows = [UIApplication sharedApplication].windows;
+                for (UIWindow *window in windows) {
+                    UIViewController *rootVC = window.rootViewController;
+                    UIViewController *targetVC = [self findClosestFeedTableViewController:rootVC];
+                    
+                    if (targetVC) {
+                        [targetVC performSelector:@selector(scrollToNextVideo)];
+                        break;
+                    }
+                }
+            }
+        }
+    }
+}
+
+%new
+- (UIViewController *)findClosestFeedTableViewController:(UIViewController *)vc {
+    if (!vc) return nil;
+    
+    if ([vc isKindOfClass:NSClassFromString(@"AWEFeedTableViewController")]) {
+        return vc;
+    }
+
+    for (UIViewController *childVC in vc.childViewControllers) {
+        UIViewController *foundVC = [self findClosestFeedTableViewController:childVC];
+        if (foundVC) return foundVC;
+    }
+
+    return [self findClosestFeedTableViewController:vc.presentedViewController];
 }
 %end
 
