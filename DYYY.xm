@@ -76,7 +76,7 @@
 
 @end
 
-@interface AWEAdAvatarView : UIView
+@interface AWEPlayInteractionUserAvatarView : UIView
 
 @end
 
@@ -438,7 +438,7 @@
 
 %end
 
-%hook AWEAdAvatarView
+%hook AWEPlayInteractionUserAvatarView
 
 - (void)layoutSubviews {
 	%orig;
