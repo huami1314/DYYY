@@ -438,6 +438,27 @@
 
 %end
 
+%hook AWEPlayInteractionFollowPromptView
+
+- (void)layoutSubviews {
+	%orig;
+
+	BOOL hideAvatarButton = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAvatarButton"];
+
+	NSString *accessibilityLabel = self.accessibilityLabel;
+
+//    NSLog(@"Accessibility Label: %@", accessibilityLabel);
+
+	if ([accessibilityLabel isEqualToString:@"关注"]) {
+		if (hideAvatarButton) {
+			[self removeFromSuperview];
+			return;
+		}
+	}
+}
+
+%end
+
 %hook AWEAdAvatarView
 
 - (void)layoutSubviews {
