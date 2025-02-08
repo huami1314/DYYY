@@ -76,10 +76,6 @@
 
 @end
 
-@interface AWEPlayInteractionUserAvatarView : UIView
-
-@end
-
 %hook AWEAwemePlayVideoViewController
 
 - (void)setIsAutoPlay:(BOOL)arg0 {
