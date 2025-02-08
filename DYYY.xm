@@ -87,7 +87,7 @@
 
 @interface AWEAdAvatarView : UIView
 
-
+@end
 %hook AWEAwemePlayVideoViewController
 
 - (void)setIsAutoPlay:(BOOL)arg0 {
@@ -455,20 +455,20 @@
 %hook AWEMusicCoverButton
 
 - (void)layoutSubviews {
-	%orig;
+    %orig;
 
-	BOOL hideMusicButton = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMusicButton"];
+    BOOL hideMusicButton = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMusicButton"];
 
-	NSString *accessibilityLabel = self.accessibilityLabel;
+    NSString *accessibilityLabel = self.accessibilityLabel;
 
 //    NSLog(@"Accessibility Label: %@", accessibilityLabel);
 
-	if ([accessibilityLabel isEqualToString:@"音乐详情"]) {
-		if (hideMusicButton) {
-			[self removeFromSuperview];
-			return;
-		}
-	}
+    if ([accessibilityLabel isEqualToString:@"音乐详情"]) {
+        if (hideMusicButton) {
+            [self removeFromSuperview];
+            return;
+        }
+    }
 }
 
 %end
@@ -476,20 +476,20 @@
 %hook AWEPlayInteractionFollowPromptView
 
 - (void)layoutSubviews {
-	%orig;
+    %orig;
 
-	BOOL hideAvatarButton = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAvatarButton"];
+    BOOL hideAvatarButton = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAvatarButton"];
 
-	NSString *accessibilityLabel = self.accessibilityLabel;
+    NSString *accessibilityLabel = self.accessibilityLabel;
 
 //    NSLog(@"Accessibility Label: %@", accessibilityLabel);
 
-	if ([accessibilityLabel isEqualToString:@"关注"]) {
-		if (hideAvatarButton) {
-			[self removeFromSuperview];
-			return;
-		}
-	}
+    if ([accessibilityLabel isEqualToString:@"关注"]) {
+        if (hideAvatarButton) {
+            [self removeFromSuperview];
+            return;
+        }
+    }
 }
 
 %end
@@ -497,13 +497,13 @@
 %hook AWEAdAvatarView
 
 - (void)layoutSubviews {
-	%orig;
+    %orig;
 
-	BOOL hideAvatarButton = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAvatarButton"];
-	if (hideAvatarButton) {
-		[self removeFromSuperview];
-		return;
-	}
+    BOOL hideAvatarButton = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAvatarButton"];
+    if (hideAvatarButton) {
+        [self removeFromSuperview];
+        return;
+    }
 }
 
 %end
