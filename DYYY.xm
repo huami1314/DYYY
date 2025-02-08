@@ -374,7 +374,7 @@
 
 %end
 
-%hook AWEFeedVideoButton AWEMusicCoverButton
+%hook AWEFeedVideoButton
 
 - (void)layoutSubviews {
 	%orig;
@@ -383,7 +383,6 @@
 	BOOL hideCommentButton = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentButton"];
 	BOOL hideCollectButton = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCollectButton"];
 	BOOL hideShareButton = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShareButton"];
-	BOOL hideMusicButton = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMusicButton"];
 
 	NSString *accessibilityLabel = self.accessibilityLabel;
 
@@ -406,11 +405,6 @@
 		}
 	} else if ([accessibilityLabel isEqualToString:@"收藏"]) {
 		if (hideCollectButton) {
-			[self removeFromSuperview];
-			return;
-		}
-	} else if ([accessibilityLabel isEqualToString:@"音乐详情"]) {
-		if (hideMusicButton) {
 			[self removeFromSuperview];
 			return;
 		}
