@@ -362,11 +362,19 @@
 
 - (void)layoutSubviews {
     %orig;
+
+    NSString *accessibilityLabel = self.accessibilityLabel;
+
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenSidebarDot"]) {
         for (UIView *subview in [self subviews]) {
             if ([subview isKindOfClass:NSClassFromString(@"DUXBadge")]) {
                 subview.hidden = YES;
             }
+        }
+    } else if ([accessibilityLabel isEqualToString:@"侧边栏"]) {
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenSidebar"]) {
+            [self removeFromSuperview];
+            return;
         }
     }
 }
