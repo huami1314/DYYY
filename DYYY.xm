@@ -43,6 +43,9 @@
 @interface AWEFeedVideoButton : UIButton
 @end
 
+@interface AWEMusicCoverButton : UIButton
+@end
+
 @interface AWEAwemePlayVideoViewController : UIViewController
 
 - (void)setVideoControllerPlaybackRate:(double)arg0;
@@ -78,11 +81,12 @@
 
 @end
 
-@interface AWEHPTopTabItemUIModel : NSObject
-
-@property (nonatomic, strong, readwrite) NSString *title;
+@interface AWEPlayInteractionUserAvatarView : UIView
 
 @end
+
+@interface AWEAdAvatarView : UIView
+
 
 %hook AWEAwemePlayVideoViewController
 
@@ -444,6 +448,62 @@
         }
     }
 
+}
+
+%end
+
+%hook AWEMusicCoverButton
+
+- (void)layoutSubviews {
+	%orig;
+
+	BOOL hideMusicButton = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMusicButton"];
+
+	NSString *accessibilityLabel = self.accessibilityLabel;
+
+//    NSLog(@"Accessibility Label: %@", accessibilityLabel);
+
+	if ([accessibilityLabel isEqualToString:@"音乐详情"]) {
+		if (hideMusicButton) {
+			[self removeFromSuperview];
+			return;
+		}
+	}
+}
+
+%end
+
+%hook AWEPlayInteractionFollowPromptView
+
+- (void)layoutSubviews {
+	%orig;
+
+	BOOL hideAvatarButton = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAvatarButton"];
+
+	NSString *accessibilityLabel = self.accessibilityLabel;
+
+//    NSLog(@"Accessibility Label: %@", accessibilityLabel);
+
+	if ([accessibilityLabel isEqualToString:@"关注"]) {
+		if (hideAvatarButton) {
+			[self removeFromSuperview];
+			return;
+		}
+	}
+}
+
+%end
+
+%hook AWEAdAvatarView
+
+- (void)layoutSubviews {
+	%orig;
+
+	BOOL hideAvatarButton = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAvatarButton"];
+	if (hideAvatarButton) {
+		[self removeFromSuperview];
+		return;
+	}
 }
 
 %end
