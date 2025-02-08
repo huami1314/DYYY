@@ -69,6 +69,10 @@
 
 @end
 
+@interface AWEPlayInteractionUserAvatarView : UIView
+
+@end
+
 
 %hook AWEAwemePlayVideoViewController
 
@@ -403,6 +407,20 @@
 		}
 	}
 
+}
+
+%end
+
+%hook AWEPlayInteractionUserAvatarView
+
+- (void)layoutSubviews {
+	%orig;
+
+	BOOL hideUserAvatar = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideUserAvatar"];
+	if (hideUserAvatar) {
+		[self removeFromSuperview];
+		return nil;
+	}
 }
 
 %end
