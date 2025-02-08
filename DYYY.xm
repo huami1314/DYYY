@@ -419,7 +419,7 @@
 	BOOL hideUserAvatar = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideUserAvatar"];
 	if (hideUserAvatar) {
 		[self removeFromSuperview];
-		return nil;
+		return;
 	}
 }
 
