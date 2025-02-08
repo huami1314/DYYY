@@ -80,10 +80,6 @@
 
 @end
 
-@interface AWEHPTopTabItemView : UIView
-
-@end
-
 %hook AWEAwemePlayVideoViewController
 
 - (void)setIsAutoPlay:(BOOL)arg0 {
@@ -417,27 +413,6 @@
 		}
 	}
 
-}
-
-%end
-
-%hook AWEHPTopTabItemView
-
-- (void)layoutSubviews {
-	%orig;
-
-	BOOL hideShareButton = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShareButton"];
-
-	NSString *accessibilityLabel = self.accessibilityLabel;
-
-//    NSLog(@"Accessibility Label: %@", accessibilityLabel);
-
-	if ([accessibilityLabel isEqualToString:@"关注"]) {
-		if (hideShareButton) {
-			[self removeFromSuperview];
-			return;
-		}
-	}
 }
 
 %end
