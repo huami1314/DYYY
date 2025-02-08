@@ -32,12 +32,8 @@
 @property (nonatomic, strong) UIView *view;  // 父类已有，可以不声明
 @end
 
-@interface AWEPlayInteractionViewController (Transparency)
-@property (nonatomic, assign) BOOL isTransparencyLocked;
-@property (nonatomic, assign) CGFloat lockedAlphaValue;
-- (void)setupTransparencyLock;
-- (void)forceUpdateTransparency;
-- (void)updateTransparencyForView:(UIView *)view;
+@interface UIView (Transparency)
+- (UIViewController *)firstAvailableUIViewController;
 @end
 
 @interface AWEFeedVideoButton : UIButton
@@ -307,69 +303,34 @@
 }
 %end
 
-%hook AWEPlayInteractionViewController
+%hook UIView
 
-%property (nonatomic, assign) BOOL isTransparencyLocked;
-%property (nonatomic, assign) CGFloat lockedAlphaValue;
-
-- (void)viewDidLoad {
-    %orig;
-    [self setupTransparencyLock];
-}
-
-%new
-- (void)setupTransparencyLock {
-    NSString *transparentValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYGlobalTransparency"];
-    if (transparentValue) {
-        CGFloat alphaValue = [transparentValue floatValue];
-        if (alphaValue >= 0.0 && alphaValue < 1.0) {
-            self.lockedAlphaValue = alphaValue;
-            self.isTransparencyLocked = YES;
-            [self forceUpdateTransparency];
-            
-            [NSTimer scheduledTimerWithTimeInterval:0.1
-                                           target:self
-                                         selector:@selector(forceUpdateTransparency)
-                                         userInfo:nil
-                                          repeats:YES];
+- (void)setAlpha:(CGFloat)alpha {
+    UIViewController *vc = [self firstAvailableUIViewController];
+    
+    if ([vc isKindOfClass:%c(AWEPlayInteractionViewController)]) {
+        NSString *transparentValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYGlobalTransparency"];
+        if (transparentValue) {
+            CGFloat alphaValue = [transparentValue floatValue];
+            if (alphaValue >= 0.0 && alphaValue < 1.0) {
+                %orig(alphaValue);
+                return;
+            }
         }
     }
+    %orig;
 }
 
 %new
-- (void)forceUpdateTransparency {
-    if (self.isTransparencyLocked) {
-        self.view.alpha = self.lockedAlphaValue;
-        [self updateTransparencyForView:self.view];
+- (UIViewController *)firstAvailableUIViewController {
+    UIResponder *responder = [self nextResponder];
+    while (responder != nil) {
+        if ([responder isKindOfClass:[UIViewController class]]) {
+            return (UIViewController *)responder;
+        }
+        responder = [responder nextResponder];
     }
-}
-
-%new
-- (void)updateTransparencyForView:(UIView *)view {
-    for (UIView *subview in view.subviews) {
-        subview.alpha = self.lockedAlphaValue;
-        [self updateTransparencyForView:subview];
-    }
-}
-
-- (void)viewWillAppear:(BOOL)animated {
-    %orig;
-    [self forceUpdateTransparency];
-}
-
-- (void)viewDidAppear:(BOOL)animated {
-    %orig;
-    [self forceUpdateTransparency];
-}
-
-- (void)viewWillLayoutSubviews {
-    %orig;
-    [self forceUpdateTransparency];
-}
-
-- (void)viewDidLayoutSubviews {
-    %orig;
-    [self forceUpdateTransparency];
+    return nil;
 }
 
 %end
