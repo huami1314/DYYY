@@ -76,6 +76,10 @@
 
 @end
 
+@interface AWEAdAvatarView : UIView
+
+@end
+
 %hook AWEAwemePlayVideoViewController
 
 - (void)setIsAutoPlay:(BOOL)arg0 {
@@ -434,13 +438,13 @@
 
 %end
 
-%hook AWEPlayInteractionUserAvatarView
+%hook AWEAdAvatarView
 
 - (void)layoutSubviews {
 	%orig;
 
-	BOOL hideMusicButton = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMusicButton"];
-	if (hideMusicButton) {
+	BOOL hideAvatarButton = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAvatarButton"];
+	if (hideAvatarButton) {
 		[self removeFromSuperview];
 		return;
 	}
