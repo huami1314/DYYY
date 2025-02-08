@@ -420,6 +420,27 @@
 
 %end
 
+%hook AWEMusicCoverButton
+
+- (void)layoutSubviews {
+	%orig;
+
+	BOOL hideMusicButton = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMusicButton"];
+
+	NSString *accessibilityLabel = self.accessibilityLabel;
+
+//    NSLog(@"Accessibility Label: %@", accessibilityLabel);
+
+	if ([accessibilityLabel isEqualToString:@"音乐详情"]) {
+		if (hideMusicButton) {
+			[self removeFromSuperview];
+			return;
+		}
+	}
+}
+
+%end
+
 %hook UITextInputTraits
 - (void)setKeyboardAppearance:(UIKeyboardAppearance)appearance {
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisDarkKeyBoard"]) {
