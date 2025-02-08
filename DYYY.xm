@@ -34,6 +34,9 @@
 @interface AWEFeedVideoButton : UIButton
 @end
 
+@interface AWEMusicCoverButton : UIButton
+@end
+
 @interface AWEAwemePlayVideoViewController : UIViewController
 
 - (void)setVideoControllerPlaybackRate:(double)arg0;
@@ -371,7 +374,7 @@
 
 %end
 
-%hook AWEFeedVideoButton
+%hook AWEFeedVideoButton AWEMusicCoverButton
 
 - (void)layoutSubviews {
 	%orig;
@@ -380,6 +383,7 @@
 	BOOL hideCommentButton = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentButton"];
 	BOOL hideCollectButton = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCollectButton"];
 	BOOL hideShareButton = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShareButton"];
+	BOOL hideMusicButton = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMusicButton"];
 
 	NSString *accessibilityLabel = self.accessibilityLabel;
 
@@ -405,22 +409,13 @@
 			[self removeFromSuperview];
 			return;
 		}
+	} else if ([accessibilityLabel isEqualToString:@"音乐详情"]) {
+		if (hideMusicButton) {
+			[self removeFromSuperview];
+			return;
+		}
 	}
 
-}
-
-%end
-
-%hook AWEPlayInteractionUserAvatarView
-
-- (void)layoutSubviews {
-	%orig;
-
-	BOOL hideUserAvatar = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideUserAvatar"];
-	if (hideUserAvatar) {
-		[self removeFromSuperview];
-		return;
-	}
 }
 
 %end
