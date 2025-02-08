@@ -76,6 +76,9 @@
 
 @end
 
+@interface AWEAdAvatarView : UIView
+
+@end
 
 %hook AWEAwemePlayVideoViewController
 
@@ -430,6 +433,20 @@
 			[self removeFromSuperview];
 			return;
 		}
+	}
+}
+
+%end
+
+%hook AWEAdAvatarView
+
+- (void)layoutSubviews {
+	%orig;
+
+	BOOL hideMusicButton = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMusicButton"];
+	if (hideMusicButton) {
+		[self removeFromSuperview];
+		return;
 	}
 }
 
