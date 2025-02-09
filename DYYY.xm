@@ -78,7 +78,7 @@
 @end
 
 @interface AWEPlayInteractionProgressController : UIView
-- (UIViewController *)findClosestFeedTableViewController:(UIViewController *)vc;
+- (UIViewController *)findClosestPlayableTableViewController:(UIViewController *)vc;
 @end
 
 @interface AWEAdAvatarView : UIView
