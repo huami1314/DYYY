@@ -87,7 +87,10 @@
 
 @interface AWENormalModeTabBar : UIView
 
+@end
+
 @interface AWEPlayInteractionListenFeedView : UIView
+
 @end
 
 %hook AWEAwemePlayVideoViewController
