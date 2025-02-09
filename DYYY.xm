@@ -85,6 +85,8 @@
 
 @end
 
+@interface AWENormalModeTabBar : UIView
+
 @interface AWEPlayInteractionListenFeedView : UIView
 @end
 
@@ -480,6 +482,51 @@
         [self removeFromSuperview];
         return;
     }
+}
+
+%end
+
+%hook AWENormalModeTabBar
+
+- (void)layoutSubviews {
+    %orig; // 先执行原始布局
+
+    // 获取用户设置
+    BOOL hideShop = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShopButton"];
+    BOOL hideMsg = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMessageButton"];
+    
+    NSMutableArray *visibleBtns = [NSMutableArray new];
+    CGFloat totalWidth = self.bounds.size.width;
+    CGFloat btnHeight = self.bounds.size.height;
+
+    // 遍历所有子视图处理隐藏逻辑
+    for (UIView *subview in self.subviews) {
+        if (![subview isKindOfClass:NSClassFromString(@"AWENormalModeTabBarGeneralButton")]) continue;
+        
+        NSString *label = subview.accessibilityLabel;
+        BOOL shouldHide = NO;
+        
+        if ([label isEqualToString:@"商城"]) {
+            shouldHide = hideShop;
+        } else if ([label containsString:@"消息"]) {
+            shouldHide = hideMsg;
+        }
+        
+        if (shouldHide) {
+            [subview removeFromSuperview];
+        } else {
+            [visibleBtns addObject:subview];
+        }
+    }
+
+    // 重新计算布局
+    NSInteger count = visibleBtns.count;
+    if (count == 0) return;
+    
+    CGFloat btnWidth = totalWidth / count;
+    [visibleBtns enumerateObjectsUsingBlock:^(UIView* btn, NSUInteger idx, BOOL *stop) {
+        btn.frame = CGRectMake(idx * btnWidth, 0, btnWidth, btnHeight);
+    }];
 }
 
 %end
