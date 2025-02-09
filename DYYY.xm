@@ -497,6 +497,7 @@
     // 获取用户设置
     BOOL hideShop = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShopButton"];
     BOOL hideMsg = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMessageButton"];
+    BOOL hideFri = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFriendsButton"];
     
     NSMutableArray *visibleBtns = [NSMutableArray new];
     CGFloat totalWidth = self.bounds.size.width;
@@ -513,6 +514,8 @@
             shouldHide = hideShop;
         } else if ([label containsString:@"消息"]) {
             shouldHide = hideMsg;
+        } else if ([label containsString:@"朋友"]) {
+            shouldHide = hideFri;
         }
         
         if (shouldHide) {
