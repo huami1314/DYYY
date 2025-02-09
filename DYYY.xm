@@ -78,7 +78,8 @@
 @end
 
 @interface AWEPlayInteractionProgressController : UIView
-- (UIViewController *)findClosestPlayableTableViewController:(UIViewController *)vc;
+//- (void)writeLog:(NSString *)log;
+- (UIViewController *)findViewController:(UIViewController *)vc ofClass:(Class)targetClass;
 @end
 
 @interface AWEAdAvatarView : UIView
@@ -492,20 +493,20 @@
 %hook AWENormalModeTabBar
 
 - (void)layoutSubviews {
-    %orig; // 先执行原始布局
+    %orig;
 
     // 获取用户设置
     BOOL hideShop = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShopButton"];
     BOOL hideMsg = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMessageButton"];
     BOOL hideFri = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFriendsButton"];
     
-    NSMutableArray *visibleBtns = [NSMutableArray new];
-    CGFloat totalWidth = self.bounds.size.width;
-    CGFloat btnHeight = self.bounds.size.height;
-
+    NSMutableArray *visibleButtons = [NSMutableArray array];
+    Class generalButtonClass = %c(AWENormalModeTabBarGeneralButton);
+    Class plusButtonClass = %c(AWENormalModeTabBarGeneralPlusButton);
+    
     // 遍历所有子视图处理隐藏逻辑
     for (UIView *subview in self.subviews) {
-        if (![subview isKindOfClass:NSClassFromString(@"AWENormalModeTabBarGeneralButton")]) continue;
+        if (![subview isKindOfClass:generalButtonClass] && ![subview isKindOfClass:plusButtonClass]) continue;
         
         NSString *label = subview.accessibilityLabel;
         BOOL shouldHide = NO;
@@ -518,21 +519,24 @@
             shouldHide = hideFri;
         }
         
-        if (shouldHide) {
-            [subview removeFromSuperview];
+        if (!shouldHide) {
+            [visibleButtons addObject:subview];
         } else {
-            [visibleBtns addObject:subview];
+            [subview removeFromSuperview];
         }
     }
 
-    // 重新计算布局
-    NSInteger count = visibleBtns.count;
-    if (count == 0) return;
-    
-    CGFloat btnWidth = totalWidth / count;
-    [visibleBtns enumerateObjectsUsingBlock:^(UIView* btn, NSUInteger idx, BOOL *stop) {
-        btn.frame = CGRectMake(idx * btnWidth, 0, btnWidth, btnHeight);
+    [visibleButtons sortUsingComparator:^NSComparisonResult(UIView* a, UIView* b) {
+        return [@(a.frame.origin.x) compare:@(b.frame.origin.x)];
     }];
+
+    CGFloat totalWidth = self.bounds.size.width;
+    CGFloat buttonWidth = totalWidth / visibleButtons.count;
+    
+    for (NSInteger i = 0; i < visibleButtons.count; i++) {
+        UIView *button = visibleButtons[i];
+        button.frame = CGRectMake(i * buttonWidth, button.frame.origin.y, buttonWidth, button.frame.size.height);
+    }
 }
 
 %end
@@ -744,10 +748,7 @@
 
 - (void)setAlpha:(CGFloat)alpha {
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisShowSchedule"]) {
-        
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"SuAwemeHookAlwaysShowProgress"]) {
-            alpha = 1.0;
-        }
+        alpha = 1.0;
         %orig(alpha);
     }else {
         %orig;
@@ -803,23 +804,40 @@
     %orig;
     
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableAutoPlay"]) {
+//        NSString *logText = [NSString stringWithFormat:@"当前进度: %.2f, 总时长: %.2f\n", arg1, arg2];
+//        [self writeLog:logText];
+        
         BOOL isTotalDurationInteger = (arg2 == floor(arg2));
         CGFloat tolerance = isTotalDurationInteger ? 1.0 : 0.3;
         
         if (fabs(arg1 - arg2) <= tolerance) {
+//            [self writeLog:@"视频播放完成，开始查找控制器\n"];
+            
             Class FeedTableVC = NSClassFromString(@"AWEFeedTableViewController");
             Class DetailTableVC = NSClassFromString(@"AWEAwemeDetailTableViewController");
-
-            if (FeedTableVC || DetailTableVC) {
-                NSArray *windows = [UIApplication sharedApplication].windows;
-                for (UIWindow *window in windows) {
-                    UIViewController *rootVC = window.rootViewController;
-                    UIViewController *targetVC = [self findClosestPlayableTableViewController:rootVC];
-
-                    if (targetVC) {
-                        [targetVC performSelector:@selector(scrollToNextVideo)];
-                        break;
-                    }
+            
+            UIViewController *feedVC = nil;
+            UIViewController *detailVC = nil;
+            
+            NSArray *windows = [UIApplication sharedApplication].windows;
+            for (UIWindow *window in windows) {
+                UIViewController *rootVC = window.rootViewController;
+                if (!rootVC) continue;
+                
+//                [self writeLog:@"开始查找Detail控制器\n"];
+                detailVC = [self findViewController:rootVC ofClass:DetailTableVC];
+                
+                if (!detailVC) {
+//                    [self writeLog:@"Detail未找到，开始查找Feed控制器\n"];
+                    feedVC = [self findViewController:rootVC ofClass:FeedTableVC];
+                }
+                
+                UIViewController *targetVC = detailVC ? detailVC : feedVC;
+                if (targetVC) {
+//                    NSString *foundMsg = [NSString stringWithFormat:@"找到目标控制器: %@\n", [targetVC class]];
+//                    [self writeLog:foundMsg];
+                    [targetVC performSelector:@selector(scrollToNextVideo)];
+                    break;
                 }
             }
         }
@@ -827,21 +845,38 @@
 }
 
 %new
-- (UIViewController *)findClosestPlayableTableViewController:(UIViewController *)vc {
+- (UIViewController *)findViewController:(UIViewController *)vc ofClass:(Class)targetClass {
     if (!vc) return nil;
     
-    if ([vc isKindOfClass:NSClassFromString(@"AWEFeedTableViewController")] || 
-        [vc isKindOfClass:NSClassFromString(@"AWEAwemeDetailTableViewController")]) {
+//    NSString *logMsg = [NSString stringWithFormat:@"检查控制器: %@\n", [vc class]];
+//    [self writeLog:logMsg];
+    
+    if ([vc isKindOfClass:targetClass]) {
         return vc;
     }
-
+    
     for (UIViewController *childVC in vc.childViewControllers) {
-        UIViewController *foundVC = [self findClosestPlayableTableViewController:childVC];
-        if (foundVC) return foundVC;
+        UIViewController *found = [self findViewController:childVC ofClass:targetClass];
+        if (found) return found;
     }
-
-    return [self findClosestPlayableTableViewController:vc.presentedViewController];
+    
+    return [self findViewController:vc.presentedViewController ofClass:targetClass];
 }
+//%new
+//- (void)writeLog:(NSString *)log {
+//    NSString *documentsPath = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject;
+//    NSString *logPath = [documentsPath stringByAppendingPathComponent:@"1.txt"];
+//    
+//    NSFileHandle *fileHandle = [NSFileHandle fileHandleForWritingAtPath:logPath];
+//    if (!fileHandle) {
+//        [[NSFileManager defaultManager] createFileAtPath:logPath contents:nil attributes:nil];
+//        fileHandle = [NSFileHandle fileHandleForWritingAtPath:logPath];
+//    }
+//    
+//    [fileHandle seekToEndOfFile];
+//    [fileHandle writeData:[log dataUsingEncoding:NSUTF8StringEncoding]];
+//    [fileHandle closeFile];
+//}
 %end
 
 //%ctor {

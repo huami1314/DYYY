@@ -40,6 +40,8 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
 @property (nonatomic, strong) UITableView *tableView;
 @property (nonatomic, strong) NSArray<NSArray<DYYYSettingItem *> *> *settingSections;
 @property (nonatomic, strong) UILabel *footerLabel;
+@property (nonatomic, strong) NSMutableArray<NSString *> *sectionTitles;
+@property (nonatomic, strong) NSMutableSet *expandedSections;
 
 @end
 
@@ -48,10 +50,12 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
 - (void)viewDidLoad {
     [super viewDidLoad];
     
-    self.title = @"设置";
+    self.title = @"DYYY设置";
+    self.expandedSections = [NSMutableSet set];
     [self setupAppearance];
     [self setupTableView];
     [self setupSettingItems];
+    [self setupSectionTitles];
     [self setupFooterLabel];
     [self addTitleGradientAnimation];
 }
@@ -71,6 +75,8 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
     self.tableView.dataSource = self;
     self.tableView.backgroundColor = [UIColor blackColor];
     self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
+    self.tableView.contentInset = UIEdgeInsetsMake(10, 0, 0, 0);
+    self.tableView.sectionHeaderTopPadding = 0;
     [self.view addSubview:self.tableView];
 }
 
@@ -89,9 +95,7 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
         @[
             [DYYYSettingItem itemWithTitle:@"设置顶栏透明" key:@"DYYYtopbartransparent" type:DYYYSettingItemTypeTextField placeholder:@"0-1小数"],
             [DYYYSettingItem itemWithTitle:@"设置全局透明" key:@"DYYYGlobalTransparency" type:DYYYSettingItemTypeTextField placeholder:@"0-1的小数"],
-            [DYYYSettingItem itemWithTitle:@"设置默认倍速" key:@"DYYYDefaultSpeed" type:DYYYSettingItemTypeSpeedPicker]
-        ],
-        @[
+            [DYYYSettingItem itemWithTitle:@"设置默认倍速" key:@"DYYYDefaultSpeed" type:DYYYSettingItemTypeSpeedPicker],
             [DYYYSettingItem itemWithTitle:@"设置首页标题" key:@"DYYYIndexTitle" type:DYYYSettingItemTypeTextField placeholder:@"不填默认"],
             [DYYYSettingItem itemWithTitle:@"设置朋友标题" key:@"DYYYFriendsTitle" type:DYYYSettingItemTypeTextField placeholder:@"不填默认"],
             [DYYYSettingItem itemWithTitle:@"设置消息标题" key:@"DYYYMsgTitle" type:DYYYSettingItemTypeTextField placeholder:@"不填默认"],
@@ -113,6 +117,10 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
             [DYYYSettingItem itemWithTitle:@"隐藏分享按钮" key:@"DYYYHideShareButton" type:DYYYSettingItemTypeSwitch]
         ]
     ];
+}
+
+- (void)setupSectionTitles {
+    self.sectionTitles = [@[@"基本设置", @"界面设置", @"隐藏设置"] mutableCopy];
 }
 
 - (void)setupFooterLabel {
@@ -158,8 +166,60 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
     return self.settingSections.count;
 }
 
+- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
+    switch (section) {
+        case 0:
+            return @"基本设置";
+        case 1:
+            return @"界面设置";
+        case 2:
+            return @"隐藏设置";
+        default:
+            return @"";
+    }
+}
+
+- (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section {
+    UIView *headerView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, tableView.bounds.size.width, 44)];
+    
+    UILabel *titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(15, 0, headerView.bounds.size.width - 50, 44)];
+    titleLabel.text = [self tableView:tableView titleForHeaderInSection:section];
+    titleLabel.textColor = [UIColor whiteColor];
+    titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightMedium];
+    [headerView addSubview:titleLabel];
+    
+    UIImageView *arrowImageView = [[UIImageView alloc] initWithFrame:CGRectMake(titleLabel.frame.origin.x + titleLabel.frame.size.width - 30, 15, 14, 14)];
+    arrowImageView.image = [UIImage systemImageNamed:[self.expandedSections containsObject:@(section)] ? @"chevron.down" : @"chevron.right"];
+    arrowImageView.tintColor = [UIColor lightGrayColor];
+    arrowImageView.tag = 100;
+    [headerView addSubview:arrowImageView];
+    
+    UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
+    button.frame = headerView.bounds;
+    button.tag = section;
+    [button addTarget:self action:@selector(headerTapped:) forControlEvents:UIControlEventTouchUpInside];
+    [headerView addSubview:button];
+    
+    return headerView;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section {
+    return 44;
+}
+
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return self.settingSections[section].count;
+    return [self.expandedSections containsObject:@(section)] ? self.settingSections[section].count : 0;
+}
+
+- (void)toggleSection:(UIButton *)sender {
+    NSNumber *section = @(sender.tag);
+    if ([self.expandedSections containsObject:section]) {
+        [self.expandedSections removeObject:section];
+    } else {
+        [self.expandedSections addObject:section];
+    }
+    
+    [self.tableView reloadSections:[NSIndexSet indexSetWithIndex:sender.tag] withRowAnimation:UITableViewRowAnimationFade];
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -168,11 +228,26 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"SettingCell"];
     if (!cell) {
         cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"SettingCell"];
+        cell.textLabel.translatesAutoresizingMaskIntoConstraints = NO;
+        [cell.textLabel.leadingAnchor constraintEqualToAnchor:cell.contentView.leadingAnchor constant:16].active = YES;
+        [cell.textLabel.centerYAnchor constraintEqualToAnchor:cell.contentView.centerYAnchor].active = YES;
     }
     
     cell.textLabel.text = item.title;
     cell.textLabel.textColor = [UIColor whiteColor];
     cell.backgroundColor = [UIColor colorWithRed:28/255.0 green:28/255.0 blue:29/255.0 alpha:1.0];
+    
+    if (indexPath.row == [self.settingSections[indexPath.section] count] - 1) {
+        UIView *bgView = [[UIView alloc] initWithFrame:cell.bounds];
+        bgView.backgroundColor = cell.backgroundColor;
+        cell.backgroundView = bgView;
+        
+        cell.backgroundView.layer.cornerRadius = 10;
+        cell.backgroundView.layer.maskedCorners = kCALayerMinXMaxYCorner | kCALayerMaxXMaxYCorner;
+        cell.backgroundView.clipsToBounds = YES;
+    } else {
+        cell.backgroundView = nil;
+    }
     
     if (item.type == DYYYSettingItemTypeSwitch) {
         UISwitch *switchView = [[UISwitch alloc] init];
@@ -213,6 +288,10 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
     return cell;
 }
 
+- (void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath {
+    CGFloat sectionInset = 16;
+    cell.contentView.frame = UIEdgeInsetsInsetRect(cell.contentView.frame, UIEdgeInsetsMake(0, sectionInset, 0, sectionInset));
+}
 
 #pragma mark - UITableViewDelegate
 
@@ -251,8 +330,6 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
     [self presentViewController:alert animated:YES completion:nil];
 }
 
-
-
 #pragma mark - Actions
 
 - (void)switchToggled:(UISwitch *)sender {
@@ -267,6 +344,24 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
     DYYYSettingItem *item = self.settingSections[indexPath.section][indexPath.row];
     [[NSUserDefaults standardUserDefaults] setObject:textField.text forKey:item.key];
     [[NSUserDefaults standardUserDefaults] synchronize];
+}
+
+- (void)headerTapped:(UIButton *)sender {
+    NSNumber *section = @(sender.tag);
+    if ([self.expandedSections containsObject:section]) {
+        [self.expandedSections removeObject:section];
+    } else {
+        [self.expandedSections addObject:section];
+    }
+    
+    UIView *headerView = [self.tableView headerViewForSection:sender.tag];
+    UIImageView *arrowImageView = [headerView viewWithTag:100];
+    
+    [UIView animateWithDuration:0.3 animations:^{
+        arrowImageView.image = [UIImage systemImageNamed:[self.expandedSections containsObject:section] ? @"chevron.down" : @"chevron.right"];
+    }];
+    
+    [self.tableView reloadSections:[NSIndexSet indexSetWithIndex:sender.tag] withRowAnimation:UITableViewRowAnimationFade];
 }
 
 @end
