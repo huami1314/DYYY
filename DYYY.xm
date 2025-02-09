@@ -750,21 +750,19 @@
     %orig;
     
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableAutoPlay"]) {
-        //    NSLog(@"%.2f,%.2f",arg1,arg2);
         BOOL isTotalDurationInteger = (arg2 == floor(arg2));
-        
         CGFloat tolerance = isTotalDurationInteger ? 1.0 : 0.3;
         
         if (fabs(arg1 - arg2) <= tolerance) {
-            //        NSLog(@"[%@] 播放完成，尝试滚动到下一个视频", @"AWEPlayInteractionProgressController");
-            
             Class FeedTableVC = NSClassFromString(@"AWEFeedTableViewController");
-            if (FeedTableVC) {
+            Class DetailTableVC = NSClassFromString(@"AWEAwemeDetailTableViewController");
+
+            if (FeedTableVC || DetailTableVC) {
                 NSArray *windows = [UIApplication sharedApplication].windows;
                 for (UIWindow *window in windows) {
                     UIViewController *rootVC = window.rootViewController;
-                    UIViewController *targetVC = [self findClosestFeedTableViewController:rootVC];
-                    
+                    UIViewController *targetVC = [self findClosestPlayableTableViewController:rootVC];
+
                     if (targetVC) {
                         [targetVC performSelector:@selector(scrollToNextVideo)];
                         break;
@@ -776,19 +774,20 @@
 }
 
 %new
-- (UIViewController *)findClosestFeedTableViewController:(UIViewController *)vc {
+- (UIViewController *)findClosestPlayableTableViewController:(UIViewController *)vc {
     if (!vc) return nil;
     
-    if ([vc isKindOfClass:NSClassFromString(@"AWEFeedTableViewController")]) {
+    if ([vc isKindOfClass:NSClassFromString(@"AWEFeedTableViewController")] || 
+        [vc isKindOfClass:NSClassFromString(@"AWEAwemeDetailTableViewController")]) {
         return vc;
     }
 
     for (UIViewController *childVC in vc.childViewControllers) {
-        UIViewController *foundVC = [self findClosestFeedTableViewController:childVC];
+        UIViewController *foundVC = [self findClosestPlayableTableViewController:childVC];
         if (foundVC) return foundVC;
     }
 
-    return [self findClosestFeedTableViewController:vc.presentedViewController];
+    return [self findClosestPlayableTableViewController:vc.presentedViewController];
 }
 %end
 
