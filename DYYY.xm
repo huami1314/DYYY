@@ -94,6 +94,10 @@
 
 @end
 
+@interface AWEFeedLiveMarkView : UIView
+
+@end
+
 %hook AWEAwemePlayVideoViewController
 
 - (void)setIsAutoPlay:(BOOL)arg0 {
@@ -312,6 +316,17 @@
     %orig(hidden);
 }
 %end
+
+%hook AWEFeedLiveMarkView
+- (void)setHidden:(BOOL)hidden {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAvatarButton"]) {
+        hidden = YES;
+    }
+    
+    %orig(hidden);
+}
+%end
+
 
 %hook UIView
 
