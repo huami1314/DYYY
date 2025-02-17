@@ -209,6 +209,7 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
     arrowImageView.image = [UIImage systemImageNamed:[self.expandedSections containsObject:@(section)] ? @"chevron.down" : @"chevron.right"];
     arrowImageView.tintColor = [UIColor lightGrayColor];
     arrowImageView.tag = 100;
+    arrowImageView.contentMode = UIViewContentModeScaleAspectFit;
     [headerView addSubview:arrowImageView];
     
     UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];

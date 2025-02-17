@@ -874,6 +874,7 @@
 }
 %end
 
+/*   弃用 - 找到更优解决方案
 %hook AWEPlayInteractionProgressController
 - (void)updateProgressSliderWithTime:(CGFloat)arg1 totalDuration:(CGFloat)arg2 {
     %orig;
@@ -941,17 +942,31 @@
 //- (void)writeLog:(NSString *)log {
 //    NSString *documentsPath = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject;
 //    NSString *logPath = [documentsPath stringByAppendingPathComponent:@"1.txt"];
-//    
+//
 //    NSFileHandle *fileHandle = [NSFileHandle fileHandleForWritingAtPath:logPath];
 //    if (!fileHandle) {
 //        [[NSFileManager defaultManager] createFileAtPath:logPath contents:nil attributes:nil];
 //        fileHandle = [NSFileHandle fileHandleForWritingAtPath:logPath];
 //    }
-//    
+//
 //    [fileHandle seekToEndOfFile];
 //    [fileHandle writeData:[log dataUsingEncoding:NSUTF8StringEncoding]];
 //    [fileHandle closeFile];
 //}
+%end
+*/
+
+%hook AWEFeedIPhoneAutoPlayManager
+
+- (BOOL)isAutoPlayOpen {
+    BOOL r = %orig;
+    
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableAutoPlay"]) {
+        return YES;
+    }
+    return r;
+}
+
 %end
 
 %hook AWEHPTopTabItemModel
