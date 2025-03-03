@@ -35,12 +35,12 @@ clean::
 	@echo -e "\033[31m==>\033[0m Cleaning packages…"
 	@rm -rf packages/*
 
-after-package::
-	@if [ "$(THEOS_PACKAGE_SCHEME)" = "roothide" ]; then \
-	echo -e "\033[31m==>\033[0m Installing package to device…"; \
-	DEB_FILE=$$(ls -t packages/*.deb | head -1); \
-	PACKAGE_NAME=$$(basename "$$DEB_FILE" | cut -d'_' -f1); \
-	ssh root@$(THEOS_DEVICE_IP) "rm -rf /tmp/$${PACKAGE_NAME}.deb"; \
-	scp "$$DEB_FILE" root@$(THEOS_DEVICE_IP):/tmp/$${PACKAGE_NAME}.deb; \
-	ssh root@$(THEOS_DEVICE_IP) "dpkg -i --force-overwrite /tmp/$${PACKAGE_NAME}.deb && rm -f /tmp/$${PACKAGE_NAME}.deb"; \
-	fi
+# after-package::
+# 	@if [ "$(THEOS_PACKAGE_SCHEME)" = "roothide" ]; then \
+# 	echo -e "\033[31m==>\033[0m Installing package to device…"; \
+# 	DEB_FILE=$$(ls -t packages/*.deb | head -1); \
+# 	PACKAGE_NAME=$$(basename "$$DEB_FILE" | cut -d'_' -f1); \
+# 	ssh root@$(THEOS_DEVICE_IP) "rm -rf /tmp/$${PACKAGE_NAME}.deb"; \
+# 	scp "$$DEB_FILE" root@$(THEOS_DEVICE_IP):/tmp/$${PACKAGE_NAME}.deb; \
+# 	ssh root@$(THEOS_DEVICE_IP) "dpkg -i --force-overwrite /tmp/$${PACKAGE_NAME}.deb && rm -f /tmp/$${PACKAGE_NAME}.deb"; \
+# 	fi
