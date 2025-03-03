@@ -612,6 +612,25 @@
         UIView *button = visibleButtons[i];
         button.frame = CGRectMake(i * buttonWidth, button.frame.origin.y, buttonWidth, button.frame.size.height);
     }
+
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenBottomBg"]) {
+        for (UIView *subview in self.subviews) {
+            if ([subview class] == [UIView class]) {  // 确保是真正的UIView而不是子类
+                BOOL hasImageView = NO;
+                for (UIView *childView in subview.subviews) {
+                    if ([childView isKindOfClass:[UIImageView class]]) {
+                        hasImageView = YES;
+                        break;
+                    }
+                }
+                
+                if (hasImageView) {
+                    subview.hidden = YES;
+                    break;  // 只隐藏第一个符合条件的视图
+                }
+            }
+        }
+    }
 }
 
 %end
