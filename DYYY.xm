@@ -96,7 +96,18 @@
 @end
 
 @interface AWEFeedLiveMarkView : UIView
+- (UIViewController *)findFeedTableViewController:(UIViewController *)viewController;
+@end
 
+@interface AWEAwemeModel : NSObject
+@property(nonatomic, assign) BOOL isLive;
+@property(nonatomic, assign) BOOL isAds;
+- (BOOL)isLive;
+- (UIViewController *)findFeedTableViewController:(UIViewController *)viewController;
+@end
+
+@interface AWEFeedTableViewController : UIViewController
+- (void)scrollToNextVideo;
 @end
 
 %hook AWEAwemePlayVideoViewController
@@ -283,32 +294,6 @@
 }
 %end
 
-//%hook UIWindow
-//- (instancetype)initWithFrame:(CGRect)frame {
-//    UIWindow *window = %orig(frame);
-//    if (window) {
-//        UITapGestureRecognizer *doubleTapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleDoubleTapGesture:)];
-//        doubleTapGesture.numberOfTapsRequired = 1;
-//        doubleTapGesture.numberOfTouchesRequired = 3;
-//        [window addGestureRecognizer:doubleTapGesture];
-//    }
-//    return window;
-//}
-//
-//%new
-//- (void)handleDoubleTapGesture:(UITapGestureRecognizer *)gesture {
-//    if (gesture.state == UIGestureRecognizerStateRecognized) {
-//        UIViewController *rootViewController = self.rootViewController;
-//        if (rootViewController) {
-//            UIViewController *settingVC = [[NSClassFromString(@"DYYYSettingViewController") alloc] init];
-//            if (settingVC) {
-//                [rootViewController presentViewController:settingVC animated:YES completion:nil];
-//            }
-//        }
-//    }
-//}
-//%end
-
 %hook UIWindow
 - (instancetype)initWithFrame:(CGRect)frame {
     UIWindow *window = %orig(frame);
@@ -354,6 +339,38 @@
 - (void)closeSettings:(UIButton *)button {
     [button.superview.window.rootViewController dismissViewControllerAnimated:YES completion:nil];
 }
+
+// 添加手动滑动功能实现
+%new
+- (void)gestureRecognizerAction:(UISwipeGestureRecognizer *)gesture {
+    if (gesture.direction == UISwipeGestureRecognizerDirectionUp) {
+        CGPoint startPoint = CGPointMake(self.bounds.size.width / 2, self.bounds.size.height / 2);
+        CGPoint endPoint = CGPointMake(self.bounds.size.width / 2, 0);
+        
+        // 创建路径
+        UIBezierPath *path = [UIBezierPath bezierPath];
+        [path moveToPoint:startPoint];
+        [path addLineToPoint:endPoint];
+        
+        // 创建动画
+        CAKeyframeAnimation *animation = [CAKeyframeAnimation animationWithKeyPath:@"position"];
+        animation.path = path.CGPath;
+        animation.duration = 0.3;
+        animation.fillMode = kCAFillModeForwards;
+        animation.removedOnCompletion = YES;
+        
+        // 创建临时视图执行动画
+        UIView *dummyView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 1, 1)];
+        dummyView.alpha = 0;
+        [self addSubview:dummyView];
+        
+        [dummyView.layer addAnimation:animation forKey:@"swipeAnimation"];
+        
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [dummyView removeFromSuperview];
+        });
+    }
+}
 %end
 
 %hook AWEFeedLiveMarkView
@@ -362,7 +379,56 @@
         hidden = YES;
     }
 
+    // 当直播标记出现时，可能是直播视频，检查是否需要跳过
+    if (!hidden && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYAutoSkipLive"]) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            // 找到包含此视图的AWEAwemeModel
+            UIResponder *responder = [self nextResponder];
+            while (responder && ![responder isKindOfClass:NSClassFromString(@"AWEAwemePlayVideoViewController")]) {
+                responder = [responder nextResponder];
+            }
+            
+            if (responder) {
+                // 尝试获取当前正在播放的AWEAwemeModel
+                id currentModel = [responder valueForKey:@"currentModel"];
+                if (currentModel && [currentModel isKindOfClass:NSClassFromString(@"AWEAwemeModel")]) {
+                    // 模拟调用scrollToNextVideo
+                    UIWindow *keyWindow = [UIApplication sharedApplication].windows.firstObject;
+                    if (keyWindow && keyWindow.rootViewController) {
+                        UIViewController *feedVC = [self findFeedTableViewController:keyWindow.rootViewController];
+                        if (feedVC && [feedVC respondsToSelector:@selector(scrollToNextVideo)]) {
+                            NSLog(@"===通过直播标记检测到直播内容，自动跳过===");
+                            [feedVC performSelector:@selector(scrollToNextVideo)];
+                        }
+                    }
+                }
+            }
+        });
+    }
+
     %orig(hidden);
+}
+
+%new
+- (UIViewController *)findFeedTableViewController:(UIViewController *)viewController {
+    if (!viewController) return nil;
+    
+    Class FeedTableVC = NSClassFromString(@"AWEFeedTableViewController");
+    
+    if ([viewController isKindOfClass:FeedTableVC]) {
+        return viewController;
+    }
+    
+    for (UIViewController *childVC in viewController.childViewControllers) {
+        UIViewController *result = [self findFeedTableViewController:childVC];
+        if (result) return result;
+    }
+    
+    if (viewController.presentedViewController) {
+        return [self findFeedTableViewController:viewController.presentedViewController];
+    }
+    
+    return nil;
 }
 %end
 
@@ -424,6 +490,44 @@
 
 - (void)setIsAds:(BOOL)isAds {
     %orig(NO);
+}
+
+- (BOOL)isLive {
+    BOOL isLiveResult = %orig;
+
+    if (isLiveResult && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYAutoSkipLive"]) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            UIWindow *keyWindow = [UIApplication sharedApplication].windows.firstObject;
+            UIViewController *rootVC = keyWindow.rootViewController;
+            UIViewController *feedVC = [self findFeedTableViewController:rootVC];
+
+            if (feedVC && [feedVC respondsToSelector:@selector(scrollToNextVideo)]) {
+                [feedVC performSelector:@selector(scrollToNextVideo)];
+            } else {
+                UISwipeGestureRecognizer *swipeUp = [[UISwipeGestureRecognizer alloc] init];
+                swipeUp.direction = UISwipeGestureRecognizerDirectionUp;
+                [keyWindow performSelector:@selector(gestureRecognizerAction:) withObject:swipeUp];
+            }
+        });
+    }
+
+    return isLiveResult;
+}
+
+%new
+- (UIViewController *)findFeedTableViewController:(UIViewController *)viewController {
+    if (!viewController) return nil;
+
+    if ([viewController isKindOfClass:NSClassFromString(@"AWEFeedTableViewController")]) {
+        return viewController;
+    }
+
+    for (UIViewController *childVC in viewController.childViewControllers) {
+        UIViewController *result = [self findFeedTableViewController:childVC];
+        if (result) return result;
+    }
+
+    return [self findFeedTableViewController:viewController.presentedViewController];
 }
 
 %end
@@ -1045,4 +1149,16 @@
 //        }
 //    });
 //}
+
+// 在%ctor中添加默认设置
+%ctor {
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    // 设置默认值
+    if (![defaults objectForKey:@"DYYYAutoSkipLive"]) {
+        [defaults setBool:YES forKey:@"DYYYAutoSkipLive"];
+    }
+    
+    // 在原有的%ctor代码之后追加（如果有）
+    // ... existing %ctor code ...
+}
 
