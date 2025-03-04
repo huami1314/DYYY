@@ -379,7 +379,7 @@
         hidden = YES;
     }
 
-    // 当直播标记出现时，可能是直播视频，检查是否需要跳过
+    // 当直播标记出现时(LiveMarkView可见)，检查是否需要跳过
     if (!hidden && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYAutoSkipLive"]) {
         dispatch_async(dispatch_get_main_queue(), ^{
             // 找到包含此视图的AWEAwemeModel
@@ -392,13 +392,25 @@
                 // 尝试获取当前正在播放的AWEAwemeModel
                 id currentModel = [responder valueForKey:@"currentModel"];
                 if (currentModel && [currentModel isKindOfClass:NSClassFromString(@"AWEAwemeModel")]) {
-                    // 模拟调用scrollToNextVideo
-                    UIWindow *keyWindow = [UIApplication sharedApplication].windows.firstObject;
-                    if (keyWindow && keyWindow.rootViewController) {
-                        UIViewController *feedVC = [self findFeedTableViewController:keyWindow.rootViewController];
-                        if (feedVC && [feedVC respondsToSelector:@selector(scrollToNextVideo)]) {
-                            NSLog(@"===通过直播标记检测到直播内容，自动跳过===");
-                            [feedVC performSelector:@selector(scrollToNextVideo)];
+                    // 再次确认是直播内容
+                    BOOL isActuallyLive = NO;
+                    
+                    // 方法1: 检查模型中的isLive属性
+                    if ([currentModel respondsToSelector:@selector(isLive)]) {
+                        isActuallyLive = [currentModel performSelector:@selector(isLive)];
+                    }
+                    
+                    // 如果确认是直播内容，才执行跳过
+                    if (isActuallyLive) {
+                        NSLog(@"===通过直播标记确认直播内容(AWEFeedLiveMarkView)，准备跳过===");
+                        // 模拟调用scrollToNextVideo
+                        UIWindow *keyWindow = [UIApplication sharedApplication].windows.firstObject;
+                        if (keyWindow && keyWindow.rootViewController) {
+                            UIViewController *feedVC = [self findFeedTableViewController:keyWindow.rootViewController];
+                            if (feedVC && [feedVC respondsToSelector:@selector(scrollToNextVideo)]) {
+                                NSLog(@"===执行直播跳过(AWEFeedLiveMarkView)===");
+                                [feedVC performSelector:@selector(scrollToNextVideo)];
+                            }
                         }
                     }
                 }
@@ -495,15 +507,20 @@
 - (BOOL)isLive {
     BOOL isLiveResult = %orig;
 
+    // 只有当确实是直播内容时才进行跳过处理
     if (isLiveResult && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYAutoSkipLive"]) {
+        NSLog(@"===检测到直播内容 (AWEAwemeModel)，准备跳过===");
+        // 确保在主线程中更新UI
         dispatch_async(dispatch_get_main_queue(), ^{
             UIWindow *keyWindow = [UIApplication sharedApplication].windows.firstObject;
             UIViewController *rootVC = keyWindow.rootViewController;
             UIViewController *feedVC = [self findFeedTableViewController:rootVC];
 
             if (feedVC && [feedVC respondsToSelector:@selector(scrollToNextVideo)]) {
+                NSLog(@"===执行直播跳过(AWEAwemeModel)===");
                 [feedVC performSelector:@selector(scrollToNextVideo)];
             } else {
+                NSLog(@"===尝试通过手势跳过直播(AWEAwemeModel)===");
                 UISwipeGestureRecognizer *swipeUp = [[UISwipeGestureRecognizer alloc] init];
                 swipeUp.direction = UISwipeGestureRecognizerDirectionUp;
                 [keyWindow performSelector:@selector(gestureRecognizerAction:) withObject:swipeUp];
