@@ -7,7 +7,7 @@
 //
 #import <UIKit/UIKit.h>
 #import <objc/runtime.h>
-
+#import "CityManager.h"
 @interface AWENormalModeTabBarGeneralButton : UIButton
 @end
 
@@ -97,6 +97,15 @@
 
 @interface AWEFeedLiveMarkView : UIView
 
+@end
+
+@interface AWEAwemeModel : NSObject
+@property (nonatomic, copy) NSString *ipAttribution;
+@property (nonatomic, copy) NSString *cityCode;
+@end
+
+@interface AWEPlayInteractionTimestampElement : UIView
+@property (nonatomic, strong) AWEAwemeModel *model;
 @end
 
 %hook AWEAwemePlayVideoViewController
@@ -1005,6 +1014,29 @@
         return;
     }
     %orig;
+}
+
+%end
+
+%hook AWEPlayInteractionTimestampElement
+-(id)timestampLabel{
+	UILabel *label = %orig;
+	if([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableArea"]){
+		NSString *text = label.text;
+		AWEAwemeModel *model = self.model;
+		NSString *ipAttribution = model.ipAttribution;
+		NSString *cityCode = model.cityCode;
+		if (!ipAttribution && cityCode) {
+			NSString *ipAttribution = [CityManager.sharedInstance getCityNameWithCode:cityCode];
+			if (ipAttribution) {
+				label.text = [NSString stringWithFormat:@"%@  IP属地：%@",text,ipAttribution];
+			}
+		}
+	}
+	return label;
+}
++(BOOL)shouldActiveWithData:(id)arg1 context:(id)arg2{
+	return [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableArea"];
 }
 
 %end
