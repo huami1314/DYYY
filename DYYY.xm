@@ -938,21 +938,30 @@
 
 %hook AWEPlayInteractionTimestampElement
 -(id)timestampLabel{
-	UILabel *label = %orig;
-	if([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableArea"]){
-		NSString *text = label.text;
-		AWEAwemeModel *model = self.model;
-		NSString *ipAttribution = model.ipAttribution;
-		NSString *cityCode = model.cityCode;
-		if (!ipAttribution && cityCode) {
-			NSString *ipAttribution = [CityManager.sharedInstance getCityNameWithCode:cityCode];
-			if (ipAttribution) {
-				label.text = [NSString stringWithFormat:@"%@  IP属地：%@",text,ipAttribution];
-			}
-		}
-	}
-	return label;
+    UILabel *label = %orig;
+    if([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableArea"]){
+        NSString *text = label.text;
+        AWEAwemeModel *model = self.model;
+        NSString *ipAttribution = model.ipAttribution;
+        NSString *cityCode = model.cityCode;
+        if (!ipAttribution && cityCode) {
+            NSString *provinceName = [CityManager.sharedInstance getprovinceNameWithCode:cityCode] ?: @"";
+            NSString *cityName = [CityManager.sharedInstance getCityNameWithCode:cityCode] ?: @"";
+            
+            if (cityName.length > 0) {
+                if ([provinceName isEqualToString:cityName]) {
+                    label.text = [NSString stringWithFormat:@"%@  IP属地：%@", text, cityName];
+                } else {
+                    label.text = [NSString stringWithFormat:@"%@  IP属地：%@ %@", text, provinceName, cityName];
+                }
+            }
+        } else {
+            label.text = text; 
+        }
+    }
+    return label;
 }
+
 +(BOOL)shouldActiveWithData:(id)arg1 context:(id)arg2{
 	return [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableArea"];
 }
