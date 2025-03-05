@@ -945,7 +945,7 @@
         NSString *ipAttribution = model.ipAttribution;
         NSString *cityCode = model.cityCode;
         if (!ipAttribution && cityCode) {
-            NSString *provinceName = [CityManager.sharedInstance getprovinceNameWithCode:cityCode] ?: @"";
+            NSString *provinceName = [CityManager.sharedInstance getProvinceNameWithCode:cityCode] ?: @"";
             NSString *cityName = [CityManager.sharedInstance getCityNameWithCode:cityCode] ?: @"";
             
             if (cityName.length > 0) {

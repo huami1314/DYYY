@@ -621,7 +621,7 @@
     }
 }
 
-- (NSString *)getprovinceNameWithCode:(NSString *)code {
+- (NSString *)getProvinceNameWithCode:(NSString *)code {
     if (!code || code.length < 6) {
         return nil;
     }
