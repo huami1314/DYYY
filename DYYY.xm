@@ -971,7 +971,7 @@
 %hook AWEFeedRootViewController
 
 - (BOOL)prefersStatusBarHidden {
-    if([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableArea"]){
+    if([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHideStatusbar"]){
         return YES;
     } else {
         return %orig;
