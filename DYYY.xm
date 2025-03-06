@@ -990,14 +990,34 @@
 
 %hook AWEFeedTableViewController
 
-- (void)layoutSubviews {
+- (void)setIsHaveModels:(BOOL)isHaveModels {
     %orig;
-    [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(scrollToNextVideo) object:nil];
-    AWEAwemeModel *model = [self currentAweme];
     
-    BOOL isSkipLive = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipLive"];
-    if ([model isLive] && isSkipLive) {
-        [self performSelector:@selector(scrollToNextVideo) withObject:nil afterDelay:5.0];
+    if (isHaveModels) {
+        [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(scrollToNextVideo) object:nil];
+        AWEAwemeModel *model = [self currentAweme];
+        
+        if ([model isLive]) {
+            
+            NSLog(@"[DEBUG] isLive is YES");
+            
+            
+            UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Debug Info"
+                                                                           message:@"isLive is YES"
+                                                                    preferredStyle:UIAlertControllerStyleAlert];
+            UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"OK"
+                                                               style:UIAlertActionStyleDefault
+                                                             handler:nil];
+            [alert addAction:okAction];
+            
+            
+            [self presentViewController:alert animated:YES completion:nil];
+        }
+        
+        BOOL isSkipLive = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipLive"];
+        if ([model isLive] && isSkipLive) {
+            [self performSelector:@selector(scrollToNextVideo) withObject:nil afterDelay:5.0];
+        }
     }
 }
 
