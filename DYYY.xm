@@ -102,6 +102,12 @@
 @interface AWEAwemeModel : NSObject
 @property (nonatomic, copy) NSString *ipAttribution;
 @property (nonatomic, copy) NSString *cityCode;
+- (BOOL)isLive;
+@end
+
+@interface AWEFeedTableViewController : UIViewController
+- (void)scrollToNextVideo;
+- (AWEAwemeModel *)currentAweme;
 @end
 
 @interface AWEPlayInteractionTimestampElement : UIView
@@ -977,6 +983,21 @@
         return YES;
     } else {
         return %orig;
+    }
+}
+
+%end
+
+%hook AWEFeedTableViewController
+
+- (void)layoutSubviews {
+    %orig;
+    [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(scrollToNextVideo) object:nil];
+    AWEAwemeModel *model = [self currentAweme];
+    
+    BOOL isSkipLive = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipLive"];
+    if ([model isLive] && isSkipLive) {
+        [self performSelector:@selector(scrollToNextVideo) withObject:nil afterDelay:5.0];
     }
 }
 
