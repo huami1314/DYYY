@@ -956,7 +956,9 @@
                 }
             }
         } else {
-            label.text = text; 
+            //label.text = text; 
+	    NSString *cityName = [CityManager.sharedInstance getCityNameWithCode:cityCode] ?: @"";
+	    label.text = [NSString stringWithFormat:@"%@ %@", text, cityName];
         }
     }
     return label;
