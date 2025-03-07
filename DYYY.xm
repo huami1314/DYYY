@@ -343,28 +343,52 @@
             UIViewController *settingVC = [[NSClassFromString(@"DYYYSettingViewController") alloc] init];
             
             if (settingVC) {
-                settingVC.modalPresentationStyle = UIModalPresentationFullScreen;
+                if (@available(iOS 15.0, *)) {
+                    if (UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPad) {
+                        settingVC.modalPresentationStyle = UIModalPresentationFormSheet;
+                        settingVC.modalTransitionStyle = UIModalTransitionStyleCoverVertical;
+                        settingVC.preferredContentSize = CGSizeMake(540, 620);
+                    } else {
+                        settingVC.modalPresentationStyle = UIModalPresentationPageSheet;
+                    }
+                } else {
+                    settingVC.modalPresentationStyle = UIModalPresentationFullScreen;
+                    
+                    UIButton *closeButton = [UIButton buttonWithType:UIButtonTypeSystem];
+                    [closeButton setTitle:@"关闭" forState:UIControlStateNormal];
+                    closeButton.translatesAutoresizingMaskIntoConstraints = NO;
+                    
+                    [settingVC.view addSubview:closeButton];
+                    
+                    [NSLayoutConstraint activateConstraints:@[
+                        [closeButton.trailingAnchor constraintEqualToAnchor:settingVC.view.trailingAnchor constant:-10],
+                        [closeButton.topAnchor constraintEqualToAnchor:settingVC.view.topAnchor constant:40],
+                        [closeButton.widthAnchor constraintEqualToConstant:80],
+                        [closeButton.heightAnchor constraintEqualToConstant:40]
+                    ]];
+                    
+                    [closeButton addTarget:self action:@selector(closeSettings:) forControlEvents:UIControlEventTouchUpInside];
+                }
                 
-                UIButton *closeButton = [UIButton buttonWithType:UIButtonTypeSystem];
-                [closeButton setTitle:@"关闭" forState:UIControlStateNormal];
-                closeButton.translatesAutoresizingMaskIntoConstraints = NO;
-                
-                [settingVC.view addSubview:closeButton];
+                UIView *handleBar = [[UIView alloc] init];
+                handleBar.backgroundColor = [UIColor whiteColor];
+                handleBar.layer.cornerRadius = 2.5;
+                handleBar.translatesAutoresizingMaskIntoConstraints = NO;
+                [settingVC.view addSubview:handleBar];
                 
                 [NSLayoutConstraint activateConstraints:@[
-                    [closeButton.trailingAnchor constraintEqualToAnchor:settingVC.view.trailingAnchor constant:-10],
-                    [closeButton.topAnchor constraintEqualToAnchor:settingVC.view.topAnchor constant:40],
-                    [closeButton.widthAnchor constraintEqualToConstant:80],
-                    [closeButton.heightAnchor constraintEqualToConstant:40]
+                    [handleBar.centerXAnchor constraintEqualToAnchor:settingVC.view.centerXAnchor],
+                    [handleBar.topAnchor constraintEqualToAnchor:settingVC.view.topAnchor constant:8],
+                    [handleBar.widthAnchor constraintEqualToConstant:40],
+                    [handleBar.heightAnchor constraintEqualToConstant:5]
                 ]];
-                
-                [closeButton addTarget:self action:@selector(closeSettings:) forControlEvents:UIControlEventTouchUpInside];
                 
                 [rootViewController presentViewController:settingVC animated:YES completion:nil];
             }
         }
     }
 }
+
 %new
 - (void)closeSettings:(UIButton *)button {
     [button.superview.window.rootViewController dismissViewControllerAnimated:YES completion:nil];

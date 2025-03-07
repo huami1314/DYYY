@@ -42,6 +42,8 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
 @property (nonatomic, strong) UILabel *footerLabel;
 @property (nonatomic, strong) NSMutableArray<NSString *> *sectionTitles;
 @property (nonatomic, strong) NSMutableSet *expandedSections;
+@property (nonatomic, strong) UIVisualEffectView *blurEffectView;
+@property (nonatomic, strong) UIVisualEffectView *vibrancyEffectView;
 
 @end
 
@@ -53,6 +55,7 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
     self.title = @"DYYY设置";
     self.expandedSections = [NSMutableSet set];
     [self setupAppearance];
+    [self setupBlurEffect];
     [self setupTableView];
     [self setupSettingItems];
     [self setupSectionTitles];
@@ -61,19 +64,37 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
 }
 
 - (void)setupAppearance {
-    self.view.backgroundColor = [UIColor blackColor];
-    self.navigationController.navigationBar.barTintColor = [UIColor blackColor];
+    self.navigationController.navigationBar.barTintColor = [UIColor clearColor];
     self.navigationController.navigationBar.tintColor = [UIColor whiteColor];
     self.navigationController.navigationBar.largeTitleTextAttributes = @{NSForegroundColorAttributeName: [UIColor whiteColor]};
     self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeAlways;
     self.navigationController.navigationBar.prefersLargeTitles = YES;
 }
 
+- (void)setupBlurEffect {
+    UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
+    self.blurEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
+    self.blurEffectView.frame = self.view.bounds;
+    self.blurEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    [self.view addSubview:self.blurEffectView];
+    
+    UIVibrancyEffect *vibrancyEffect = [UIVibrancyEffect effectForBlurEffect:blurEffect];
+    self.vibrancyEffectView = [[UIVisualEffectView alloc] initWithEffect:vibrancyEffect];
+    self.vibrancyEffectView.frame = self.blurEffectView.bounds;
+    self.vibrancyEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    [self.blurEffectView.contentView addSubview:self.vibrancyEffectView];
+    
+    UIView *overlayView = [[UIView alloc] initWithFrame:self.view.bounds];
+    overlayView.backgroundColor = [UIColor colorWithWhite:0 alpha:0.3];
+    overlayView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    [self.view addSubview:overlayView];
+}
+
 - (void)setupTableView {
     self.tableView = [[UITableView alloc] initWithFrame:self.view.bounds style:UITableViewStyleInsetGrouped];
     self.tableView.delegate = self;
     self.tableView.dataSource = self;
-    self.tableView.backgroundColor = [UIColor blackColor];
+    self.tableView.backgroundColor = [UIColor clearColor];
     self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
     self.tableView.contentInset = UIEdgeInsetsMake(20, 0, 0, 0);
     self.tableView.sectionHeaderTopPadding = 0;
@@ -141,7 +162,7 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
 
 - (void)setupFooterLabel {
     self.footerLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width, 50)];
-    self.footerLabel.text = [NSString stringWithFormat:@"Developer By @huamidev\nVersion: %@ (%@)", @"2.0-4", @"250307"];
+    self.footerLabel.text = [NSString stringWithFormat:@"Developer By @huamidev\nVersion: %@ (%@)", @"2.0-5", @"250308"];
     self.footerLabel.textAlignment = NSTextAlignmentCenter;
     self.footerLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightRegular];
     self.footerLabel.textColor = [UIColor colorWithRed:173/255.0 green:216/255.0 blue:230/255.0 alpha:1.0];
@@ -257,18 +278,17 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
     
     cell.textLabel.text = item.title;
     cell.textLabel.textColor = [UIColor whiteColor];
-    cell.backgroundColor = [UIColor colorWithRed:28/255.0 green:28/255.0 blue:29/255.0 alpha:1.0];
+    cell.backgroundColor = [UIColor colorWithWhite:1 alpha:0.1];
+    
+    cell.backgroundView = nil;
     
     if (indexPath.row == [self.settingSections[indexPath.section] count] - 1) {
-        UIView *bgView = [[UIView alloc] initWithFrame:cell.bounds];
-        bgView.backgroundColor = cell.backgroundColor;
-        cell.backgroundView = bgView;
-        
-        cell.backgroundView.layer.cornerRadius = 10;
-        cell.backgroundView.layer.maskedCorners = kCALayerMinXMaxYCorner | kCALayerMaxXMaxYCorner;
-        cell.backgroundView.clipsToBounds = YES;
+        cell.layer.cornerRadius = 10;
+        cell.layer.maskedCorners = kCALayerMinXMaxYCorner | kCALayerMaxXMaxYCorner;
+        cell.layer.masksToBounds = YES;
     } else {
-        cell.backgroundView = nil;
+        cell.layer.cornerRadius = 0;
+        cell.layer.maskedCorners = 0;
     }
     
     if (item.type == DYYYSettingItemTypeSwitch) {
@@ -286,7 +306,7 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
             attributes:@{NSForegroundColorAttributeName: [UIColor lightGrayColor]}];
         textField.text = [[NSUserDefaults standardUserDefaults] objectForKey:item.key];
         textField.textAlignment = NSTextAlignmentRight;
-        textField.backgroundColor = [UIColor darkGrayColor];
+        textField.backgroundColor = [UIColor colorWithWhite:1 alpha:0.1];
         textField.textColor = [UIColor whiteColor];
         
         [textField addTarget:self action:@selector(textFieldDidChange:) forControlEvents:UIControlEventEditingDidEnd];
