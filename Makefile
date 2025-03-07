@@ -11,6 +11,13 @@ ARCHS = arm64 arm64e
 
 #export THEOS=/Users/huami/theos
 #export THEOS_PACKAGE_SCHEME=roothide
+
+ifeq ($(SCHEME),roothide)
+    export THEOS_PACKAGE_SCHEME = roothide
+else ifeq ($(SCHEME),rootless)
+    export THEOS_PACKAGE_SCHEME = rootless
+endif
+
 export DEBUG = 0
 INSTALL_TARGET_PROCESSES = Aweme
 
@@ -33,7 +40,7 @@ THEOS_DEVICE_PORT = 22
 
 clean::
 	@echo -e "\033[31m==>\033[0m Cleaning packages…"
-	@rm -rf packages/*
+	@rm -rf .theos packages
 
 after-package::
 	@if [ "$(THEOS_PACKAGE_SCHEME)" = "roothide" ] && [ "$(INSTALL)" = "1" ]; then \
