@@ -619,7 +619,6 @@
 - (void)layoutSubviews {
     %orig;
 
-    // 获取用户设置
     BOOL hideShop = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShopButton"];
     BOOL hideMsg = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMessageButton"];
     BOOL hideFri = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFriendsButton"];
@@ -628,7 +627,6 @@
     Class generalButtonClass = %c(AWENormalModeTabBarGeneralButton);
     Class plusButtonClass = %c(AWENormalModeTabBarGeneralPlusButton);
     
-    // 遍历所有子视图处理隐藏逻辑
     for (UIView *subview in self.subviews) {
         if (![subview isKindOfClass:generalButtonClass] && ![subview isKindOfClass:plusButtonClass]) continue;
         
@@ -664,7 +662,7 @@
 
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenBottomBg"]) {
         for (UIView *subview in self.subviews) {
-            if ([subview class] == [UIView class]) {  // 确保是真正的UIView而不是子类
+            if ([subview class] == [UIView class]) {
                 BOOL hasImageView = NO;
                 for (UIView *childView in subview.subviews) {
                     if ([childView isKindOfClass:[UIImageView class]]) {
@@ -675,7 +673,7 @@
                 
                 if (hasImageView) {
                     subview.hidden = YES;
-                    break;  // 只隐藏第一个符合条件的视图
+                    break;
                 }
             }
         }
