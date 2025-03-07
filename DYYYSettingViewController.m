@@ -338,16 +338,33 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
             [[NSUserDefaults standardUserDefaults] setFloat:speed.floatValue forKey:@"DYYYDefaultSpeed"];
             [[NSUserDefaults standardUserDefaults] synchronize];
             
-            NSIndexPath *indexPath = [NSIndexPath indexPathForRow:2 inSection:0];
-            UITableViewCell *cell = [self.tableView cellForRowAtIndexPath:indexPath];
-            UITextField *speedField = [cell.accessoryView viewWithTag:999];
-            speedField.text = [NSString stringWithFormat:@"%.2f", speed.floatValue];
+            for (NSInteger section = 0; section < self.settingSections.count; section++) {
+                NSArray *items = self.settingSections[section];
+                for (NSInteger row = 0; row < items.count; row++) {
+                    DYYYSettingItem *item = items[row];
+                    if (item.type == DYYYSettingItemTypeSpeedPicker) {
+                        NSIndexPath *indexPath = [NSIndexPath indexPathForRow:row inSection:section];
+                        UITableViewCell *cell = [self.tableView cellForRowAtIndexPath:indexPath];
+                        UITextField *speedField = [cell.accessoryView viewWithTag:999];
+                        if (speedField) {
+                            speedField.text = [NSString stringWithFormat:@"%.2f", speed.floatValue];
+                        }
+                        break;
+                    }
+                }
+            }
         }];
         [alert addAction:action];
     }
     
     UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil];
     [alert addAction:cancelAction];
+    
+    if (UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPad) {
+        UITableViewCell *selectedCell = [self.tableView cellForRowAtIndexPath:[self.tableView indexPathForSelectedRow]];
+        alert.popoverPresentationController.sourceView = selectedCell;
+        alert.popoverPresentationController.sourceRect = selectedCell.bounds;
+    }
     
     [self presentViewController:alert animated:YES completion:nil];
 }
