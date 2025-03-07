@@ -114,6 +114,9 @@
 - (void)scrollToNextVideo;
 @end
 
+@interface AWEFeedTableView : UIView
+@end
+
 %hook AWEAwemePlayVideoViewController
 
 - (void)setIsAutoPlay:(BOOL)arg0 {
@@ -437,6 +440,18 @@
 }
 %end
 
+
+%hook AWEFeedTableView
+- (void)layoutSubviews {
+    %orig;
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+        CGRect frame = self.frame;
+        frame.size.height = self.superview.frame.size.height;
+        self.frame = frame;
+    }
+}
+%end
+
 %hook UIView
 
 - (void)setAlpha:(CGFloat)alpha {
@@ -450,6 +465,13 @@
                 %orig(alphaValue);
                 return;
             }
+        }
+    }
+    if ([vc isKindOfClass:%c(AWEPlayInteractionViewController)] && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+        CGRect frame = vc.view.frame;
+        if (frame.size.height == vc.view.superview.frame.size.height) {
+            frame.size.height -= 83;
+            vc.view.frame = frame;
         }
     }
     %orig;
@@ -660,7 +682,7 @@
         button.frame = CGRectMake(i * buttonWidth, button.frame.origin.y, buttonWidth, button.frame.size.height);
     }
 
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenBottomBg"]) {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenBottomBg"] || [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
         for (UIView *subview in self.subviews) {
             if ([subview class] == [UIView class]) {
                 BOOL hasImageView = NO;
