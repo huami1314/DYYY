@@ -1079,7 +1079,7 @@
 
 %end
 
-%hook AWEBaseElementView
+%hook AWEAwemeMusicInfoView
 
 - (void)layoutSubviews {
     %orig;
