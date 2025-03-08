@@ -1029,31 +1029,27 @@
 %end
 
 %hook AWEPlayInteractionTimestampElement
--(id)timestampLabel{
+- (id)timestampLabel {
     UILabel *label = %orig;
-    if([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableArea"]){
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableArea"]) {
         NSString *text = label.text;
-        if ([text containsString:@"IP属地"]) {
-            return label;
-        }
-        AWEAwemeModel *model = self.model;
-        NSString *ipAttribution = model.ipAttribution;
-        NSString *cityCode = model.cityCode;
-        if (!ipAttribution && cityCode) {
-            NSString *provinceName = [CityManager.sharedInstance getProvinceNameWithCode:cityCode] ?: @"";
+        NSString *cityCode = self.model.cityCode;
+        
+        if (cityCode.length > 0) {
             NSString *cityName = [CityManager.sharedInstance getCityNameWithCode:cityCode] ?: @"";
+            NSString *provinceName = [CityManager.sharedInstance getProvinceNameWithCode:cityCode] ?: @"";
             
-            if (cityName.length > 0) {
-                if ([provinceName isEqualToString:cityName]) {
-                    label.text = [NSString stringWithFormat:@"%@  IP属地：%@", text, cityName];
+            if (cityName.length > 0 && ![text containsString:cityName]) {
+                if (!self.model.ipAttribution) {
+                    if ([provinceName isEqualToString:cityName]) {
+                        label.text = [NSString stringWithFormat:@"%@  IP属地：%@", text, cityName];
+                    } else {
+                        label.text = [NSString stringWithFormat:@"%@  IP属地：%@ %@", text, provinceName, cityName];
+                    }
                 } else {
-                    label.text = [NSString stringWithFormat:@"%@  IP属地：%@ %@", text, provinceName, cityName];
+                    label.text = [NSString stringWithFormat:@"%@ %@", text, cityName];
                 }
             }
-        } else {
-            //label.text = text; 
-	    NSString *cityName = [CityManager.sharedInstance getCityNameWithCode:cityCode] ?: @"";
-	    label.text = [NSString stringWithFormat:@"%@ %@", text, cityName];
         }
     }
     return label;
