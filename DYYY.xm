@@ -1099,21 +1099,6 @@
 
 %end
 
-%hook AWEFeedTableViewController
-
-- (void)layoutSubviews {
-    %orig;
-    [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(scrollToNextVideo) object:nil];
-    AWEAwemeModel *model = [self currentAweme];
-    
-    BOOL isSkipLive = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipLive"];
-    if ([model isLive] && isSkipLive) {
-        [self performSelector:@selector(scrollToNextVideo) withObject:nil afterDelay:5.0];
-    }
-}
-
-%end
-
 //%ctor {
 //    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
 //        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
