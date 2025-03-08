@@ -368,6 +368,22 @@
 }
 %end
 
+%hook AWEStoryContainerCollectionView
+- (void)layoutSubviews {
+    %orig;
+    
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+        for (UIView *subview in self.subviews) {
+            if ([subview isKindOfClass:[UIView class]]) {
+                CGRect frame = subview.frame;
+                frame.size.height = subview.superview.frame.size.height - 83;
+                subview.frame = frame;
+            }
+        }
+    }
+}
+%end
+
 %hook AWEFeedTableView
 - (void)layoutSubviews {
     %orig;
@@ -450,44 +466,27 @@
         if (!existingBlurView) {
             UIBlurEffectStyle blurStyle;
             if (@available(iOS 13.0, *)) {
-                UIUserInterfaceStyle currentStyle = UITraitCollection.currentTraitCollection.userInterfaceStyle;
-                blurStyle = (currentStyle == UIUserInterfaceStyleDark) ? UIBlurEffectStyleDark : UIBlurEffectStyleLight;
+                blurStyle = self.traitCollection.userInterfaceStyle == UIUserInterfaceStyleDark ? 
+                    UIBlurEffectStyleDark : UIBlurEffectStyleLight;
             } else {
-                blurStyle = UIBlurEffectStyleDark;
+                blurStyle = UIBlurEffectStyleLight;
             }
             
             UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurStyle];
             UIVisualEffectView *blurEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
             blurEffectView.frame = self.view.bounds;
-            blurEffectView.alpha = 0.9;
             blurEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+            blurEffectView.alpha = 0.98;
             blurEffectView.tag = 999;
             
             UIView *overlayView = [[UIView alloc] initWithFrame:self.view.bounds];
-            if (@available(iOS 13.0, *)) {
-                UIUserInterfaceStyle currentStyle = UITraitCollection.currentTraitCollection.userInterfaceStyle;
-                overlayView.backgroundColor = (currentStyle == UIUserInterfaceStyleDark) ? 
-                    [UIColor colorWithWhite:0 alpha:0.3] : [UIColor colorWithWhite:1 alpha:0.1];
-            } else {
-                overlayView.backgroundColor = [UIColor colorWithWhite:0 alpha:0.3];
-            }
+            CGFloat alpha = blurStyle == UIBlurEffectStyleDark ? 0.3 : 0.1;
+            overlayView.backgroundColor = [UIColor colorWithWhite:(blurStyle == UIBlurEffectStyleDark ? 0 : 1) alpha:alpha];
             overlayView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
             [blurEffectView.contentView addSubview:overlayView];
             
             [self.view insertSubview:blurEffectView atIndex:0];
         } else {
-            if (@available(iOS 13.0, *)) {
-                UIUserInterfaceStyle currentStyle = UITraitCollection.currentTraitCollection.userInterfaceStyle;
-                UIBlurEffect *updatedEffect = [UIBlurEffect effectWithStyle:(currentStyle == UIUserInterfaceStyleDark) ? 
-                    UIBlurEffectStyleDark : UIBlurEffectStyleLight];
-                existingBlurView.effect = updatedEffect;
-                
-                for (UIView *subview in existingBlurView.contentView.subviews) {
-                    subview.backgroundColor = (currentStyle == UIUserInterfaceStyleDark) ? 
-                        [UIColor colorWithWhite:0 alpha:0.3] : [UIColor colorWithWhite:1 alpha:0.1];
-                }
-            }
-            
             [self.view insertSubview:existingBlurView atIndex:0];
         }
     }
@@ -780,9 +779,7 @@
 - (void)layoutSubviews {
     %orig;
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisDarkKeyBoard"]) {
-        
         for (UIView *subview in self.subviews) {
-            
             if ([subview isKindOfClass:NSClassFromString(@"AWECommentInputViewSwiftImpl.CommentInputViewMiddleContainer")]) {
                 for (UIView *innerSubview in subview.subviews) {
                     if ([innerSubview isKindOfClass:[UIView class]]) {
@@ -794,7 +791,6 @@
             if ([subview isKindOfClass:NSClassFromString(@"AWEIMEmoticonPanelBoxView")]) {
                 subview.backgroundColor = [UIColor colorWithRed:33/255.0 green:33/255.0 blue:33/255.0 alpha:1.0];
             }
-            
         }
     }
 }

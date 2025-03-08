@@ -135,3 +135,6 @@
 
 @interface AWEAwemeMusicInfoView : UIView
 @end
+
+@interface AWEStoryContainerCollectionView : UIView
+@end
