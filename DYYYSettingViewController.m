@@ -230,13 +230,13 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
     
     UILabel *titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(15, 0, headerView.bounds.size.width - 50, 44)];
     titleLabel.text = [self tableView:tableView titleForHeaderInSection:section];
-    titleLabel.textColor = [UIColor labelColor];;
+    titleLabel.textColor = [UIColor whiteColor];;
     titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightMedium];
     [headerView addSubview:titleLabel];
     
     UIImageView *arrowImageView = [[UIImageView alloc] initWithFrame:CGRectMake(titleLabel.frame.origin.x + titleLabel.frame.size.width - 30, 15, 14, 14)];
     arrowImageView.image = [UIImage systemImageNamed:[self.expandedSections containsObject:@(section)] ? @"chevron.down" : @"chevron.right"];
-    arrowImageView.tintColor = [UIColor secondaryLabelColor];
+    arrowImageView.tintColor = [UIColor lightGrayColor];
     arrowImageView.tag = 100;
     arrowImageView.contentMode = UIViewContentModeScaleAspectFit;
     [headerView addSubview:arrowImageView];
@@ -321,7 +321,7 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
 
         UITextField *speedField = [[UITextField alloc] initWithFrame:CGRectMake(0, 0, 80, 30)];
         speedField.text = [NSString stringWithFormat:@"%.2f", [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYDefaultSpeed"]];
-        speedField.textColor = [UIColor labelColor];
+        speedField.textColor = [UIColor whiteColor];
         speedField.borderStyle = UITextBorderStyleNone;
         speedField.backgroundColor = [UIColor clearColor];
         speedField.textAlignment = NSTextAlignmentRight;
