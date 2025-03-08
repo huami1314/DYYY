@@ -348,6 +348,10 @@
 - (void)viewDidLayoutSubviews {
     %orig;
     
+    if (![self.parentViewController isKindOfClass:%c(AWEFeedCellViewController)]) {
+        return;
+    }
+    
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
         CGRect frame = self.view.frame;
         frame.size.height = self.view.superview.frame.size.height - 83;
@@ -399,10 +403,10 @@
     UIViewController *vc = [self firstAvailableUIViewController];
     if ([vc isKindOfClass:%c(AWEAwemePlayVideoViewController)]) {
         CGRect originalFrame = self.frame;
+        CGRect screenBounds = [UIScreen mainScreen].bounds;
         
-        if (originalFrame.size.width > 0 && originalFrame.size.height > 0 &&
-            (frame.size.width < originalFrame.size.width * 0.5 || 
-             frame.size.height < originalFrame.size.height * 0.5)) {
+        if (frame.origin.x != 0 || frame.origin.y != 0) {
+            %orig;
             return;
         }
     }
