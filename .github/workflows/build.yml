@@ -25,9 +25,8 @@ jobs:
       - name: Prepare Theos
         uses: huami1314/theos-action@main
 
-      - name: Install GNU Make
+      - name: Setup GNU Make
         run: |
-          brew install make
           echo "$(brew --prefix)/opt/make/libexec/gnubin" >> $GITHUB_PATH
 
       - name: Build package
