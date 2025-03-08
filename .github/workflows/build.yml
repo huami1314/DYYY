@@ -25,12 +25,17 @@ jobs:
       - name: Prepare Theos
         uses: huami1314/theos-action@main
 
+      - name: Install GNU Make
+        run: |
+          brew install make
+          echo "$(brew --prefix)/opt/make/libexec/gnubin" >> $GITHUB_PATH
+
       - name: Build package
         run: |
           rm -f packages/*
-          make package FINALPACKAGE=1
-          make package THEOS_PACKAGE_SCHEME=rootless FINALPACKAGE=1
-          make package THEOS_PACKAGE_SCHEME=roothide FINALPACKAGE=1
+          make package FINALPACKAGE=1 -j$(sysctl -n hw.ncpu)
+          make package THEOS_PACKAGE_SCHEME=rootless FINALPACKAGE=1 -j$(sysctl -n hw.ncpu)
+          make package THEOS_PACKAGE_SCHEME=roothide FINALPACKAGE=1 -j$(sysctl -n hw.ncpu)
 
       - name: Upload specific Deb packages
         uses: actions/upload-artifact@v4.6.0
