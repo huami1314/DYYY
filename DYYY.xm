@@ -116,6 +116,12 @@
 @interface AWEFeedTableView : UIView
 @end
 
+@interface AWEPlayInteractionProgressContainerView : UIView
+@end
+
+@interface AFDFastSpeedView : UIView
+@end
+
 %hook AWEAwemePlayVideoViewController
 
 - (void)setIsAutoPlay:(BOOL)arg0 {
@@ -471,6 +477,32 @@
 }
 %end
 
+%hook AWEPlayInteractionProgressContainerView
+- (void)layoutSubviews {
+    %orig;
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+        for (UIView *subview in self.subviews) {
+            if ([subview class] == [UIView class]) {
+                [subview setBackgroundColor:[UIColor clearColor]];
+            }
+        }
+    }
+}
+%end
+
+%hook AFDFastSpeedView
+- (void)layoutSubviews {
+    %orig;
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+        for (UIView *subview in self.subviews) {
+            if ([subview class] == [UIView class]) {
+                [subview setBackgroundColor:[UIColor clearColor]];
+            }
+        }
+    }
+}
+%end
+
 %hook UIView
 
 - (void)setAlpha:(CGFloat)alpha {
@@ -489,8 +521,17 @@
     if ([vc isKindOfClass:%c(AWEPlayInteractionViewController)] && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
         CGRect frame = vc.view.frame;
         if (frame.size.height == vc.view.superview.frame.size.height) {
-            frame.size.height -= 83;
-            vc.view.frame = frame;
+            UIResponder *responder = vc.view.superview.nextResponder;
+            while (responder != nil) {
+                if ([responder isKindOfClass:[UIViewController class]]) {
+                    if ([responder isKindOfClass:%c(AWEFeedCellViewController)]) {
+                        frame.size.height -= 83;
+                        vc.view.frame = frame;
+                    }
+                    break;
+                }
+                responder = [responder nextResponder];
+            }
         }
     }
     %orig;
