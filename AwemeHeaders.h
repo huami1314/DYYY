@@ -110,3 +110,12 @@
 
 @interface AFDFastSpeedView : UIView
 @end
+
+@interface AWEUserWorkCollectionViewComponentCell : UICollectionViewCell
+@end
+
+@interface AWEFeedRefreshFooter : UIView
+@end
+
+@interface AWERLSegmentView : UIView
+@end
