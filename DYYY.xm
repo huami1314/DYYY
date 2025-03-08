@@ -1007,6 +1007,9 @@
     UILabel *label = %orig;
     if([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableArea"]){
         NSString *text = label.text;
+        if ([text containsString:@"IP属地"]) {
+            return label;
+        }
         AWEAwemeModel *model = self.model;
         NSString *ipAttribution = model.ipAttribution;
         NSString *cityCode = model.cityCode;
