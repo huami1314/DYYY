@@ -402,11 +402,7 @@
     
     UIViewController *vc = [self firstAvailableUIViewController];
     if ([vc isKindOfClass:%c(AWEAwemePlayVideoViewController)]) {
-        CGRect originalFrame = self.frame;
-        CGRect screenBounds = [UIScreen mainScreen].bounds;
-        
         if (frame.origin.x != 0 || frame.origin.y != 0) {
-            %orig;
             return;
         }
     }
@@ -452,7 +448,15 @@
         }
         
         if (!existingBlurView) {
-            UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
+            UIBlurEffectStyle blurStyle;
+            if (@available(iOS 13.0, *)) {
+                UIUserInterfaceStyle currentStyle = UITraitCollection.currentTraitCollection.userInterfaceStyle;
+                blurStyle = (currentStyle == UIUserInterfaceStyleDark) ? UIBlurEffectStyleDark : UIBlurEffectStyleLight;
+            } else {
+                blurStyle = UIBlurEffectStyleDark;
+            }
+            
+            UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurStyle];
             UIVisualEffectView *blurEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
             blurEffectView.frame = self.view.bounds;
             blurEffectView.alpha = 0.9;
@@ -460,12 +464,30 @@
             blurEffectView.tag = 999;
             
             UIView *overlayView = [[UIView alloc] initWithFrame:self.view.bounds];
-            overlayView.backgroundColor = [UIColor colorWithWhite:0 alpha:0.3];
+            if (@available(iOS 13.0, *)) {
+                UIUserInterfaceStyle currentStyle = UITraitCollection.currentTraitCollection.userInterfaceStyle;
+                overlayView.backgroundColor = (currentStyle == UIUserInterfaceStyleDark) ? 
+                    [UIColor colorWithWhite:0 alpha:0.3] : [UIColor colorWithWhite:1 alpha:0.1];
+            } else {
+                overlayView.backgroundColor = [UIColor colorWithWhite:0 alpha:0.3];
+            }
             overlayView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
             [blurEffectView.contentView addSubview:overlayView];
             
             [self.view insertSubview:blurEffectView atIndex:0];
         } else {
+            if (@available(iOS 13.0, *)) {
+                UIUserInterfaceStyle currentStyle = UITraitCollection.currentTraitCollection.userInterfaceStyle;
+                UIBlurEffect *updatedEffect = [UIBlurEffect effectWithStyle:(currentStyle == UIUserInterfaceStyleDark) ? 
+                    UIBlurEffectStyleDark : UIBlurEffectStyleLight];
+                existingBlurView.effect = updatedEffect;
+                
+                for (UIView *subview in existingBlurView.contentView.subviews) {
+                    subview.backgroundColor = (currentStyle == UIUserInterfaceStyleDark) ? 
+                        [UIColor colorWithWhite:0 alpha:0.3] : [UIColor colorWithWhite:1 alpha:0.1];
+                }
+            }
+            
             [self.view insertSubview:existingBlurView atIndex:0];
         }
     }
