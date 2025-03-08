@@ -128,3 +128,6 @@
 
 @interface AWETemplateHotspotView : UIView
 @end
+
+@interface AWEAwemeMusicInfoView : UIView
+@end
