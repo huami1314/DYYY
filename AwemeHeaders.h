@@ -125,3 +125,6 @@
 
 @interface AWEPlayInteractionSearchAnchorView : UIView
 @end
+
+@interface AWETemplateHotspotView : UIView
+@end
