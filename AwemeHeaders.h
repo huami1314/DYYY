@@ -119,3 +119,6 @@
 
 @interface AWERLSegmentView : UIView
 @end
+
+@interface AWEPlayInteractionSearchAnchorView : UIView
+@end
