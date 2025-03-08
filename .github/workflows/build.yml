@@ -23,7 +23,7 @@ jobs:
           key: ${{ runner.os }}-${{ env.upstream_heads }}
 
       - name: Prepare Theos
-        uses:huami1314/theos-action@main
+        uses: huami1314/theos-action@main
 
       - name: Build package
         run: |
