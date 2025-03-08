@@ -120,5 +120,8 @@
 @interface AWERLSegmentView : UIView
 @end
 
+@interface AWEFeedTemplateAnchorView : UIView
+@end
+
 @interface AWEPlayInteractionSearchAnchorView : UIView
 @end
