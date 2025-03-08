@@ -1135,3 +1135,54 @@
 }
 
 %end
+
+%hook AWEFeedTemplateAnchorView
+
+- (void)layoutSubviews {
+    %orig;
+
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLocation"]) {
+        [self removeFromSuperview];
+        return;
+    }
+}
+
+%end
+
+%hook AWEPlayInteractionSearchAnchorView
+
+- (void)layoutSubviews {
+    %orig;
+
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideInteractionSearch"]) {
+        [self removeFromSuperview];
+        return;
+    }
+}
+
+%end
+
+%hook AWEAwemeMusicInfoView
+
+- (void)layoutSubviews {
+    %orig;
+
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideQuqishuiting"]) {
+        self.hidden = YES;
+    }
+}
+
+%end
+
+%hook AWETemplateHotspotView
+
+- (void)layoutSubviews {
+    %orig;
+
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideHotspot"]) {
+        [self removeFromSuperview];
+        return;
+    }
+}
+
+%end

@@ -120,9 +120,18 @@
 @interface AWERLSegmentView : UIView
 @end
 
-@interface _TtC33AWECommentPanelContainerSwiftImpl35CommentContainerInnerViewController : UIViewController
-@end
-
 @interface AWEBaseListViewController : UIViewController
 - (void)applyBlurEffectIfNeeded;
+@end
+
+@interface AWEFeedTemplateAnchorView : UIView
+@end
+
+@interface AWEPlayInteractionSearchAnchorView : UIView
+@end
+
+@interface AWETemplateHotspotView : UIView
+@end
+
+@interface AWEAwemeMusicInfoView : UIView
 @end
