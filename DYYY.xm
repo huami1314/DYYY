@@ -124,14 +124,6 @@
 @end
 
 @interface AWEFeedTableViewController : UIViewController
-@property (nonatomic, strong) AWEAwemeModel *currentAweme;
-- (void)scrollToNextVideo;
-@end
-
-@interface AWEFeedTableView : UIView
-@end
-
-@interface AWEFeedTableViewController : UIViewController
 @end
 
 @interface AWEFeedTableView : UIView
