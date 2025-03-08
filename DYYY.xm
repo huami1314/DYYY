@@ -1052,3 +1052,16 @@
 }
 
 %end
+
+%hook AWEPlayInteractionSearchAnchorView
+
+- (void)layoutSubviews {
+    %orig;
+
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideInteractionSearch"]) {
+        [self removeFromSuperview];
+        return;
+    }
+}
+
+%end
