@@ -1053,6 +1053,19 @@
 
 %end
 
+%hook AWEFeedTemplateAnchorView
+
+- (void)layoutSubviews {
+    %orig;
+
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLocation"]) {
+        [self removeFromSuperview];
+        return;
+    }
+}
+
+%end
+
 %hook AWEPlayInteractionSearchAnchorView
 
 - (void)layoutSubviews {
