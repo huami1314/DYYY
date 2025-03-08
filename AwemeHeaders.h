@@ -34,7 +34,7 @@
 @end
 
 @interface AWEAwemePlayVideoViewController : UIViewController
-
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context;
 - (void)setVideoControllerPlaybackRate:(double)arg0;
 
 @end
@@ -118,4 +118,11 @@
 @end
 
 @interface AWERLSegmentView : UIView
+@end
+
+@interface _TtC33AWECommentPanelContainerSwiftImpl35CommentContainerInnerViewController : UIViewController
+@end
+
+@interface AWEBaseListViewController : UIViewController
+- (void)applyBlurEffectIfNeeded;
 @end

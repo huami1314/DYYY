@@ -344,6 +344,25 @@
 
 %end
 
+%hook AWEPlayInteractionViewController
+- (void)viewDidLayoutSubviews {
+    %orig;
+    
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+        CGRect frame = self.view.frame;
+        frame.size.height = self.view.superview.frame.size.height - 83;
+        self.view.frame = frame;
+        
+        for (UIView *subview in self.view.subviews) {
+            if ([subview isKindOfClass:[UIView class]] && 
+                subview.backgroundColor && 
+                CGColorEqualToColor(subview.backgroundColor.CGColor, [UIColor blackColor].CGColor)) {
+                subview.hidden = YES;
+            }
+        }
+    }
+}
+%end
 
 %hook AWEFeedTableView
 - (void)layoutSubviews {
@@ -364,6 +383,86 @@
             if ([subview class] == [UIView class]) {
                 [subview setBackgroundColor:[UIColor clearColor]];
             }
+        }
+    }
+}
+%end
+
+%hook UIView
+
+- (void)setFrame:(CGRect)frame {
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"]) {
+        %orig;
+        return;
+    }
+    
+    UIViewController *vc = [self firstAvailableUIViewController];
+    if ([vc isKindOfClass:%c(AWEAwemePlayVideoViewController)]) {
+        CGRect originalFrame = self.frame;
+        
+        if (originalFrame.size.width > 0 && originalFrame.size.height > 0 &&
+            (frame.size.width < originalFrame.size.width * 0.5 || 
+             frame.size.height < originalFrame.size.height * 0.5)) {
+            return;
+        }
+    }
+    %orig;
+}
+
+%end
+
+%hook AWEBaseListViewController
+- (void)viewDidLayoutSubviews {
+    %orig;
+    [self applyBlurEffectIfNeeded];
+}
+
+- (void)viewDidAppear:(BOOL)animated {
+    %orig;
+    [self applyBlurEffectIfNeeded];
+}
+
+- (void)viewWillAppear:(BOOL)animated {
+    %orig;
+    [self applyBlurEffectIfNeeded];
+}
+
+%new
+- (void)applyBlurEffectIfNeeded {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"] && 
+        [self isKindOfClass:NSClassFromString(@"AWECommentPanelContainerSwiftImpl.CommentContainerInnerViewController")]) {
+        
+        self.view.backgroundColor = [UIColor clearColor];
+        for (UIView *subview in self.view.subviews) {
+            if (![subview isKindOfClass:[UIVisualEffectView class]]) {
+                subview.backgroundColor = [UIColor clearColor];
+            }
+        }
+        
+        UIVisualEffectView *existingBlurView = nil;
+        for (UIView *subview in self.view.subviews) {
+            if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == 999) {
+                existingBlurView = (UIVisualEffectView *)subview;
+                break;
+            }
+        }
+        
+        if (!existingBlurView) {
+            UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
+            UIVisualEffectView *blurEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
+            blurEffectView.frame = self.view.bounds;
+            blurEffectView.alpha = 0.9;
+            blurEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+            blurEffectView.tag = 999;
+            
+            UIView *overlayView = [[UIView alloc] initWithFrame:self.view.bounds];
+            overlayView.backgroundColor = [UIColor colorWithWhite:0 alpha:0.3];
+            overlayView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+            [blurEffectView.contentView addSubview:overlayView];
+            
+            [self.view insertSubview:blurEffectView atIndex:0];
+        } else {
+            [self.view insertSubview:existingBlurView atIndex:0];
         }
     }
 }
@@ -394,22 +493,6 @@
             if (alphaValue >= 0.0 && alphaValue <= 1.0) {
                 %orig(alphaValue);
                 return;
-            }
-        }
-    }
-    if ([vc isKindOfClass:%c(AWEPlayInteractionViewController)] && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-        CGRect frame = vc.view.frame;
-        if (frame.size.height == vc.view.superview.frame.size.height) {
-            UIResponder *responder = vc.view.superview.nextResponder;
-            while (responder != nil) {
-                if ([responder isKindOfClass:[UIViewController class]]) {
-                    if ([responder isKindOfClass:%c(AWEFeedCellViewController)]) {
-                        frame.size.height -= 83;
-                        vc.view.frame = frame;
-                    }
-                    break;
-                }
-                responder = [responder nextResponder];
             }
         }
     }
