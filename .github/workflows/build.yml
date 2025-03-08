@@ -1,4 +1,4 @@
-name: CI
+name: build deb
 
 on: [push]
 
@@ -7,7 +7,7 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4.2.2
         with:
           submodules: true
 
@@ -17,13 +17,13 @@ jobs:
 
       - name: Use cache
         id: cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4.2.1
         with:
           path: ${{ github.workspace }}/theos
           key: ${{ runner.os }}-${{ env.upstream_heads }}
 
       - name: Prepare Theos
-        uses: huami1314/theos-action@main
+        uses: wwg135/theos-action@main
 
       - name: Build package
         run: |
@@ -33,7 +33,7 @@ jobs:
           make package THEOS_PACKAGE_SCHEME=roothide FINALPACKAGE=1
 
       - name: Upload specific Deb packages
-        uses: actions/upload-artifact@v4.3.3
+        uses: actions/upload-artifact@v4.6.0
         with:
           name: DYYY
           path: ${{ github.workspace }}/packages/*.deb
