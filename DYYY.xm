@@ -1105,7 +1105,12 @@
                         label.text = [NSString stringWithFormat:@"%@  IP属地：%@ %@", text, provinceName, cityName];
                     }
                 } else {
-                    label.text = [NSString stringWithFormat:@"%@ %@", text, cityName];
+                    // 添加条件判断
+			if (![text isEqualToString:provinceName] || [cityName isEqualToString:text]) {
+    				label.text = text; 
+			} else {
+    				label.text = [NSString stringWithFormat:@"%@ %@", text, cityName]; 
+			}
                 }
             }
         }
