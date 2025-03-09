@@ -373,7 +373,8 @@
     %orig;
     
     UIView *next = (UIView *)self.nextResponder;
-    if (![next.viewDelegate isKindOfClass:NSClassFromString(@"AWEFriendsImpl.RichContentNewListViewController")]) {
+    UIViewController *vc = [next firstAvailableUIViewController];
+    if (![vc isKindOfClass:NSClassFromString(@"AWEFriendsImpl.RichContentNewListViewController")]) {
         return;
     }
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
