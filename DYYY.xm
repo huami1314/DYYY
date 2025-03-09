@@ -372,15 +372,18 @@
 - (void)layoutSubviews {
     %orig;
     
-    UIView *next = (UIView *)self.nextResponder;
-    UIViewController *vc = [next firstAvailableUIViewController];
-    if (![vc isKindOfClass:NSClassFromString(@"AWEFriendsImpl.RichContentNewListViewController")]) {
-        return;
-    }
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-        for (UIView *subview in self.subviews) {
-            if ([subview isKindOfClass:[UIView class]]) {
-                CGRect frame = subview.frame;
+    for (UIView *subview in self.subviews) {
+        if ([subview isKindOfClass:[UIView class]]) {
+            UIView *nextResponder = (UIView *)subview.nextResponder;
+            if ([nextResponder isKindOfClass:%c(AWEPlayInteractionViewController)]) {
+                UIViewController *awemeBaseViewController = [nextResponder valueForKey:@"awemeBaseViewController"];
+                if (![awemeBaseViewController isKindOfClass:%c(AWEFeedCellViewController)]) {
+                    return;
+                }
+            }
+            
+            CGRect frame = subview.frame;
+            if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
                 frame.size.height = subview.superview.frame.size.height - 83;
                 subview.frame = frame;
             }
@@ -468,15 +471,24 @@
             }
         }
         
-        if (!existingBlurView) {
-            UIBlurEffectStyle blurStyle;
-            if (@available(iOS 13.0, *)) {
-                blurStyle = self.traitCollection.userInterfaceStyle == UIUserInterfaceStyleDark ? 
-                    UIBlurEffectStyleDark : UIBlurEffectStyleLight;
-            } else {
-                blurStyle = UIBlurEffectStyleLight;
-            }
+        BOOL isDarkMode = YES;
+        
+        UILabel *commentLabel = [self findCommentLabel:self.view];
+        if (commentLabel) {
+            UIColor *textColor = commentLabel.textColor;
+            CGFloat red, green, blue, alpha;
+            [textColor getRed:&red green:&green blue:&blue alpha:&alpha];
             
+            if (red > 0.7 && green > 0.7 && blue > 0.7) {
+                isDarkMode = YES;
+            } else if (red < 0.3 && green < 0.3 && blue < 0.3) {
+                isDarkMode = NO;
+            }
+        }
+        
+        UIBlurEffectStyle blurStyle = isDarkMode ? UIBlurEffectStyleDark : UIBlurEffectStyleLight;
+        
+        if (!existingBlurView) {
             UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurStyle];
             UIVisualEffectView *blurEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
             blurEffectView.frame = self.view.bounds;
@@ -485,16 +497,45 @@
             blurEffectView.tag = 999;
             
             UIView *overlayView = [[UIView alloc] initWithFrame:self.view.bounds];
-            CGFloat alpha = blurStyle == UIBlurEffectStyleDark ? 0.3 : 0.1;
-            overlayView.backgroundColor = [UIColor colorWithWhite:(blurStyle == UIBlurEffectStyleDark ? 0 : 1) alpha:alpha];
+            CGFloat alpha = isDarkMode ? 0.3 : 0.1;
+            overlayView.backgroundColor = [UIColor colorWithWhite:(isDarkMode ? 0 : 1) alpha:alpha];
             overlayView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
             [blurEffectView.contentView addSubview:overlayView];
             
             [self.view insertSubview:blurEffectView atIndex:0];
         } else {
+            UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurStyle];
+            [existingBlurView setEffect:blurEffect];
+            
+            for (UIView *subview in existingBlurView.contentView.subviews) {
+                if (subview.tag != 999) {
+                    CGFloat alpha = isDarkMode ? 0.3 : 0.1;
+                    subview.backgroundColor = [UIColor colorWithWhite:(isDarkMode ? 0 : 1) alpha:alpha];
+                }
+            }
+            
             [self.view insertSubview:existingBlurView atIndex:0];
         }
     }
+}
+
+%new
+- (UILabel *)findCommentLabel:(UIView *)view {
+    if ([view isKindOfClass:[UILabel class]]) {
+        UILabel *label = (UILabel *)view;
+        if (label.text && ([label.text hasSuffix:@"条评论"] || [label.text hasSuffix:@"暂无评论"])) {
+            return label;
+        }
+    }
+    
+    for (UIView *subview in view.subviews) {
+        UILabel *result = [self findCommentLabel:subview];
+        if (result) {
+            return result;
+        }
+    }
+    
+    return nil;
 }
 %end
 
@@ -795,6 +836,22 @@
             }
             if ([subview isKindOfClass:NSClassFromString(@"AWEIMEmoticonPanelBoxView")]) {
                 subview.backgroundColor = [UIColor colorWithRed:33/255.0 green:33/255.0 blue:33/255.0 alpha:1.0];
+            }
+        }
+    }
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+        NSString *className = NSStringFromClass([self class]);
+        if ([className isEqualToString:@"AWECommentInputViewSwiftImpl.CommentInputContainerView"]) {
+            for (UIView *subview in self.subviews) {
+                if ([subview isKindOfClass:[UIView class]] && subview.backgroundColor) {
+                    CGFloat red = 0, green = 0, blue = 0, alpha = 0;
+                    [subview.backgroundColor getRed:&red green:&green blue:&blue alpha:&alpha];
+                    
+                    if ((red == 22/255.0 && green == 22/255.0 && blue == 22/255.0) || 
+                        (red == 1.0 && green == 1.0 && blue == 1.0)) {
+                        subview.backgroundColor = [UIColor clearColor];
+                    }
+                }
             }
         }
     }

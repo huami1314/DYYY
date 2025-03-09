@@ -122,6 +122,7 @@
 
 @interface AWEBaseListViewController : UIViewController
 - (void)applyBlurEffectIfNeeded;
+- (UILabel *)findCommentLabel:(UIView *)view;
 @end
 
 @interface AWEFeedTemplateAnchorView : UIView
@@ -140,4 +141,7 @@
 @end
 
 @interface AWELiveNewPreStreamViewController : UIViewController
+@end
+
+@interface CommentInputContainerView : UIView
 @end
