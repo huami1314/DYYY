@@ -372,10 +372,10 @@
 - (void)layoutSubviews {
     %orig;
     
-    if (![self.nextResponder.nextResponder isKindOfClass:%c(AWEFeedCellViewController)]) {
+    UIView *next = (UIView *)self.nextResponder;
+    if (![next.viewDelegate isKindOfClass:NSClassFromString(@"AWEFriendsImpl.RichContentNewListViewController")]) {
         return;
     }
-    
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
         for (UIView *subview in self.subviews) {
             if ([subview isKindOfClass:[UIView class]]) {
