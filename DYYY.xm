@@ -1099,18 +1099,29 @@
             
             if (cityName.length > 0 && ![text containsString:cityName]) {
                 if (!self.model.ipAttribution) {
-                    if ([provinceName isEqualToString:cityName]) {
+                    BOOL isDirectCity = [provinceName isEqualToString:cityName] || 
+                                       ([cityCode hasPrefix:@"11"] || [cityCode hasPrefix:@"12"] || 
+                                        [cityCode hasPrefix:@"31"] || [cityCode hasPrefix:@"50"]);
+                    
+                    if (isDirectCity) {
                         label.text = [NSString stringWithFormat:@"%@  IP属地：%@", text, cityName];
                     } else {
                         label.text = [NSString stringWithFormat:@"%@  IP属地：%@ %@", text, provinceName, cityName];
                     }
                 } else {
-                    // 添加条件判断
-			if (![text isEqualToString:provinceName] || [cityName isEqualToString:text]) {
-    				label.text = text; 
-			} else {
-    				label.text = [NSString stringWithFormat:@"%@ %@", text, cityName]; 
-			}
+                    BOOL isDirectCity = [provinceName isEqualToString:cityName] || 
+                                       ([cityCode hasPrefix:@"11"] || [cityCode hasPrefix:@"12"] || 
+                                        [cityCode hasPrefix:@"31"] || [cityCode hasPrefix:@"50"]);
+                    
+                    BOOL containsProvince = [text containsString:provinceName];
+                    
+                    if (isDirectCity && containsProvince) {
+                        label.text = text;
+                    } else if (containsProvince) {
+                        label.text = [NSString stringWithFormat:@"%@ %@", text, cityName];
+                    } else {
+                        label.text = text;
+                    }
                 }
             }
         }

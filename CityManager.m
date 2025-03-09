@@ -601,11 +601,11 @@
         @"659006":@"铁门关",
         @"659007":@"双河",
         @"659008":@"可克达拉",
-        @"710000":@"台湾",
-        @"710100":@"台湾",
-        @"810000":@"香港",
-        @"810100":@"香港",
-        @"820100":@"澳门"
+        @"710000":@"中国台湾",
+        @"710100":@"中国台湾",
+        @"810000":@"中国香港",
+        @"810100":@"中国香港",
+        @"820100":@"中国澳门"
     };
 }
 
@@ -616,9 +616,7 @@
     
     NSString *cityName = self.cityCodeMap[code];
     
-    if (!cityName) {
     return cityName;
-    }
 }
 
 - (NSString *)getProvinceNameWithCode:(NSString *)code {
@@ -629,9 +627,7 @@
     provinceCode = [provinceCode stringByAppendingString:@"0000"];
     NSString *provinceCodeName = self.cityCodeMap[provinceCode];
     
-    if (!provinceCodeName) {
-        return provinceCodeName;
-    }
+    return provinceCodeName;
 }
 
 @end
