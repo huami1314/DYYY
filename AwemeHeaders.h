@@ -138,3 +138,6 @@
 
 @interface AWEStoryContainerCollectionView : UIView
 @end
+
+@interface AWELiveNewPreStreamViewController : UIViewController
+@end

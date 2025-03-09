@@ -372,6 +372,10 @@
 - (void)layoutSubviews {
     %orig;
     
+    if (![self.nextResponder.nextResponder isKindOfClass:%c(AWEFeedCellViewController)]) {
+        return;
+    }
+    
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
         for (UIView *subview in self.subviews) {
             if ([subview isKindOfClass:[UIView class]]) {
