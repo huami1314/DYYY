@@ -356,7 +356,12 @@
         CGRect frame = self.view.frame;
         frame.size.height = self.view.superview.frame.size.height - 83;
         self.view.frame = frame;
-        
+    }
+    
+    BOOL shouldHideSubview = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"] || 
+                             [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"];
+    
+    if (shouldHideSubview) {
         for (UIView *subview in self.view.subviews) {
             if ([subview isKindOfClass:[UIView class]] && 
                 subview.backgroundColor && 
@@ -367,6 +372,7 @@
     }
 }
 %end
+
 
 %hook AWEStoryContainerCollectionView
 - (void)layoutSubviews {
