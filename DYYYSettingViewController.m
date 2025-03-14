@@ -44,6 +44,7 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
 @property (nonatomic, strong) NSMutableSet *expandedSections;
 @property (nonatomic, strong) UIVisualEffectView *blurEffectView;
 @property (nonatomic, strong) UIVisualEffectView *vibrancyEffectView;
+@property (nonatomic, assign) BOOL isAgreementShown;
 
 @end
 
@@ -54,6 +55,8 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
     
     self.title = @"DYYY设置";
     self.expandedSections = [NSMutableSet set];
+    self.isAgreementShown = NO;
+    
     [self setupAppearance];
     [self setupBlurEffect];
     [self setupTableView];
@@ -61,6 +64,15 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
     [self setupSectionTitles];
     [self setupFooterLabel];
     [self addTitleGradientAnimation];
+}
+
+- (void)viewDidAppear:(BOOL)animated {
+    [super viewDidAppear:animated];
+    
+    if (!self.isAgreementShown) {
+        [self checkFirstLaunch];
+        self.isAgreementShown = YES;
+    }
 }
 
 - (void)setupAppearance {
@@ -160,17 +172,20 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
             [DYYYSettingItem itemWithTitle:@"移除直播" key:@"DYYYHideTabLive" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"移除热点" key:@"DYYYHidePadHot" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"移除经验" key:@"DYYYHideHangout" type:DYYYSettingItemTypeSwitch]
+        ],
+        @[
+            [DYYYSettingItem itemWithTitle:@"复制文案" key:@"DYYYCopyText" type:DYYYSettingItemTypeSwitch]
         ]
     ];
 }
 
 - (void)setupSectionTitles {
-    self.sectionTitles = [@[@"基本设置", @"界面设置", @"隐藏设置", @"顶栏移除"] mutableCopy];
+    self.sectionTitles = [@[@"基本设置", @"界面设置", @"隐藏设置", @"顶栏移除", @"功能设置"] mutableCopy];
 }
 
 - (void)setupFooterLabel {
     self.footerLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width, 50)];
-    self.footerLabel.text = [NSString stringWithFormat:@"Developer By @huamidev\nVersion: %@ (%@)-End", @"2.0-9", @"250310"];
+    self.footerLabel.text = [NSString stringWithFormat:@"Developer By @huamidev\nVersion: %@ (%@)", @"2.0-9", @"250314"];
     self.footerLabel.textAlignment = NSTextAlignmentCenter;
     self.footerLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightRegular];
     self.footerLabel.textColor = [UIColor colorWithRed:173/255.0 green:216/255.0 blue:230/255.0 alpha:1.0];
@@ -208,6 +223,59 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
     [gradient addAnimation:colorChange forKey:@"colorChangeAnimation"];
 }
 
+#pragma mark - First Launch Agreement
+
+- (void)checkFirstLaunch {
+    
+    BOOL hasAgreed = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"];
+    
+    if (!hasAgreed) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self showAgreementAlert];
+        });
+    }
+}
+
+- (void)showAgreementAlert {
+    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"用户协议"
+                                                                             message:@"本插件为开源项目\n仅供学习交流用途\n如有侵权请联系, GitHub仓库：huami1314/DYYY\n请遵守当地法律法规, 逆向工程仅为学习目的\n盗用源码进行商业用途/发布但未标记开源项目必究\n详细请参考项目内MIT许可证信息\n\n请输入\"我已阅读并同意继续使用\"以继续使用"
+                                                                      preferredStyle:UIAlertControllerStyleAlert];
+    
+    [alertController addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) {
+        textField.clearButtonMode = UITextFieldViewModeWhileEditing;
+    }];
+    
+    UIAlertAction *confirmAction = [UIAlertAction actionWithTitle:@"确认" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+        UITextField *textField = alertController.textFields.firstObject;
+        NSString *inputText = textField.text;
+        
+        if ([inputText isEqualToString:@"我已阅读并同意继续使用"]) {
+            [[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"DYYYUserAgreementAccepted"];
+            [[NSUserDefaults standardUserDefaults] synchronize];
+        } else {
+            UIAlertController *errorAlert = [UIAlertController alertControllerWithTitle:@"输入错误"
+                                                                               message:@"请正确输入"
+                                                                        preferredStyle:UIAlertControllerStyleAlert];
+            
+            UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+                [self showAgreementAlert];
+            }];
+            
+            [errorAlert addAction:okAction];
+            [self presentViewController:errorAlert animated:YES completion:nil];
+        }
+    }];
+
+    UIAlertAction *exitAction = [UIAlertAction actionWithTitle:@"退出" style:UIAlertActionStyleDestructive handler:^(UIAlertAction * _Nonnull action) {
+        exit(0);
+    }];
+    
+    [alertController addAction:confirmAction];
+    [alertController addAction:exitAction];
+    
+    [self presentViewController:alertController animated:YES completion:nil];
+}
+
 #pragma mark - UITableViewDataSource
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
@@ -224,6 +292,8 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
             return @"隐藏设置";
         case 3:
             return @"顶栏移除";
+        case 4:
+            return @"功能设置";
         default:
             return @"";
     }

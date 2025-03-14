@@ -93,6 +93,7 @@
 @property (nonatomic, copy) NSString *cityCode;
 @property (nonatomic, assign) BOOL isLive;
 @property (nonatomic, strong) AWEAwemeModel *currentAweme;
+@property (nonatomic, copy) NSString *descriptionString;
 @end
 
 @interface AWEPlayInteractionTimestampElement : UIView
@@ -144,4 +145,22 @@
 @end
 
 @interface CommentInputContainerView : UIView
+@end
+
+@interface AWELongPressPanelTableViewController : UIViewController
+@property (nonatomic, strong) AWEAwemeModel *awemeModel;
+- (void)closeWithAnimated:(BOOL)animated;
+@end
+
+@interface AWELongPressPanelViewGroupModel : NSObject
+@property (nonatomic, assign) NSInteger groupType;
+@property (nonatomic, strong) NSArray *groupArr;
+@end
+
+@interface AWELongPressPanelBaseViewModel : NSObject
+@property (nonatomic, strong) AWEAwemeModel *awemeModel;
+@property (nonatomic, assign) NSInteger actionType;
+- (void)setDuxIconName:(NSString *)iconName;
+- (void)setDescribeString:(NSString *)descString;
+- (void)setAction:(void (^)(void))action;
 @end
