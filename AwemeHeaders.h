@@ -164,3 +164,11 @@
 - (void)setDescribeString:(NSString *)descString;
 - (void)setAction:(void (^)(void))action;
 @end
+
+@interface AWELongPressPanelManager : NSObject
++ (instancetype)shareInstance;
+- (void)dismissWithAnimation:(BOOL)animated completion:(void (^)(void))completion;
+@end
+
+@interface AWEElementStackView : UIView
+@end

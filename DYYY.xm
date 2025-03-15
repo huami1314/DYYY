@@ -1309,6 +1309,9 @@ static UIViewController * getActiveTopController(void) {
         
         [window addSubview:toastView];
         
+        AWELongPressPanelManager *panelManager = [NSClassFromString(@"AWELongPressPanelManager") shareInstance];
+        [panelManager dismissWithAnimation:YES completion:nil];
+
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             [UIView animateWithDuration:0.3 animations:^{
                 toastView.alpha = 0;
@@ -1325,6 +1328,116 @@ static UIViewController * getActiveTopController(void) {
     [newArray insertObject:customGroup atIndex:0];
     
     return newArray;
+}
+
+%end
+
+%hook AWEElementStackView
+
+- (void)layoutSubviews {
+    %orig;
+    if (![self.accessibilityLabel isEqualToString:@"right"]) {
+        return;
+    }
+    NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYElementScale"];
+    if (scaleValue.length > 0) {
+        CGFloat scale = [scaleValue floatValue];
+        if (scale > 0 && scale != 1.0) {
+            NSMutableArray *originalPositions = [NSMutableArray array];
+            for (UIView *subview in self.subviews) {
+                [originalPositions addObject:@(subview.frame.origin.y)];
+            }
+            
+            for (UIView *subview in self.subviews) {
+                subview.transform = CGAffineTransformMakeScale(scale, scale);
+            }
+            
+            if (self.subviews.count > 1) {
+                for (int i = 1; i < self.subviews.count; i++) {
+                    UIView *currentView = self.subviews[i];
+                    UIView *previousView = self.subviews[i-1];
+                    
+                    CGFloat originalGap = [originalPositions[i] floatValue] - ([originalPositions[i-1] floatValue] + previousView.frame.size.height);
+                    CGFloat newGap = originalGap * scale;
+                    
+                    CGRect frame = currentView.frame;
+                    frame.origin.y = previousView.frame.origin.y + (previousView.frame.size.height * scale) + newGap;
+                    currentView.frame = frame;
+                }
+            }
+        }
+    }
+}
+
+%end
+
+%hook AWEFeedVideoButton
+
+- (void)setImage:(id)arg1 {
+    NSString *nameString = nil;
+    
+    if ([self respondsToSelector:@selector(imageNameString)]) {
+        nameString = [self performSelector:@selector(imageNameString)];
+    }
+    
+    if (!nameString) {
+        %orig;
+        return;
+    }
+    
+    NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
+    NSString *dyyyFolderPath = [documentsPath stringByAppendingPathComponent:@"DYYY"];
+    
+    [[NSFileManager defaultManager] createDirectoryAtPath:dyyyFolderPath 
+                            withIntermediateDirectories:YES 
+                                             attributes:nil 
+                                                  error:nil];
+    
+    NSDictionary *iconMapping = @{
+        @"icon_home_like_after": @"like_after.png",
+        @"icon_home_like_before": @"like_before.png",
+        @"icon_home_comment": @"comment.png",
+        @"icon_home_unfavorite": @"unfavorite.png",
+        @"icon_home_favorite": @"favorite.png",
+        @"iconHomeShareRight": @"share.png"
+    };
+    
+    NSString *customFileName = nil;
+    for (NSString *prefix in iconMapping.allKeys) {
+        if ([nameString hasPrefix:prefix]) {
+            customFileName = iconMapping[prefix];
+            break;
+        }
+    }
+    
+    if (customFileName) {
+        NSString *customImagePath = [dyyyFolderPath stringByAppendingPathComponent:customFileName];
+        
+        if ([[NSFileManager defaultManager] fileExistsAtPath:customImagePath]) {
+            UIImage *customImage = [UIImage imageWithContentsOfFile:customImagePath];
+            if (customImage) {
+                CGFloat targetWidth = 44.0;
+                CGFloat targetHeight = 44.0;
+                CGSize originalSize = customImage.size;
+                
+                CGFloat scale = MIN(targetWidth / originalSize.width, targetHeight / originalSize.height);
+                CGFloat newWidth = originalSize.width * scale;
+                CGFloat newHeight = originalSize.height * scale;
+                
+                UIGraphicsBeginImageContextWithOptions(CGSizeMake(newWidth, newHeight), NO, 0.0);
+                [customImage drawInRect:CGRectMake(0, 0, newWidth, newHeight)];
+                UIImage *resizedImage = UIGraphicsGetImageFromCurrentImageContext();
+                UIGraphicsEndImageContext();
+                
+                if (resizedImage) {
+                    %orig(resizedImage);
+                    return;
+                }
+            }
+        }
+    }
+    
+    %orig;
 }
 
 %end
