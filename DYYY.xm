@@ -1495,59 +1495,63 @@ void downloadAllImages(NSMutableArray *imageURLs) {
     NSMutableArray *viewModels = [NSMutableArray array];
     
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYLongPressDownload"]) {
-        AWELongPressPanelBaseViewModel *downloadViewModel = [[%c(AWELongPressPanelBaseViewModel) alloc] init];
-        downloadViewModel.awemeModel = self.awemeModel;
-        downloadViewModel.actionType = 666;
-        downloadViewModel.duxIconName = @"ic_circledown_filled_20";
-        downloadViewModel.describeString = @"下载视频";
-        
-        downloadViewModel.action = ^{
-            AWEAwemeModel *awemeModel = self.awemeModel;
-            AWEVideoModel *videoModel = awemeModel.video;
-            AWEMusicModel *musicModel = awemeModel.music;
+
+        if (self.awemeModel.awemeType != 68) {
+            AWELongPressPanelBaseViewModel *downloadViewModel = [[%c(AWELongPressPanelBaseViewModel) alloc] init];
+            downloadViewModel.awemeModel = self.awemeModel;
+            downloadViewModel.actionType = 666;
+            downloadViewModel.duxIconName = @"ic_circledown_filled_20";
+            downloadViewModel.describeString = @"保存视频";
             
-            if (videoModel && videoModel.h264URL && videoModel.h264URL.originURLList.count > 0) {
-                NSURL *url = [NSURL URLWithString:videoModel.h264URL.originURLList.firstObject];
-                downloadMedia(url, MediaTypeVideo, ^{
-                    showToast(@"视频已保存到相册");
-                });
-            }
+            downloadViewModel.action = ^{
+                AWEAwemeModel *awemeModel = self.awemeModel;
+                AWEVideoModel *videoModel = awemeModel.video;
+                AWEMusicModel *musicModel = awemeModel.music;
+                
+                if (videoModel && videoModel.h264URL && videoModel.h264URL.originURLList.count > 0) {
+                    NSURL *url = [NSURL URLWithString:videoModel.h264URL.originURLList.firstObject];
+                    downloadMedia(url, MediaTypeVideo, ^{
+                        showToast(@"视频已保存到相册");
+                    });
+                }
+                
+                AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
+                [panelManager dismissWithAnimation:YES completion:nil];
+            };
             
-            AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
-            [panelManager dismissWithAnimation:YES completion:nil];
-        };
+            [viewModels addObject:downloadViewModel];
+        }
         
-        [viewModels addObject:downloadViewModel];
-        
-        // 下载封面
-        AWELongPressPanelBaseViewModel *coverViewModel = [[%c(AWELongPressPanelBaseViewModel) alloc] init];
-        coverViewModel.awemeModel = self.awemeModel;
-        coverViewModel.actionType = 667;
-        coverViewModel.duxIconName = @"ic_circledown_filled_20";
-        coverViewModel.describeString = @"下载封面";
-        
-        coverViewModel.action = ^{
-            AWEAwemeModel *awemeModel = self.awemeModel;
-            AWEVideoModel *videoModel = awemeModel.video;
+        if (self.awemeModel.awemeType != 68) {
+            AWELongPressPanelBaseViewModel *coverViewModel = [[%c(AWELongPressPanelBaseViewModel) alloc] init];
+            coverViewModel.awemeModel = self.awemeModel;
+            coverViewModel.actionType = 667;
+            coverViewModel.duxIconName = @"ic_circledown_filled_20";
+            coverViewModel.describeString = @"保存封面";
             
-            if (videoModel && videoModel.coverURL && videoModel.coverURL.originURLList.count > 0) {
-                NSURL *url = [NSURL URLWithString:videoModel.coverURL.originURLList.firstObject];
-                downloadMedia(url, MediaTypeImage, ^{
-                    showToast(@"封面已保存到相册");
-                });
-            }
+            coverViewModel.action = ^{
+                AWEAwemeModel *awemeModel = self.awemeModel;
+                AWEVideoModel *videoModel = awemeModel.video;
+                
+                if (videoModel && videoModel.coverURL && videoModel.coverURL.originURLList.count > 0) {
+                    NSURL *url = [NSURL URLWithString:videoModel.coverURL.originURLList.firstObject];
+                    downloadMedia(url, MediaTypeImage, ^{
+                        showToast(@"封面已保存到相册");
+                    });
+                }
+                
+                AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
+                [panelManager dismissWithAnimation:YES completion:nil];
+            };
             
-            AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
-            [panelManager dismissWithAnimation:YES completion:nil];
-        };
-        
-        [viewModels addObject:coverViewModel];
+            [viewModels addObject:coverViewModel];
+        }
         
         AWELongPressPanelBaseViewModel *audioViewModel = [[%c(AWELongPressPanelBaseViewModel) alloc] init];
         audioViewModel.awemeModel = self.awemeModel;
         audioViewModel.actionType = 668;
         audioViewModel.duxIconName = @"ic_circledown_filled_20";
-        audioViewModel.describeString = @"下载音频";
+        audioViewModel.describeString = @"保存音频";
         
         audioViewModel.action = ^{
             AWEAwemeModel *awemeModel = self.awemeModel;
@@ -1569,7 +1573,7 @@ void downloadAllImages(NSMutableArray *imageURLs) {
             imageViewModel.awemeModel = self.awemeModel;
             imageViewModel.actionType = 669;
             imageViewModel.duxIconName = @"ic_circledown_filled_20";
-            imageViewModel.describeString = @"下载图片";
+            imageViewModel.describeString = @"保存当前图片";
             
             imageViewModel.action = ^{
                 AWEAwemeModel *awemeModel = self.awemeModel;
@@ -1599,7 +1603,7 @@ void downloadAllImages(NSMutableArray *imageURLs) {
                 allImagesViewModel.awemeModel = self.awemeModel;
                 allImagesViewModel.actionType = 670;
                 allImagesViewModel.duxIconName = @"ic_circledown_filled_20";
-                allImagesViewModel.describeString = @"下载全部图片";
+                allImagesViewModel.describeString = @"保存所有图片";
                 
                 allImagesViewModel.action = ^{
                     AWEAwemeModel *awemeModel = self.awemeModel;
@@ -1670,59 +1674,62 @@ void downloadAllImages(NSMutableArray *imageURLs) {
     NSMutableArray *viewModels = [NSMutableArray array];
     
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYLongPressDownload"]) {
-        AWELongPressPanelBaseViewModel *downloadViewModel = [[%c(AWELongPressPanelBaseViewModel) alloc] init];
-        downloadViewModel.awemeModel = self.awemeModel;
-        downloadViewModel.actionType = 666;
-        downloadViewModel.duxIconName = @"ic_circledown_filled_20";
-        downloadViewModel.describeString = @"下载视频";
-        
-        downloadViewModel.action = ^{
-            AWEAwemeModel *awemeModel = self.awemeModel;
-            AWEVideoModel *videoModel = awemeModel.video;
-            AWEMusicModel *musicModel = awemeModel.music;
+        if (self.awemeModel.awemeType != 68) {
+            AWELongPressPanelBaseViewModel *downloadViewModel = [[%c(AWELongPressPanelBaseViewModel) alloc] init];
+            downloadViewModel.awemeModel = self.awemeModel;
+            downloadViewModel.actionType = 666;
+            downloadViewModel.duxIconName = @"ic_circledown_filled_20";
+            downloadViewModel.describeString = @"保存视频";
             
-            if (videoModel && videoModel.h264URL && videoModel.h264URL.originURLList.count > 0) {
-                NSURL *url = [NSURL URLWithString:videoModel.h264URL.originURLList.firstObject];
-                downloadMedia(url, MediaTypeVideo, ^{
-                    showToast(@"视频已保存到相册");
-                });
-            }
+            downloadViewModel.action = ^{
+                AWEAwemeModel *awemeModel = self.awemeModel;
+                AWEVideoModel *videoModel = awemeModel.video;
+                AWEMusicModel *musicModel = awemeModel.music;
+                
+                if (videoModel && videoModel.h264URL && videoModel.h264URL.originURLList.count > 0) {
+                    NSURL *url = [NSURL URLWithString:videoModel.h264URL.originURLList.firstObject];
+                    downloadMedia(url, MediaTypeVideo, ^{
+                        showToast(@"视频已保存到相册");
+                    });
+                }
+                
+                AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
+                [panelManager dismissWithAnimation:YES completion:nil];
+            };
             
-            AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
-            [panelManager dismissWithAnimation:YES completion:nil];
-        };
+            [viewModels addObject:downloadViewModel];
+        }
         
-        [viewModels addObject:downloadViewModel];
-        
-        // 下载封面
-        AWELongPressPanelBaseViewModel *coverViewModel = [[%c(AWELongPressPanelBaseViewModel) alloc] init];
-        coverViewModel.awemeModel = self.awemeModel;
-        coverViewModel.actionType = 667;
-        coverViewModel.duxIconName = @"ic_circledown_filled_20";
-        coverViewModel.describeString = @"下载封面";
-        
-        coverViewModel.action = ^{
-            AWEAwemeModel *awemeModel = self.awemeModel;
-            AWEVideoModel *videoModel = awemeModel.video;
+        if (self.awemeModel.awemeType != 68) {
+            AWELongPressPanelBaseViewModel *coverViewModel = [[%c(AWELongPressPanelBaseViewModel) alloc] init];
+            coverViewModel.awemeModel = self.awemeModel;
+            coverViewModel.actionType = 667;
+            coverViewModel.duxIconName = @"ic_circledown_filled_20";
+            coverViewModel.describeString = @"保存封面";
             
-            if (videoModel && videoModel.coverURL && videoModel.coverURL.originURLList.count > 0) {
-                NSURL *url = [NSURL URLWithString:videoModel.coverURL.originURLList.firstObject];
-                downloadMedia(url, MediaTypeImage, ^{
-                    showToast(@"封面已保存到相册");
-                });
-            }
+            coverViewModel.action = ^{
+                AWEAwemeModel *awemeModel = self.awemeModel;
+                AWEVideoModel *videoModel = awemeModel.video;
+                
+                if (videoModel && videoModel.coverURL && videoModel.coverURL.originURLList.count > 0) {
+                    NSURL *url = [NSURL URLWithString:videoModel.coverURL.originURLList.firstObject];
+                    downloadMedia(url, MediaTypeImage, ^{
+                        showToast(@"封面已保存到相册");
+                    });
+                }
+                
+                AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
+                [panelManager dismissWithAnimation:YES completion:nil];
+            };
             
-            AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
-            [panelManager dismissWithAnimation:YES completion:nil];
-        };
-        
-        [viewModels addObject:coverViewModel];
+            [viewModels addObject:coverViewModel];
+        }
         
         AWELongPressPanelBaseViewModel *audioViewModel = [[%c(AWELongPressPanelBaseViewModel) alloc] init];
         audioViewModel.awemeModel = self.awemeModel;
         audioViewModel.actionType = 668;
         audioViewModel.duxIconName = @"ic_circledown_filled_20";
-        audioViewModel.describeString = @"下载音频";
+        audioViewModel.describeString = @"保存音频";
         
         audioViewModel.action = ^{
             AWEAwemeModel *awemeModel = self.awemeModel;
@@ -1744,7 +1751,7 @@ void downloadAllImages(NSMutableArray *imageURLs) {
             imageViewModel.awemeModel = self.awemeModel;
             imageViewModel.actionType = 669;
             imageViewModel.duxIconName = @"ic_circledown_filled_20";
-            imageViewModel.describeString = @"下载图片";
+            imageViewModel.describeString = @"保存当前图片";
             
             imageViewModel.action = ^{
                 AWEAwemeModel *awemeModel = self.awemeModel;
@@ -1774,7 +1781,7 @@ void downloadAllImages(NSMutableArray *imageURLs) {
                 allImagesViewModel.awemeModel = self.awemeModel;
                 allImagesViewModel.actionType = 670;
                 allImagesViewModel.duxIconName = @"ic_circledown_filled_20";
-                allImagesViewModel.describeString = @"下载全部图片";
+                allImagesViewModel.describeString = @"保存所有图片";
                 
                 allImagesViewModel.action = ^{
                     AWEAwemeModel *awemeModel = self.awemeModel;
