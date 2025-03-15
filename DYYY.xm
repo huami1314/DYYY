@@ -1637,21 +1637,29 @@ void downloadAllImages(NSMutableArray *imageURLs) {
 %end
 
 %hook AWEElementStackView
-
+static CGFloat right_tx = 0;
+static CGFloat left_tx = 0;
+static CGFloat currentScale = 1.0;
 - (void)layoutSubviews {
     %orig;
+    NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYElementScale"];
     if ([self.accessibilityLabel isEqualToString:@"right"]) {
-        NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYElementScale"];
         if (scaleValue.length > 0) {
             CGFloat scale = [scaleValue floatValue];
-            CGFloat ty = 0;
-            
-            for(UIView *view in self.subviews){
-                ty += (view.frame.size.height - view.frame.size.height * scale)/2;
+            if(currentScale !=  scale){
+                currentScale = scale;
+                right_tx = 0;
+                left_tx = 0;
             }
             if (scale > 0 && scale != 1.0) {
-                CGFloat tx = self.frame.size.width - self.frame.size.width * scale - 5;
-                self.transform = CGAffineTransformMake(scale, 0, 0, scale, tx, ty);
+                CGFloat ty = 0;
+                for(UIView *view in self.subviews){
+                    ty += (view.frame.size.height - view.frame.size.height * scale)/2;
+                }
+                if(right_tx == 0){
+                    right_tx = (self.frame.size.width - self.frame.size.width * scale)/2;
+                }
+                self.transform = CGAffineTransformMake(scale, 0, 0, scale, right_tx, ty);
             }
         }
     }
@@ -1660,13 +1668,14 @@ void downloadAllImages(NSMutableArray *imageURLs) {
         if (scaleValue.length > 0) {
             CGFloat scale = [scaleValue floatValue];
             if (scale > 0 && scale != 1.0) {
-                CGFloat offsetX = (1 - scale) * self.frame.size.width / 2 + 5;
-                for (UIView *subview in self.subviews) {
-                    subview.transform = CGAffineTransformMakeScale(scale, scale);
-                    CGRect frame = subview.frame;
-                    frame.origin.x -= offsetX;
-                    subview.frame = frame;
+                CGFloat ty = 0;
+                for(UIView *view in self.subviews){
+                    ty += (view.frame.size.height - view.frame.size.height * scale)/2;
                 }
+                if(left_tx == 0){
+                    left_tx = (self.frame.size.width - self.frame.size.width * scale)/2 - self.frame.size.width * (1 -scale);
+                }
+                self.transform = CGAffineTransformMake(scale, 0, 0, scale, left_tx, ty);
             }
         }
     }
