@@ -611,7 +611,7 @@ void downloadAllImages(NSMutableArray *imageURLs) {
 %hook UIView
 
 - (void)setFrame:(CGRect)frame {
-    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"]) {
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"] || ![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
         %orig;
         return;
     }
@@ -620,6 +620,20 @@ void downloadAllImages(NSMutableArray *imageURLs) {
     if ([vc isKindOfClass:%c(AWEAwemePlayVideoViewController)]) {
         if (frame.origin.x != 0 || frame.origin.y != 0) {
             return;
+        } else {
+            CGRect superviewFrame = self.superview.frame;
+            
+            if (superviewFrame.size.height > 0 && frame.size.height > 0 && 
+                frame.size.height < superviewFrame.size.height && 
+                frame.origin.x == 0 && frame.origin.y == 0) {
+                
+                CGFloat heightDifference = superviewFrame.size.height - frame.size.height;
+                if (fabs(heightDifference - 83) < 1.0) {
+                    frame.size.height = superviewFrame.size.height;
+                    %orig(frame);
+                    return;
+                }
+            }
         }
     }
     %orig;
