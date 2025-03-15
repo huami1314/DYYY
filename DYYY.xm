@@ -1783,6 +1783,24 @@ static CGFloat currentScale = 1.0;
 
 %end
 
+%hook AWECommentMediaDownloadConfigLivePhoto
+
+bool commentLivePhotoNotWaterMark = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYCommentLivePhotoNotWaterMark"];
+
+- (bool)needClientWaterMark {
+    return commentLivePhotoNotWaterMark ? 0 : %orig;
+}
+
+- (bool)needClientEndWaterMark {
+    return commentLivePhotoNotWaterMark ? 0 : %orig;
+}
+
+- (id)watermarkConfig {
+    return commentLivePhotoNotWaterMark ? nil : %orig;
+}
+
+%end
+
 %ctor {
     %init(DYYYSettingsGesture);
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {
