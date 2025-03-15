@@ -1,4 +1,85 @@
+#import <UIKit/UIKit.h>
+#import <Photos/Photos.h>
+
+#define DYYY 100
+
+typedef NS_ENUM(NSInteger, MediaType) {
+    MediaTypeVideo,
+    MediaTypeImage,
+    MediaTypeAudio
+};
+
+@interface URLModel : NSObject
+@property (nonatomic, strong) NSArray *originURLList;
+@end
+
+@interface DUXToast : NSObject
++ (void)showText:(NSString *)text;
+@end
+
+@interface AWEVideoModel : NSObject
+@property (nonatomic, strong) URLModel *h264URL;
+@property (nonatomic, strong) URLModel *coverURL;
+@end
+
+@interface AWEMusicModel : NSObject
+@property (nonatomic, strong) URLModel *playURL;
+@end
+
+@interface AWEImageAlbumImageModel : NSObject
+@property (nonatomic, strong) NSArray *urlList;
+@end
+
+@interface AWEAwemeModel : NSObject
+@property (nonatomic, strong) AWEVideoModel *video;
+@property (nonatomic, strong) AWEMusicModel *music;
+@property (nonatomic, strong) NSArray<AWEImageAlbumImageModel *> *albumImages;
+@property (nonatomic, assign) NSInteger currentImageIndex;
+@property (nonatomic, assign) NSInteger awemeType;
+@property (nonatomic, strong) NSString *cityCode;
+@property (nonatomic, strong) NSString *ipAttribution;
+@property (nonatomic, strong) id currentAweme;
+@property (nonatomic, copy) NSString *descriptionString;
+@property (nonatomic, assign) BOOL isLive;
+- (BOOL)isLive;
+@end
+
+@interface AWELongPressPanelBaseViewModel : NSObject
+@property (nonatomic, copy) NSString *describeString;
+@property (nonatomic, assign) NSInteger enterMethod;
+@property (nonatomic, assign) NSInteger actionType;
+@property (nonatomic, assign) BOOL showIfNeed;
+@property (nonatomic, copy) NSString *duxIconName;
+@property (nonatomic, copy) void (^action)(void);
+@property (nonatomic, strong) AWEAwemeModel *awemeModel;
+- (void)setDuxIconName:(NSString *)iconName;
+- (void)setDescribeString:(NSString *)descString;
+- (void)setAction:(void (^)(void))action;
+@end
+
+@interface AWELongPressPanelViewGroupModel : NSObject
+@property (nonatomic, assign) NSInteger groupType;
+@property (nonatomic, strong) NSArray *groupArr;
+@end
+
+@interface AWELongPressPanelManager : NSObject
++ (instancetype)shareInstance;
+- (void)dismissWithAnimation:(BOOL)animated completion:(void (^)(void))completion;
+@end
+
+void downloadMedia(NSURL *url, MediaType mediaType, void (^completion)(void));
+void downloadAllImages(NSMutableArray *imageURLs);
+
 @interface AWENormalModeTabBarGeneralButton : UIButton
+@end
+
+@interface AWEProgressLoadingView : UIView
+- (id)initWithType:(NSInteger)arg1 title:(NSString *)arg2;
+- (id)initWithType:(NSInteger)arg1 title:(NSString *)arg2 progressTextFont:(UIFont *)arg3 progressCircleWidth:(NSNumber *)arg4;
+- (void)dismissWithAnimated:(BOOL)arg1;
+- (void)dismissAnimated:(BOOL)arg1;
+- (void)showOnView:(id)arg1 animated:(BOOL)arg2;
+- (void)showOnView:(id)arg1 animated:(BOOL)arg2 afterDelay:(CGFloat)arg3;
 @end
 
 @interface AWENormalModeTabBarBadgeContainerView : UIView
@@ -88,14 +169,6 @@
 
 @end
 
-@interface AWEAwemeModel : NSObject
-@property (nonatomic, copy) NSString *ipAttribution;
-@property (nonatomic, copy) NSString *cityCode;
-@property (nonatomic, assign) BOOL isLive;
-@property (nonatomic, strong) AWEAwemeModel *currentAweme;
-@property (nonatomic, copy) NSString *descriptionString;
-@end
-
 @interface AWEPlayInteractionTimestampElement : UIView
 @property (nonatomic, strong) AWEAwemeModel *model;
 @end
@@ -152,23 +225,36 @@
 - (void)closeWithAnimated:(BOOL)animated;
 @end
 
-@interface AWELongPressPanelViewGroupModel : NSObject
-@property (nonatomic, assign) NSInteger groupType;
-@property (nonatomic, strong) NSArray *groupArr;
+@interface AWESettingSectionModel : NSObject
+@property (nonatomic, copy) NSString *sectionHeaderTitle;
+@property (nonatomic, assign) CGFloat sectionHeaderHeight;
+@property (nonatomic, assign) NSInteger type;
+@property (nonatomic, strong) NSArray *itemArray;
 @end
 
-@interface AWELongPressPanelBaseViewModel : NSObject
-@property (nonatomic, strong) AWEAwemeModel *awemeModel;
-@property (nonatomic, assign) NSInteger actionType;
-- (void)setDuxIconName:(NSString *)iconName;
-- (void)setDescribeString:(NSString *)descString;
-- (void)setAction:(void (^)(void))action;
+@interface AWESettingItemModel : NSObject
+@property (nonatomic, copy) NSString *identifier;
+@property (nonatomic, copy) NSString *title;
+@property (nonatomic, copy) NSString *detail;
+@property (nonatomic, assign) NSInteger type;
+@property (nonatomic, copy) NSString *iconImageName;
+@property (nonatomic, assign) NSInteger cellType;
+@property (nonatomic, assign) NSInteger colorStyle;
+@property (nonatomic, assign) BOOL isEnable;
+@property (nonatomic, copy) void (^cellTappedBlock)(void);
 @end
 
-@interface AWELongPressPanelManager : NSObject
-+ (instancetype)shareInstance;
-- (void)dismissWithAnimation:(BOOL)animated completion:(void (^)(void))completion;
+@interface AWESettingsViewModel : NSObject
+@property (nonatomic, weak) UIViewController *controllerDelegate;
+@property (nonatomic, copy) NSString *traceEnterFrom;
+@end
+
+@interface DYYYSettingViewController : UIViewController
 @end
 
 @interface AWEElementStackView : UIView
+@property (nonatomic, copy) NSString *accessibilityLabel;
+@property (nonatomic, assign) CGRect frame;
+@property (nonatomic, strong) NSArray *subviews;
+@property (nonatomic, assign) CGAffineTransform transform;
 @end
