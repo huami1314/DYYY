@@ -222,7 +222,10 @@ void downloadAllImages(NSMutableArray *imageURLs);
 
 @interface AWELongPressPanelTableViewController : UIViewController
 @property (nonatomic, strong) AWEAwemeModel *awemeModel;
-- (void)closeWithAnimated:(BOOL)animated;
+@end
+
+@interface AWEModernLongPressPanelTableViewController : UIViewController
+@property (nonatomic, strong) AWEAwemeModel *awemeModel;
 @end
 
 @interface AWESettingSectionModel : NSObject
