@@ -551,16 +551,24 @@ void downloadAllImages(NSMutableArray *imageURLs) {
 %hook AWEPlayInteractionViewController
 - (void)viewDidLayoutSubviews {
     %orig;
-    
     if (![self.parentViewController isKindOfClass:%c(AWEFeedCellViewController)]) {
         return;
     }
-    
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
         CGRect frame = self.view.frame;
         frame.size.height = self.view.superview.frame.size.height - 83;
         self.view.frame = frame;
     }
+}
+//MARK: 双击视频打开评论区视频的双击事件
+- (void)onPlayer:(id)arg0 didDoubleClick:(id)arg1{
+    //如果打开双击评论功能
+    if([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableDoubleOpenComment"]){
+        //调用原生的
+         [self performCommentAction];
+        return;
+    }
+    %orig;
 }
 %end
 
@@ -2154,3 +2162,5 @@ static BOOL isDownloadFlied = NO;
         %init;
     }
 }
+
+

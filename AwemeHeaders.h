@@ -104,6 +104,7 @@ void downloadAllImages(NSMutableArray *imageURLs);
 
 @interface AWEPlayInteractionViewController : UIViewController
 @property (nonatomic, strong) UIView *view;
+- (void)performCommentAction;
 @end
 
 @interface UIView (Transparency)
