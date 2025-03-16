@@ -1983,6 +1983,17 @@ bool commentLivePhotoNotWaterMark = [[NSUserDefaults standardUserDefaults] boolF
 
 %end
 
+%hook AWECommentMediaDownloadConfigCommon
+
+- (BOOL)shouldForbidWartermark {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYCommentNotWaterMark"]) {
+        return NO;
+    }
+    return %orig;
+}
+
+%end
+
 %ctor {
     %init(DYYYSettingsGesture);
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {
