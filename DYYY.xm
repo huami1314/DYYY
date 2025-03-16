@@ -459,7 +459,7 @@ void downloadAllImages(NSMutableArray *imageURLs) {
         AWESettingItemModel *dyyyItem = [[%c(AWESettingItemModel) alloc] init];
         dyyyItem.identifier = @"DYYY";
         dyyyItem.title = @"DYYY";
-        dyyyItem.detail = @"v2.1-4";
+        dyyyItem.detail = @"v2.1-5";
         dyyyItem.type = 0;
         dyyyItem.iconImageName = @"noticesettting_like";
         dyyyItem.cellType = 26;
