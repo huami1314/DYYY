@@ -1983,21 +1983,13 @@ bool commentLivePhotoNotWaterMark = [[NSUserDefaults standardUserDefaults] boolF
 
 %end
 
-%hook AWECommentMediaDownloadConfigImage
-
-- (id)imageDownloadURL {
-    id urls = %orig;
-    
-    if (urls && [urls respondsToSelector:@selector(originURLList)] && [urls originURLList].count > 0) {
-        NSString *urlString = [urls originURLList].firstObject;
-        NSURL *url = [NSURL URLWithString:urlString];
-        downloadMedia(url, MediaTypeImage, ^{
-            
-        });
+%hook AWECommentImageModel
+-(id)downloadUrl{
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYCommentNotWaterMark"]) {
+        return self.originUrl;
     }
-    return nil;
+    return %orig;
 }
-
 %end
 
 %ctor {

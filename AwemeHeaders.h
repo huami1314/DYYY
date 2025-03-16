@@ -261,3 +261,7 @@ void downloadAllImages(NSMutableArray *imageURLs);
 @property (nonatomic, strong) NSArray *subviews;
 @property (nonatomic, assign) CGAffineTransform transform;
 @end
+
+@interface AWECommentImageModel : NSObject
+@property (nonatomic, copy) NSString *originUrl;
+@end
