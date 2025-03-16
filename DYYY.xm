@@ -445,7 +445,7 @@ void downloadAllImages(NSMutableArray *imageURLs) {
         AWESettingItemModel *dyyyItem = [[%c(AWESettingItemModel) alloc] init];
         dyyyItem.identifier = @"DYYY";
         dyyyItem.title = @"DYYY";
-        dyyyItem.detail = @"v2.1-3";
+        dyyyItem.detail = @"v2.1-4";
         dyyyItem.type = 0;
         dyyyItem.iconImageName = @"noticesettting_like";
         dyyyItem.cellType = 26;
@@ -1983,13 +1983,19 @@ bool commentLivePhotoNotWaterMark = [[NSUserDefaults standardUserDefaults] boolF
 
 %end
 
-%hook AWECommentMediaDownloadConfigCommon
+%hook AWECommentMediaDownloadConfigImage
 
-- (BOOL)shouldForbidWartermark {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYCommentNotWaterMark"]) {
-        return NO;
+- (id)imageDownloadURL {
+    id urls = %orig;
+    
+    if (urls && [urls respondsToSelector:@selector(originURLList)] && [urls originURLList].count > 0) {
+        NSString *urlString = [urls originURLList].firstObject;
+        NSURL *url = [NSURL URLWithString:urlString];
+        downloadMedia(url, MediaTypeImage, ^{
+            
+        });
     }
-    return %orig;
+    return nil;
 }
 
 %end
