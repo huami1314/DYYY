@@ -33,6 +33,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 
 @interface AWEAwemeModel : NSObject
 @property (nonatomic, assign,readwrite) CGFloat videoDuration;
+@property (nonatomic, assign,readwrite) CGFloat videoDuration;
 @property (nonatomic, strong) AWEVideoModel *video;
 @property (nonatomic, strong) AWEMusicModel *music;
 @property (nonatomic, strong) NSArray<AWEImageAlbumImageModel *> *albumImages;
@@ -324,4 +325,13 @@ void downloadAllImages(NSMutableArray *imageURLs);
 @interface AWEHPTopTabItemModel : NSObject
 @property (nonatomic, copy) NSString *channelID;
 @property (nonatomic, copy) NSString *channelTitle;
+@end
+
+
+
+
+@interface AWEFeedProgressSlider : UIView
+@property (nonatomic, strong) UIView *leftLabelUI;
+@property (nonatomic, strong) UIView *rightLabelUI;
+@property (nonatomic) AWEPlayInteractionProgressController * progressSliderDelegate;
 @end
