@@ -6,7 +6,8 @@
 typedef NS_ENUM(NSInteger, MediaType) {
     MediaTypeVideo,
     MediaTypeImage,
-    MediaTypeAudio
+    MediaTypeAudio,
+    MediaTypeHeic
 };
 
 @interface URLModel : NSObject
@@ -264,4 +265,34 @@ void downloadAllImages(NSMutableArray *imageURLs);
 
 @interface AWECommentImageModel : NSObject
 @property (nonatomic, copy) NSString *originUrl;
+@end
+
+@class AWECommentModel;
+@class AWECommentLongPressPanelParam;
+@class AWEIMStickerModel;
+@class AWEURLModel;
+
+@interface AWECommentLongPressPanelContext : NSObject
+- (AWECommentModel *)selectdComment;
+- (AWECommentLongPressPanelParam *)params;
+@end
+
+@interface AWECommentLongPressPanelParam : NSObject
+- (AWECommentModel *)selectdComment;
+@end
+
+@interface AWECommentModel : NSObject
+- (AWEIMStickerModel *)sticker;
+@end
+
+@interface AWEIMStickerModel : NSObject
+- (AWEURLModel *)staticURLModel;
+@end
+
+@interface AWEURLModel : NSObject
+- (NSArray *)originURLList;
+@end
+
+@interface _TtC33AWECommentLongPressPanelSwiftImpl37CommentLongPressPanelSaveImageElement : NSObject
+- (AWECommentLongPressPanelContext *)commentPageContext;
 @end

@@ -104,6 +104,8 @@ void saveMedia(NSURL *mediaURL, MediaType mediaType, void (^completion)(void)) {
             [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
                 if (mediaType == MediaTypeVideo) {
                     [PHAssetChangeRequest creationRequestForAssetFromVideoAtFileURL:mediaURL];
+                } else if (mediaType == MediaTypeHeic) {
+                    [PHAssetChangeRequest creationRequestForAssetFromImageAtFileURL:mediaURL];
                 } else {
                     UIImage *image = [UIImage imageWithContentsOfFile:mediaURL.path];
                     if (image) {
@@ -170,6 +172,9 @@ void downloadMedia(NSURL *url, MediaType mediaType, void (^completion)(void)) {
                             break;
                         case MediaTypeAudio:
                             fileName = [fileName stringByAppendingPathExtension:@"mp3"];
+                            break;
+                        case MediaTypeHeic:
+                            fileName = [fileName stringByAppendingPathExtension:@"heic"];
                             break;
                     }
                 }
@@ -1989,6 +1994,65 @@ bool commentLivePhotoNotWaterMark = [[NSUserDefaults standardUserDefaults] boolF
         return self.originUrl;
     }
     return %orig;
+}
+%end
+
+%hook _TtC33AWECommentLongPressPanelSwiftImpl37CommentLongPressPanelSaveImageElement
+
+static BOOL isDownloadFlied = NO;
+
+-(BOOL)elementShouldShow{
+    BOOL DYYYFourceDownloadEmotion = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYFourceDownloadEmotion"];
+    if(DYYYFourceDownloadEmotion){
+        AWECommentLongPressPanelContext *commentPageContext = [self commentPageContext];
+        AWECommentModel *selectdComment = [commentPageContext selectdComment];
+        if(!selectdComment){
+            AWECommentLongPressPanelParam *params = [commentPageContext params];
+            selectdComment = [params selectdComment];
+        }
+        AWEIMStickerModel *sticker = [selectdComment sticker];
+        if(sticker){
+            AWEURLModel *staticURLModel = [sticker staticURLModel];
+            NSArray *originURLList = [staticURLModel originURLList];
+            if (originURLList.count > 0) {
+                return YES;
+            }
+        }
+    }
+    return %orig;
+}
+
+-(void)elementTapped{
+    BOOL DYYYFourceDownloadEmotion = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYFourceDownloadEmotion"];
+    if(DYYYFourceDownloadEmotion){
+        AWECommentLongPressPanelContext *commentPageContext = [self commentPageContext];
+        AWECommentModel *selectdComment = [commentPageContext selectdComment];
+        if(!selectdComment){
+            AWECommentLongPressPanelParam *params = [commentPageContext params];
+            selectdComment = [params selectdComment];
+        }
+        AWEIMStickerModel *sticker = [selectdComment sticker];
+        if(sticker){
+            AWEURLModel *staticURLModel = [sticker staticURLModel];
+            NSArray *originURLList = [staticURLModel originURLList];
+            if (originURLList.count > 0) {
+                NSString *urlString = @"";
+                if(isDownloadFlied){
+                    urlString = originURLList[originURLList.count-1];
+                    isDownloadFlied = NO;
+                }else{
+                    urlString = originURLList[0];
+                }
+
+                NSURL *heifURL = [NSURL URLWithString:urlString];
+                downloadMedia(heifURL, MediaTypeHeic, ^{
+                    showToast(@"表情包已保存到相册");
+                    });
+                return;
+            }
+        }
+    }
+    %orig;
 }
 %end
 
