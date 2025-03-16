@@ -32,6 +32,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 @interface AWEAwemeModel : NSObject
+@property (nonatomic, assign,readwrite) CGFloat videoDuration;
 @property (nonatomic, strong) AWEVideoModel *video;
 @property (nonatomic, strong) AWEMusicModel *music;
 @property (nonatomic, strong) NSArray<AWEImageAlbumImageModel *> *albumImages;
@@ -150,8 +151,15 @@ void downloadAllImages(NSMutableArray *imageURLs);
 
 @end
 
-@interface AWEPlayInteractionProgressController : UIView
+@interface AWEPlayInteractionNewBaseController : UIView
+@property (retain, nonatomic) AWEAwemeModel * model;
+@end
+
+@interface AWEPlayInteractionProgressController : AWEPlayInteractionNewBaseController
 - (UIViewController *)findViewController:(UIViewController *)vc ofClass:(Class)targetClass;
+@property (retain, nonatomic) id progressSlider;
+- (NSString *)formatTimeFromSeconds:(CGFloat)seconds;
+- (NSString *)convertSecondsToTimeString:(NSInteger)totalSeconds;
 @end
 
 @interface AWEAdAvatarView : UIView
@@ -295,4 +303,13 @@ void downloadAllImages(NSMutableArray *imageURLs);
 
 @interface _TtC33AWECommentLongPressPanelSwiftImpl37CommentLongPressPanelSaveImageElement : NSObject
 - (AWECommentLongPressPanelContext *)commentPageContext;
+@end
+
+
+
+
+@interface AWEFeedProgressSlider : UIView
+@property (nonatomic, strong) UIView *leftLabelUI;
+@property (nonatomic, strong) UIView *rightLabelUI;
+@property (nonatomic) AWEPlayInteractionProgressController * progressSliderDelegate;
 @end
