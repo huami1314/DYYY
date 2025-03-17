@@ -12,7 +12,7 @@
 
 static UIWindow * getActiveWindow(void) {
     if (@available(iOS 15.0, *)) {
-        for (UIScene *scene in [UIApplication sharedApplication].connectedScenes) {
+        for (UIScene *scene in [UIApplication sharedApplication].connectedScenes){
             if ([scene isKindOfClass:[UIWindowScene class]] && scene.activationState == UISceneActivationStateForegroundActive) {
                 for (UIWindow *w in ((UIWindowScene *)scene).windows) {
                     if (w.isKeyWindow) return w;
