@@ -633,6 +633,11 @@ void downloadAllImages(NSMutableArray *imageURLs) {
 %hook UIView
 
 - (void)setFrame:(CGRect)frame {
+
+    if ([self isKindOfClass:%c(AWEIMSkylightListView)] || [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenAvatarList"]) {
+        frame = CGRectZero;
+    }
+
     if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"] && ![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
         %orig;
         return;
@@ -839,6 +844,9 @@ void downloadAllImages(NSMutableArray *imageURLs) {
 
 - (void)layoutSubviews {
     %orig;
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenLeftSideBar"] && [self.accessibilityLabel isEqualToString:@"侧边栏"]) {
+        self.hidden = YES;
+    }
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenSidebarDot"]) {
         for (UIView *subview in [self subviews]) {
             if ([subview isKindOfClass:NSClassFromString(@"DUXBadge")]) {
@@ -1527,45 +1535,6 @@ void downloadAllImages(NSMutableArray *imageURLs) {
 
 %end
 
-%hook AWEUserWorkCollectionViewComponentCell
-
-- (void)layoutSubviews {
-    %orig;
-
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMyPage"]) {
-        [self removeFromSuperview];
-        return;
-    }
-}
-
-%end
-
-%hook AWEFeedRefreshFooter
-
-- (void)layoutSubviews {
-    %orig;
-
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMyPage"]) {
-        [self removeFromSuperview];
-        return;
-    }
-}
-
-%end
-
-%hook AWERLSegmentView
-
-- (void)layoutSubviews {
-    %orig;
-
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMyPage"]) {
-        [self removeFromSuperview];
-        return;
-    }
-}
-
-%end
-
 %hook AWEFeedTemplateAnchorView
 
 - (void)layoutSubviews {
@@ -2216,5 +2185,3 @@ static BOOL isDownloadFlied = NO;
         %init;
     }
 }
-
-
