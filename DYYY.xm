@@ -1400,23 +1400,51 @@ void downloadAllImages(NSMutableArray *imageURLs) {
 
 %end
 
-%hook AWEHPTopTabItemModel
+%hook AWEFeedChannelManager
 
-- (void)setChannelID:(NSString *)channelID {
+- (void)reloadChannelWithChannelModels:(id)arg1 currentChannelIDList:(id)arg2 reloadType:(id)arg3 selectedChannelID:(id)arg4 {
+    NSArray *channelModels = arg1;
+    NSMutableArray *newChannelModels = [NSMutableArray array];
+    NSArray *currentChannelIDList = arg2;
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-
-    if (([channelID isEqualToString:@"homepage_hot_container"] && [defaults boolForKey:@"DYYYHideHotContainer"]) ||
-        ([channelID isEqualToString:@"homepage_follow"] && [defaults boolForKey:@"DYYYHideFollow"]) ||
-        ([channelID isEqualToString:@"homepage_mediumvideo"] && [defaults boolForKey:@"DYYYHideMediumVideo"]) ||
-        ([channelID isEqualToString:@"homepage_mall"] && [defaults boolForKey:@"DYYYHideMall"]) ||
-        ([channelID isEqualToString:@"homepage_nearby"] && [defaults boolForKey:@"DYYYHideNearby"]) ||
-        ([channelID isEqualToString:@"homepage_groupon"] && [defaults boolForKey:@"DYYYHideGroupon"]) ||
-        ([channelID isEqualToString:@"homepage_tablive"] && [defaults boolForKey:@"DYYYHideTabLive"]) ||
-        ([channelID isEqualToString:@"homepage_pad_hot"] && [defaults boolForKey:@"DYYYHidePadHot"]) ||
-        ([channelID isEqualToString:@"homepage_hangout"] && [defaults boolForKey:@"DYYYHideHangout"])) {
-        return;
+    
+    NSMutableArray *newCurrentChannelIDList = [NSMutableArray arrayWithArray:currentChannelIDList];
+    
+    for (AWEHPTopTabItemModel *tabItemModel in channelModels) {
+        NSString *channelID = tabItemModel.channelID;
+        
+        if ([channelID isEqualToString:@"homepage_hot_container"]) {
+            [newChannelModels addObject:tabItemModel];
+            continue;
+        }
+        
+        BOOL isHideChannel = NO;
+        if ([channelID isEqualToString:@"homepage_follow"]) {
+            isHideChannel = [defaults boolForKey:@"DYYYHideFollow"];
+        } else if ([channelID isEqualToString:@"homepage_mediumvideo"]) {
+            isHideChannel = [defaults boolForKey:@"DYYYHideMediumVideo"];
+        } else if ([channelID isEqualToString:@"homepage_mall"]) {
+            isHideChannel = [defaults boolForKey:@"DYYYHideMall"];
+        } else if ([channelID isEqualToString:@"homepage_nearby"]) {
+            isHideChannel = [defaults boolForKey:@"DYYYHideNearby"];
+        } else if ([channelID isEqualToString:@"homepage_groupon"]) {
+            isHideChannel = [defaults boolForKey:@"DYYYHideGroupon"];
+        } else if ([channelID isEqualToString:@"homepage_tablive"]) {
+            isHideChannel = [defaults boolForKey:@"DYYYHideTabLive"];
+        } else if ([channelID isEqualToString:@"homepage_pad_hot"]) {
+            isHideChannel = [defaults boolForKey:@"DYYYHidePadHot"];
+        } else if ([channelID isEqualToString:@"homepage_hangout"]) {
+            isHideChannel = [defaults boolForKey:@"DYYYHideHangout"];
+        }
+        
+        if (!isHideChannel) {
+            [newChannelModels addObject:tabItemModel];
+        } else {
+            [newCurrentChannelIDList removeObject:channelID];
+        }
     }
-    %orig;
+    
+    %orig(newChannelModels, newCurrentChannelIDList, arg3, arg4);
 }
 
 %end

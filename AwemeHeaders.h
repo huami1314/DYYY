@@ -306,11 +306,22 @@ void downloadAllImages(NSMutableArray *imageURLs);
 - (AWECommentLongPressPanelContext *)commentPageContext;
 @end
 
-
-
-
 @interface AWEFeedProgressSlider : UIView
 @property (nonatomic, strong) UIView *leftLabelUI;
 @property (nonatomic, strong) UIView *rightLabelUI;
 @property (nonatomic) AWEPlayInteractionProgressController * progressSliderDelegate;
+@end
+
+@interface AWEFeedChannelObject : NSObject
+@property (nonatomic, copy) NSString *channelID;
+@property (nonatomic, copy) NSString *channelTitle;
+@end
+
+@interface AWEFeedChannelManager : NSObject
+- (AWEFeedChannelObject *)getChannelWithChannelID:(NSString *)channelID;
+@end
+
+@interface AWEHPTopTabItemModel : NSObject
+@property (nonatomic, copy) NSString *channelID;
+@property (nonatomic, copy) NSString *channelTitle;
 @end
