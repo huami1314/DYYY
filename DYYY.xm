@@ -634,7 +634,7 @@ void downloadAllImages(NSMutableArray *imageURLs) {
 
 - (void)setFrame:(CGRect)frame {
 
-    if ([self isKindOfClass:%c(AWEIMSkylightListView)] || [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenAvatarList"]) {
+    if ([self isKindOfClass:%c(AWEIMSkylightListView)] && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenAvatarList"]) {
         frame = CGRectZero;
     }
 
