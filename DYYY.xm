@@ -2036,9 +2036,13 @@ static CGFloat currentScale = 1.0;
         @"iconHomeShareRight": @"share.png"
     };
     
+    if ([nameString containsString:@"_comment"]) {
+        customFileName = @"comment.png";
+    }
+
     NSString *customFileName = nil;
     for (NSString *prefix in iconMapping.allKeys) {
-        if (([nameString hasPrefix:prefix]) || ([nameString containsString:@"_comment"])) {
+        if ([nameString hasPrefix:prefix]) {
             customFileName = iconMapping[prefix];
             break;
         }
