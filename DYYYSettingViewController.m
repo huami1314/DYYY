@@ -116,8 +116,8 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
 - (void)setupSettingItems {
     self.settingSections = @[
         @[
-            [DYYYSettingItem itemWithTitle:@"开启弹幕改色" key:@"DYYYEnableDanmuColor" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"修改弹幕颜色" key:@"DYYYdanmuColor" type:DYYYSettingItemTypeTextField placeholder:@"十六进制"],
+            [DYYYSettingItem itemWithTitle:@"启用弹幕改色" key:@"DYYYEnableDanmuColor" type:DYYYSettingItemTypeSwitch],
+            [DYYYSettingItem itemWithTitle:@"自定弹幕颜色" key:@"DYYYdanmuColor" type:DYYYSettingItemTypeTextField placeholder:@"十六进制"],
             [DYYYSettingItem itemWithTitle:@"启用深色键盘" key:@"DYYYisDarkKeyBoard" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"显示视频进度" key:@"DYYYisShowScheduleDisplay" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"启用自动播放" key:@"DYYYisEnableAutoPlay" type:DYYYSettingItemTypeSwitch],
@@ -245,7 +245,7 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
 
 - (void)showAgreementAlert {
     UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"用户协议"
-                                                                             message:@"本插件为开源项目\n仅供学习交流用途\n如有侵权请联系, GitHub仓库：huami1314/DYYY\n请遵守当地法律法规, 逆向工程仅为学习目的\n盗用源码进行商业用途/发布但未标记开源项目必究\n详细请参考项目内MIT许可证信息\n\n请输入\"我已阅读并同意继续使用\"以继续使用"
+                                                                             message:@"本插件为开源项目\n仅供学习交流用途\n如有侵权请联系, GitHub 仓库：huami1314/DYYY\n请遵守当地法律法规, 逆向工程仅为学习目的\n盗用源码进行商业用途/发布但未标记开源项目必究\n详情请参阅项目内 MIT 许可证\n\n请输入\"我已阅读并同意继续使用\"以继续使用"
                                                                       preferredStyle:UIAlertControllerStyleAlert];
     
     [alertController addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) {
