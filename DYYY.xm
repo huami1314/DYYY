@@ -105,7 +105,16 @@ void saveMedia(NSURL *mediaURL, MediaType mediaType, void (^completion)(void)) {
                 if (mediaType == MediaTypeVideo) {
                     [PHAssetChangeRequest creationRequestForAssetFromVideoAtFileURL:mediaURL];
                 } else if (mediaType == MediaTypeHeic) {
-                    [PHAssetChangeRequest creationRequestForAssetFromImageAtFileURL:mediaURL];
+                     //获取表情包的数据
+                    NSData *gifData = [NSData dataWithContentsOfURL:mediaURL];
+                    //创建相册资源
+                    PHAssetCreationRequest *request = [PHAssetCreationRequest creationRequestForAsset];
+                    //实例相册类资源参数
+                    PHAssetResourceCreationOptions *options = [[PHAssetResourceCreationOptions alloc] init];
+                    //定义表情包参数
+                    options.uniformTypeIdentifier = @"com.compuserve.gif"; 
+                    //保存表情包图片/gif动图
+                    [request addResourceWithType:PHAssetResourceTypePhoto data:gifData options:options]; 
                 } else {
                     UIImage *image = [UIImage imageWithContentsOfFile:mediaURL.path];
                     if (image) {
@@ -2155,6 +2164,23 @@ static BOOL isDownloadFlied = NO;
     %orig;
 }
 %end
+%hook AWEConcernSkylightCapsuleView
+- (void)setHidden:(BOOL)hidden {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidenCapsuleView"]) {
+        hidden = YES;
+    }
+
+    %orig(hidden);
+}
+%end
+
+// 去广告功能
+%hook AwemeAdManager
+- (void)showAd {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYNoAds"]) return;
+    %orig;
+}
+%end
 
 %ctor {
     %init(DYYYSettingsGesture);
@@ -2162,5 +2188,3 @@ static BOOL isDownloadFlied = NO;
         %init;
     }
 }
-
-
