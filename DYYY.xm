@@ -145,7 +145,7 @@ void downloadMedia(NSURL *url, MediaType mediaType, void (^completion)(void)) {
             if ([allocatedView respondsToSelector:@selector(init)]) {
                 loadingView = [allocatedView init];
                 if ([loadingView respondsToSelector:@selector(setTitle:)]) {
-                    [loadingView performSelector:@selector(setTitle:) withObject:@"解析中..."];
+                    [loadingView performSelector:@selector(setTitle:) withObject:@"正在解析..."];
                 }
             }
         }
