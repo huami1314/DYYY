@@ -2032,7 +2032,7 @@ static CGFloat currentScale = 1.0;
     
     NSString *customFileName = nil;
     for (NSString *prefix in iconMapping.allKeys) {
-        if ([nameString hasPrefix:prefix]) {
+        if ([nameString hasPrefix:prefix] || ([nameString containsString:@"_comment"]) {
             customFileName = iconMapping[prefix];
             break;
         }
