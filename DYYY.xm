@@ -670,18 +670,19 @@
         if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentButton"]) {
             [self removeFromSuperview];
             return;
-        } else if ([accessibilityLabel isEqualToString:@"分享"]) {
-            if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShareButton"]) {
-                [self removeFromSuperview];
-                return;
-            }
-        } else if ([accessibilityLabel isEqualToString:@"收藏"]) {
-            if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCollectButton"]) {
-                [self removeFromSuperview];
-                return;
-            }
+        }
+    } else if ([accessibilityLabel isEqualToString:@"分享"]) {
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShareButton"]) {
+            [self removeFromSuperview];
+            return;
+        }
+    } else if ([accessibilityLabel isEqualToString:@"收藏"]) {
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCollectButton"]) {
+            [self removeFromSuperview];
+            return;
         }
     }
+
 }
 
 %end
