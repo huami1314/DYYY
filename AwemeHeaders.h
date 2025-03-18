@@ -70,9 +70,6 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (void)dismissWithAnimation:(BOOL)animated completion:(void (^)(void))completion;
 @end
 
-void downloadMedia(NSURL *url, MediaType mediaType, void (^completion)(void));
-void downloadAllImages(NSMutableArray *imageURLs);
-
 @interface AWENormalModeTabBarGeneralButton : UIButton
 @end
 
@@ -293,6 +290,7 @@ void downloadAllImages(NSMutableArray *imageURLs);
 
 @interface AWECommentModel : NSObject
 - (AWEIMStickerModel *)sticker;
+- (NSString *)content;
 @end
 
 @interface AWEIMStickerModel : NSObject
@@ -304,6 +302,10 @@ void downloadAllImages(NSMutableArray *imageURLs);
 @end
 
 @interface _TtC33AWECommentLongPressPanelSwiftImpl37CommentLongPressPanelSaveImageElement : NSObject
+- (AWECommentLongPressPanelContext *)commentPageContext;
+@end
+
+@interface _TtC33AWECommentLongPressPanelSwiftImpl32CommentLongPressPanelCopyElement : NSObject
 - (AWECommentLongPressPanelContext *)commentPageContext;
 @end
 
