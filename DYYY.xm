@@ -819,8 +819,21 @@ void downloadAllImages(NSMutableArray *imageURLs) {
 
 %hook AWEAwemeModel
 
+- (id)initWithDictionary:(id)arg1 error:(id *)arg2 {
+    id orig = %orig;
+    BOOL noAds = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYNoAds"];
+    return (noAds && self.isAds) ? nil : orig;
+}
+
+- (id)init {
+    id orig = %orig;
+    BOOL noAds = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYNoAds"];
+    return (noAds && self.isAds) ? nil : orig;
+}
+
 - (void)setIsAds:(BOOL)isAds {
-    %orig(NO);
+    BOOL noAds = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYNoAds"];
+    %orig(noAds ? NO : isAds); 
 }
 
 %end
