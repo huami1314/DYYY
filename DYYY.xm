@@ -1291,31 +1291,31 @@ void downloadAllImages(NSMutableArray *imageURLs) {
         //左时间的视图不存在就创建 50 15 大小的视图文本
         if (!self.leftLabelUI) {
             self.leftLabelUI = [[UILabel alloc] init];
-            self.leftLabelUI.frame = CGRectMake(3, -12, 50, 15);
+            self.leftLabelUI.frame = CGRectMake(0, -12, 50, 15);
             self.leftLabelUI.backgroundColor = [UIColor clearColor];
             [(UILabel *)self.leftLabelUI setText:@"00:00"];
             [(UILabel *)self.leftLabelUI setTextColor:[UIColor whiteColor]];
-            [(UILabel *)self.leftLabelUI setFont:[UIFont systemFontOfSize:10]];
+            [(UILabel *)self.leftLabelUI setFont:[UIFont systemFontOfSize:8]];
             [self addSubview:self.leftLabelUI];
         }else{
             [(UILabel *)self.leftLabelUI setText:@"00:00"];
             [(UILabel *)self.leftLabelUI setTextColor:[UIColor whiteColor]];
-            [(UILabel *)self.leftLabelUI setFont:[UIFont systemFontOfSize:10]];
+            [(UILabel *)self.leftLabelUI setFont:[UIFont systemFontOfSize:8]];
         }
         
         // 如果rightLabelUI为空,创建右侧视图
         if (!self.rightLabelUI) {
             self.rightLabelUI = [[UILabel alloc] init];
-            self.rightLabelUI.frame = CGRectMake(self.frame.size.width - 30, -12, 50, 15);
+            self.rightLabelUI.frame = CGRectMake(self.frame.size.width - 25, -12, 50, 15);
             self.rightLabelUI.backgroundColor = [UIColor clearColor];
             [(UILabel *)self.rightLabelUI setText:duration];
             [(UILabel *)self.rightLabelUI setTextColor:[UIColor whiteColor]];
-            [(UILabel *)self.rightLabelUI setFont:[UIFont systemFontOfSize:10]];
+            [(UILabel *)self.rightLabelUI setFont:[UIFont systemFontOfSize:8]];
             [self addSubview:self.rightLabelUI];
         }else{
             [(UILabel *)self.rightLabelUI setText:duration];
             [(UILabel *)self.rightLabelUI setTextColor:[UIColor whiteColor]];
-            [(UILabel *)self.rightLabelUI setFont:[UIFont systemFontOfSize:10]];
+            [(UILabel *)self.rightLabelUI setFont:[UIFont systemFontOfSize:8]];
         }
     }
 }
