@@ -42,6 +42,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @property (nonatomic, strong) NSString *ipAttribution;
 @property (nonatomic, strong) id currentAweme;
 @property (nonatomic, copy) NSString *descriptionString;
+@property (nonatomic, assign) BOOL isAds;
 @property (nonatomic, assign) BOOL isLive;
 - (BOOL)isLive;
 @end
