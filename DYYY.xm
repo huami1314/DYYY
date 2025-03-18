@@ -1448,7 +1448,7 @@ void downloadAllImages(NSMutableArray *imageURLs) {
         } else if ([channelID isEqualToString:@"homepage_hangout"]) {
             isHideChannel = [defaults boolForKey:@"DYYYHideHangout"];
         } else if ([channelID isEqualToString:@"homepage_familiar"]) {
-            isHideChannel = [defaults boolForKey:@"DYYYHideFri"];
+            isHideChannel = [defaults boolForKey:@"DYYYHideFriend"];
         }
         
         if (!isHideChannel) {
