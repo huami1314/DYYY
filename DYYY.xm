@@ -1412,19 +1412,6 @@ void downloadAllImages(NSMutableArray *imageURLs) {
 }
 %end
 
-%hook AWEFeedIPhoneAutoPlayManager
-
-- (BOOL)isAutoPlayOpen {
-    BOOL r = %orig;
-    
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableAutoPlay"]) {
-        return YES;
-    }
-    return r;
-}
-
-%end
-
 %hook AWEFeedChannelManager
 
 - (void)reloadChannelWithChannelModels:(id)arg1 currentChannelIDList:(id)arg2 reloadType:(id)arg3 selectedChannelID:(id)arg4 {
@@ -1460,6 +1447,8 @@ void downloadAllImages(NSMutableArray *imageURLs) {
             isHideChannel = [defaults boolForKey:@"DYYYHidePadHot"];
         } else if ([channelID isEqualToString:@"homepage_hangout"]) {
             isHideChannel = [defaults boolForKey:@"DYYYHideHangout"];
+        } else if ([channelID isEqualToString:@"homepage_familiar"]) {
+            isHideChannel = [defaults boolForKey:@"DYYYHideFri"];
         }
         
         if (!isHideChannel) {
