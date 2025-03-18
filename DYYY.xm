@@ -833,7 +833,7 @@ void downloadAllImages(NSMutableArray *imageURLs) {
 
 - (void)setIsAds:(BOOL)isAds {
     BOOL noAds = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYNoAds"];
-    %orig(noAds ? NO : isAds); 
+    %orig(noAds ? isAds : NO);
 }
 
 %end
