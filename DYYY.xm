@@ -1175,7 +1175,7 @@
                 }
             }
             if ([label.text isEqualToString:@"商城"]) {
-                if (friendsTitle.length > 0) {
+                if (shopTitle.length > 0) {
                     [label setText:shopTitle];
                     [self setNeedsLayout];
                 }
