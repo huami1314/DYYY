@@ -856,16 +856,20 @@ void downloadAllImages(NSMutableArray *imageURLs) {
 %hook AWELeftSideBarEntranceView
 
 - (void)layoutSubviews {
-    %orig;
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenLeftSideBar"] && [self.accessibilityLabel isEqualToString:@"侧边栏"]) {
-        self.hidden = YES;
-    }
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenSidebarDot"]) {
-        for (UIView *subview in [self subviews]) {
-            if ([subview isKindOfClass:NSClassFromString(@"DUXBadge")]) {
-                subview.hidden = YES;
-            }
+    
+    __block BOOL isInTargetController = NO;
+    UIResponder *currentResponder = self;
+    
+    while ((currentResponder = [currentResponder nextResponder])) {
+        if ([currentResponder isKindOfClass:NSClassFromString(@"AWEUserHomeViewControllerV2")]) {
+            isInTargetController = YES;
+            break;
         }
+    }
+    
+    // 动态设置透明度（非目标控制器时隐藏）
+    if (!isInTargetController&&[[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenLeftSideBar"]) {
+        self.alpha = 0;
     }
 }
 
