@@ -845,7 +845,7 @@ void downloadAllImages(NSMutableArray *imageURLs) {
 - (void)layoutSubviews {
     %orig;
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenLeftSideBar"] && [self.accessibilityLabel isEqualToString:@"侧边栏"]) {
-        self.hidden = YES;
+        self.alpha = 0;
     }
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenSidebarDot"]) {
         for (UIView *subview in [self subviews]) {
