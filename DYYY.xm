@@ -1155,6 +1155,7 @@
     
     NSString *indexTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYIndexTitle"];
     NSString *friendsTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYFriendsTitle"];
+    NSString *shopTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYShopTitle"];
     NSString *msgTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYMsgTitle"];
     NSString *selfTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYSelfTitle"];
     
@@ -1170,6 +1171,12 @@
             if ([label.text isEqualToString:@"朋友"]) {
                 if (friendsTitle.length > 0) {
                     [label setText:friendsTitle];
+                    [self setNeedsLayout];
+                }
+            }
+            if ([label.text isEqualToString:@"商城"]) {
+                if (friendsTitle.length > 0) {
+                    [label setText:shopTitle];
                     [self setNeedsLayout];
                 }
             }
