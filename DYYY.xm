@@ -2183,6 +2183,21 @@ static BOOL isDownloadFlied = NO;
 }
 %end
 
+//隐藏顶栏关注下的提示线
+%hook AWEFeedMultiTabSelectedContainerView
+
+- (void)setHidden:(BOOL)hidden {
+    BOOL forceHide = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidentopbarprompt"];
+    
+    if (forceHide) {
+        %orig(YES); 
+    } else {
+        %orig(hidden); 
+    }
+}
+
+%end
+
 %ctor {
     %init(DYYYSettingsGesture);
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {
