@@ -1147,7 +1147,6 @@
 }
 %end
 
-
 %hook AWENormalModeTabBarTextView
 
 - (void)layoutSubviews {
@@ -1188,7 +1187,7 @@
         }
     }
 }
-%en
+%end
 
 %hook AWEFeedIPhoneAutoPlayManager
  
