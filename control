@@ -1,11 +1,9 @@
-Package: com.huami.dyyy
-Name: DYYY
-Version: 2.1-6
-Description: 仅供学习交流，请在 24 小时内自觉删除。
-Homepage: https://github.com/huami1314/DYYY
-Section: Tweaks
-Depends: firmware (>= 5.0), mobilesubstrate
-Priority: optional
-Maintainer: huami
-Author: huami
+Package: com.duanian.wxhook
+Name:断点助手
+Depends: mobilesubstrate
+Version: 1.0.2
 Architecture: iphoneos-arm
+Description: 安装后在设置内查看插件功能，所有功能均有使用说明
+Maintainer:断点
+Author: 断点
+Section: Tweaks
