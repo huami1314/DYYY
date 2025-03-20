@@ -1517,7 +1517,7 @@
                         [DYYYManager showToast:@"图片已保存到相册"];
                     }];
                 }
-                」
+                
             };
             
             [viewModels addObject:imageViewModel];
@@ -1706,7 +1706,7 @@
                         [DYYYManager showToast:@"图片已保存到相册"];
                     }];
                 }
-            }
+                
                     
                 AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
                 [panelManager dismissWithAnimation:YES completion:nil];
