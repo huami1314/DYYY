@@ -55,6 +55,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @property (nonatomic, copy) NSString *descriptionString;
 @property (nonatomic, assign) BOOL isAds;
 @property (nonatomic, assign) BOOL isLive;
+@property (nonatomic, strong) NSString *shareURL;
 - (BOOL)isLive;
 @end
 
