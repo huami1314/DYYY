@@ -2122,6 +2122,7 @@ static BOOL isDownloadFlied = NO;
     return %orig;
 }
 
+//修改保存表情包方式：
 -(void)elementTapped{
     BOOL DYYYFourceDownloadEmotion = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYFourceDownloadEmotion"];
     if(DYYYFourceDownloadEmotion){
@@ -2133,27 +2134,186 @@ static BOOL isDownloadFlied = NO;
         }
         AWEIMStickerModel *sticker = [selectdComment sticker];
         if(sticker){
-            AWEURLModel *staticURLModel = [sticker staticURLModel];
-            NSArray *originURLList = [staticURLModel originURLList];
+            // 尝试获取动画URL，而不是静态URL
+            AWEURLModel *animatedURLModel = [sticker animatedURLModel];
+            if (!animatedURLModel) {
+                // 如果没有动画URL，回退到静态URL
+                animatedURLModel = [sticker staticURLModel];
+            }
+            
+            NSArray *originURLList = [animatedURLModel originURLList];
             if (originURLList.count > 0) {
                 NSString *urlString = @"";
-                if(isDownloadFlied){
-                    urlString = originURLList[originURLList.count-1];
-                    isDownloadFlied = NO;
-                }else{
-                    urlString = originURLList[0];
+                // 优先选择质量最高的URL (通常是列表中的最后一个)
+                urlString = originURLList[originURLList.count-1];
+                
+                NSURL *stickerURL = [NSURL URLWithString:urlString];
+                
+                // 根据URL扩展名判断媒体类型
+                NSString *fileExtension = [urlString pathExtension].lowercaseString;
+                MediaType mediaType = MediaTypeGif; // 默认为GIF类型
+                
+                if ([fileExtension isEqualToString:@"heic"] || [fileExtension isEqualToString:@"heif"]) {
+                    mediaType = MediaTypeHeic;
+                } else if ([fileExtension isEqualToString:@"mp4"] || [fileExtension isEqualToString:@"mov"]) {
+                    mediaType = MediaTypeVideo;
+                } else if ([fileExtension isEqualToString:@"webp"]) {
+                    mediaType = MediaTypeWebp;
                 }
-
-                NSURL *heifURL = [NSURL URLWithString:urlString];
-                downloadMedia(heifURL, MediaTypeHeic, ^{
+                
+                downloadMedia(stickerURL, mediaType, ^{
                     showToast(@"表情包已保存到相册");
-                    });
+                });
+                return;
+            }
+            
+            // 如果没有动画URL或下载失败，尝试获取SVGA格式的表情包URL
+            NSString *svgaURLString = [sticker svgaURL];
+            if (svgaURLString.length > 0) {
+                NSURL *svgaURL = [NSURL URLWithString:svgaURLString];
+                downloadMedia(svgaURL, MediaTypeSvga, ^{
+                    showToast(@"表情包已保存到相册");
+                });
                 return;
             }
         }
     }
     %orig;
 }
+
+// 扩展媒体类型枚举以支持更多格式
+typedef NS_ENUM(NSInteger, MediaType) {
+    MediaTypeImage = 0,
+    MediaTypeVideo,
+    MediaTypeGif,
+    MediaTypeHeic,
+    MediaTypeWebp,
+    MediaTypeSvga
+};
+
+// 下载媒体文件的函数
+void downloadMedia(NSURL *url, MediaType mediaType, void(^completion)(void)) {
+    if (!url) {
+        showToast(@"无效的下载链接");
+        return;
+    }
+    
+    NSURLSession *session = [NSURLSession sharedSession];
+    NSURLSessionDownloadTask *downloadTask = [session downloadTaskWithURL:url completionHandler:^(NSURL *location, NSURLResponse *response, NSError *error) {
+        if (error) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                showToast([NSString stringWithFormat:@"下载失败: %@", error.localizedDescription]);
+            });
+            return;
+        }
+        
+        NSString *fileName = [response suggestedFilename];
+        if (!fileName) {
+            fileName = [NSString stringWithFormat:@"sticker_%ld.%@", (long)time(NULL), 
+                       mediaType == MediaTypeGif ? @"gif" : 
+                       mediaType == MediaTypeHeic ? @"heic" : 
+                       mediaType == MediaTypeVideo ? @"mp4" : 
+                       mediaType == MediaTypeWebp ? @"webp" : 
+                       mediaType == MediaTypeSvga ? @"svga" : @"jpg"];
+        }
+        
+        NSURL *documentsDirectory = [[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask].firstObject;
+        NSURL *destinationURL = [documentsDirectory URLByAppendingPathComponent:fileName];
+        
+        NSFileManager *fileManager = [NSFileManager defaultManager];
+        [fileManager removeItemAtURL:destinationURL error:nil];
+        
+        NSError *moveError = nil;
+        [fileManager moveItemAtURL:location toURL:destinationURL error:&moveError];
+        
+        if (moveError) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                showToast([NSString stringWithFormat:@"保存失败: %@", moveError.localizedDescription]);
+            });
+            return;
+        }
+        
+        // 保存到相册
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (mediaType == MediaTypeGif || mediaType == MediaTypeWebp || mediaType == MediaTypeSvga) {
+                // 处理特殊格式的动画表情
+                NSData *data = [NSData dataWithContentsOfURL:destinationURL];
+                if (data) {
+                    [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
+                        PHAssetCreationRequest *request = [PHAssetCreationRequest creationRequestForAsset];
+                        [request addResourceWithType:PHAssetResourceTypePhoto data:data options:nil];
+                    } completionHandler:^(BOOL success, NSError * _Nullable error) {
+                        if (success) {
+                            if (completion) {
+                                completion();
+                            }
+                        } else {
+                            showToast(@"保存到相册失败");
+                        }
+                    }];
+                }
+            } else if (mediaType == MediaTypeVideo) {
+                // 处理视频
+                [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
+                    [PHAssetChangeRequest creationRequestForAssetFromVideoAtFileURL:destinationURL];
+                } completionHandler:^(BOOL success, NSError * _Nullable error) {
+                    if (success) {
+                        if (completion) {
+                            completion();
+                        }
+                    } else {
+                        showToast(@"保存到相册失败");
+                    }
+                }];
+            } else {
+                // 处理图片
+                [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
+                    [PHAssetChangeRequest creationRequestForAssetFromImageAtFileURL:destinationURL];
+                } completionHandler:^(BOOL success, NSError * _Nullable error) {
+                    if (success) {
+                        if (completion) {
+                            completion();
+                        }
+                    } else {
+                        showToast(@"保存到相册失败");
+                    }
+                }];
+            }
+        });
+    }];
+    
+    [downloadTask resume];
+}
+
+// 显示提示的函数
+void showToast(NSString *message) {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        UIWindow *window = [UIApplication sharedApplication].keyWindow;
+        UIView *toastView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 200, 50)];
+        toastView.backgroundColor = [UIColor colorWithWhite:0 alpha:0.7];
+        toastView.layer.cornerRadius = 10;
+        toastView.center = window.center;
+        
+        UILabel *label = [[UILabel alloc] initWithFrame:toastView.bounds];
+        label.text = message;
+        label.textColor = [UIColor whiteColor];
+        label.textAlignment = NSTextAlignmentCenter;
+        label.font = [UIFont systemFontOfSize:15];
+        [toastView addSubview:label];
+        
+        [window addSubview:toastView];
+        
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [UIView animateWithDuration:0.3 animations:^{
+                toastView.alpha = 0;
+            } completion:^(BOOL finished) {
+                [toastView removeFromSuperview];
+            }];
+        });
+    });
+}
+
+
 %end
 
 %ctor {
