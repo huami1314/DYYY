@@ -18,7 +18,17 @@ typedef NS_ENUM(NSInteger, MediaType) {
 + (void)showText:(NSString *)text;
 @end
 
+
+@interface AWEURLModel : NSObject
+- (NSArray *)originURLList;
+- (id)URI;
+- (NSURL *)getDYYYSrcURLDownload;
+@end
+
 @interface AWEVideoModel : NSObject
+@property (retain, nonatomic) AWEURLModel *playURL;
+@property (copy, nonatomic) NSArray * manualBitrateModels;
+@property (copy, nonatomic) NSArray * bitrateModels;
 @property (nonatomic, strong) URLModel *h264URL;
 @property (nonatomic, strong) URLModel *coverURL;
 @end
@@ -29,6 +39,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 
 @interface AWEImageAlbumImageModel : NSObject
 @property (nonatomic, strong) NSArray *urlList;
+@property (retain, nonatomic) AWEVideoModel *clipVideo;
 @end
 
 @interface AWEAwemeModel : NSObject
@@ -297,9 +308,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (AWEURLModel *)staticURLModel;
 @end
 
-@interface AWEURLModel : NSObject
-- (NSArray *)originURLList;
-@end
+
 
 @interface _TtC33AWECommentLongPressPanelSwiftImpl37CommentLongPressPanelSaveImageElement : NSObject
 - (AWECommentLongPressPanelContext *)commentPageContext;
