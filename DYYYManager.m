@@ -7,8 +7,18 @@
 #import <MobileCoreServices/MobileCoreServices.h>
 
 // 自定义进度条视图类
-@interface DYYYDownloadProgressView : UIView
+@interface DYYYManager(){
+    AVAssetExportSession *session;
+    AVURLAsset *asset;
+    AVAssetReader *reader;
+    AVAssetWriter *writer;
+    dispatch_queue_t queue;
+    dispatch_group_t group;
+}
+@end
 
+
+@interface DYYYDownloadProgressView : UIView
 @property (nonatomic, strong) UIView *containerView;
 @property (nonatomic, strong) UIView *progressBarBackground;
 @property (nonatomic, strong) UIView *progressBar;
@@ -166,6 +176,7 @@
 - (instancetype)init {
     self = [super init];
     if (self) {
+        _fileLinks = [NSMutableDictionary dictionary];
         _downloadTasks = [NSMutableDictionary dictionary];
         _progressViews = [NSMutableDictionary dictionary];
         _downloadQueue = [[NSOperationQueue alloc] init];
@@ -501,6 +512,50 @@
     });
 }
 
+//保存实况的方法，下载图片和下载视频都用这个
++ (void)downloadLivePhoto:(NSURL *)url mediaType:(MediaType)mediaType completion:(void (^)(void))completion {
+ [self downloadMediaWithProgress:url mediaType:mediaType progress:nil completion:^(BOOL success, NSURL *fileURL) {
+        if (success) {
+            //懒得改代码了，。索性直接复制粘贴下面的下载 调用两次来储存实况，下载图片和下载视频，都在一个方法
+            //移动下在好的文件在沙盒的LivePhoto目录里并且不动他的名称和后缀
+            NSString *livePhotoPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject stringByAppendingPathComponent:@"LivePhoto"];
+            [[NSFileManager defaultManager] createDirectoryAtPath:livePhotoPath withIntermediateDirectories:YES attributes:nil error:nil];
+            NSString *fileName = fileURL.lastPathComponent; 
+            NSString *newFilePath = [livePhotoPath stringByAppendingPathComponent:fileName];
+            [[NSFileManager defaultManager] moveItemAtURL:fileURL toURL:[NSURL fileURLWithPath:newFilePath] error:nil];
+
+            //判断下载文件的后缀名称例如 mp3 mp4
+            NSString *fileExtension = [fileURL.absoluteString.lastPathComponent pathExtension].lowercaseString;
+
+            if ([fileExtension hasPrefix:@"mp4"]) {
+                //如果是 mp4，储存在字典中
+                [[DYYYManager shared].fileLinks setObject:newFilePath forKey:@"video"];
+            } else if ([fileExtension hasPrefix:@"heic"]) {
+                //如果是 heic，储存在字典中
+                [[DYYYManager shared].fileLinks setObject:newFilePath forKey:@"image"];
+            }
+            //判断字典里面有没有实况保存的视频和图片
+            if ([DYYYManager shared].fileLinks[@"video"] && [DYYYManager shared].fileLinks[@"image"]) {
+                //有时候会闪退 写个 try 异常抛出看看
+               @try {
+                //如果两个都存在的话，讲视频和图片保存为实况
+                   [[DYYYManager shared] saveLivePhoto:[DYYYManager shared].fileLinks[@"image"] videoUrl:[DYYYManager shared].fileLinks[@"video"]];
+                   //清空储存防止下一次保存的冲突
+                   [[DYYYManager shared].fileLinks removeAllObjects];
+               } @catch (NSException *exception) {
+                   //如果保存失败删除临时文件
+                   [[NSFileManager defaultManager] removeItemAtPath:[DYYYManager shared].fileLinks[@"image"] error:nil];
+                   [[NSFileManager defaultManager] removeItemAtPath:[DYYYManager shared].fileLinks[@"video"] error:nil];
+                  // [self showToast:[NSString stringWithFormat:@"保存实况照片失败: %@", exception.description]];
+               }
+            }
+        } else {
+            if (completion) {
+                completion();
+            }
+        }
+    }];
+}
 + (void)downloadMedia:(NSURL *)url mediaType:(MediaType)mediaType completion:(void (^)(void))completion {
     [self downloadMediaWithProgress:url mediaType:mediaType progress:nil completion:^(BOOL success, NSURL *fileURL) {
         if (success) {
@@ -984,6 +1039,200 @@
                 completionBlock(NO, nil);
             }
         });
+    }
+}
+
+//MARK: 以下都是创建保存实况的调用方法
+- (void)saveLivePhoto:(NSString *)imageSourcePath videoUrl:(NSString *)videoSourcePath {
+    NSURL *photoURL = [NSURL fileURLWithPath:imageSourcePath];
+    NSURL *videoURL = [NSURL fileURLWithPath:videoSourcePath];
+    BOOL available = [PHAssetCreationRequest supportsAssetResourceTypes:@[@(PHAssetResourceTypePhoto), @(PHAssetResourceTypePairedVideo)]];
+    if (!available) {
+        return;
+    }
+    [PHPhotoLibrary requestAuthorization:^(PHAuthorizationStatus status) {
+        if (status != PHAuthorizationStatusAuthorized) {
+            return;
+        }
+        NSString *identifier = [NSUUID UUID].UUIDString;
+        [self useAssetWriter:photoURL video:videoURL identifier:identifier complete:^(BOOL success, NSString *photoFile, NSString *videoFile, NSError *error) {
+            NSURL *photo = [NSURL fileURLWithPath:photoFile];
+            NSURL *video = [NSURL fileURLWithPath:videoFile];
+            [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
+                PHAssetCreationRequest *request = [PHAssetCreationRequest creationRequestForAsset];
+                [request addResourceWithType:PHAssetResourceTypePhoto fileURL:photo options:nil];
+                [request addResourceWithType:PHAssetResourceTypePairedVideo fileURL:video options:nil];
+            } completionHandler:^(BOOL success, NSError * _Nullable error) {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    if (success) {
+                        [DYYYManager showToast:@"保存实况成功"];
+                        // 删除临时文件
+                        [[NSFileManager defaultManager] removeItemAtPath:imageSourcePath error:nil];
+                        [[NSFileManager defaultManager] removeItemAtPath:videoSourcePath error:nil];
+                        [[NSFileManager defaultManager] removeItemAtPath:photoFile error:nil];
+                        [[NSFileManager defaultManager] removeItemAtPath:videoFile error:nil];
+                    } 
+                });
+            }];
+        }];
+    }];
+}
+- (void)useAssetWriter:(NSURL *)photoURL video:(NSURL *)videoURL identifier:(NSString *)identifier complete:(void (^)(BOOL success, NSString *photoFile, NSString *videoFile, NSError *error))complete {
+    NSString *photoName = [photoURL lastPathComponent];
+    NSString *photoFile = [self filePathFromDoc:photoName];
+    [self addMetadataToPhoto:photoURL outputFile:photoFile identifier:identifier];
+    NSString *videoName = [videoURL lastPathComponent];
+    NSString *videoFile = [self filePathFromDoc:videoName];
+    [self addMetadataToVideo:videoURL outputFile:videoFile identifier:identifier];
+    if (!DYYYManager.shared->group) return;
+    dispatch_group_notify(DYYYManager.shared->group, dispatch_get_main_queue(), ^{
+        [self finishWritingTracksWithPhoto:photoFile video:videoFile complete:complete];
+    });
+}
+- (void)finishWritingTracksWithPhoto:(NSString *)photoFile video:(NSString *)videoFile complete:(void (^)(BOOL success, NSString *photoFile, NSString *videoFile, NSError *error))complete {
+    [DYYYManager.shared->reader cancelReading];
+    [DYYYManager.shared->writer finishWritingWithCompletionHandler:^{
+        if (complete) complete(YES, photoFile, videoFile, nil);
+    }];
+}
+- (void)addMetadataToPhoto:(NSURL *)photoURL outputFile:(NSString *)outputFile identifier:(NSString *)identifier {
+    NSMutableData *data = [NSData dataWithContentsOfURL:photoURL].mutableCopy;
+    UIImage *image = [UIImage imageWithData:data];
+    CGImageRef imageRef = image.CGImage;
+    NSDictionary *imageMetadata = @{(NSString *)kCGImagePropertyMakerAppleDictionary : @{@"17" : identifier}};
+    CGImageDestinationRef dest = CGImageDestinationCreateWithData((CFMutableDataRef)data, kUTTypeJPEG, 1, nil);
+    CGImageDestinationAddImage(dest, imageRef, (CFDictionaryRef)imageMetadata);
+    CGImageDestinationFinalize(dest);
+    [data writeToFile:outputFile atomically:YES];
+}
+
+- (void)addMetadataToVideo:(NSURL *)videoURL outputFile:(NSString *)outputFile identifier:(NSString *)identifier {
+    NSError *error = nil;
+    AVAsset *asset = [AVAsset assetWithURL:videoURL];
+    AVAssetReader *reader = [AVAssetReader assetReaderWithAsset:asset error:&error];
+    if (error) {
+        return;
+    }
+    NSMutableArray<AVMetadataItem *> *metadata = asset.metadata.mutableCopy;
+    AVMetadataItem *item = [self createContentIdentifierMetadataItem:identifier];
+    [metadata addObject:item];
+    NSURL *videoFileURL = [NSURL fileURLWithPath:outputFile];
+    [self deleteFile:outputFile];
+    AVAssetWriter *writer = [AVAssetWriter assetWriterWithURL:videoFileURL fileType:AVFileTypeQuickTimeMovie error:&error];
+    if (error) {
+        return;
+    }
+    [writer setMetadata:metadata];
+    NSArray<AVAssetTrack *> *tracks = [asset tracks];
+    for (AVAssetTrack *track in tracks) {
+        NSDictionary *readerOutputSettings = nil;
+        NSDictionary *writerOuputSettings = nil;
+        if ([track.mediaType isEqualToString:AVMediaTypeAudio]) {
+            readerOutputSettings = @{AVFormatIDKey : @(kAudioFormatLinearPCM)};
+            writerOuputSettings = @{AVFormatIDKey : @(kAudioFormatMPEG4AAC),
+                                    AVSampleRateKey : @(44100),
+                                    AVNumberOfChannelsKey : @(2),
+                                    AVEncoderBitRateKey : @(128000)};
+        }
+        AVAssetReaderTrackOutput *output = [AVAssetReaderTrackOutput assetReaderTrackOutputWithTrack:track outputSettings:readerOutputSettings];
+        AVAssetWriterInput *input = [AVAssetWriterInput assetWriterInputWithMediaType:track.mediaType outputSettings:writerOuputSettings];
+        if ([reader canAddOutput:output] && [writer canAddInput:input]) {
+            [reader addOutput:output];
+            [writer addInput:input];
+        }
+    }
+    AVAssetWriterInput *input = [self createStillImageTimeAssetWriterInput];
+    AVAssetWriterInputMetadataAdaptor *adaptor = [AVAssetWriterInputMetadataAdaptor assetWriterInputMetadataAdaptorWithAssetWriterInput:input];
+    if ([writer canAddInput:input]) {
+        [writer addInput:input];
+    }
+    [writer startWriting];
+    [writer startSessionAtSourceTime:kCMTimeZero];
+    [reader startReading];
+    AVMetadataItem *timedItem = [self createStillImageTimeMetadataItem];
+    CMTimeRange timedRange = CMTimeRangeMake(kCMTimeZero, CMTimeMake(1, 100));
+    AVTimedMetadataGroup *timedMetadataGroup = [[AVTimedMetadataGroup alloc] initWithItems:@[timedItem] timeRange:timedRange];
+    [adaptor appendTimedMetadataGroup:timedMetadataGroup];
+    DYYYManager.shared->reader = reader;
+    DYYYManager.shared->writer = writer;
+    DYYYManager.shared->queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+    DYYYManager.shared->group = dispatch_group_create();
+    for (NSInteger i = 0; i < reader.outputs.count; ++i) {
+        dispatch_group_enter(DYYYManager.shared->group);
+        [self writeTrack:i];
+    }
+}
+
+- (void)writeTrack:(NSInteger)trackIndex {
+    AVAssetReaderOutput *output = DYYYManager.shared->reader.outputs[trackIndex];
+    AVAssetWriterInput *input = DYYYManager.shared->writer.inputs[trackIndex];
+    [input requestMediaDataWhenReadyOnQueue:DYYYManager.shared->queue usingBlock:^{
+        while (input.readyForMoreMediaData) {
+            AVAssetReaderStatus status = DYYYManager.shared->reader.status;
+            CMSampleBufferRef buffer = NULL;
+            if ((status == AVAssetReaderStatusReading) &&
+                (buffer = [output copyNextSampleBuffer])) {
+                if (buffer) {
+                    BOOL success = [input appendSampleBuffer:buffer];
+                    CFRelease(buffer);
+                    if (!success) {
+                        [input markAsFinished];
+                        dispatch_group_leave(DYYYManager.shared->group);
+                        return;
+                    }
+                } else {
+                    [input markAsFinished];
+                    dispatch_group_leave(DYYYManager.shared->group);
+                    return;
+                }
+            } else {
+                if (status == AVAssetReaderStatusReading) {
+                } else if (status == AVAssetReaderStatusCompleted) {
+                } else if (status == AVAssetReaderStatusCancelled) {
+                } else if (status == AVAssetReaderStatusFailed) {
+                }
+                [input markAsFinished];
+                dispatch_group_leave(DYYYManager.shared->group);
+                return;
+            }
+        }
+    }];
+}
+- (AVMetadataItem *)createContentIdentifierMetadataItem:(NSString *)identifier {
+    AVMutableMetadataItem *item = [AVMutableMetadataItem metadataItem];
+    item.keySpace = AVMetadataKeySpaceQuickTimeMetadata;
+    item.key = AVMetadataQuickTimeMetadataKeyContentIdentifier;
+    item.value = identifier;
+    return item;
+}
+
+- (AVAssetWriterInput *)createStillImageTimeAssetWriterInput {
+    NSArray *spec = @[@{(NSString *)kCMMetadataFormatDescriptionMetadataSpecificationKey_Identifier : @"mdta/com.apple.quicktime.still-image-time",
+                        (NSString *)kCMMetadataFormatDescriptionMetadataSpecificationKey_DataType : (NSString *)kCMMetadataBaseDataType_SInt8 }];
+    CMFormatDescriptionRef desc = NULL;
+    CMMetadataFormatDescriptionCreateWithMetadataSpecifications(kCFAllocatorDefault, kCMMetadataFormatType_Boxed, (__bridge CFArrayRef)spec, &desc);
+    AVAssetWriterInput *input = [AVAssetWriterInput assetWriterInputWithMediaType:AVMediaTypeMetadata outputSettings:nil sourceFormatHint:desc];
+    return input;
+}
+
+- (AVMetadataItem *)createStillImageTimeMetadataItem {
+    AVMutableMetadataItem *item = [AVMutableMetadataItem metadataItem];
+    item.keySpace = AVMetadataKeySpaceQuickTimeMetadata;
+    item.key = @"com.apple.quicktime.still-image-time";
+    item.value = @(-1);
+    item.dataType = (NSString *)kCMMetadataBaseDataType_SInt8;
+    return item;
+}
+- (NSString *)filePathFromDoc:(NSString *)filename {
+    NSString *docPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
+    NSString *filePath = [docPath stringByAppendingPathComponent:filename];
+    return filePath;
+}
+
+- (void)deleteFile:(NSString *)file {
+    NSFileManager *fm = [NSFileManager defaultManager];
+    if ([fm fileExistsAtPath:file]) {
+        [fm removeItemAtPath:file error:nil];
     }
 }
 
