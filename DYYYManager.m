@@ -1166,30 +1166,30 @@
 - (void)writeTrack:(NSInteger)trackIndex {
     AVAssetReaderOutput *output = DYYYManager.shared->reader.outputs[trackIndex];
     AVAssetWriterInput *input = DYYYManager.shared->writer.inputs[trackIndex];
+    
     [input requestMediaDataWhenReadyOnQueue:DYYYManager.shared->queue usingBlock:^{
         while (input.readyForMoreMediaData) {
             AVAssetReaderStatus status = DYYYManager.shared->reader.status;
             CMSampleBufferRef buffer = NULL;
             if ((status == AVAssetReaderStatusReading) &&
                 (buffer = [output copyNextSampleBuffer])) {
-                if (buffer) {
-                    BOOL success = [input appendSampleBuffer:buffer];
-                    CFRelease(buffer);
-                    if (!success) {
-                        [input markAsFinished];
-                        dispatch_group_leave(DYYYManager.shared->group);
-                        return;
-                    }
-                } else {
+                BOOL success = [input appendSampleBuffer:buffer];
+                CFRelease(buffer);
+                if (!success) {
+                   
                     [input markAsFinished];
                     dispatch_group_leave(DYYYManager.shared->group);
                     return;
                 }
             } else {
                 if (status == AVAssetReaderStatusReading) {
+                   
                 } else if (status == AVAssetReaderStatusCompleted) {
+                   
                 } else if (status == AVAssetReaderStatusCancelled) {
+                   
                 } else if (status == AVAssetReaderStatusFailed) {
+                   
                 }
                 [input markAsFinished];
                 dispatch_group_leave(DYYYManager.shared->group);
