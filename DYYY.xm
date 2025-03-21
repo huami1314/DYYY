@@ -1548,13 +1548,13 @@
                 allImagesViewModel.action = ^{
                     AWEAwemeModel *awemeModel = self.awemeModel;
                     NSMutableArray *imageURLs = [NSMutableArray array];
-                    
+
                     for (AWEImageAlbumImageModel *imageModel in awemeModel.albumImages) {
                         if (imageModel.urlList.count > 0) {
                             [imageURLs addObject:imageModel.urlList.firstObject];
                         }
                     }
-                    
+
                     if (imageURLs.count > 0) {
                         [DYYYManager downloadAllImages:imageURLs];
                     }
@@ -1636,7 +1636,7 @@
             AWELongPressPanelBaseViewModel *downloadViewModel = [[%c(AWELongPressPanelBaseViewModel) alloc] init];
             downloadViewModel.awemeModel = self.awemeModel;
             downloadViewModel.actionType = 666;
-            downloadViewModel.duxIconName = @"ic";
+            downloadViewModel.duxIconName = @"ic_boxarrowdownhigh_outlined";
             downloadViewModel.describeString = @"保存视频";
             
             downloadViewModel.action = ^{
@@ -1714,7 +1714,6 @@
             AWEImageAlbumImageModel *currimge = self.awemeModel.albumImages[self.awemeModel.currentImageIndex - 1];
              if (currimge.clipVideo != nil) {
                 imageViewModel.describeString = @"保存当前实况";
-
              }
             imageViewModel.action = ^{
                 AWEAwemeModel *awemeModel = self.awemeModel;
@@ -1728,7 +1727,7 @@
                 //如果是实况的话
                 if (currimge.clipVideo != nil) {
                     NSURL *url = [NSURL URLWithString:currentImageModel.urlList.firstObject];
-
+                    
                     [DYYYManager downloadLivePhoto:[currimge.clipVideo.playURL getDYYYSrcURLDownload] mediaType:MediaTypeVideo completion:^{
                     }];
 
@@ -1754,7 +1753,7 @@
                 allImagesViewModel.actionType = 670;
                 allImagesViewModel.duxIconName = @"ic_boxarrowdownhigh_outlined";
                 allImagesViewModel.describeString = @"保存所有图片";
-                
+
                 allImagesViewModel.action = ^{
                     AWEAwemeModel *awemeModel = self.awemeModel;
                     NSMutableArray *imageURLs = [NSMutableArray array];
@@ -2113,6 +2112,7 @@ static BOOL isDownloadFlied = NO;
     return bestURL;
 }
 %end
+
 %ctor {
     %init(DYYYSettingsGesture);
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {

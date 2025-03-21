@@ -376,71 +376,21 @@
         
         // 获取HEIC图像数量
         size_t count = CGImageSourceGetCount(heicSource);
-        if (count <= 1) {
-            // 如果只有一帧，处理为静态GIF
-            CFRelease(heicSource);
-            
-            // 为单帧HEIC创建普通的静态GIF
-            UIImage *image = [UIImage imageWithData:[NSData dataWithContentsOfURL:heicURL]];
-            if (!image) {
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    if (completion) {
-                        completion(nil, NO);
-                    }
-                });
-                return;
-            }
-            
-            // 创建GIF文件路径
-            NSString *gifFileName = [[heicURL.lastPathComponent stringByDeletingPathExtension] stringByAppendingPathExtension:@"gif"];
-            NSURL *gifURL = [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:gifFileName]];
-            
-            // 创建GIF文件
-            CGImageDestinationRef destination = CGImageDestinationCreateWithURL((__bridge CFURLRef)gifURL, kUTTypeGIF, 1, NULL);
-            if (!destination) {
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    if (completion) {
-                        completion(nil, NO);
-                    }
-                });
-                return;
-            }
-            
-            // 设置GIF属性
-            NSDictionary *gifProperties = @{
-                (__bridge NSString *)kCGImagePropertyGIFDictionary: @{
-                    (__bridge NSString *)kCGImagePropertyGIFLoopCount: @0, // 0表示无限循环
-                }
-            };
-            CGImageDestinationSetProperties(destination, (__bridge CFDictionaryRef)gifProperties);
-            
-            // 添加帧
-            CGImageRef imageRef = [image CGImage];
-            NSDictionary *frameProperties = @{
-                (__bridge NSString *)kCGImagePropertyGIFDictionary: @{
-                    (__bridge NSString *)kCGImagePropertyGIFDelayTime: @0.1f, // 设置延迟时间
-                }
-            };
-            CGImageDestinationAddImage(destination, imageRef, (__bridge CFDictionaryRef)frameProperties);
-            
-            // 完成GIF
-            BOOL success = CGImageDestinationFinalize(destination);
-            CFRelease(destination);
-            
-            dispatch_async(dispatch_get_main_queue(), ^{
-                if (completion) {
-                    completion(gifURL, success);
-                }
-            });
-            return;
-        }
+        BOOL isAnimated = (count > 1);
         
         // 创建GIF文件路径
         NSString *gifFileName = [[heicURL.lastPathComponent stringByDeletingPathExtension] stringByAppendingPathExtension:@"gif"];
         NSURL *gifURL = [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:gifFileName]];
         
+        // 设置GIF属性
+        NSDictionary *gifProperties = @{
+            (__bridge NSString *)kCGImagePropertyGIFDictionary: @{
+                (__bridge NSString *)kCGImagePropertyGIFLoopCount: @0, // 0表示无限循环
+            }
+        };
+        
         // 创建GIF图像目标
-        CGImageDestinationRef destination = CGImageDestinationCreateWithURL((__bridge CFURLRef)gifURL, kUTTypeGIF, count, NULL);
+        CGImageDestinationRef destination = CGImageDestinationCreateWithURL((__bridge CFURLRef)gifURL, kUTTypeGIF, isAnimated ? count : 1, NULL);
         if (!destination) {
             CFRelease(heicSource);
             dispatch_async(dispatch_get_main_queue(), ^{
@@ -452,48 +402,64 @@
         }
         
         // 设置GIF属性
-        NSDictionary *gifProperties = @{
-            (__bridge NSString *)kCGImagePropertyGIFDictionary: @{
-                (__bridge NSString *)kCGImagePropertyGIFLoopCount: @0, // 0表示无限循环
-            }
-        };
         CGImageDestinationSetProperties(destination, (__bridge CFDictionaryRef)gifProperties);
         
-        // 从HEIC中提取帧并添加到GIF
-        for (size_t i = 0; i < count; i++) {
-            // 获取当前帧
-            CGImageRef imageRef = CGImageSourceCreateImageAtIndex(heicSource, i, NULL);
-            if (!imageRef) {
-                continue;
-            }
-            
-            // 获取帧属性
-            CFDictionaryRef properties = CGImageSourceCopyPropertiesAtIndex(heicSource, i, NULL);
-            CFDictionaryRef heicProperties = properties ? CFDictionaryGetValue(properties, kCGImagePropertyHEICSDictionary) : NULL;
-            
-            // 获取延迟时间
-            float delayTime = 0.1f; // 默认延迟时间
-            if (heicProperties) {
-                CFNumberRef delayTimeRef = CFDictionaryGetValue(heicProperties, kCGImagePropertyHEICSDelayTime);
-                if (delayTimeRef) {
-                    CFNumberGetValue(delayTimeRef, kCFNumberFloatType, &delayTime);
+        if (isAnimated) {
+            // 处理动画HEIC，提取所有帧并添加到GIF
+            for (size_t i = 0; i < count; i++) {
+                // 获取当前帧
+                CGImageRef imageRef = CGImageSourceCreateImageAtIndex(heicSource, i, NULL);
+                if (!imageRef) {
+                    continue;
+                }
+                
+                // 获取帧属性
+                CFDictionaryRef properties = CGImageSourceCopyPropertiesAtIndex(heicSource, i, NULL);
+                
+                // 获取延迟时间
+                float delayTime = 0.1f; // 默认延迟时间
+                if (properties) {
+                    CFDictionaryRef heicProperties = CFDictionaryGetValue(properties, kCGImagePropertyHEICSDictionary);
+                    if (heicProperties) {
+                        CFNumberRef delayTimeRef = CFDictionaryGetValue(heicProperties, kCGImagePropertyHEICSDelayTime);
+                        if (delayTimeRef) {
+                            CFNumberGetValue(delayTimeRef, kCFNumberFloatType, &delayTime);
+                        }
+                    }
+                }
+                
+                // 创建帧属性
+                NSDictionary *frameProperties = @{
+                    (__bridge NSString *)kCGImagePropertyGIFDictionary: @{
+                        (__bridge NSString *)kCGImagePropertyGIFDelayTime: @(delayTime),
+                    }
+                };
+                
+                // 添加帧到GIF
+                CGImageDestinationAddImage(destination, imageRef, (__bridge CFDictionaryRef)frameProperties);
+                
+                // 释放资源
+                CGImageRelease(imageRef);
+                if (properties) {
+                    CFRelease(properties);
                 }
             }
-            
-            // 创建帧属性
-            NSDictionary *frameProperties = @{
-                (__bridge NSString *)kCGImagePropertyGIFDictionary: @{
-                    (__bridge NSString *)kCGImagePropertyGIFDelayTime: @(delayTime),
-                }
-            };
-            
-            // 添加帧到GIF
-            CGImageDestinationAddImage(destination, imageRef, (__bridge CFDictionaryRef)frameProperties);
-            
-            // 释放资源
-            CGImageRelease(imageRef);
-            if (properties) {
-                CFRelease(properties);
+        } else {
+            // 处理静态HEIC，创建单帧GIF
+            CGImageRef imageRef = CGImageSourceCreateImageAtIndex(heicSource, 0, NULL);
+            if (imageRef) {
+                // 创建帧属性
+                NSDictionary *frameProperties = @{
+                    (__bridge NSString *)kCGImagePropertyGIFDictionary: @{
+                        (__bridge NSString *)kCGImagePropertyGIFDelayTime: @0.1f,
+                    }
+                };
+                
+                // 添加帧到GIF
+                CGImageDestinationAddImage(destination, imageRef, (__bridge CFDictionaryRef)frameProperties);
+                
+                // 释放资源
+                CGImageRelease(imageRef);
             }
         }
         
