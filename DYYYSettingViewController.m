@@ -120,6 +120,8 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
             [DYYYSettingItem itemWithTitle:@"自定弹幕颜色" key:@"DYYYdanmuColor" type:DYYYSettingItemTypeTextField placeholder:@"十六进制"],
             [DYYYSettingItem itemWithTitle:@"启用深色键盘" key:@"DYYYisDarkKeyBoard" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"显示视频进度" key:@"DYYYisShowScheduleDisplay" type:DYYYSettingItemTypeSwitch],
+            [DYYYSettingItem itemWithTitle:@"显示时间标签" key:@"DYYYisShowTimeLabel" type:DYYYSettingItemTypeSwitch],
+            [DYYYSettingItem itemWithTitle:@"时间纵轴坐标" key:@"DYYYTimeLabelYPosition" type:DYYYSettingItemTypeTextField placeholder:@"默认-12"],
             [DYYYSettingItem itemWithTitle:@"启用自动播放" key:@"DYYYisEnableAutoPlay" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"启用过滤直播" key:@"DYYYisSkipLive" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"启用首页净化" key:@"DYYYisEnablePure" type:DYYYSettingItemTypeSwitch],

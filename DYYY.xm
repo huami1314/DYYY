@@ -1079,18 +1079,24 @@
     %orig;
     //定义一下进度条默认算法
     NSString *duration = [self.progressSliderDelegate formatTimeFromSeconds:floor(self.progressSliderDelegate.model.videoDuration/1000)];
-    //如果开启了显示时间进度
-    if([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisShowScheduleDisplay"]){
+    
+    // 如果开启了显示时间标签
+    if([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisShowTimeLabel"]){
+        // 获取Y坐标设置值，默认为-12
+        NSString *yPositionStr = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTimeLabelYPosition"];
+        CGFloat yPosition = yPositionStr ? [yPositionStr floatValue] : -12;
+        
         //左时间的视图不存在就创建 50 15 大小的视图文本
         if (!self.leftLabelUI) {
             self.leftLabelUI = [[UILabel alloc] init];
-            self.leftLabelUI.frame = CGRectMake(0, -12, 50, 15);
+            self.leftLabelUI.frame = CGRectMake(0, yPosition, 50, 15);
             self.leftLabelUI.backgroundColor = [UIColor clearColor];
             [(UILabel *)self.leftLabelUI setText:@"00:00"];
             [(UILabel *)self.leftLabelUI setTextColor:[UIColor whiteColor]];
             [(UILabel *)self.leftLabelUI setFont:[UIFont systemFontOfSize:8]];
             [self addSubview:self.leftLabelUI];
         }else{
+            self.leftLabelUI.frame = CGRectMake(0, yPosition, 50, 15);
             [(UILabel *)self.leftLabelUI setText:@"00:00"];
             [(UILabel *)self.leftLabelUI setTextColor:[UIColor whiteColor]];
             [(UILabel *)self.leftLabelUI setFont:[UIFont systemFontOfSize:8]];
@@ -1099,16 +1105,28 @@
         // 如果rightLabelUI为空,创建右侧视图
         if (!self.rightLabelUI) {
             self.rightLabelUI = [[UILabel alloc] init];
-            self.rightLabelUI.frame = CGRectMake(self.frame.size.width - 25, -12, 50, 15);
+            self.rightLabelUI.frame = CGRectMake(self.frame.size.width - 25, yPosition, 50, 15);
             self.rightLabelUI.backgroundColor = [UIColor clearColor];
             [(UILabel *)self.rightLabelUI setText:duration];
             [(UILabel *)self.rightLabelUI setTextColor:[UIColor whiteColor]];
             [(UILabel *)self.rightLabelUI setFont:[UIFont systemFontOfSize:8]];
             [self addSubview:self.rightLabelUI];
         }else{
+            self.rightLabelUI.frame = CGRectMake(self.frame.size.width - 25, yPosition, 50, 15);
             [(UILabel *)self.rightLabelUI setText:duration];
             [(UILabel *)self.rightLabelUI setTextColor:[UIColor whiteColor]];
             [(UILabel *)self.rightLabelUI setFont:[UIFont systemFontOfSize:8]];
+        }
+    } else {
+        // 如果不显示时间标签，移除已有的标签
+        if (self.leftLabelUI) {
+            [self.leftLabelUI removeFromSuperview];
+            self.leftLabelUI = nil;
+        }
+        
+        if (self.rightLabelUI) {
+            [self.rightLabelUI removeFromSuperview];
+            self.rightLabelUI = nil;
         }
     }
 }
@@ -1120,32 +1138,38 @@
 //根据时间来给算法
 - (NSString *)formatTimeFromSeconds:(CGFloat)seconds {
     //小时
-    NSInteger hours = (NSInteger)seconds / 3600;
+    NSInteger hours = (NSInteger)(seconds) / 3600;
     //分钟
-    NSInteger minutes = ((NSInteger)seconds % 3600) / 60;
+    NSInteger minutes = ((NSInteger)(seconds) % 3600) / 60;
     //秒数
-    NSInteger secs = (NSInteger)seconds % 60;
+    NSInteger secs = (NSInteger)(seconds) % 60;
     //定义进度条实例
     AWEFeedProgressSlider *progressSlider = self.progressSlider;
-    //如果视频超过 60 分钟
-    if (hours > 0) {
-        //主线程设置他的显示总时间进度条位置
-         dispatch_async(dispatch_get_main_queue(), ^{
-            //设置右边小时进度条的位置
-            progressSlider.rightLabelUI.frame = CGRectMake(progressSlider.frame.size.width - 46, -12, 50, 15);
-         });
-         //返回 00:00:00
-        return [NSString stringWithFormat:@"%02ld:%02ld:%02ld", (long)hours, (long)minutes, (long)secs];
-    } else {
-        //返回 00:00
-        return [NSString stringWithFormat:@"%02ld:%02ld", (long)minutes, (long)secs];
+    
+    // 只有在显示时间标签时才需要调整位置
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisShowTimeLabel"]) {
+        //如果视频超过 60 分钟
+        if (hours > 0) {
+            //主线程设置他的显示总时间进度条位置
+             dispatch_async(dispatch_get_main_queue(), ^{
+                //设置右边小时进度条的位置
+                NSString *yPositionStr = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTimeLabelYPosition"];
+                CGFloat yPosition = yPositionStr ? [yPositionStr floatValue] : -12;
+                progressSlider.rightLabelUI.frame = CGRectMake(progressSlider.frame.size.width - 46, yPosition, 50, 15);
+             });
+             //返回 00:00:00
+            return [NSString stringWithFormat:@"%02ld:%02ld:%02ld", (long)hours, (long)minutes, (long)secs];
+        }
     }
+    
+    //返回 00:00
+    return [NSString stringWithFormat:@"%02ld:%02ld", (long)minutes, (long)secs];
 }
 
 - (void)updateProgressSliderWithTime:(CGFloat)arg1 totalDuration:(CGFloat)arg2 {
     %orig;
     //如果开启了显示视频进度
-    if([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisShowScheduleDisplay"]){
+    if([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisShowTimeLabel"]){
         //获取进度条实例
         AWEFeedProgressSlider *progressSlider = self.progressSlider;
         //如果检测到时间
