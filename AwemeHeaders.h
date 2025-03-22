@@ -231,6 +231,9 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWEAwemeMusicInfoView : UIView
 @end
 
+@interface AFDRecommendToFriendEntranceLabel : UILabel
+@end
+
 @interface AWEStoryContainerCollectionView : UIView
 @end
 

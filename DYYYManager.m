@@ -5,6 +5,7 @@
 #import <ImageIO/ImageIO.h>
 #import <MobileCoreServices/UTCoreTypes.h>
 #import <MobileCoreServices/MobileCoreServices.h>
+#import <CoreMedia/CMMetadata.h>
 
 // 自定义进度条视图类
 @interface DYYYManager(){
