@@ -599,21 +599,37 @@
 
 %hook AWELeftSideBarEntranceView
 
+- (instancetype)initWithFrame:(CGRect)frame {
+    self = %orig;
+    if (self) {
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateHiddenState) name:NSUserDefaultsDidChangeNotification object:nil];
+    }
+    return self;
+}
+
+- (void)dealloc {
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:NSUserDefaultsDidChangeNotification object:nil];
+    %orig;
+}
+
 - (void)layoutSubviews {
-    
-    __block BOOL isInTargetController = NO;
-    UIResponder *currentResponder = self;
-    
-    while ((currentResponder = [currentResponder nextResponder])) {
-        if ([currentResponder isKindOfClass:NSClassFromString(@"AWEUserHomeViewControllerV2")]) {
-            isInTargetController = YES;
-            break;
+    %orig;
+    [self updateHiddenState];
+}
+
+- (void)updateHiddenState {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        BOOL shouldHide = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenLeftSideBar"];
+        if (shouldHide) {
+            self.alpha = 0;
+            self.hidden = YES;
+            self.userInteractionEnabled = NO;
+        } else {
+            self.alpha = 1;
+            self.hidden = NO;
+            self.userInteractionEnabled = YES;
         }
-    }
-    
-    if (!isInTargetController&&[[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenLeftSideBar"]) {
-        self.alpha = 0;
-    }
+    });
 }
 
 %end
