@@ -2016,7 +2016,7 @@ static CGFloat currentScale = 1.0;
 
 %end
 
-// 对昵称的缩放
+// 对文案的缩放
 @interface AWEPlayInteractionDescriptionScrollView : UIScrollView
 @end
 
@@ -2026,7 +2026,7 @@ static CGFloat currentScale = 1.0;
     %orig;
     
     self.transform = CGAffineTransformIdentity;
-
+/ 
     NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
     CGFloat scale = 1.0; 
     
