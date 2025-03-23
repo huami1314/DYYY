@@ -1103,7 +1103,7 @@
         CGRect sliderFrame = [self convertRect:self.bounds toView:parentView];
         
         // 获取垂直偏移量配置值，默认为-12.5
-        CGFloat verticalOffset = -12.5
+        CGFloat verticalOffset = -12.5;
         NSString *offsetValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTimelineVerticalPosition"];
         if (offsetValue.length > 0) {
             CGFloat configOffset = [offsetValue floatValue];
@@ -1116,7 +1116,7 @@
         UILabel *leftLabel = [[UILabel alloc] init];
         leftLabel.frame = CGRectMake(sliderFrame.origin.x, 
                                      sliderFrame.origin.y + verticalOffset, 
-                                     50, -12.5);
+                                     50, 15);
         leftLabel.backgroundColor = [UIColor clearColor];
         [leftLabel setText:@"00:00"];
         [leftLabel setTextColor:[UIColor whiteColor]];
@@ -1128,7 +1128,7 @@
         UILabel *rightLabel = [[UILabel alloc] init];
         rightLabel.frame = CGRectMake(sliderFrame.origin.x + sliderFrame.size.width - 25, 
                                       sliderFrame.origin.y + verticalOffset, 
-                                      50, -12.5);
+                                      50, 15);
         rightLabel.backgroundColor = [UIColor clearColor];
         [rightLabel setText:duration];
         [rightLabel setTextColor:[UIColor whiteColor]];
@@ -1362,11 +1362,28 @@
             }
         }
     }
+    // 应用IP属地标签缩放
+    NSString *ipScaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
+    if (ipScaleValue.length > 0) {
+        CGFloat ipScale = [ipScaleValue floatValue];
+        if (ipScale > 0 && ipScale != 1.0) {
+            // 保存原始字体大小和位置
+            UIFont *originalFont = label.font;
+            CGRect originalFrame = label.frame;
+            label.layer.anchorPoint = CGPointMake(0, label.layer.anchorPoint.y);
+            label.layer.position = CGPointMake(originalFrame.origin.x, label.layer.position.y);
+            CGFloat halfScreenWidth = [UIScreen mainScreen].bounds.size.width / 2.84;
+            CGAffineTransform scaleTransform = CGAffineTransformMakeScale(ipScale, ipScale);
+            CGAffineTransform translationTransform = CGAffineTransformMakeTranslation(-halfScreenWidth, 0);
+            label.transform = CGAffineTransformConcat(scaleTransform, translationTransform);
+           
+            label.font = originalFont;
+        }
+    }
     NSString *labelColor = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYLabelColor"];
     if (labelColor.length > 0) {
         label.textColor = [DYYYManager colorWithHexString:labelColor];
     }
-
     return label;
 }
 
@@ -1995,21 +2012,95 @@ static CGFloat currentScale = 1.0;
             }
         }
     }
-    if ([self.accessibilityLabel isEqualToString:@"left"]) {
-        NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYElementScale"];
-        if (scaleValue.length > 0) {
-            CGFloat scale = [scaleValue floatValue];
-            if (scale > 0 && scale != 1.0) {
-                CGFloat ty = 0;
-                for(UIView *view in self.subviews){
-                    ty += (view.frame.size.height - view.frame.size.height * scale)/2;
-                }
-                if(left_tx == 0){
-                    left_tx = (self.frame.size.width - self.frame.size.width * scale)/2 - self.frame.size.width * (1 -scale);
-                }
-                self.transform = CGAffineTransformMake(scale, 0, 0, scale, left_tx, ty);
-            }
+}
+
+%end
+
+// 对昵称的缩放
+@interface AWEPlayInteractionDescriptionScrollView : UIScrollView
+@end
+
+%hook AWEPlayInteractionDescriptionScrollView
+
+- (void)layoutSubviews {
+    %orig;
+    
+    self.transform = CGAffineTransformIdentity;
+
+    NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
+    CGFloat scale = 1.0; 
+    
+    if (scaleValue.length > 0) {
+        CGFloat customScale = [scaleValue floatValue];
+        if (customScale > 0 && customScale != 1.0) {
+            scale = customScale;
         }
+    }
+        self.transform = CGAffineTransformIdentity;
+    
+    UIView *parentView = self.superview;
+    UIView *grandParentView = nil;
+
+
+    if (parentView) {
+        grandParentView = parentView.superview;
+    }
+    
+    if (grandParentView) {
+        CGAffineTransform scaleTransform = CGAffineTransformMakeScale(scale, scale);
+        grandParentView.transform = scaleTransform;
+
+        CGRect scaledFrame = grandParentView.frame;
+        CGFloat translationX = -scaledFrame.origin.x;
+
+        CGAffineTransform translationTransform = CGAffineTransformMakeTranslation(translationX, 0);
+        CGAffineTransform combinedTransform = CGAffineTransformConcat(scaleTransform, translationTransform);
+
+        grandParentView.transform = combinedTransform;
+    }
+}
+
+%end
+
+// 对用户名标签的缩放
+@interface AWEUserNameLabel : UIView
+@end
+
+%hook AWEUserNameLabel
+
+- (void)layoutSubviews {
+    %orig;
+    
+    self.transform = CGAffineTransformIdentity;
+
+    NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
+    CGFloat scale = 1.0; 
+    
+    if (scaleValue.length > 0) {
+        CGFloat customScale = [scaleValue floatValue];
+        if (customScale > 0 && customScale != 1.0) {
+            scale = customScale;
+        }
+    }
+    
+    UIView *parentView = self.superview;
+    UIView *grandParentView = nil;
+
+    if (parentView) {
+        grandParentView = parentView.superview;
+    }
+    
+    if (grandParentView) {
+        CGAffineTransform scaleTransform = CGAffineTransformMakeScale(scale, scale);
+        grandParentView.transform = scaleTransform;
+
+        CGRect scaledFrame = grandParentView.frame;
+        CGFloat translationX = -scaledFrame.origin.x;
+  
+        CGAffineTransform translationTransform = CGAffineTransformMakeTranslation(translationX, 0);
+        CGAffineTransform combinedTransform = CGAffineTransformConcat(scaleTransform, translationTransform);
+        
+        grandParentView.transform = combinedTransform;
     }
 }
 
