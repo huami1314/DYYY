@@ -45,37 +45,92 @@
 @property(nonatomic, copy) void (^switchChangedBlock)(void);
 @end
 
-// 添加缺少的辅助函数定义
-static BOOL getUserDefaults(NSString *key) {
+// 获取顶级视图控制器
+static UIViewController *getActiveTopViewController() {
+    UIWindowScene *activeScene = nil;
+    for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
+        if (scene.activationState == UISceneActivationStateForegroundActive) {
+            activeScene = scene;
+            break;
+        }
+    }
+    if (!activeScene) {
+        for (id scene in [UIApplication sharedApplication].connectedScenes) {
+            if ([scene isKindOfClass:[UIWindowScene class]]) {
+                activeScene = (UIWindowScene *)scene;
+                break;
+            }
+        }
+    }
+    if (!activeScene) return nil;
+    UIWindow *window = activeScene.windows.firstObject;
+    UIViewController *topController = window.rootViewController;
+    while (topController.presentedViewController) {
+        topController = topController.presentedViewController;
+    }
+    return topController;
+}
+
+// 获取最上层视图控制器
+static UIViewController *topView(void) {
+    UIWindow *window = nil;
+    for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
+        if (scene.activationState == UISceneActivationStateForegroundActive) {
+            window = scene.windows.firstObject;
+            break;
+        }
+    }
+    if (!window) {
+        for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
+            if ([scene isKindOfClass:[UIWindowScene class]]) {
+                window = scene.windows.firstObject;
+                break;
+            }
+        }
+    }
+    if (!window) return nil;
+    UIViewController *rootVC = window.rootViewController;
+    while (rootVC.presentedViewController) {
+        rootVC = rootVC.presentedViewController;
+    }
+    if ([rootVC isKindOfClass:[UINavigationController class]]) {
+        return ((UINavigationController *)rootVC).topViewController;
+    }
+    return rootVC;
+}
+
+// 显示文本输入弹窗
+static void showTextInputAlert(NSString *title, void (^onConfirm)(NSString *text), void (^onCancel)(void)) {
+    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:title message:nil preferredStyle:UIAlertControllerStyleAlert];
+    [alertController addTextFieldWithConfigurationHandler:^(UITextField *textField) {
+        textField.placeholder = @"请输入内容";
+    }];
+    UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+        NSString *inputText = alertController.textFields.firstObject.text;
+        if (onConfirm) onConfirm(inputText);
+    }];
+    UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:^(UIAlertAction *action) {
+        if (onCancel) onCancel();
+    }];
+    [alertController addAction:cancelAction];
+    [alertController addAction:okAction];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        UIViewController *topVC = topView();
+        if (topVC) [topVC presentViewController:alertController animated:YES completion:nil];
+    });
+}
+
+// 获取和设置用户偏好
+static bool getUserDefaults(NSString *key) {
     return [[NSUserDefaults standardUserDefaults] boolForKey:key];
 }
 
-static void setUserDefaults(id value, NSString *key) {
-    [[NSUserDefaults standardUserDefaults] setObject:value forKey:key];
+static void setUserDefaults(id object, NSString *key) {
+    [[NSUserDefaults standardUserDefaults] setObject:object forKey:key];
     [[NSUserDefaults standardUserDefaults] synchronize];
 }
 
-static void showTextInputAlert(NSString *title, void(^completion)(NSString *text), NSString *defaultText) {
-    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:title message:nil preferredStyle:UIAlertControllerStyleAlert];
-    [alertController addTextFieldWithConfigurationHandler:^(UITextField *textField) {
-        textField.text = defaultText;
-    }];
-    
-    UIAlertAction *confirmAction = [UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-        NSString *text = alertController.textFields.firstObject.text;
-        if (completion) completion(text);
-    }];
-    
-    UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil];
-    
-    [alertController addAction:cancelAction];
-    [alertController addAction:confirmAction];
-    
-    UIViewController *rootVC = [UIApplication sharedApplication].keyWindow.rootViewController;
-    [rootVC presentViewController:alertController animated:YES completion:nil];
-}
 
-// 修复DYYY宏定义问题 - 确保是字符串而不是数字
 #undef DYYY
 #define DYYY @"DYYY设置"
 
