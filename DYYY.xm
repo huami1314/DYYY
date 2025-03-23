@@ -1102,8 +1102,8 @@
         // 计算标签在父视图中的位置
         CGRect sliderFrame = [self convertRect:self.bounds toView:parentView];
         
-        // 获取垂直偏移量配置值，默认为-15
-        CGFloat verticalOffset = -15;
+        // 获取垂直偏移量配置值，默认为-12.5
+        CGFloat verticalOffset = -12.5
         NSString *offsetValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTimelineVerticalPosition"];
         if (offsetValue.length > 0) {
             CGFloat configOffset = [offsetValue floatValue];
@@ -1116,7 +1116,7 @@
         UILabel *leftLabel = [[UILabel alloc] init];
         leftLabel.frame = CGRectMake(sliderFrame.origin.x, 
                                      sliderFrame.origin.y + verticalOffset, 
-                                     50, 15);
+                                     50, -12.5);
         leftLabel.backgroundColor = [UIColor clearColor];
         [leftLabel setText:@"00:00"];
         [leftLabel setTextColor:[UIColor whiteColor]];
@@ -1128,7 +1128,7 @@
         UILabel *rightLabel = [[UILabel alloc] init];
         rightLabel.frame = CGRectMake(sliderFrame.origin.x + sliderFrame.size.width - 25, 
                                       sliderFrame.origin.y + verticalOffset, 
-                                      50, 15);
+                                      50, -12.5);
         rightLabel.backgroundColor = [UIColor clearColor];
         [rightLabel setText:duration];
         [rightLabel setTextColor:[UIColor whiteColor]];
