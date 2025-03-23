@@ -11,6 +11,9 @@
 #import "AwemeHeaders.h"
 #import "DYYYManager.h"
 
+#define DYYY @"DYYY"
+#define tweakVersion @"2.1-7"
+
 %hook AWEAwemePlayVideoViewController
 
 - (void)setIsAutoPlay:(BOOL)arg0 {
@@ -230,59 +233,6 @@
 - (void)closeSettings:(UIButton *)button {
     [button.superview.window.rootViewController dismissViewControllerAnimated:YES completion:nil];
 }
-%end
-
-%hook AWESettingsViewModel
-
-- (NSArray *)sectionDataArray {
-    NSArray *originalSections = %orig;
-    
-    BOOL sectionExists = NO;
-    for (AWESettingSectionModel *section in originalSections) {
-        if ([section.sectionHeaderTitle isEqualToString:@"DYYY"]) {
-            sectionExists = YES;
-            break;
-        }
-    }
-    
-    if (self.traceEnterFrom && !sectionExists) {
-        AWESettingItemModel *dyyyItem = [[%c(AWESettingItemModel) alloc] init];
-        dyyyItem.identifier = @"DYYY";
-        dyyyItem.title = @"DYYY";
-        dyyyItem.detail = @"v2.1-7";
-        dyyyItem.type = 0;
-        dyyyItem.iconImageName = @"noticesettting_like";
-        dyyyItem.cellType = 26;
-        dyyyItem.colorStyle = 2;
-        dyyyItem.isEnable = YES;
-        
-        dyyyItem.cellTappedBlock = ^{
-            UIViewController *rootViewController = self.controllerDelegate;
-            DYYYSettingViewController *settingVC = [[DYYYSettingViewController alloc] init];
-            if (rootViewController.navigationController) {
-                [rootViewController.navigationController pushViewController:settingVC animated:YES];
-            } else {
-                UINavigationController *navController = [[UINavigationController alloc] initWithRootViewController:settingVC];
-                [rootViewController presentViewController:navController animated:YES completion:nil];
-            }
-
-        };
-        
-        AWESettingSectionModel *dyyySection = [[%c(AWESettingSectionModel) alloc] init];
-        dyyySection.sectionHeaderTitle = @"DYYY";
-        dyyySection.sectionHeaderHeight = 40;
-        dyyySection.type = 0;
-        dyyySection.itemArray = @[dyyyItem];
-        
-        NSMutableArray<AWESettingSectionModel *> *newSections = [NSMutableArray arrayWithArray:originalSections];
-        [newSections insertObject:dyyySection atIndex:0];
-        
-        return newSections;
-    }
-    
-    return originalSections;
-}
-
 %end
 
 

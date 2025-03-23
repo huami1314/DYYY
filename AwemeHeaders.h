@@ -251,30 +251,6 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @property (nonatomic, strong) AWEAwemeModel *awemeModel;
 @end
 
-@interface AWESettingSectionModel : NSObject
-@property (nonatomic, copy) NSString *sectionHeaderTitle;
-@property (nonatomic, assign) CGFloat sectionHeaderHeight;
-@property (nonatomic, assign) NSInteger type;
-@property (nonatomic, strong) NSArray *itemArray;
-@end
-
-@interface AWESettingItemModel : NSObject
-@property (nonatomic, copy) NSString *identifier;
-@property (nonatomic, copy) NSString *title;
-@property (nonatomic, copy) NSString *detail;
-@property (nonatomic, assign) NSInteger type;
-@property (nonatomic, copy) NSString *iconImageName;
-@property (nonatomic, assign) NSInteger cellType;
-@property (nonatomic, assign) NSInteger colorStyle;
-@property (nonatomic, assign) BOOL isEnable;
-@property (nonatomic, copy) void (^cellTappedBlock)(void);
-@end
-
-@interface AWESettingsViewModel : NSObject
-@property (nonatomic, weak) UIViewController *controllerDelegate;
-@property (nonatomic, copy) NSString *traceEnterFrom;
-@end
-
 @interface DYYYSettingViewController : UIViewController
 @end
 
@@ -311,8 +287,6 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWEIMStickerModel : NSObject
 - (AWEURLModel *)staticURLModel;
 @end
-
-
 
 @interface _TtC33AWECommentLongPressPanelSwiftImpl37CommentLongPressPanelSaveImageElement : NSObject
 - (AWECommentLongPressPanelContext *)commentPageContext;
