@@ -2026,7 +2026,7 @@ static CGFloat currentScale = 1.0;
     %orig;
     
     self.transform = CGAffineTransformIdentity;
-/ 
+
     NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
     CGFloat scale = 1.0; 
     
