@@ -598,21 +598,17 @@
 
 - (BOOL)isHidden {
     BOOL origHidden = %orig; 
-    
-    BOOL hideSamestyle = [[NSUserDefaults standardUserDefaults] boolForKey:@"HideSamestyle"];
-    
+    BOOL hideSamestyle = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFeedAnchorContainer"];
     return origHidden || hideSamestyle;
 }
 
 - (void)setHidden:(BOOL)hidden {
-    BOOL forceHide = [[NSUserDefaults standardUserDefaults] boolForKey:@"HideSamestyle"];
+    BOOL forceHide = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFeedAnchorContainer"];
     %orig(forceHide ? YES : hidden); 
 }
 
 %end
 
-维他入我心, [2025/3/24 10:39]
-OK
 //隐藏作者声明
 %hook AWEAntiAddictedNoticeBarView
 
