@@ -651,7 +651,7 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
             
             // 创建主分类列表
             AWESettingSectionModel *mainSection = [[%c(AWESettingSectionModel) alloc] init];
-            mainSection.sectionHeaderTitle = @"设置分类";
+            mainSection.sectionHeaderTitle = @"功能";
             mainSection.sectionHeaderHeight = 40;
             mainSection.type = 0;
             NSMutableArray<AWESettingItemModel *> *mainItems = [NSMutableArray array];
@@ -1005,7 +1005,7 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                     @{@"identifier": @"DYYYLongPressDownload", @"title": @"长按面板保存媒体", @"detail": @"无水印保存", @"cellType": @6, @"imageName": @"ic_boxarrowdown_outlined"},
                     @{@"identifier": @"DYYYCommentLivePhotoNotWaterMark", @"title": @"移除评论实况水印", @"detail": @"", @"cellType": @6, @"imageName": @"ic_livephoto_outlined_20"},
                     @{@"identifier": @"DYYYCommentNotWaterMark", @"title": @"移除评论图片水印", @"detail": @"", @"cellType": @6, @"imageName": @"ic_removeimage_outlined_20"},
-                    @{@"identifier": @"DYYYFourceDownloadEmotion", @"title": @"保存评论区表情包", @"detail": @"", @"cellType": @6, @"imageName": @"ic_emoji_outlined_20"}
+                    @{@"identifier": @"DYYYFourceDownloadEmotion", @"title": @"保存评论区表情包", @"detail": @"", @"cellType": @6, @"imageName": @"ic_emoji_outlined"}
                 ];
                 
                 for (NSDictionary *dict in downloadSettings) {
@@ -1036,6 +1036,13 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
             };
             [mainItems addObject:enhanceSettingItem];
             
+            // 创建关于分类（单独section）
+            AWESettingSectionModel *aboutSection = [[%c(AWESettingSectionModel) alloc] init];
+            aboutSection.sectionHeaderTitle = @"关于";
+            aboutSection.sectionHeaderHeight = 40;
+            aboutSection.type = 0;
+            NSMutableArray<AWESettingItemModel *> *aboutItems = [NSMutableArray array];
+            
             // 添加关于
             AWESettingItemModel *aboutItem = [[%c(AWESettingItemModel) alloc] init];
             aboutItem.identifier = @"DYYYAbout";
@@ -1049,10 +1056,13 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
             aboutItem.cellTappedBlock = ^{
                 showAboutDialog(@"关于DYYY", @"版本: v2.1-7\n\n感谢使用DYYY\n\n@维他入我心 基于DYYY二次开发\n\n感谢开源", nil);
             };
-            [mainItems addObject:aboutItem];
+            [aboutItems addObject:aboutItem];
             
             mainSection.itemArray = mainItems;
-            viewModel.sectionDataArray = @[mainSection];
+            aboutSection.itemArray = aboutItems;
+            
+            // 将两个section添加到viewModel
+            viewModel.sectionDataArray = @[mainSection, aboutSection];
             objc_setAssociatedObject(settingsVC, kViewModelKey, viewModel, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
             [rootVC.navigationController pushViewController:(UIViewController *)settingsVC animated:YES];
         };
