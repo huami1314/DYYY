@@ -696,6 +696,27 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                 
                 for (NSDictionary *dict in videoSettings) {
                     AWESettingItemModel *item = [self createSettingItem:dict cellTapHandlers:cellTapHandlers];
+                    
+                    // 特殊处理默认倍速选项，使用showSpeedSelectionSheet而不是输入框
+                    if ([item.identifier isEqualToString:@"DYYYDefaultSpeed"]) {
+                        // 获取已保存的默认倍速值
+                        NSString *savedSpeed = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDefaultSpeed"];
+                        if (savedSpeed && savedSpeed.length > 0) {
+                            item.detail = savedSpeed;
+                        } else {
+                            item.detail = @"点击选择";
+                        }
+                        
+                        // 覆盖默认的cellTappedBlock
+                        item.cellTappedBlock = ^{
+                            NSArray<NSString *> *speedOptions = @[@"0.75x", @"1.0x", @"1.25x", @"1.5x", @"2.0x", @"2.5x", @"3.0x"];
+                            showSpeedSelectionSheet(rootVC, speedOptions, ^(NSInteger selectedIndex, NSString *selectedValue) {
+                                setUserDefaults(selectedValue, @"DYYYDefaultSpeed");
+                                item.detail = selectedValue;
+                            });
+                        };
+                    }
+                    
                     [videoItems addObject:item];
                 }
                 
@@ -786,17 +807,6 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                 
                 for (NSDictionary *dict in scaleSettings) {
                     AWESettingItemModel *item = [self createSettingItem:dict cellTapHandlers:cellTapHandlers];
-                    // 特殊处理默认倍速选项
-                    if ([item.identifier isEqualToString:@"DYYYDefaultSpeed"]) {
-                        cellTapHandlers[item.identifier] = ^{
-                            NSArray<NSString *> *speedOptions = @[ @"0.75x", @"1.0x", @"1.25x", @"1.5x", @"2.0x", @"2.5x", @"3.0x"];
-                            showSpeedSelectionSheet(rootVC, speedOptions, ^(NSInteger selectedIndex, NSString *selectedValue) {
-                                setUserDefaults(selectedValue, @"DYYYDefaultSpeed");
-                                item.detail = selectedValue;
-                            });
-                        };
-                        item.cellTappedBlock = cellTapHandlers[item.identifier];
-                    }
                     [scaleItems addObject:item];
                 }
                 
