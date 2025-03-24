@@ -593,6 +593,40 @@
 }
 %end
 
+//隐藏TA的店铺
+%hook AWEECommerceEntryView
+
+- (void)layoutSubviews {
+    %orig;
+
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideHisShop"]) {
+        UIView *parentView = self.superview;
+        if (parentView) {
+            parentView.hidden = YES;
+        } else {
+            self.hidden = YES;
+        }
+    }
+}
+
+%end
+
+//隐藏挑战贴纸
+%hook AWEFeedStickerContainerView
+
+- (BOOL)isHidden {
+    BOOL origHidden = %orig; 
+    BOOL hideRecommend = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideChallengeStickers"];
+    return origHidden || hideRecommend;
+}
+
+- (void)setHidden:(BOOL)hidden {
+    BOOL forceHide = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideChallengeStickers"];
+    %orig(forceHide ? YES : hidden); 
+}
+
+%end
+
 //隐藏消息页开启通知提示
 %hook AWEIMMessageTabOptPushBannerView
 
