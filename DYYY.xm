@@ -645,6 +645,18 @@
 
 %end
 
+//隐藏消息页顶栏头像气泡
+%hook AFDSkylightCellBubble
+ - (void)layoutSubviews {
+     %orig;
+ 
+     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenAvatarBubble"]) {
+         [self removeFromSuperview];
+         return;
+     }
+ }
+%end
+
 //隐藏消息页开启通知提示
 %hook AWEIMMessageTabOptPushBannerView
 

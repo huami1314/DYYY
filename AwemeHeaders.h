@@ -350,3 +350,8 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @property (nonatomic, strong, readonly) UIView *superview;
 @property (nonatomic, assign, getter=isHidden) BOOL hidden;
 @end
+
+@interface AFDSkylightCellBubble : UIView
+@property (nonatomic, strong, readonly) UIView *superview;
+@property (nonatomic, assign, getter=isHidden) BOOL hidden;
+@end
