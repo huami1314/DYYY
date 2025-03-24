@@ -313,7 +313,7 @@ static AWESettingBaseViewController* createSubSettingsViewController(NSString* t
                 NSMutableArray<AWESettingItemModel *> *uiSettingsItems = [NSMutableArray array];
                 NSMutableDictionary *cellTapHandlers = [NSMutableDictionary dictionary];
                 NSArray *uiSettings = @[
-                    @{@"identifier": @"DYYYtopbartransparent", @"title": @"设置顶栏透明", @"detail": @"", @"cellType": @26, @"imageName": @"ic_arrowup_outlined_20"},
+                    @{@"identifier": @"DYYYtopbartransparent", @"title": @"设置顶栏透明", @"detail": @"", @"cellType": @26, @"imageName": @"ic_module_outlined_20"},
                     @{@"identifier": @"DYYYGlobalTransparency", @"title": @"设置全局透明", @"detail": @"", @"cellType": @26, @"imageName": @"ic_eyeslash_outlined_20"},
                     @{@"identifier": @"DYYYDefaultSpeed", @"title": @"设置默认倍速", @"detail": @"", @"cellType": @26, @"imageName": @"ic_speed_outlined_20"},
                     @{@"identifier": @"DYYYElementScale", @"title": @"右侧栏缩放度", @"detail": @"", @"cellType": @26, @"imageName": @"ic_zoomin_outlined_20"},
