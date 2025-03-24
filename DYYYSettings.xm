@@ -114,7 +114,9 @@ static UIViewController *topView(void) {
 @property (nonatomic, copy) void (^onCancel)(void);
 @property (nonatomic, assign) CGRect originalFrame; // 添加属性来保存原始位置
 @property (nonatomic, copy) NSString *defaultText; // 添加默认文本属性
+@property (nonatomic, copy) NSString *placeholderText; // 添加占位符文本属性
 - (instancetype)initWithTitle:(NSString *)title defaultText:(NSString *)defaultText; // 修改初始化方法
+- (instancetype)initWithTitle:(NSString *)title defaultText:(NSString *)defaultText placeholder:(NSString *)placeholder; // 新增带占位符的初始化方法
 - (instancetype)initWithTitle:(NSString *)title; // 保留原方法
 - (void)show;
 - (void)dismiss;
@@ -122,9 +124,10 @@ static UIViewController *topView(void) {
 
 @implementation DYYYCustomInputView
 
-- (instancetype)initWithTitle:(NSString *)title defaultText:(NSString *)defaultText {
+- (instancetype)initWithTitle:(NSString *)title defaultText:(NSString *)defaultText placeholder:(NSString *)placeholder {
     if (self = [super initWithFrame:UIScreen.mainScreen.bounds]) {
         self.defaultText = defaultText;
+        self.placeholderText = placeholder;
         self.backgroundColor = [UIColor colorWithWhite:0 alpha:0.4];
         
         // 创建模糊效果视图
@@ -156,8 +159,12 @@ static UIViewController *topView(void) {
         self.inputTextField = [[UITextField alloc] initWithFrame:CGRectMake(20, 64, 260, 40)];
         self.inputTextField.backgroundColor = [UIColor colorWithRed:245/255.0 green:245/255.0 blue:245/255.0 alpha:1.0];
         self.inputTextField.textColor = [UIColor colorWithRed:45/255.0 green:47/255.0 blue:56/255.0 alpha:1.0]; // #2d2f38
-        self.inputTextField.attributedPlaceholder = [[NSAttributedString alloc] initWithString:@"请输入内容" 
+        
+        // 使用自定义占位符文本
+        NSString *placeholderString = placeholder.length > 0 ? placeholder : @"请输入内容";
+        self.inputTextField.attributedPlaceholder = [[NSAttributedString alloc] initWithString:placeholderString 
                                                                                     attributes:@{NSForegroundColorAttributeName: [UIColor colorWithRed:124/255.0 green:124/255.0 blue:130/255.0 alpha:1.0]}]; // #7c7c82
+        
         self.inputTextField.leftView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 10, 40)];
         self.inputTextField.leftViewMode = UITextFieldViewModeAlways;
         self.inputTextField.layer.cornerRadius = 8;
@@ -211,9 +218,14 @@ static UIViewController *topView(void) {
     return self;
 }
 
+// 为向后兼容添加的初始化方法
+- (instancetype)initWithTitle:(NSString *)title defaultText:(NSString *)defaultText {
+    return [self initWithTitle:title defaultText:defaultText placeholder:nil];
+}
+
 // 为了向后兼容保留原方法
 - (instancetype)initWithTitle:(NSString *)title {
-    return [self initWithTitle:title defaultText:nil];
+    return [self initWithTitle:title defaultText:nil placeholder:nil];
 }
 
 - (void)dealloc {
@@ -541,19 +553,21 @@ static void showAboutDialog(NSString *title, NSString *message, void (^onConfirm
 
 static void showTextInputAlert(NSString *title, void (^onConfirm)(NSString *text), void (^onCancel)(void));
 static void showTextInputAlert(NSString *title, NSString *defaultText, void (^onConfirm)(NSString *text), void (^onCancel)(void));
+static void showTextInputAlert(NSString *title, NSString *defaultText, NSString *placeholder, void (^onConfirm)(NSString *text), void (^onCancel)(void));
 
-static void showTextInputAlert(NSString *title, NSString *defaultText, void (^onConfirm)(NSString *text), void (^onCancel)(void)) {
-    DYYYCustomInputView *inputView = [[DYYYCustomInputView alloc] initWithTitle:title defaultText:defaultText];
+static void showTextInputAlert(NSString *title, NSString *defaultText, NSString *placeholder, void (^onConfirm)(NSString *text), void (^onCancel)(void)) {
+    DYYYCustomInputView *inputView = [[DYYYCustomInputView alloc] initWithTitle:title defaultText:defaultText placeholder:placeholder];
     inputView.onConfirm = onConfirm;
     inputView.onCancel = onCancel;
     [inputView show];
 }
 
+static void showTextInputAlert(NSString *title, NSString *defaultText, void (^onConfirm)(NSString *text), void (^onCancel)(void)) {
+    showTextInputAlert(title, defaultText, nil, onConfirm, onCancel);
+}
+
 static void showTextInputAlert(NSString *title, void (^onConfirm)(NSString *text), void (^onCancel)(void)) {
-    DYYYCustomInputView *inputView = [[DYYYCustomInputView alloc] initWithTitle:title defaultText:nil];
-    inputView.onConfirm = onConfirm;
-    inputView.onCancel = onCancel;
-    [inputView show];
+    showTextInputAlert(title, nil, nil, onConfirm, onCancel);
 }
 
 // 显示自定义倍速选择视图
@@ -1131,8 +1145,14 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
     AWESettingItemModel *item = [[%c(AWESettingItemModel) alloc] init];
     item.identifier = dict[@"identifier"];
     item.title = dict[@"title"];
+    
+    // 获取保存的实际值
     NSString *savedDetail = [[NSUserDefaults standardUserDefaults] objectForKey:item.identifier];
-    item.detail = savedDetail ?: dict[@"detail"];
+    
+    // 设置detail展示保存的值或空字符串，保留原始提示文本用作输入框占位符
+    NSString *placeholder = dict[@"detail"];
+    item.detail = savedDetail ?: @"";
+    
     item.type = 1000;
     item.svgIconImageName = dict[@"imageName"];
     item.cellType = [dict[@"cellType"] integerValue];
@@ -1142,8 +1162,8 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
     
     if (item.cellType == 26 && cellTapHandlers != nil) {
         cellTapHandlers[item.identifier] = ^{
-            // 修改这里：传递当前的 detail 值作为默认文本
-            showTextInputAlert(item.title, item.detail, ^(NSString *text) {
+            // 使用新的方法，传递占位符
+            showTextInputAlert(item.title, item.detail, placeholder, ^(NSString *text) {
                 setUserDefaults(text, item.identifier);
                 // 更新item的detail属性
                 item.detail = text;
