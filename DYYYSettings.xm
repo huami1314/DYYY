@@ -1,6 +1,28 @@
 #import <UIKit/UIKit.h>
 #import <objc/runtime.h>
 #import "AwemeHeaders.h"
+#import <MobileCoreServices/MobileCoreServices.h>
+
+@class DYYYIconOptionsDialogView;
+static void showIconOptionsDialog(NSString *title, UIImage *previewImage, NSString *saveFilename, void (^onClear)(void), void (^onSelect)(void));
+
+// 添加UIImagePickerController代理类
+@interface DYYYImagePickerDelegate : NSObject <UIImagePickerControllerDelegate, UINavigationControllerDelegate>
+@property (nonatomic, copy) void (^completionBlock)(NSDictionary *info);
+@end
+
+@implementation DYYYImagePickerDelegate
+- (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info {
+    if (self.completionBlock) {
+        self.completionBlock(info);
+    }
+    [picker dismissViewControllerAnimated:YES completion:nil];
+}
+
+- (void)imagePickerControllerDidCancel:(UIImagePickerController *)picker {
+    [picker dismissViewControllerAnimated:YES completion:nil];
+}
+@end
 
 @interface AWESettingBaseViewModel : NSObject
 @end
@@ -412,6 +434,130 @@ static UIViewController *topView(void) {
     return self;
 }
 
+static AWESettingItemModel *createIconCustomizationItem(NSString *identifier, NSString *title, NSString *svgIconName, NSString *saveFilename) {
+    AWESettingItemModel *item = [[%c(AWESettingItemModel) alloc] init];
+    item.identifier = identifier;
+    item.title = title;
+    
+    // 检查图片是否存在，使用saveFilename而非svgIconName来检查文件
+    NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
+    NSString *dyyyFolderPath = [documentsPath stringByAppendingPathComponent:@"DYYY"];
+    NSString *imagePath = [dyyyFolderPath stringByAppendingPathComponent:saveFilename];
+    
+    BOOL fileExists = [[NSFileManager defaultManager] fileExistsAtPath:imagePath];
+    item.detail = fileExists ? @"已设置" : @"默认";
+    
+    item.type = 0;
+    item.svgIconImageName = svgIconName; // 使用传入的SVG图标名称
+    item.cellType = 26;
+    item.colorStyle = 0;
+    item.isEnable = YES;
+    
+    // 其余代码保持不变
+    item.cellTappedBlock = ^{
+        // 创建文件夹（如果不存在）
+        if (![[NSFileManager defaultManager] fileExistsAtPath:dyyyFolderPath]) {
+            [[NSFileManager defaultManager] createDirectoryAtPath:dyyyFolderPath 
+                                     withIntermediateDirectories:YES 
+                                                      attributes:nil 
+                                                           error:nil];
+        }
+        
+        UIViewController *topVC = topView();
+        
+        // 加载预览图片(如果存在)
+        UIImage *previewImage = nil;
+        if (fileExists) {
+            previewImage = [UIImage imageWithContentsOfFile:imagePath];
+        }
+        
+        // 显示选项对话框 - 使用saveFilename作为参数传递
+        showIconOptionsDialog(title, previewImage, saveFilename, ^{
+            // 清除按钮回调
+            if ([[NSFileManager defaultManager] fileExistsAtPath:imagePath]) {
+                NSError *error = nil;
+                [[NSFileManager defaultManager] removeItemAtPath:imagePath error:&error];
+                if (!error) {
+                    item.detail = @"默认";
+                    
+                    // 刷新表格视图
+                    if ([topVC isKindOfClass:%c(AWESettingBaseViewController)]) {
+                        dispatch_async(dispatch_get_main_queue(), ^{
+                            UITableView *tableView = nil;
+                            for (UIView *subview in topVC.view.subviews) {
+                                if ([subview isKindOfClass:[UITableView class]]) {
+                                    tableView = (UITableView *)subview;
+                                    break;
+                                }
+                            }
+                            
+                            if (tableView) {
+                                [tableView reloadData];
+                            }
+                        });
+                    }
+                }
+            }
+        }, ^{
+           // 选择按钮回调 - 打开图片选择器
+            UIImagePickerController *picker = [[UIImagePickerController alloc] init];
+            picker.sourceType = UIImagePickerControllerSourceTypePhotoLibrary;
+            picker.allowsEditing = NO;
+            picker.mediaTypes = @[@"public.image"];  // 使用字符串替代kUTTypeImage
+            
+            // 创建并设置代理
+            DYYYImagePickerDelegate *pickerDelegate = [[DYYYImagePickerDelegate alloc] init];
+            pickerDelegate.completionBlock = ^(NSDictionary *info) {
+                UIImage *selectedImage = info[UIImagePickerControllerOriginalImage];
+                if (selectedImage) {
+                    // 确保路径存在
+                    NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
+                    NSString *dyyyFolderPath = [documentsPath stringByAppendingPathComponent:@"DYYY"];
+                    NSString *imagePath = [dyyyFolderPath stringByAppendingPathComponent:saveFilename];
+                    
+                    // 保存图片
+                    NSData *imageData = UIImagePNGRepresentation(selectedImage);
+                    BOOL success = [imageData writeToFile:imagePath atomically:YES];
+                    
+                    if (success) {
+                        // 更新UI
+                        item.detail = @"已设置";
+                        
+                        // 确保在主线程刷新UI
+                        dispatch_async(dispatch_get_main_queue(), ^{
+                            // 刷新表格视图
+                            if ([topVC isKindOfClass:%c(AWESettingBaseViewController)]) {
+                                UITableView *tableView = nil;
+                                for (UIView *subview in topVC.view.subviews) {
+                                    if ([subview isKindOfClass:[UITableView class]]) {
+                                        tableView = (UITableView *)subview;
+                                        break;
+                                    }
+                                }
+                                
+                                if (tableView) {
+                                    [tableView reloadData];
+                                }
+                            }
+                        });
+                    }
+                }
+            };
+            
+            // 使用一个静态变量的地址作为关联对象的键
+            static char kDYYYPickerDelegateKey;
+            
+            picker.delegate = pickerDelegate;
+            // 正确设置关联对象
+            objc_setAssociatedObject(picker, &kDYYYPickerDelegateKey, pickerDelegate, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+            
+            [topVC presentViewController:picker animated:YES completion:nil];
+        });
+    };
+    
+    return item;
+}
+
 - (void)show {
     UIWindow *window = [UIApplication sharedApplication].keyWindow;
     [window addSubview:self];
@@ -660,7 +806,7 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
         dyyyItem.title = @"DYYY";
         dyyyItem.detail = @"v2.1-7";
         dyyyItem.type = 0;
-        dyyyItem.iconImageName = @"noticesettting_like";
+        dyyyItem.iconImageName = @"ic_sapling_outlined";
         dyyyItem.cellType = 26;
         dyyyItem.colorStyle = 2;
         dyyyItem.isEnable = YES;
@@ -875,17 +1021,31 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                     AWESettingItemModel *item = [self createSettingItem:dict cellTapHandlers:cellTapHandlers];
                     [titleItems addObject:item];
                 }
+
+                // 【图标自定义】分类
+                NSMutableArray<AWESettingItemModel *> *iconItems = [NSMutableArray array];
                 
-                // 创建并组织所有section
+                // 添加图标自定义项
+                [iconItems addObject:createIconCustomizationItem(@"DYYYIconLikeBefore", @"未点赞图标", @"ic_heart_outlined_20", @"like_before.png")];
+                [iconItems addObject:createIconCustomizationItem(@"DYYYIconLikeAfter", @"已点赞图标", @"ic_heart_filled_20", @"like_after.png")];
+                [iconItems addObject:createIconCustomizationItem(@"DYYYIconComment", @"评论图标", @"ic_comment_outlined_20", @"comment.png")];
+                [iconItems addObject:createIconCustomizationItem(@"DYYYIconFavorite", @"已收藏图标", @"ic_star_filled_20", @"favorite.png")];
+                [iconItems addObject:createIconCustomizationItem(@"DYYYIconUnfavorite", @"未收藏图标", @"ic_star_outlined_20", @"unfavorite.png")];
+                [iconItems addObject:createIconCustomizationItem(@"DYYYIconShare", @"分享图标", @"ic_share_outlined", @"share.png")];
+                                
+                // 将图标自定义section添加到sections数组
+                
                 NSMutableArray *sections = [NSMutableArray array];
                 [sections addObject:createSection(@"透明度设置", transparencyItems)];
                 [sections addObject:createSection(@"缩放与大小", scaleItems)];
                 [sections addObject:createSection(@"标题自定义", titleItems)];
-                
+                [sections addObject:createSection(@"图标自定义", iconItems)];
+                // 创建并组织所有section
                 // 创建并推入二级设置页面
                 AWESettingBaseViewController *subVC = createSubSettingsViewController(@"界面设置", sections);
                 [rootVC.navigationController pushViewController:(UIViewController *)subVC animated:YES];
             };
+
             [mainItems addObject:uiSettingItem];
             
             // 创建隐藏设置分类项
@@ -1214,6 +1374,157 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
     return item;
 }
 
+// 添加一个新的双按钮弹窗类，用于图标自定义操作
+@interface DYYYIconOptionsDialogView : UIView
+@property (nonatomic, strong) UIVisualEffectView *blurView;
+@property (nonatomic, strong) UIView *contentView;
+@property (nonatomic, strong) UILabel *titleLabel;
+@property (nonatomic, strong) UIImageView *previewImageView;
+@property (nonatomic, strong) UIButton *clearButton;
+@property (nonatomic, strong) UIButton *selectButton;
+@property (nonatomic, copy) void (^onClear)(void);
+@property (nonatomic, copy) void (^onSelect)(void);
+- (instancetype)initWithTitle:(NSString *)title previewImage:(UIImage *)image;
+- (void)show;
+- (void)dismiss;
+@end
+
+@implementation DYYYIconOptionsDialogView
+
+- (instancetype)initWithTitle:(NSString *)title previewImage:(UIImage *)image {
+    if (self = [super initWithFrame:UIScreen.mainScreen.bounds]) {
+        self.backgroundColor = [UIColor colorWithWhite:0 alpha:0.4];
+        
+        // 创建模糊效果视图
+        self.blurView = [[UIVisualEffectView alloc] initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleDark]];
+        self.blurView.frame = self.bounds;
+        self.blurView.alpha = 0.7;
+        [self addSubview:self.blurView];
+        
+        // 创建内容视图 - 使用纯白背景
+        CGFloat contentHeight = image ? 300 : 200; // 如果有图片预览则增加高度
+        self.contentView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 300, contentHeight)];
+        self.contentView.center = CGPointMake(self.frame.size.width / 2, self.frame.size.height / 2);
+        self.contentView.backgroundColor = [UIColor whiteColor];
+        self.contentView.layer.cornerRadius = 12;
+        self.contentView.layer.masksToBounds = YES;
+        self.contentView.alpha = 0;
+        self.contentView.transform = CGAffineTransformMakeScale(0.8, 0.8);
+        [self addSubview:self.contentView];
+        
+        // 标题 - 颜色使用 #2d2f38
+        self.titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(20, 20, 260, 24)];
+        self.titleLabel.text = title;
+        self.titleLabel.textColor = [UIColor colorWithRed:45/255.0 green:47/255.0 blue:56/255.0 alpha:1.0]; // #2d2f38
+        self.titleLabel.textAlignment = NSTextAlignmentCenter;
+        self.titleLabel.font = [UIFont systemFontOfSize:18 weight:UIFontWeightMedium];
+        [self.contentView addSubview:self.titleLabel];
+        
+        // 如果有图片，添加预览
+        CGFloat buttonStartY = 54;
+        if (image) {
+            CGFloat imageViewSize = 120;
+            self.previewImageView = [[UIImageView alloc] initWithFrame:CGRectMake((300 - imageViewSize) / 2, 54, imageViewSize, imageViewSize)];
+            self.previewImageView.contentMode = UIViewContentModeScaleAspectFit;
+            self.previewImageView.image = image;
+            self.previewImageView.layer.cornerRadius = 8;
+            self.previewImageView.layer.borderColor = [UIColor colorWithRed:230/255.0 green:230/255.0 blue:230/255.0 alpha:1.0].CGColor;
+            self.previewImageView.layer.borderWidth = 0.5;
+            self.previewImageView.clipsToBounds = YES;
+            [self.contentView addSubview:self.previewImageView];
+            buttonStartY = 184; // 调整按钮位置
+        }
+        
+        // 添加内容和按钮之间的分割线
+        UIView *contentButtonSeparator = [[UIView alloc] initWithFrame:CGRectMake(0, contentHeight - 55.5, 300, 0.5)];
+        contentButtonSeparator.backgroundColor = [UIColor colorWithRed:230/255.0 green:230/255.0 blue:230/255.0 alpha:1.0];
+        [self.contentView addSubview:contentButtonSeparator];
+        
+        // 按钮容器
+        UIView *buttonContainer = [[UIView alloc] initWithFrame:CGRectMake(0, contentHeight - 55, 300, 55)];
+        [self.contentView addSubview:buttonContainer];
+        
+        // 清除按钮 - 颜色使用 #7c7c82
+        self.clearButton = [UIButton buttonWithType:UIButtonTypeSystem];
+        self.clearButton.frame = CGRectMake(0, 0, 149.5, 55);
+        self.clearButton.backgroundColor = [UIColor clearColor];
+        [self.clearButton setTitle:@"清除" forState:UIControlStateNormal];
+        [self.clearButton setTitleColor:[UIColor colorWithRed:124/255.0 green:124/255.0 blue:130/255.0 alpha:1.0] forState:UIControlStateNormal]; // #7c7c82
+        [self.clearButton addTarget:self action:@selector(clearButtonTapped) forControlEvents:UIControlEventTouchUpInside];
+        [buttonContainer addSubview:self.clearButton];
+        
+        // 按钮之间的分割线
+        UIView *buttonSeparator = [[UIView alloc] initWithFrame:CGRectMake(149.5, 0, 0.5, 55)];
+        buttonSeparator.backgroundColor = [UIColor colorWithRed:230/255.0 green:230/255.0 blue:230/255.0 alpha:1.0];
+        [buttonContainer addSubview:buttonSeparator];
+        
+        // 选择按钮 - 颜色使用 #2d2f38
+        self.selectButton = [UIButton buttonWithType:UIButtonTypeSystem];
+        self.selectButton.frame = CGRectMake(150, 0, 150, 55);
+        self.selectButton.backgroundColor = [UIColor clearColor];
+        [self.selectButton setTitle:@"选择" forState:UIControlStateNormal];
+        [self.selectButton setTitleColor:[UIColor colorWithRed:45/255.0 green:47/255.0 blue:56/255.0 alpha:1.0] forState:UIControlStateNormal]; // #2d2f38
+        [self.selectButton addTarget:self action:@selector(selectButtonTapped) forControlEvents:UIControlEventTouchUpInside];
+        [buttonContainer addSubview:self.selectButton];
+        
+        // 添加点击空白处关闭的手势
+        UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleBackgroundTap:)];
+        [self addGestureRecognizer:tapGesture];
+    }
+    return self;
+}
+
+// 处理背景点击事件
+- (void)handleBackgroundTap:(UITapGestureRecognizer *)gesture {
+    CGPoint location = [gesture locationInView:self];
+    if (!CGRectContainsPoint(self.contentView.frame, location)) {
+        [self dismiss];
+    }
+}
+
+- (void)show {
+    UIWindow *window = [UIApplication sharedApplication].keyWindow;
+    [window addSubview:self];
+    
+    [UIView animateWithDuration:0.25 animations:^{
+        self.contentView.alpha = 1.0;
+        self.contentView.transform = CGAffineTransformIdentity;
+    }];
+}
+
+- (void)dismiss {
+    [UIView animateWithDuration:0.2 animations:^{
+        self.contentView.alpha = 0;
+        self.contentView.transform = CGAffineTransformMakeScale(0.8, 0.8);
+        self.blurView.alpha = 0;
+    } completion:^(BOOL finished) {
+        [self removeFromSuperview];
+    }];
+}
+
+- (void)clearButtonTapped {
+    if (self.onClear) {
+        self.onClear();
+    }
+    [self dismiss];
+}
+
+- (void)selectButtonTapped {
+    if (self.onSelect) {
+        self.onSelect();
+    }
+    [self dismiss];
+}
+
+@end
+
+// 显示图标选项弹窗
+static void showIconOptionsDialog(NSString *title, UIImage *previewImage, NSString *saveFilename, void (^onClear)(void), void (^onSelect)(void)) {
+    DYYYIconOptionsDialogView *optionsDialog = [[DYYYIconOptionsDialogView alloc] initWithTitle:title previewImage:previewImage];
+    optionsDialog.onClear = onClear;
+    optionsDialog.onSelect = onSelect;
+    [optionsDialog show];
+}
 
 %end
 
