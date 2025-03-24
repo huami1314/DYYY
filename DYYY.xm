@@ -593,6 +593,18 @@
 }
 %end
 
+//隐藏消息页开启通知提示
+%hook AWEIMMessageTabOptPushBannerView
+
+- (instancetype)initWithFrame:(CGRect)frame {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePushBanner"]) {
+        return %orig(CGRectMake(frame.origin.x, frame.origin.y, 0, 0));
+    }
+    return %orig;
+}
+
+%end
+
 //隐藏拍同款
 %hook AWEFeedAnchorContainerView
 

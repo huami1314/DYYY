@@ -330,3 +330,8 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @property (nonatomic, strong, readonly) UIView *superview;
 @property (nonatomic, assign, getter=isHidden) BOOL hidden;
 @end
+
+@interface AWEIMMessageTabOptPushBannerView : UIView
+@property (nonatomic, strong, readonly) UIView *superview;
+@property (nonatomic, assign, getter=isHidden) BOOL hidden;
+@end
