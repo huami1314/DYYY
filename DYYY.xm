@@ -582,6 +582,17 @@
 
 %end
 
+// 拦截开屏广告
+%hook BDASplashControllerView
++ (id)alloc {
+    BOOL noAds = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYNoAds"];
+    if (noAds) {
+        return nil;
+    }
+    return %orig; 
+}
+%end
+
 %hook AWENormalModeTabBarBadgeContainerView
 
 - (void)layoutSubviews {
