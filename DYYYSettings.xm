@@ -806,7 +806,7 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
         dyyyItem.title = @"DYYY";
         dyyyItem.detail = @"v2.1-7";
         dyyyItem.type = 0;
-        dyyyItem.iconImageName = @"ic_sapling_outlined";
+        dyyyItem.svgIconImageName = @"ic_sapling_outlined";
         dyyyItem.cellType = 26;
         dyyyItem.colorStyle = 2;
         dyyyItem.isEnable = YES;
@@ -1029,8 +1029,8 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                 [iconItems addObject:createIconCustomizationItem(@"DYYYIconLikeBefore", @"未点赞图标", @"ic_heart_outlined_20", @"like_before.png")];
                 [iconItems addObject:createIconCustomizationItem(@"DYYYIconLikeAfter", @"已点赞图标", @"ic_heart_filled_20", @"like_after.png")];
                 [iconItems addObject:createIconCustomizationItem(@"DYYYIconComment", @"评论图标", @"ic_comment_outlined_20", @"comment.png")];
-                [iconItems addObject:createIconCustomizationItem(@"DYYYIconFavorite", @"已收藏图标", @"ic_star_filled_20", @"favorite.png")];
                 [iconItems addObject:createIconCustomizationItem(@"DYYYIconUnfavorite", @"未收藏图标", @"ic_star_outlined_20", @"unfavorite.png")];
+                [iconItems addObject:createIconCustomizationItem(@"DYYYIconFavorite", @"已收藏图标", @"ic_star_filled_20", @"favorite.png")];
                 [iconItems addObject:createIconCustomizationItem(@"DYYYIconShare", @"分享图标", @"ic_share_outlined", @"share.png")];
                                 
                 // 将图标自定义section添加到sections数组
