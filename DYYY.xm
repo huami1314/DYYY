@@ -313,18 +313,59 @@
         self.view.frame = frame;
     }
 }
-//MARK: 双击视频打开评论区视频的双击事件
-- (void)onPlayer:(id)arg0 didDoubleClick:(id)arg1{
-    //如果打开双击评论功能
-    if([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableDoubleOpenComment"]){
-        //调用原生的
-         [self performCommentAction];
-        return;
+
+// MARK: 双击视频事件
+- (void)onPlayer:(id)arg0 didDoubleClick:(id)arg1 {
+
+    BOOL isPopupEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableDoubleOpenAlertController"];
+    BOOL isDirectCommentEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableDoubleOpenComment"];
+
+    if (isPopupEnabled) {
+        // 显示弹窗
+        UIAlertController *alertController = [UIAlertController
+            alertControllerWithTitle:NSLocalizedString(@"选择操作", nil)
+            message:@""
+            preferredStyle:UIAlertControllerStyleActionSheet];
+
+        [alertController addAction:[UIAlertAction
+            actionWithTitle:NSLocalizedString(@"打开评论区", nil)
+            style:UIAlertActionStyleDefault
+            handler:^(UIAlertAction *action) {
+                [self performCommentAction]; // 调用打开评论区的逻辑
+            }]];
+
+        [alertController addAction:[UIAlertAction
+            actionWithTitle:NSLocalizedString(@"点赞视频", nil)
+            style:UIAlertActionStyleDefault
+            handler:^(UIAlertAction *action) {
+                %orig; // 调用原始的点赞逻辑
+            }]];
+
+        [alertController addAction:[UIAlertAction
+            actionWithTitle:NSLocalizedString(@"取消", nil)
+            style:UIAlertActionStyleCancel
+            handler:nil]];
+
+        UIViewController *topController = [DYYYManager getActiveTopController];
+        if (topController) {
+            // 适配 iPad
+            if ([UIDevice currentDevice].userInterfaceIdiom == UIUserInterfaceIdiomPad) {
+                alertController.popoverPresentationController.sourceView = topController.view;
+                alertController.popoverPresentationController.sourceRect = CGRectMake(topController.view.bounds.size.width / 2, topController.view.bounds.size.height / 2, 1, 1);
+            }
+            [topController presentViewController:alertController animated:YES completion:nil];
+        }
+
+        return; // 阻止原始的双击逻辑
+    } else if (isDirectCommentEnabled) {
+        [self performCommentAction];
+        return; 
     }
+
     %orig;
 }
-%end
 
+%end
 
 %hook AWEStoryContainerCollectionView
 - (void)layoutSubviews {
@@ -599,6 +640,74 @@
     }
     return %orig; 
 }
+%end
+
+//隐藏头像加号
+%hook LOTAnimationView
+- (void)layoutSubviews {
+    %orig;
+
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLOTAnimationView"]) {
+        [self removeFromSuperview];
+        return;
+    }
+}
+%end
+
+//移除同城吃喝玩乐提示框
+%hook AWENearbySkyLightCapsuleView
+- (void)layoutSubviews {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCapsuleView"]) {
+        if ([self respondsToSelector:@selector(removeFromSuperview)]) {
+            [self removeFromSuperview];
+        }
+        self.hidden = YES;
+        return; 
+    }
+    %orig;
+}
+%end
+
+//移除共创头像列表
+%hook AWEPlayInteractionCoCreatorNewInfoView
+- (void)layoutSubviews {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideGongChuang"]) {
+        if ([self respondsToSelector:@selector(removeFromSuperview)]) {
+            [self removeFromSuperview]; 
+        }
+        self.hidden = YES; 
+        return; 
+    }
+    %orig; 
+}
+%end
+
+//隐藏右下音乐和取消静音按钮
+%hook AFDCancelMuteAwemeView
+- (void)layoutSubviews {
+    %orig;
+
+    UIView *superview = self.superview;
+
+    if ([superview isKindOfClass:NSClassFromString(@"AWEBaseElementView")]) {
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCancelMute"]) {
+            self.hidden = YES;
+        }
+    }
+}
+%end
+
+//隐藏弹幕按钮
+%hook AWEPlayDanmakuInputContainView
+
+- (void)layoutSubviews {
+    %orig;
+
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideDanmuButton"]) {
+        self.hidden = YES;
+    }
+}
+
 %end
 
 //隐藏作者店铺

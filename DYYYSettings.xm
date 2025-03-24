@@ -124,6 +124,7 @@ static UIViewController *topView(void) {
     return rootVC;
 }
 
+
 // 自定义文本输入视图
 @interface DYYYCustomInputView : UIView <UITextFieldDelegate>
 @property (nonatomic, strong) UIVisualEffectView *blurView;
@@ -603,6 +604,7 @@ static AWESettingItemModel *createIconCustomizationItem(NSString *identifier, NS
 - (instancetype)initWithTitle:(NSString *)title message:(NSString *)message;
 - (void)show;
 - (void)dismiss;
+- (void)confirmTapped;
 @end
 
 @implementation DYYYAboutDialogView
@@ -931,7 +933,7 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                 // 【过滤与屏蔽】分类
                 NSMutableArray<AWESettingItemModel *> *filterItems = [NSMutableArray array];
                 NSArray *filterSettings = @[
-                    @{@"identifier": @"DYYYisSkipLive", @"title": @"启用过滤直播", @"detail": @"", @"cellType": @6, @"imageName": @"ic_livephoto_outlined_20"},
+                    @{@"identifier": @"DYYYisSkipLive", @"title": @"启用过滤直播", @"detail": @"", @"cellType": @6, @"imageName": @"ic_video_outlined_20"},
                     @{@"identifier": @"DYYYNoAds", @"title": @"启用屏蔽广告", @"detail": @"", @"cellType": @6, @"imageName": @"ic_ad_outlined_20"},
                 ];
                 
@@ -1079,6 +1081,7 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                 // 【视频播放界面】分类
                 NSMutableArray<AWESettingItemModel *> *videoUiItems = [NSMutableArray array];
                 NSArray *videoUiSettings = @[
+                    @{@"identifier": @"DYYYHideLOTAnimationView", @"title": @"隐藏头像加号", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
                     @{@"identifier": @"DYYYHideLikeButton", @"title": @"隐藏点赞按钮", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
                     @{@"identifier": @"DYYYHideCommentButton", @"title": @"隐藏评论按钮", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
                     @{@"identifier": @"DYYYHideCollectButton", @"title": @"隐藏收藏按钮", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
@@ -1111,10 +1114,14 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                 // 【提示与位置信息】分类
                 NSMutableArray<AWESettingItemModel *> *infoItems = [NSMutableArray array];
                 NSArray *infoSettings = @[
+                    @{@"identifier": @"DYYYHideCapsuleView", @"title": @"隐藏吃喝玩乐", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
                     @{@"identifier": @"DYYYHideDiscover", @"title": @"隐藏右上搜索", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
                     @{@"identifier": @"DYYYHideInteractionSearch", @"title": @"隐藏相关搜索", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
+                    @{@"identifier": @"DYYYHideDanmuButton", @"title": @"隐藏弹幕按钮", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
+                    @{@"identifier": @"DYYYHideCancelMute", @"title": @"隐藏静音按钮", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
                     @{@"identifier": @"DYYYHideLocation", @"title": @"隐藏视频定位", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
                     @{@"identifier": @"DYYYHideQuqishuiting", @"title": @"隐藏去汽水听", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
+                    @{@"identifier": @"DYYYHideGongChuang", @"title": @"隐藏共创头像", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
                     @{@"identifier": @"DYYYHideHotspot", @"title": @"隐藏热点提示", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
                     @{@"identifier": @"DYYYHideRecommendTips", @"title": @"隐藏推荐提示", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
                     @{@"identifier": @"DYYYHideShareContentView", @"title": @"隐藏分享提示", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
@@ -1244,7 +1251,8 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                 // 【交互增强】分类
                 NSMutableArray<AWESettingItemModel *> *interactionItems = [NSMutableArray array];
                 NSArray *interactionSettings = @[
-                    @{@"identifier": @"DYYYEnableDoubleOpenComment", @"title": @"启用双击打开评论", @"detail": @"", @"cellType": @6, @"imageName": @"ic_comment_outlined_20"}
+                    @{@"identifier": @"DYYYEnableDoubleOpenComment", @"title": @"启用双击打开评论", @"detail": @"", @"cellType": @6, @"imageName": @"ic_comment_outlined_20"},
+                    @{@"identifier": @"DYYYEnableDoubleOpenAlertController", @"title": @"启用双击点赞评论", @"detail": @"", @"cellType": @6, @"imageName": @"ic_xiaoxihuazhonghua_outlined_20"}
                 ];
                 
                 for (NSDictionary *dict in interactionSettings) {
@@ -1282,7 +1290,7 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
             aboutItem.colorStyle = 0;
             aboutItem.isEnable = YES;
             aboutItem.cellTappedBlock = ^{
-                showAboutDialog(@"关于DYYY", @"版本: v2.1-7\n\n感谢使用DYYY\n\n@维他入我心 基于DYYY二次开发\n\n感谢开源", nil);
+                showAboutDialog(@"关于DYYY", @"版本: v2.1-7\n\n感谢使用DYYY\n\n@维他入我心 基于DYYY二次开发\n\nTelegram@vita_app\n\n感谢开源", nil);
             };
             [aboutItems addObject:aboutItem];
             
