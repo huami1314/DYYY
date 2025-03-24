@@ -1461,7 +1461,18 @@
             CGRect originalFrame = label.frame;
             label.layer.anchorPoint = CGPointMake(0, label.layer.anchorPoint.y);
             label.layer.position = CGPointMake(originalFrame.origin.x, label.layer.position.y);
-            CGFloat halfScreenWidth = [UIScreen mainScreen].bounds.size.width / 2.84;
+            
+            // 添加IP属地左移系数支持
+            NSString *leftShiftFactorValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYIPLeftShiftFactor"];
+            CGFloat leftShiftFactor = 2.84; // 默认值
+            if (leftShiftFactorValue.length > 0) {
+                CGFloat customShiftFactor = [leftShiftFactorValue floatValue];
+                if (customShiftFactor > 0) {
+                    leftShiftFactor = customShiftFactor;
+                }
+            }
+            
+            CGFloat halfScreenWidth = [UIScreen mainScreen].bounds.size.width / leftShiftFactor;
             CGAffineTransform scaleTransform = CGAffineTransformMakeScale(ipScale, ipScale);
             CGAffineTransform translationTransform = CGAffineTransformMakeTranslation(-halfScreenWidth, 0);
             label.transform = CGAffineTransformConcat(scaleTransform, translationTransform);
@@ -1477,7 +1488,7 @@
 }
 
 +(BOOL)shouldActiveWithData:(id)arg1 context:(id)arg2{
-	return [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableArea"];
+    return [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableArea"];
 }
 
 %end
@@ -2105,7 +2116,6 @@ static CGFloat currentScale = 1.0;
 
 %end
 
-// 对文案的缩放
 @interface AWEPlayInteractionDescriptionScrollView : UIScrollView
 @end
 
@@ -2125,11 +2135,16 @@ static CGFloat currentScale = 1.0;
             scale = customScale;
         }
     }
-        self.transform = CGAffineTransformIdentity;
+    
+    // 添加文案垂直偏移支持
+    NSString *descriptionOffsetValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDescriptionVerticalOffset"];
+    CGFloat verticalOffset = 0;
+    if (descriptionOffsetValue.length > 0) {
+        verticalOffset = [descriptionOffsetValue floatValue];
+    }
     
     UIView *parentView = self.superview;
     UIView *grandParentView = nil;
-
 
     if (parentView) {
         grandParentView = parentView.superview;
@@ -2142,7 +2157,7 @@ static CGFloat currentScale = 1.0;
         CGRect scaledFrame = grandParentView.frame;
         CGFloat translationX = -scaledFrame.origin.x;
 
-        CGAffineTransform translationTransform = CGAffineTransformMakeTranslation(translationX, 0);
+        CGAffineTransform translationTransform = CGAffineTransformMakeTranslation(translationX, verticalOffset);
         CGAffineTransform combinedTransform = CGAffineTransformConcat(scaleTransform, translationTransform);
 
         grandParentView.transform = combinedTransform;
@@ -2151,7 +2166,57 @@ static CGFloat currentScale = 1.0;
 
 %end
 
-// 对用户名标签的缩放
+// 对新版文案的缩放（33.0以上）
+@interface AWEPlayInteractionDescriptionLabel : UILabel
+@end
+
+%hook AWEPlayInteractionDescriptionLabel
+
+- (void)layoutSubviews {
+    %orig;
+    
+    self.transform = CGAffineTransformIdentity;
+
+    NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
+    CGFloat scale = 1.0; 
+    
+    if (scaleValue.length > 0) {
+        CGFloat customScale = [scaleValue floatValue];
+        if (customScale > 0 && customScale != 1.0) {
+            scale = customScale;
+        }
+    }
+    
+    // 添加文案垂直偏移支持
+    NSString *descriptionOffsetValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDescriptionVerticalOffset"];
+    CGFloat verticalOffset = 0;
+    if (descriptionOffsetValue.length > 0) {
+        verticalOffset = [descriptionOffsetValue floatValue];
+    }
+    
+    UIView *parentView = self.superview;
+    UIView *grandParentView = nil;
+
+    if (parentView) {
+        grandParentView = parentView.superview;
+    }
+    
+    if (grandParentView) {
+        CGAffineTransform scaleTransform = CGAffineTransformMakeScale(scale, scale);
+        grandParentView.transform = scaleTransform;
+
+        CGRect scaledFrame = grandParentView.frame;
+        CGFloat translationX = -scaledFrame.origin.x;
+
+        CGAffineTransform translationTransform = CGAffineTransformMakeTranslation(translationX, verticalOffset);
+        CGAffineTransform combinedTransform = CGAffineTransformConcat(scaleTransform, translationTransform);
+
+        grandParentView.transform = combinedTransform;
+    }
+}
+
+%end
+
 @interface AWEUserNameLabel : UIView
 @end
 
@@ -2172,6 +2237,13 @@ static CGFloat currentScale = 1.0;
         }
     }
     
+    // 添加垂直偏移支持
+    NSString *verticalOffsetValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameVerticalOffset"];
+    CGFloat verticalOffset = 0;
+    if (verticalOffsetValue.length > 0) {
+        verticalOffset = [verticalOffsetValue floatValue];
+    }
+    
     UIView *parentView = self.superview;
     UIView *grandParentView = nil;
 
@@ -2186,7 +2258,7 @@ static CGFloat currentScale = 1.0;
         CGRect scaledFrame = grandParentView.frame;
         CGFloat translationX = -scaledFrame.origin.x;
   
-        CGAffineTransform translationTransform = CGAffineTransformMakeTranslation(translationX, 0);
+        CGAffineTransform translationTransform = CGAffineTransformMakeTranslation(translationX, verticalOffset);
         CGAffineTransform combinedTransform = CGAffineTransformConcat(scaleTransform, translationTransform);
         
         grandParentView.transform = combinedTransform;

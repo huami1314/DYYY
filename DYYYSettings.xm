@@ -851,6 +851,9 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                 NSArray *scaleSettings = @[
                     @{@"identifier": @"DYYYElementScale", @"title": @"右侧栏缩放度", @"detail": @"不填默认", @"cellType": @26, @"imageName": @"ic_zoomin_outlined_20"},
                     @{@"identifier": @"DYYYNicknameScale", @"title": @"昵称文案缩放", @"detail": @"不填默认", @"cellType": @26, @"imageName": @"ic_zoomin_outlined_20"},
+                    @{@"identifier": @"DYYYNicknameVerticalOffset", @"title": @"昵称下移距离", @"detail": @"不填默认", @"cellType": @26, @"imageName": @"ic_pensketch_outlined_20"},
+                    @{@"identifier": @"DYYYDescriptionVerticalOffset", @"title": @"文案下移距离", @"detail": @"不填默认", @"cellType": @26, @"imageName": @"ic_pensketch_outlined_20"},
+                    @{@"identifier": @"DYYYIPLeftShiftFactor", @"title": @"属地左移系数", @"detail": @"2.84", @"cellType": @26, @"imageName": @"ic_pensketch_outlined_20"},
                 ];
                 
                 for (NSDictionary *dict in scaleSettings) {
@@ -861,7 +864,7 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                 // 【标题自定义】分类
                 NSMutableArray<AWESettingItemModel *> *titleItems = [NSMutableArray array];
                 NSArray *titleSettings = @[
-                    @{@"identifier": @"DYYYIndexTitle", @"title": @"设置首页标题", @"detail": @"不填默认", @"cellType": @26, @"imageName": @"ic_docpen_filled"},
+                    @{@"identifier": @"DYYYIndexTitle", @"title": @"设置首页标题", @"detail": @"不填默认", @"cellType": @26, @"imageName": @"ic_horizontalbook_outlined_20"},
                     @{@"identifier": @"DYYYFriendsTitle", @"title": @"设置朋友标题", @"detail": @"不填默认", @"cellType": @26, @"imageName": @"ic_usertwo_outlined_20"},
                     @{@"identifier": @"DYYYMsgTitle", @"title": @"设置消息标题", @"detail": @"不填默认", @"cellType": @26, @"imageName": @"ic_msg_outlined_20"},
                     @{@"identifier": @"DYYYSelfTitle", @"title": @"设置我的标题", @"detail": @"不填默认", @"cellType": @26, @"imageName": @"ic_user_outlined_20"},
@@ -1209,5 +1212,7 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
     
     return item;
 }
+
+
 %end
 
