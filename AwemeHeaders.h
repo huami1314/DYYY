@@ -315,3 +315,13 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @property (nonatomic, copy) NSString *channelID;
 @property (nonatomic, copy) NSString *channelTitle;
 @end
+
+@interface AWEPlayInteractionStrongifyShareContentView : UIView
+@property (nonatomic, strong, readonly) UIView *superview;
+@property (nonatomic, assign, getter=isHidden) BOOL hidden;
+@end
+
+@interface AWEAntiAddictedNoticeBarView : UIView
+@property (nonatomic, strong, readonly) UIView *superview;
+@property (nonatomic, assign, getter=isHidden) BOOL hidden;
+@end
