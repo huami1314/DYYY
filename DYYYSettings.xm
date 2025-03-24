@@ -113,15 +113,18 @@ static UIViewController *topView(void) {
 @property (nonatomic, copy) void (^onConfirm)(NSString *text);
 @property (nonatomic, copy) void (^onCancel)(void);
 @property (nonatomic, assign) CGRect originalFrame; // 添加属性来保存原始位置
-- (instancetype)initWithTitle:(NSString *)title;
+@property (nonatomic, copy) NSString *defaultText; // 添加默认文本属性
+- (instancetype)initWithTitle:(NSString *)title defaultText:(NSString *)defaultText; // 修改初始化方法
+- (instancetype)initWithTitle:(NSString *)title; // 保留原方法
 - (void)show;
 - (void)dismiss;
 @end
 
 @implementation DYYYCustomInputView
 
-- (instancetype)initWithTitle:(NSString *)title {
+- (instancetype)initWithTitle:(NSString *)title defaultText:(NSString *)defaultText {
     if (self = [super initWithFrame:UIScreen.mainScreen.bounds]) {
+        self.defaultText = defaultText;
         self.backgroundColor = [UIColor colorWithWhite:0 alpha:0.4];
         
         // 创建模糊效果视图
@@ -161,6 +164,12 @@ static UIViewController *topView(void) {
         self.inputTextField.tintColor = [UIColor colorWithRed:11/255.0 green:223/255.0 blue:154/255.0 alpha:1.0]; // #0BDF9A
         self.inputTextField.delegate = self;
         self.inputTextField.returnKeyType = UIReturnKeyDone;
+        
+        // 设置默认文本
+        if (defaultText && defaultText.length > 0) {
+            self.inputTextField.text = defaultText;
+        }
+        
         [self.contentView addSubview:self.inputTextField];
         
         // 添加内容和按钮之间的分割线
@@ -200,6 +209,11 @@ static UIViewController *topView(void) {
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillHide:) name:UIKeyboardWillHideNotification object:nil];
     }
     return self;
+}
+
+// 为了向后兼容保留原方法
+- (instancetype)initWithTitle:(NSString *)title {
+    return [self initWithTitle:title defaultText:nil];
 }
 
 - (void)dealloc {
@@ -525,9 +539,18 @@ static void showAboutDialog(NSString *title, NSString *message, void (^onConfirm
     [aboutDialog show];
 }
 
-// 显示自定义文本输入弹窗
+static void showTextInputAlert(NSString *title, void (^onConfirm)(NSString *text), void (^onCancel)(void));
+static void showTextInputAlert(NSString *title, NSString *defaultText, void (^onConfirm)(NSString *text), void (^onCancel)(void));
+
+static void showTextInputAlert(NSString *title, NSString *defaultText, void (^onConfirm)(NSString *text), void (^onCancel)(void)) {
+    DYYYCustomInputView *inputView = [[DYYYCustomInputView alloc] initWithTitle:title defaultText:defaultText];
+    inputView.onConfirm = onConfirm;
+    inputView.onCancel = onCancel;
+    [inputView show];
+}
+
 static void showTextInputAlert(NSString *title, void (^onConfirm)(NSString *text), void (^onCancel)(void)) {
-    DYYYCustomInputView *inputView = [[DYYYCustomInputView alloc] initWithTitle:title];
+    DYYYCustomInputView *inputView = [[DYYYCustomInputView alloc] initWithTitle:title defaultText:nil];
     inputView.onConfirm = onConfirm;
     inputView.onCancel = onCancel;
     [inputView show];
@@ -675,8 +698,7 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                     @{@"identifier": @"DYYYEnableDanmuColor", @"title": @"启用弹幕改色", @"detail": @"", @"cellType": @6, @"imageName": @"ic_bubbletwo_outlined_20"},
                     @{@"identifier": @"DYYYdanmuColor", @"title": @"自定弹幕颜色", @"detail": @"十六进制", @"cellType": @26, @"imageName": @"ic_bubbletwo_filled_20"},
                     @{@"identifier": @"DYYYLabelColor", @"title": @"时间标签颜色", @"detail": @"十六进制", @"cellType": @26, @"imageName": @"ic_clock_outlined_20"},
-                    @{@"identifier": @"DYYYPlaceholderColor", @"title": @"改占位符颜色", @"detail": @"十六进制", @"cellType": @26, @"imageName": @"ic_artboardpen_outlined"}
-                ];
+               ];
                 
                 for (NSDictionary *dict in appearanceSettings) {
                     AWESettingItemModel *item = [self createSettingItem:dict cellTapHandlers:cellTapHandlers];
@@ -701,18 +723,30 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                     if ([item.identifier isEqualToString:@"DYYYDefaultSpeed"]) {
                         // 获取已保存的默认倍速值
                         NSString *savedSpeed = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDefaultSpeed"];
-                        if (savedSpeed && savedSpeed.length > 0) {
-                            item.detail = savedSpeed;
-                        } else {
-                            item.detail = @"点击选择";
-                        }
-                        
-                        // 覆盖默认的cellTappedBlock
+                        item.detail = savedSpeed ?: @"1.0x";
                         item.cellTappedBlock = ^{
-                            NSArray<NSString *> *speedOptions = @[@"0.75x", @"1.0x", @"1.25x", @"1.5x", @"2.0x", @"2.5x", @"3.0x"];
-                            showSpeedSelectionSheet(rootVC, speedOptions, ^(NSInteger selectedIndex, NSString *selectedValue) {
+                            NSArray *speedOptions = @[@"0.75x", @"1.0x", @"1.25x", @"1.5x", @"2.0x", @"2.5x", @"3.0x"];
+                            showSpeedSelectionSheet(topView(), speedOptions, ^(NSInteger selectedIndex, NSString *selectedValue) {
                                 setUserDefaults(selectedValue, @"DYYYDefaultSpeed");
+                                
+                                // 更新UI
                                 item.detail = selectedValue;
+                                UIViewController *topVC = topView();
+                                if ([topVC isKindOfClass:%c(AWESettingBaseViewController)]) {
+                                    dispatch_async(dispatch_get_main_queue(), ^{
+                                        UITableView *tableView = nil;
+                                        for (UIView *subview in topVC.view.subviews) {
+                                            if ([subview isKindOfClass:[UITableView class]]) {
+                                                tableView = (UITableView *)subview;
+                                                break;
+                                            }
+                                        }
+                                        
+                                        if (tableView) {
+                                            [tableView reloadData];
+                                        }
+                                    });
+                                }
                             });
                         };
                     }
@@ -817,7 +851,6 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                     @{@"identifier": @"DYYYFriendsTitle", @"title": @"设置朋友标题", @"detail": @"不填默认", @"cellType": @26, @"imageName": @"ic_usertwo_outlined_20"},
                     @{@"identifier": @"DYYYMsgTitle", @"title": @"设置消息标题", @"detail": @"不填默认", @"cellType": @26, @"imageName": @"ic_msg_outlined_20"},
                     @{@"identifier": @"DYYYSelfTitle", @"title": @"设置我的标题", @"detail": @"不填默认", @"cellType": @26, @"imageName": @"ic_user_outlined_20"},
-                    @{@"identifier": @"DYYYPlaceholder", @"title": @"自定义占位符", @"detail": @"", @"cellType": @26, @"imageName": @"ic_pensketch_outlined_20"}
                 ];
                 
                 for (NSDictionary *dict in titleSettings) {
@@ -1109,8 +1142,29 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
     
     if (item.cellType == 26 && cellTapHandlers != nil) {
         cellTapHandlers[item.identifier] = ^{
-            showTextInputAlert(item.title, ^(NSString *text) {
+            // 修改这里：传递当前的 detail 值作为默认文本
+            showTextInputAlert(item.title, item.detail, ^(NSString *text) {
                 setUserDefaults(text, item.identifier);
+                // 更新item的detail属性
+                item.detail = text;
+                
+                // 查找当前视图控制器并刷新设置表格
+                UIViewController *topVC = topView();
+                if ([topVC isKindOfClass:%c(AWESettingBaseViewController)]) {
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        UITableView *tableView = nil;
+                        for (UIView *subview in topVC.view.subviews) {
+                            if ([subview isKindOfClass:[UITableView class]]) {
+                                tableView = (UITableView *)subview;
+                                break;
+                            }
+                        }
+                        
+                        if (tableView) {
+                            [tableView reloadData];
+                        }
+                    });
+                }
             }, nil);
         };
         item.cellTappedBlock = cellTapHandlers[item.identifier];
