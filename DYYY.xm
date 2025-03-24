@@ -593,13 +593,31 @@
 }
 %end
 
-//隐藏TA的店铺
+//隐藏作者店铺
 %hook AWEECommerceEntryView
 
 - (void)layoutSubviews {
     %orig;
 
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideHisShop"]) {
+        UIView *parentView = self.superview;
+        if (parentView) {
+            parentView.hidden = YES;
+        } else {
+            self.hidden = YES;
+        }
+    }
+}
+
+%end
+
+//隐藏校园提示
+%hook AWETemplateTagsCommonView
+
+- (void)layoutSubviews {
+    %orig;
+
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTemplateTags"]) {
         UIView *parentView = self.superview;
         if (parentView) {
             parentView.hidden = YES;
