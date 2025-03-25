@@ -335,13 +335,13 @@ static UIViewController *topView(void) {
 
 @end
 
-// 自定义倍速选择视图
-@interface DYYYSpeedSelectionView : UIView
+// 自定义选项选择视图
+@interface DYYYOptionsSelectionView : UIView
 @property (nonatomic, strong) UIVisualEffectView *blurView;
 @property (nonatomic, strong) UIView *contentView;
 @property (nonatomic, strong) UILabel *titleLabel;
 @property (nonatomic, strong) UIButton *cancelButton;
-@property (nonatomic, strong) NSArray<NSString *> *speedOptions;
+@property (nonatomic, strong) NSArray<NSString *> *options;
 @property (nonatomic, strong) NSMutableArray<UIButton *> *optionButtons;
 @property (nonatomic, copy) void (^onSelect)(NSInteger selectedIndex, NSString *selectedValue);
 - (instancetype)initWithTitle:(NSString *)title options:(NSArray<NSString *> *)options;
@@ -349,11 +349,11 @@ static UIViewController *topView(void) {
 - (void)dismiss;
 @end
 
-@implementation DYYYSpeedSelectionView
+@implementation DYYYOptionsSelectionView
 
 - (instancetype)initWithTitle:(NSString *)title options:(NSArray<NSString *> *)options {
     if (self = [super initWithFrame:UIScreen.mainScreen.bounds]) {
-        self.speedOptions = options;
+        self.options = options;
         self.optionButtons = [NSMutableArray array];
         self.backgroundColor = [UIColor colorWithWhite:0 alpha:0.4];
         
@@ -581,8 +581,8 @@ static AWESettingItemModel *createIconCustomizationItem(NSString *identifier, NS
 
 - (void)optionTapped:(UIButton *)sender {
     NSInteger index = sender.tag;
-    if (self.onSelect && index < self.speedOptions.count) {
-        self.onSelect(index, self.speedOptions[index]);
+    if (self.onSelect && index < self.options.count) {
+        self.onSelect(index, self.options[index]);
     }
     [self dismiss];
 }
@@ -655,7 +655,6 @@ static AWESettingItemModel *createIconCustomizationItem(NSString *identifier, NS
                                  value:[UIColor colorWithRed:124/255.0 green:124/255.0 blue:130/255.0 alpha:1.0] 
                                  range:NSMakeRange(0, message.length)];
         
-        // 查找并设置 Telegram 链接
         NSRange telegramRange = [message rangeOfString:@"Telegram@vita_app"];
         if (telegramRange.location != NSNotFound) {
             [attributedString addAttribute:NSLinkAttributeName 
@@ -663,11 +662,17 @@ static AWESettingItemModel *createIconCustomizationItem(NSString *identifier, NS
                                      range:telegramRange];
         }
         
-        // 查找并设置 GitHub 链接
         NSRange githubRange = [message rangeOfString:@"github.com/Wtrwx/DYYY"];
         if (githubRange.location != NSNotFound) {
             [attributedString addAttribute:NSLinkAttributeName 
                                      value:@"https://github.com/Wtrwx/DYYY" 
+                                     range:githubRange];
+        }
+
+        NSRange huamiGithubRange = [message rangeOfString:@"github.com/huami1314/DYYY"];
+        if (huamiGithubRange.location != NSNotFound) {
+            [attributedString addAttribute:NSLinkAttributeName 
+                                     value:@"https://github.com/huami1314/DYYY" 
                                      range:githubRange];
         }
         
@@ -746,14 +751,14 @@ static void showTextInputAlert(NSString *title, void (^onConfirm)(NSString *text
     showTextInputAlert(title, nil, nil, onConfirm, onCancel);
 }
 
-// 显示自定义倍速选择视图
-static void showSpeedSelectionSheet(UIViewController *viewController, NSArray<NSString *> *speedOptions, void (^onSelect)(NSInteger selectedIndex, NSString *selectedValue)) {
-    // 确保倍速选项数组正确
-    if (!speedOptions || speedOptions.count == 0) {
-        speedOptions = @[@"0.75x", @"1.0x", @"1.25x", @"1.5x", @"2.0x", @"2.5x", @"3.0x"];
+// 显示自定义选项选择视图
+static void showOptionsSelectionSheet(UIViewController *viewController, NSArray<NSString *> *options, NSString *title, void (^onSelect)(NSInteger selectedIndex, NSString *selectedValue)) {
+    // 确保选项数组正确
+    if (!options || options.count == 0) {
+        options = @[@"0.75x", @"1.0x", @"1.25x", @"1.5x", @"2.0x", @"2.5x", @"3.0x"];
     }
     
-    DYYYSpeedSelectionView *selectionView = [[DYYYSpeedSelectionView alloc] initWithTitle:@"选择默认倍速" options:speedOptions];
+    DYYYOptionsSelectionView *selectionView = [[DYYYOptionsSelectionView alloc] initWithTitle:title options:options];
     selectionView.onSelect = onSelect;
     [selectionView show];
 }
@@ -899,6 +904,7 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                 NSMutableArray<AWESettingItemModel *> *videoItems = [NSMutableArray array];
                 NSArray *videoSettings = @[
                     @{@"identifier": @"DYYYisShowScheduleDisplay", @"title": @"显示进度时长", @"detail": @"", @"cellType": @6, @"imageName": @"ic_playertime_outlined_20"},
+                    @{@"identifier": @"DYYYScheduleStyle", @"title": @"进度时长样式", @"detail": @"", @"cellType": @26, @"imageName": @"ic_playertime_outlined_20"},
                     @{@"identifier": @"DYYYTimelineVerticalPosition", @"title": @"时长纵轴位置", @"detail": @"-12.5", @"cellType": @26, @"imageName": @"ic_playertime_outlined_20"},
                     @{@"identifier": @"DYYYHideVideoProgress", @"title": @"隐藏视频进度", @"detail": @"", @"cellType": @6, @"imageName": @"ic_playertime_outlined_20"},
                     @{@"identifier": @"DYYYisEnableAutoPlay", @"title": @"启用自动播放", @"detail": @"", @"cellType": @6, @"imageName": @"ic_play_outlined_12"},
@@ -909,15 +915,45 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                 for (NSDictionary *dict in videoSettings) {
                     AWESettingItemModel *item = [self createSettingItem:dict cellTapHandlers:cellTapHandlers];
                     
-                    // 特殊处理默认倍速选项，使用showSpeedSelectionSheet而不是输入框
+                    // 特殊处理默认倍速选项，使用showOptionsSelectionSheet而不是输入框
                     if ([item.identifier isEqualToString:@"DYYYDefaultSpeed"]) {
                         // 获取已保存的默认倍速值
                         NSString *savedSpeed = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDefaultSpeed"];
                         item.detail = savedSpeed ?: @"1.0x";
                         item.cellTappedBlock = ^{
                             NSArray *speedOptions = @[@"0.75x", @"1.0x", @"1.25x", @"1.5x", @"2.0x", @"2.5x", @"3.0x"];
-                            showSpeedSelectionSheet(topView(), speedOptions, ^(NSInteger selectedIndex, NSString *selectedValue) {
+                            showOptionsSelectionSheet(topView(), speedOptions, @"选择默认倍速", ^(NSInteger selectedIndex, NSString *selectedValue) {
                                 setUserDefaults(selectedValue, @"DYYYDefaultSpeed");
+                                
+                                // 更新UI
+                                item.detail = selectedValue;
+                                UIViewController *topVC = topView();
+                                if ([topVC isKindOfClass:%c(AWESettingBaseViewController)]) {
+                                    dispatch_async(dispatch_get_main_queue(), ^{
+                                        UITableView *tableView = nil;
+                                        for (UIView *subview in topVC.view.subviews) {
+                                            if ([subview isKindOfClass:[UITableView class]]) {
+                                                tableView = (UITableView *)subview;
+                                                break;
+                                            }
+                                        }
+                                        
+                                        if (tableView) {
+                                            [tableView reloadData];
+                                        }
+                                    });
+                                }
+                            });
+                        };
+                    }
+                    // 添加对进度时长样式的特殊处理
+                    else if ([item.identifier isEqualToString:@"DYYYScheduleStyle"]) {
+                        NSString *savedStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
+                        item.detail = savedStyle ?: @"默认";
+                        item.cellTappedBlock = ^{
+                            NSArray *styleOptions = @[@"进度条两侧上下", @"进度条两侧左右", @"进度条右侧剩余", @"进度条右侧完整"];
+                            showOptionsSelectionSheet(topView(), styleOptions, @"选择进度时长样式", ^(NSInteger selectedIndex, NSString *selectedValue) {
+                                setUserDefaults(selectedValue, @"DYYYScheduleStyle");
                                 
                                 // 更新UI
                                 item.detail = selectedValue;
@@ -943,7 +979,6 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                     
                     [videoItems addObject:item];
                 }
-                
                 // 【系统功能】分类
                 NSMutableArray<AWESettingItemModel *> *systemItems = [NSMutableArray array];
                 NSArray *systemSettings = @[
@@ -1357,7 +1392,8 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                     @"@维他入我心 基于DYYY二次开发\n\n"
                     @"Telegram@vita_app\n\n"
                     @"github.com/Wtrwx/DYYY\n\n" 
-                    @"感谢Huami开源", nil);
+                    @"感谢Huami开源"
+                    @"github.com/huami1314/DYYY\n\n" , nil);
             };
             [aboutItems addObject:aboutItem];
             

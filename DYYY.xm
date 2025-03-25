@@ -1327,7 +1327,67 @@
 }
 %end
 
+@interface AWEFeedProgressSlider (CustomAdditions)
+- (void)applyCustomProgressStyle;
+@end
+
+// 然后是现有的 hook 实现
 %hook AWEFeedProgressSlider
+
+// 在初始化时设置进度条样式
+- (instancetype)initWithFrame:(CGRect)frame {
+    self = %orig;
+    if (self) {
+        [self applyCustomProgressStyle];
+    }
+    return self;
+}
+
+// 在布局更新时应用自定义样式
+- (void)layoutSubviews {
+    %orig;
+    [self applyCustomProgressStyle];
+}
+
+%new
+- (void)applyCustomProgressStyle {
+    NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
+    
+    if ([scheduleStyle isEqualToString:@"进度条两侧左右"]) {
+        // 获取父视图宽度，以便计算新的宽度
+        CGFloat parentWidth = self.superview.bounds.size.width;
+        CGRect frame = self.frame;
+        
+        // 计算宽度百分比和边距
+        CGFloat widthPercent = 0.80;
+        NSString *widthPercentValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYProgressBarWidthPercent"];
+        if (widthPercentValue.length > 0) {
+            CGFloat customPercent = [widthPercentValue floatValue];
+            if (customPercent > 0 && customPercent <= 1.0) {
+                widthPercent = customPercent;
+            }
+        }
+        
+        // 调整进度条宽度和位置
+        CGFloat newWidth = parentWidth * widthPercent;
+        CGFloat centerX = frame.origin.x + frame.size.width / 2;
+        
+        frame.size.width = newWidth;
+        frame.origin.x = centerX - newWidth / 2;
+        
+        self.frame = frame;
+        
+        // 调整进度条子视图的位置和大小
+        for (UIView *subview in self.subviews) {
+            if ([subview isKindOfClass:[UIProgressView class]] || 
+                [subview isKindOfClass:[UISlider class]]) {
+                CGRect subFrame = subview.frame;
+                subFrame.size.width = newWidth;
+                subview.frame = subFrame;
+            }
+        }
+    }
+}
 
 //开启视频进度条后默认显示进度条的透明度否则有部分视频不会显示进度条以及秒数
 - (void)setAlpha:(CGFloat)alpha {
@@ -1355,6 +1415,7 @@
 }
 
 //MARK: 视频显示进度条以及视频进度秒数
+//MARK: 视频显示进度条以及视频进度秒数
 - (void)setLimitUpperActionArea:(BOOL)arg1 {
     %orig;
     //定义一下进度条默认算法
@@ -1381,25 +1442,39 @@
             }
         }
         
-        // 创建左侧时间标签
-        UILabel *leftLabel = [[UILabel alloc] init];
-        leftLabel.frame = CGRectMake(sliderFrame.origin.x, 
-                                     sliderFrame.origin.y + verticalOffset, 
-                                     50, 15);
-        leftLabel.backgroundColor = [UIColor clearColor];
-        [leftLabel setText:@"00:00"];
-        [leftLabel setTextColor:[UIColor whiteColor]];
-        [leftLabel setFont:[UIFont systemFontOfSize:8]];
-        leftLabel.tag = 10001;
-        [parentView addSubview:leftLabel];
+        // 获取显示样式设置
+        NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
+        BOOL showRemainingTime = [scheduleStyle isEqualToString:@"进度条右侧剩余"];
+        BOOL showCompleteTime = [scheduleStyle isEqualToString:@"进度条右侧完整"];
+        
+        // 只有在非"进度条右侧剩余"和非"进度条右侧完整"模式时创建左侧时间标签
+        if (!showRemainingTime && !showCompleteTime) {
+            // 创建左侧时间标签
+            UILabel *leftLabel = [[UILabel alloc] init];
+            leftLabel.frame = CGRectMake(sliderFrame.origin.x, 
+                                         sliderFrame.origin.y + verticalOffset, 
+                                         50, 15);
+            leftLabel.backgroundColor = [UIColor clearColor];
+            [leftLabel setText:@"00:00"];
+            [leftLabel setTextColor:[UIColor whiteColor]];
+            [leftLabel setFont:[UIFont systemFontOfSize:8]];
+            leftLabel.tag = 10001;
+            [parentView addSubview:leftLabel];
+        }
         
         // 创建右侧时间标签
         UILabel *rightLabel = [[UILabel alloc] init];
-        rightLabel.frame = CGRectMake(sliderFrame.origin.x + sliderFrame.size.width - 23, 
-                                      sliderFrame.origin.y + verticalOffset, 
-                                      50, 15);
+        if (showCompleteTime) {
+            rightLabel.frame = CGRectMake(sliderFrame.origin.x + sliderFrame.size.width - 50, 
+                                        sliderFrame.origin.y + verticalOffset, 
+                                        50, 15);
+        } else {
+            rightLabel.frame = CGRectMake(sliderFrame.origin.x + sliderFrame.size.width - 23, 
+                                        sliderFrame.origin.y + verticalOffset, 
+                                        50, 15);
+        }
         rightLabel.backgroundColor = [UIColor clearColor];
-        [rightLabel setText:duration];
+        [rightLabel setText:showRemainingTime ? @"00:00" : duration];
         [rightLabel setTextColor:[UIColor whiteColor]];
         [rightLabel setFont:[UIFont systemFontOfSize:8]];
         rightLabel.tag = 10002;
@@ -1457,15 +1532,27 @@
         UILabel *leftLabel = [parentView viewWithTag:10001];
         UILabel *rightLabel = [parentView viewWithTag:10002];
         
+        // 获取显示样式设置
+        NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
+        BOOL showRemainingTime = [scheduleStyle isEqualToString:@"进度条右侧剩余"];
+        BOOL showCompleteTime = [scheduleStyle isEqualToString:@"进度条右侧完整"];
+        
         //如果检测到时间
         if (arg1 > 0 && leftLabel) {
-            //创建左边的文本进度并且算法格式化时间
             [leftLabel setText:[self formatTimeFromSeconds:arg1]];
         }
-        //如果检测到时间
         if (arg2 > 0 && rightLabel) {
-            //创建右边的文本进度条并且算法格式化时间
-            [rightLabel setText:[self formatTimeFromSeconds:arg2]];
+            if (showRemainingTime) {
+                CGFloat remainingTime = arg2 - arg1;
+                if (remainingTime < 0) remainingTime = 0;
+                [rightLabel setText:[NSString stringWithFormat:@"%@", [self formatTimeFromSeconds:remainingTime]]];
+            } else if (showCompleteTime) {
+                [rightLabel setText:[NSString stringWithFormat:@"%@/%@", 
+                                    [self formatTimeFromSeconds:arg1], 
+                                    [self formatTimeFromSeconds:arg2]]];
+            } else {
+                [rightLabel setText:[self formatTimeFromSeconds:arg2]];
+            }
         }
     }
 }
