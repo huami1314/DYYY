@@ -1228,7 +1228,6 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                 [removeSettingsItems addObject:item];
             }
             
-            // 修复：创建section并组织到sections数组
             NSMutableArray *sections = [NSMutableArray array];
             [sections addObject:createSection(@"顶栏选项", removeSettingsItems)];
             
@@ -1288,10 +1287,7 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                     // 为双击菜单选项添加特殊处理
                     if ([item.identifier isEqualToString:@"DYYYEnableDoubleOpenAlertController"]) {
                         item.cellTappedBlock = ^{
-                            // 创建双击菜单设置页面
                             NSMutableArray<AWESettingItemModel *> *doubleTapItems = [NSMutableArray array];
-                            
-                            // 启用双击菜单的主开关
                             AWESettingItemModel *enableDoubleTapMenu = [self createSettingItem:@{
                                 @"identifier": @"DYYYEnableDoubleOpenAlertController", 
                                 @"title": @"启用双击打开菜单", 
@@ -1301,7 +1297,6 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                             }];
                             [doubleTapItems addObject:enableDoubleTapMenu];
                             
-                            // 为双击菜单中添加各个功能项
                             NSArray *doubleTapFunctions = @[
                                 @{@"identifier": @"DYYYDoubleTapDownload", @"title": @"保存视频/图片", @"detail": @"", @"cellType": @6, @"imageName": @"ic_boxarrowdown_outlined"},
                                 @{@"identifier": @"DYYYDoubleTapDownloadAudio", @"title": @"保存音频", @"detail": @"", @"cellType": @6, @"imageName": @"ic_boxarrowdown_outlined"},
@@ -1314,12 +1309,8 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                                 AWESettingItemModel *functionItem = [self createSettingItem:dict];
                                 [doubleTapItems addObject:functionItem];
                             }
-                            
-                            // 创建一个section来包含上述设置项
                             NSMutableArray *sections = [NSMutableArray array];
                             [sections addObject:createSection(@"双击菜单设置", doubleTapItems)];
-                            
-                            // 创建并推入双击菜单设置页面
                             UIViewController *rootVC = self.controllerDelegate;
                             AWESettingBaseViewController *subVC = createSubSettingsViewController(@"双击菜单设置", sections);
                             [rootVC.navigationController pushViewController:(UIViewController *)subVC animated:YES];
