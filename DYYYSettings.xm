@@ -593,12 +593,13 @@ static AWESettingItemModel *createIconCustomizationItem(NSString *identifier, NS
 
 @end
 
+
 // 添加一个自定义关于弹窗类
 @interface DYYYAboutDialogView : UIView
 @property (nonatomic, strong) UIVisualEffectView *blurView;
 @property (nonatomic, strong) UIView *contentView;
 @property (nonatomic, strong) UILabel *titleLabel;
-@property (nonatomic, strong) UILabel *messageLabel;
+@property (nonatomic, strong) UITextView *messageTextView; // 将 UILabel 改为 UITextView
 @property (nonatomic, strong) UIButton *confirmButton;
 @property (nonatomic, copy) void (^onConfirm)(void);
 - (instancetype)initWithTitle:(NSString *)title message:(NSString *)message;
@@ -636,15 +637,43 @@ static AWESettingItemModel *createIconCustomizationItem(NSString *identifier, NS
         self.titleLabel.font = [UIFont systemFontOfSize:18 weight:UIFontWeightMedium];
         [self.contentView addSubview:self.titleLabel];
         
-        // 消息内容 - 颜色使用 #7c7c82，增加高度到210以显示更多内容
-        self.messageLabel = [[UILabel alloc] initWithFrame:CGRectMake(20, 54, 260, 210)];
-        self.messageLabel.text = message;
-        self.messageLabel.textColor = [UIColor colorWithRed:124/255.0 green:124/255.0 blue:130/255.0 alpha:1.0]; // #7c7c82
-        self.messageLabel.textAlignment = NSTextAlignmentCenter;
-        self.messageLabel.font = [UIFont systemFontOfSize:15];
-        self.messageLabel.numberOfLines = 0;
-        self.messageLabel.lineBreakMode = NSLineBreakByWordWrapping;
-        [self.contentView addSubview:self.messageLabel];
+        // 消息内容 - 使用 UITextView 代替 UILabel 以支持链接点击
+        self.messageTextView = [[UITextView alloc] initWithFrame:CGRectMake(20, 54, 260, 210)];
+        self.messageTextView.backgroundColor = [UIColor clearColor];
+        self.messageTextView.textAlignment = NSTextAlignmentCenter;
+        self.messageTextView.font = [UIFont systemFontOfSize:15];
+        self.messageTextView.editable = NO;
+        self.messageTextView.scrollEnabled = NO;
+        self.messageTextView.dataDetectorTypes = UIDataDetectorTypeLink;
+        self.messageTextView.selectable = YES;
+        
+        // 创建带链接的富文本
+        NSMutableAttributedString *attributedString = [[NSMutableAttributedString alloc] initWithString:message];
+        
+        // 设置整体颜色为 #7c7c82
+        [attributedString addAttribute:NSForegroundColorAttributeName 
+                                 value:[UIColor colorWithRed:124/255.0 green:124/255.0 blue:130/255.0 alpha:1.0] 
+                                 range:NSMakeRange(0, message.length)];
+        
+        // 查找并设置 Telegram 链接
+        NSRange telegramRange = [message rangeOfString:@"Telegram@vita_app"];
+        if (telegramRange.location != NSNotFound) {
+            [attributedString addAttribute:NSLinkAttributeName 
+                                     value:@"https://t.me/vita_app" 
+                                     range:telegramRange];
+        }
+        
+        // 查找并设置 GitHub 链接
+        NSRange githubRange = [message rangeOfString:@"github.com/Wtrwx/DYYY"];
+        if (githubRange.location != NSNotFound) {
+            [attributedString addAttribute:NSLinkAttributeName 
+                                     value:@"https://github.com/Wtrwx/DYYY" 
+                                     range:githubRange];
+        }
+        
+        self.messageTextView.attributedText = attributedString;
+        self.messageTextView.tintColor = [UIColor colorWithRed:11/255.0 green:223/255.0 blue:154/255.0 alpha:1.0]; // 链接点击颜色 #0BDF9A
+        [self.contentView addSubview:self.messageTextView];
         
         // 添加内容和按钮之间的分割线，调整位置
         UIView *contentButtonSeparator = [[UIView alloc] initWithFrame:CGRectMake(0, 264, 300, 0.5)];
@@ -689,7 +718,6 @@ static AWESettingItemModel *createIconCustomizationItem(NSString *identifier, NS
     }
     [self dismiss];
 }
-
 @end
 
 // 显示自定义关于弹窗
@@ -1252,7 +1280,7 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                 NSMutableArray<AWESettingItemModel *> *interactionItems = [NSMutableArray array];
                 NSArray *interactionSettings = @[
                     @{@"identifier": @"DYYYEnableDoubleOpenComment", @"title": @"启用双击打开评论", @"detail": @"", @"cellType": @6, @"imageName": @"ic_comment_outlined_20"},
-                    @{@"identifier": @"DYYYEnableDoubleOpenAlertController", @"title": @"启用双击点赞评论", @"detail": @"", @"cellType": @6, @"imageName": @"ic_xiaoxihuazhonghua_outlined_20"}
+                    @{@"identifier": @"DYYYEnableDoubleOpenAlertController", @"title": @"启用双击打开菜单", @"detail": @"", @"cellType": @6, @"imageName": @"ic_xiaoxihuazhonghua_outlined_20"}
                 ];
                 
                 for (NSDictionary *dict in interactionSettings) {
@@ -1295,8 +1323,8 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                     @"感谢使用DYYY\n\n"
                     @"@维他入我心 基于DYYY二次开发\n\n"
                     @"Telegram@vita_app\n\n"
-                    @"Github: github.com/Wtrwx/dyyy\n\n" 
-                    @"感谢开源", nil);
+                    @"github.com/Wtrwx/DYYY\n\n" 
+                    @"感谢Huami开源", nil);
             };
             [aboutItems addObject:aboutItem];
             

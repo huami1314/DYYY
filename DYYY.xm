@@ -10,6 +10,7 @@
 #import "CityManager.h"
 #import "AwemeHeaders.h"
 #import "DYYYManager.h"
+#import "DYYYBottomAlertView.h"
 
 #define DYYY @"DYYY"
 #define tweakVersion @"2.2-2"
@@ -1185,41 +1186,22 @@
 %end
 
 %hook AWEPlayInteractionUserAvatarElement
-
 - (void)onFollowViewClicked:(UITapGestureRecognizer *)gesture {
-//    NSLog(@"拦截到关注按钮点击");
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYfollowTips"]) {
         
         dispatch_async(dispatch_get_main_queue(), ^{
-            UIAlertController *alertController = [UIAlertController
-                                                  alertControllerWithTitle:@"关注确认"
-                                                  message:@"是否确认关注？"
-                                                  preferredStyle:UIAlertControllerStyleAlert];
-            
-            UIAlertAction *cancelAction = [UIAlertAction
-                                           actionWithTitle:@"取消"
-                                           style:UIAlertActionStyleCancel
-                                           handler:nil];
-            
-            UIAlertAction *confirmAction = [UIAlertAction
-                                            actionWithTitle:@"确定"
-                                            style:UIAlertActionStyleDefault
-                                            handler:^(UIAlertAction * _Nonnull action) {
+            [DYYYBottomAlertView showAlertWithTitle:@"关注确认" 
+                                           message:@"是否确认关注？" 
+                                       cancelAction:nil 
+                                       confirmAction:^{
                 %orig(gesture);
             }];
-            
-            [alertController addAction:cancelAction];
-            [alertController addAction:confirmAction];
-            
-            UIViewController *topController = [DYYYManager getActiveTopController];
-            if (topController) {
-                [topController presentViewController:alertController animated:YES completion:nil];
-            }
         });
-    }else {
+    } else {
         %orig;
     }
 }
+
 
 %end
 
@@ -1227,34 +1209,19 @@
 - (id)touchUpInsideBlock {
     id r = %orig;
     
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYcollectTips"] && [self.accessibilityLabel isEqualToString:@"收藏"]) {
+    // 只有收藏按钮才显示确认弹窗
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYcollectTips"] && 
+        [self.accessibilityLabel isEqualToString:@"收藏"]) {
+        
         dispatch_async(dispatch_get_main_queue(), ^{
-            UIAlertController *alertController = [UIAlertController
-                                                  alertControllerWithTitle:@"收藏确认"
-                                                  message:@"是否[确认/取消]收藏？"
-                                                  preferredStyle:UIAlertControllerStyleAlert];
-
-            UIAlertAction *cancelAction = [UIAlertAction
-                                           actionWithTitle:@"取消"
-                                           style:UIAlertActionStyleCancel
-                                           handler:nil];
-
-            UIAlertAction *confirmAction = [UIAlertAction
-                                            actionWithTitle:@"确定"
-                                            style:UIAlertActionStyleDefault
-                                            handler:^(UIAlertAction * _Nonnull action) {
+            [DYYYBottomAlertView showAlertWithTitle:@"收藏确认" 
+                                        message:@"是否确认/取消收藏？" 
+                                    cancelAction:nil 
+                                    confirmAction:^{
                 if (r && [r isKindOfClass:NSClassFromString(@"NSBlock")]) {
                     ((void(^)(void))r)();
                 }
             }];
-
-            [alertController addAction:cancelAction];
-            [alertController addAction:confirmAction];
-
-            UIViewController *topController = [DYYYManager getActiveTopController];
-            if (topController) {
-                [topController presentViewController:alertController animated:YES completion:nil];
-            }
         });
 
         return nil; // 阻止原始 block 立即执行
