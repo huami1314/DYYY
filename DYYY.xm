@@ -433,7 +433,7 @@
         // 添加打开评论区选项
         if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDoubleTapComment"] || 
             ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleTapComment"]) {
-            [items addObject:[DYYYActionItem itemWithTitle:@"打开评论区" handler:^{
+            [items addObject:[DYYYActionItem itemWithTitle:@"打开评论" handler:^{
                 [self performCommentAction];
             }]];
         }
