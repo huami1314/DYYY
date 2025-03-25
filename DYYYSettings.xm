@@ -1202,6 +1202,7 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                 @{@"identifier": @"DYYYHideTabLive", @"title": @"移除直播", @"detail": @"", @"cellType": @6, @"imageName": @"ic_xmark_outlined_20"},
                 @{@"identifier": @"DYYYHidePadHot", @"title": @"移除热点", @"detail": @"", @"cellType": @6, @"imageName": @"ic_xmark_outlined_20"},
                 @{@"identifier": @"DYYYHideHangout", @"title": @"移除经验", @"detail": @"", @"cellType": @6, @"imageName": @"ic_xmark_outlined_20"}
+                @{@"identifier": @"DYYYHidePlaylet", @"title": @"移除短剧", @"detail": @"", @"cellType": @6, @"imageName": @"ic_xmark_outlined_20"}
             ];
             
             for (NSDictionary *dict in removeSettings) {
