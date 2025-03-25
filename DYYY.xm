@@ -1468,13 +1468,15 @@
             rightLabel.frame = CGRectMake(sliderFrame.origin.x + sliderFrame.size.width - 50, 
                                         sliderFrame.origin.y + verticalOffset, 
                                         50, 15);
+            // 修改这里：始终使用 00:00/时长 的格式
+            [rightLabel setText:[NSString stringWithFormat:@"00:00/%@", duration]];
         } else {
             rightLabel.frame = CGRectMake(sliderFrame.origin.x + sliderFrame.size.width - 23, 
                                         sliderFrame.origin.y + verticalOffset, 
                                         50, 15);
+            [rightLabel setText:showRemainingTime ? @"00:00" : duration];
         }
         rightLabel.backgroundColor = [UIColor clearColor];
-        [rightLabel setText:showRemainingTime ? @"00:00" : duration];
         [rightLabel setTextColor:[UIColor whiteColor]];
         [rightLabel setFont:[UIFont systemFontOfSize:8]];
         rightLabel.tag = 10002;
@@ -1482,7 +1484,7 @@
     }
 }
 
-%end
+%end      
 
 //MARK: 视频显示-算法
 %hook AWEPlayInteractionProgressController
