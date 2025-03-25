@@ -61,9 +61,9 @@
         _sheetView.layer.masksToBounds = YES;
         [self addSubview:_sheetView];
         
-        CGFloat padding = 10.0;  // 从16.0减小到10.0
-        CGFloat buttonHeight = 40.0;  // 从50.0减小到40.0
-        CGFloat titleHeight = title.length > 0 ? 30.0 : 0;  // 从40.0减小到30.0
+        CGFloat padding = 24.0; 
+        CGFloat buttonHeight = 30.0;
+        CGFloat titleHeight = title.length > 0 ? 50.0 : 0;
         CGFloat totalContentHeight = titleHeight + (buttonHeight + padding) * items.count + buttonHeight + bottomSafeAreaHeight + padding;
         
         // 设置弹窗的大小和位置
