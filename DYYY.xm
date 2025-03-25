@@ -935,6 +935,20 @@
 
 %end
 
+//移除下面推荐框黑条
+%hook AWEPlayInteractionRelatedVideoView
+- (void)layoutSubviews {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAntiAddictedNotice"]) {
+        if ([self respondsToSelector:@selector(removeFromSuperview)]) {
+            [self removeFromSuperview]; 
+        }
+        self.hidden = YES;
+        return; 
+    }
+    %orig;
+}
+%end
+
 %hook AWENormalModeTabBarBadgeContainerView
 
 - (void)layoutSubviews {
@@ -1414,7 +1428,6 @@
     return %orig;
 }
 
-//MARK: 视频显示进度条以及视频进度秒数
 //MARK: 视频显示进度条以及视频进度秒数
 - (void)setLimitUpperActionArea:(BOOL)arg1 {
     %orig;
