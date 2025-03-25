@@ -276,7 +276,7 @@ static UIViewController *topView(void) {
         CGFloat offsetY = keyboardHeight + 20 - bottomDistance;
         
         // 使用动画平滑过渡
-        [UIView animateWithDuration:0.3 animations:^{
+        [UIView animateWithDuration:0.12 animations:^{
             CGRect newFrame = self.contentView.frame;
             newFrame.origin.y -= offsetY;
             self.contentView.frame = newFrame;
@@ -287,7 +287,7 @@ static UIViewController *topView(void) {
 // 键盘即将隐藏
 - (void)keyboardWillHide:(NSNotification *)notification {
     // 恢复原始位置
-    [UIView animateWithDuration:0.3 animations:^{
+    [UIView animateWithDuration:0.1 animations:^{
         self.contentView.frame = self.originalFrame;
     }];
 }
@@ -296,7 +296,7 @@ static UIViewController *topView(void) {
     UIWindow *window = [UIApplication sharedApplication].keyWindow;
     [window addSubview:self];
     
-    [UIView animateWithDuration:0.25 animations:^{
+    [UIView animateWithDuration:0.12 animations:^{
         self.contentView.alpha = 1.0;
         self.contentView.transform = CGAffineTransformIdentity;
     } completion:^(BOOL finished) {
@@ -305,7 +305,7 @@ static UIViewController *topView(void) {
 }
 
 - (void)dismiss {
-    [UIView animateWithDuration:0.2 animations:^{
+    [UIView animateWithDuration:0.1 animations:^{
         self.contentView.alpha = 0;
         self.contentView.transform = CGAffineTransformMakeScale(0.8, 0.8);
         self.blurView.alpha = 0;
@@ -563,14 +563,14 @@ static AWESettingItemModel *createIconCustomizationItem(NSString *identifier, NS
     UIWindow *window = [UIApplication sharedApplication].keyWindow;
     [window addSubview:self];
     
-    [UIView animateWithDuration:0.25 animations:^{
+    [UIView animateWithDuration:0.12 animations:^{
         self.contentView.alpha = 1.0;
         self.contentView.transform = CGAffineTransformIdentity;
     }];
 }
 
 - (void)dismiss {
-    [UIView animateWithDuration:0.2 animations:^{
+    [UIView animateWithDuration:0.1 animations:^{
         self.contentView.alpha = 0;
         self.contentView.transform = CGAffineTransformMakeScale(0.8, 0.8);
         self.blurView.alpha = 0;
@@ -599,7 +599,7 @@ static AWESettingItemModel *createIconCustomizationItem(NSString *identifier, NS
 @property (nonatomic, strong) UIVisualEffectView *blurView;
 @property (nonatomic, strong) UIView *contentView;
 @property (nonatomic, strong) UILabel *titleLabel;
-@property (nonatomic, strong) UITextView *messageTextView; // 将 UILabel 改为 UITextView
+@property (nonatomic, strong) UITextView *messageTextView; 
 @property (nonatomic, strong) UIButton *confirmButton;
 @property (nonatomic, copy) void (^onConfirm)(void);
 - (instancetype)initWithTitle:(NSString *)title message:(NSString *)message;
@@ -637,7 +637,7 @@ static AWESettingItemModel *createIconCustomizationItem(NSString *identifier, NS
         self.titleLabel.font = [UIFont systemFontOfSize:18 weight:UIFontWeightMedium];
         [self.contentView addSubview:self.titleLabel];
         
-        // 消息内容 - 使用 UITextView 代替 UILabel 以支持链接点击
+       // 消息内容 - 使用 UITextView 代替 UILabel 以支持链接点击
         self.messageTextView = [[UITextView alloc] initWithFrame:CGRectMake(20, 54, 260, 210)];
         self.messageTextView.backgroundColor = [UIColor clearColor];
         self.messageTextView.textAlignment = NSTextAlignmentCenter;
@@ -647,14 +647,22 @@ static AWESettingItemModel *createIconCustomizationItem(NSString *identifier, NS
         self.messageTextView.dataDetectorTypes = UIDataDetectorTypeLink;
         self.messageTextView.selectable = YES;
         
+        // 创建段落样式并设置居中对齐
+        NSMutableParagraphStyle *paragraphStyle = [[NSMutableParagraphStyle alloc] init];
+        paragraphStyle.alignment = NSTextAlignmentCenter;
+        
         // 创建带链接的富文本
         NSMutableAttributedString *attributedString = [[NSMutableAttributedString alloc] initWithString:message];
+        
+        // 应用段落样式到整个文本
+        [attributedString addAttribute:NSParagraphStyleAttributeName 
+                                 value:paragraphStyle 
+                                 range:NSMakeRange(0, message.length)];
         
         // 设置整体颜色为 #7c7c82
         [attributedString addAttribute:NSForegroundColorAttributeName 
                                  value:[UIColor colorWithRed:124/255.0 green:124/255.0 blue:130/255.0 alpha:1.0] 
                                  range:NSMakeRange(0, message.length)];
-        
         NSRange telegramRange = [message rangeOfString:@"Telegram@vita_app"];
         if (telegramRange.location != NSNotFound) {
             [attributedString addAttribute:NSLinkAttributeName 
@@ -662,22 +670,21 @@ static AWESettingItemModel *createIconCustomizationItem(NSString *identifier, NS
                                      range:telegramRange];
         }
         
-        NSRange githubRange = [message rangeOfString:@"github.com/Wtrwx/DYYY"];
+        NSRange githubRange = [message rangeOfString:@"开源地址@Wtrwx"];
         if (githubRange.location != NSNotFound) {
             [attributedString addAttribute:NSLinkAttributeName 
                                      value:@"https://github.com/Wtrwx/DYYY" 
                                      range:githubRange];
         }
 
-        NSRange huamiGithubRange = [message rangeOfString:@"github.com/huami1314/DYYY"];
+        NSRange huamiGithubRange = [message rangeOfString:@"开源地址@huami1314"];
         if (huamiGithubRange.location != NSNotFound) {
             [attributedString addAttribute:NSLinkAttributeName 
                                      value:@"https://github.com/huami1314/DYYY" 
-                                     range:githubRange];
+                                     range:huamiGithubRange];
         }
         
         self.messageTextView.attributedText = attributedString;
-        self.messageTextView.tintColor = [UIColor colorWithRed:11/255.0 green:223/255.0 blue:154/255.0 alpha:1.0]; // 链接点击颜色 #0BDF9A
         [self.contentView addSubview:self.messageTextView];
         
         // 添加内容和按钮之间的分割线，调整位置
@@ -701,14 +708,14 @@ static AWESettingItemModel *createIconCustomizationItem(NSString *identifier, NS
     UIWindow *window = [UIApplication sharedApplication].keyWindow;
     [window addSubview:self];
     
-    [UIView animateWithDuration:0.25 animations:^{
+    [UIView animateWithDuration:0.12 animations:^{
         self.contentView.alpha = 1.0;
         self.contentView.transform = CGAffineTransformIdentity;
     }];
 }
 
 - (void)dismiss {
-    [UIView animateWithDuration:0.2 animations:^{
+    [UIView animateWithDuration:0.1 animations:^{
         self.contentView.alpha = 0;
         self.contentView.transform = CGAffineTransformMakeScale(0.8, 0.8);
         self.blurView.alpha = 0;
@@ -1314,6 +1321,7 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                 // 【交互增强】分类
                 NSMutableArray<AWESettingItemModel *> *interactionItems = [NSMutableArray array];
                 NSArray *interactionSettings = @[
+                    @{@"identifier": @"DYYYDisableHomeRefresh", @"title": @"禁用点击首页刷新", @"detail": @"", @"cellType": @6, @"imageName": @"ic_arrowcircle_outlined_20"},
                     @{@"identifier": @"DYYYEnableDoubleOpenComment", @"title": @"启用双击打开评论", @"detail": @"", @"cellType": @6, @"imageName": @"ic_comment_outlined_20"},
                     @{@"identifier": @"DYYYEnableDoubleOpenAlertController", @"title": @"启用双击打开菜单", @"detail": @"", @"cellType": @26, @"imageName": @"ic_xiaoxihuazhonghua_outlined_20"}
                 ];
@@ -1391,9 +1399,9 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                     @"感谢使用DYYY\n\n"
                     @"@维他入我心 基于DYYY二次开发\n\n"
                     @"Telegram@vita_app\n\n"
-                    @"github.com/Wtrwx/DYYY\n\n" 
-                    @"感谢Huami开源"
-                    @"github.com/huami1314/DYYY\n\n" , nil);
+                    @"开源地址@Wtrwx\n\n" 
+                    @"感谢Huami开源\n\n"
+                    @"开源地址@huami1314\n\n" , nil);
             };
             [aboutItems addObject:aboutItem];
             
@@ -1597,14 +1605,14 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
     UIWindow *window = [UIApplication sharedApplication].keyWindow;
     [window addSubview:self];
     
-    [UIView animateWithDuration:0.25 animations:^{
+    [UIView animateWithDuration:0.12 animations:^{
         self.contentView.alpha = 1.0;
         self.contentView.transform = CGAffineTransformIdentity;
     }];
 }
 
 - (void)dismiss {
-    [UIView animateWithDuration:0.2 animations:^{
+    [UIView animateWithDuration:0.1 animations:^{
         self.contentView.alpha = 0;
         self.contentView.transform = CGAffineTransformMakeScale(0.8, 0.8);
         self.blurView.alpha = 0;
