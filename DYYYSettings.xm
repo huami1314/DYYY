@@ -608,7 +608,6 @@ static AWESettingItemModel *createIconCustomizationItem(NSString *identifier, NS
 @end
 
 @implementation DYYYAboutDialogView
-
 - (instancetype)initWithTitle:(NSString *)title message:(NSString *)message {
     if (self = [super initWithFrame:UIScreen.mainScreen.bounds]) {
         self.backgroundColor = [UIColor colorWithWhite:0 alpha:0.4];
@@ -619,8 +618,8 @@ static AWESettingItemModel *createIconCustomizationItem(NSString *identifier, NS
         self.blurView.alpha = 0.7;
         [self addSubview:self.blurView];
         
-        // 创建内容视图 - 使用纯白背景，增加高度以显示更多内容
-        self.contentView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 300, 250)];
+        // 创建内容视图 - 使用纯白背景，增加高度到320以显示更多内容
+        self.contentView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 300, 320)];
         self.contentView.center = CGPointMake(self.frame.size.width / 2, self.frame.size.height / 2);
         self.contentView.backgroundColor = [UIColor whiteColor];
         self.contentView.layer.cornerRadius = 12;
@@ -637,23 +636,24 @@ static AWESettingItemModel *createIconCustomizationItem(NSString *identifier, NS
         self.titleLabel.font = [UIFont systemFontOfSize:18 weight:UIFontWeightMedium];
         [self.contentView addSubview:self.titleLabel];
         
-        // 消息内容 - 颜色使用 #7c7c82，增加高度以显示更多内容
-        self.messageLabel = [[UILabel alloc] initWithFrame:CGRectMake(20, 54, 260, 140)];
+        // 消息内容 - 颜色使用 #7c7c82，增加高度到210以显示更多内容
+        self.messageLabel = [[UILabel alloc] initWithFrame:CGRectMake(20, 54, 260, 210)];
         self.messageLabel.text = message;
         self.messageLabel.textColor = [UIColor colorWithRed:124/255.0 green:124/255.0 blue:130/255.0 alpha:1.0]; // #7c7c82
         self.messageLabel.textAlignment = NSTextAlignmentCenter;
         self.messageLabel.font = [UIFont systemFontOfSize:15];
         self.messageLabel.numberOfLines = 0;
+        self.messageLabel.lineBreakMode = NSLineBreakByWordWrapping;
         [self.contentView addSubview:self.messageLabel];
         
         // 添加内容和按钮之间的分割线，调整位置
-        UIView *contentButtonSeparator = [[UIView alloc] initWithFrame:CGRectMake(0, 194, 300, 0.5)];
+        UIView *contentButtonSeparator = [[UIView alloc] initWithFrame:CGRectMake(0, 264, 300, 0.5)];
         contentButtonSeparator.backgroundColor = [UIColor colorWithRed:230/255.0 green:230/255.0 blue:230/255.0 alpha:1.0];
         [self.contentView addSubview:contentButtonSeparator];
         
         // 确认按钮 - 颜色使用 #2d2f38，无背景色，调整位置
         self.confirmButton = [UIButton buttonWithType:UIButtonTypeSystem];
-        self.confirmButton.frame = CGRectMake(0, 194.5, 300, 55.5);
+        self.confirmButton.frame = CGRectMake(0, 264.5, 300, 55.5);
         self.confirmButton.backgroundColor = [UIColor clearColor];
         [self.confirmButton setTitle:@"确定" forState:UIControlStateNormal];
         [self.confirmButton setTitleColor:[UIColor colorWithRed:45/255.0 green:47/255.0 blue:56/255.0 alpha:1.0] forState:UIControlStateNormal]; // #2d2f38
@@ -806,7 +806,7 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
         AWESettingItemModel *dyyyItem = [[%c(AWESettingItemModel) alloc] init];
         dyyyItem.identifier = @"DYYY";
         dyyyItem.title = @"DYYY";
-        dyyyItem.detail = @"v2.1-7";
+        dyyyItem.detail = @"v2.2-2";
         dyyyItem.type = 0;
         dyyyItem.svgIconImageName = @"ic_sapling_outlined";
         dyyyItem.cellType = 26;
@@ -1283,14 +1283,20 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
             AWESettingItemModel *aboutItem = [[%c(AWESettingItemModel) alloc] init];
             aboutItem.identifier = @"DYYYAbout";
             aboutItem.title = @"关于插件";
-            aboutItem.detail = @"v2.1-7";
+            aboutItem.detail = @"v2.2-2";
             aboutItem.type = 0;
             aboutItem.iconImageName = @"awe-settings-icon-about";
             aboutItem.cellType = 26;
             aboutItem.colorStyle = 0;
             aboutItem.isEnable = YES;
             aboutItem.cellTappedBlock = ^{
-                showAboutDialog(@"关于DYYY", @"版本: v2.1-7\n\n感谢使用DYYY\n\n@维他入我心 基于DYYY二次开发\n\nTelegram@vita_app\n\n感谢开源", nil);
+                showAboutDialog(@"关于DYYY", 
+                    @"版本: v2.2-2\n\n"
+                    @"感谢使用DYYY\n\n"
+                    @"@维他入我心 基于DYYY二次开发\n\n"
+                    @"Telegram@vita_app\n\n"
+                    @"Github: github.com/Wtrwx/dyyy\n\n" 
+                    @"感谢开源", nil);
             };
             [aboutItems addObject:aboutItem];
             

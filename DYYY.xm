@@ -12,7 +12,7 @@
 #import "DYYYManager.h"
 
 #define DYYY @"DYYY"
-#define tweakVersion @"2.1-7"
+#define tweakVersion @"2.2-2"
 
 %hook AWEAwemePlayVideoViewController
 
@@ -2367,8 +2367,9 @@ static CGFloat currentScale = 1.0;
     if (parentView) {
         grandParentView = parentView.superview;
     }
-    
-    if (grandParentView) {
+
+    // 检查祖父视图是否为 AWEBaseElementView 类型
+    if (grandParentView && [grandParentView.superview isKindOfClass:%c(AWEBaseElementView)]) {
         CGAffineTransform scaleTransform = CGAffineTransformMakeScale(scale, scale);
         grandParentView.transform = scaleTransform;
 
