@@ -11,6 +11,7 @@
 #import "AwemeHeaders.h"
 #import "DYYYManager.h"
 #import "DYYYBottomAlertView.h"
+#import "DYYYActionSheetView.h"
 
 #define DYYY @"DYYY"
 #define tweakVersion @"2.2-2"
@@ -314,55 +315,150 @@
         self.view.frame = frame;
     }
 }
-
-// MARK: 双击视频事件
 - (void)onPlayer:(id)arg0 didDoubleClick:(id)arg1 {
-
     BOOL isPopupEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableDoubleOpenAlertController"];
     BOOL isDirectCommentEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableDoubleOpenComment"];
 
-    if (isPopupEnabled) {
-        // 显示弹窗
-        UIAlertController *alertController = [UIAlertController
-            alertControllerWithTitle:NSLocalizedString(@"选择操作", nil)
-            message:@""
-            preferredStyle:UIAlertControllerStyleActionSheet];
-
-        [alertController addAction:[UIAlertAction
-            actionWithTitle:NSLocalizedString(@"打开评论区", nil)
-            style:UIAlertActionStyleDefault
-            handler:^(UIAlertAction *action) {
-                [self performCommentAction]; // 调用打开评论区的逻辑
-            }]];
-
-        [alertController addAction:[UIAlertAction
-            actionWithTitle:NSLocalizedString(@"点赞视频", nil)
-            style:UIAlertActionStyleDefault
-            handler:^(UIAlertAction *action) {
-                %orig; // 调用原始的点赞逻辑
-            }]];
-
-        [alertController addAction:[UIAlertAction
-            actionWithTitle:NSLocalizedString(@"取消", nil)
-            style:UIAlertActionStyleCancel
-            handler:nil]];
-
-        UIViewController *topController = [DYYYManager getActiveTopController];
-        if (topController) {
-            // 适配 iPad
-            if ([UIDevice currentDevice].userInterfaceIdiom == UIUserInterfaceIdiomPad) {
-                alertController.popoverPresentationController.sourceView = topController.view;
-                alertController.popoverPresentationController.sourceRect = CGRectMake(topController.view.bounds.size.width / 2, topController.view.bounds.size.height / 2, 1, 1);
-            }
-            [topController presentViewController:alertController animated:YES completion:nil];
-        }
-
-        return; // 阻止原始的双击逻辑
-    } else if (isDirectCommentEnabled) {
+    // 直接打开评论区的情况
+    if (isDirectCommentEnabled) {
         [self performCommentAction];
-        return; 
+        return;
     }
-
+    
+    // 显示弹窗的情况
+    if (isPopupEnabled) {
+        // 获取当前视频模型
+        AWEAwemeModel *awemeModel = nil;
+        
+        // 尝试通过可能的方法/属性获取模型
+        if ([self respondsToSelector:@selector(awemeModel)]) {
+            awemeModel = [self performSelector:@selector(awemeModel)];
+        } else if ([self respondsToSelector:@selector(currentAwemeModel)]) {
+            awemeModel = [self performSelector:@selector(currentAwemeModel)];
+        } else if ([self respondsToSelector:@selector(getAwemeModel)]) {
+            awemeModel = [self performSelector:@selector(getAwemeModel)];
+        }
+        
+        // 如果仍然无法获取模型，尝试从视图控制器获取
+        if (!awemeModel) {
+            UIViewController *baseVC = [self valueForKey:@"awemeBaseViewController"];
+            if (baseVC && [baseVC respondsToSelector:@selector(model)]) {
+                awemeModel = [baseVC performSelector:@selector(model)];
+            } else if (baseVC && [baseVC respondsToSelector:@selector(awemeModel)]) {
+                awemeModel = [baseVC performSelector:@selector(awemeModel)];
+            }
+        }
+        
+        // 如果无法获取模型，执行默认行为并返回
+        if (!awemeModel) {
+            %orig;
+            return;
+        }
+        
+        AWEVideoModel *videoModel = awemeModel.video;
+        AWEMusicModel *musicModel = awemeModel.music;
+        
+        // 确定内容类型（视频或图片）
+        BOOL isImageContent = (awemeModel.awemeType == 68);
+        NSString *downloadTitle = isImageContent ? @"保存图片" : @"保存视频";
+        
+        // 创建操作项目数组
+        NSMutableArray *items = [NSMutableArray array];
+        
+        // 添加下载选项
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDoubleTapDownload"] || 
+            ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleTapDownload"]) {
+            [items addObject:[DYYYActionItem itemWithTitle:downloadTitle handler:^{
+                if (isImageContent) {
+                    // 图片内容
+                    AWEImageAlbumImageModel *currentImageModel = nil;
+                    if (awemeModel.currentImageIndex > 0 && awemeModel.currentImageIndex <= awemeModel.albumImages.count) {
+                        currentImageModel = awemeModel.albumImages[awemeModel.currentImageIndex - 1];
+                    } else {
+                        currentImageModel = awemeModel.albumImages.firstObject;
+                    }
+                    
+                    if (currentImageModel && currentImageModel.urlList.count > 0) {
+                        NSURL *url = [NSURL URLWithString:currentImageModel.urlList.firstObject];
+                        [DYYYManager downloadMedia:url mediaType:MediaTypeImage completion:^{
+                            [DYYYManager showToast:@"图片已保存到相册"];
+                        }];
+                    }
+                } else {
+                    // 视频内容
+                    if (videoModel && videoModel.h264URL && videoModel.h264URL.originURLList.count > 0) {
+                        NSURL *url = [NSURL URLWithString:videoModel.h264URL.originURLList.firstObject];
+                        [DYYYManager downloadMedia:url mediaType:MediaTypeVideo completion:^{
+                            [DYYYManager showToast:@"视频已保存到相册"];
+                        }];
+                    }
+                }
+            }]];
+            
+            // 如果是图集，添加下载所有图片选项
+            if (isImageContent && awemeModel.albumImages.count > 1) {
+                [items addObject:[DYYYActionItem itemWithTitle:@"保存所有图片" handler:^{
+                    NSMutableArray *imageURLs = [NSMutableArray array];
+                    for (AWEImageAlbumImageModel *imageModel in awemeModel.albumImages) {
+                        if (imageModel.urlList.count > 0) {
+                            [imageURLs addObject:imageModel.urlList.firstObject];
+                        }
+                    }
+                    [DYYYManager downloadAllImages:imageURLs];
+                }]];
+            }
+        }
+        
+        // 添加下载音频选项
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDoubleTapDownloadAudio"] || 
+            ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleTapDownloadAudio"]) {
+            [items addObject:[DYYYActionItem itemWithTitle:@"保存音频" handler:^{
+                if (musicModel && musicModel.playURL && musicModel.playURL.originURLList.count > 0) {
+                    NSURL *url = [NSURL URLWithString:musicModel.playURL.originURLList.firstObject];
+                    [DYYYManager downloadMedia:url mediaType:MediaTypeAudio completion:nil];
+                }
+            }]];
+        }
+        
+        // 添加复制文案选项
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDoubleTapCopyDesc"] || 
+            ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleTapCopyDesc"]) {
+            [items addObject:[DYYYActionItem itemWithTitle:@"复制文案" handler:^{
+                NSString *descText = [awemeModel valueForKey:@"descriptionString"];
+                [[UIPasteboard generalPasteboard] setString:descText];
+                [DYYYManager showToast:@"文案已复制到剪贴板"];
+            }]];
+        }
+        
+        // 添加打开评论区选项
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDoubleTapComment"] || 
+            ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleTapComment"]) {
+            [items addObject:[DYYYActionItem itemWithTitle:@"打开评论区" handler:^{
+                [self performCommentAction];
+            }]];
+        }
+        
+        // 添加点赞视频选项
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDoubleTapLike"] || 
+            ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleTapLike"]) {
+            [items addObject:[DYYYActionItem itemWithTitle:@"点赞视频" handler:^{
+                %orig(arg0, arg1);
+            }]];
+        }
+        
+        // 如果没有任何功能项被选择，则执行默认行为
+        if (items.count == 0) {
+            %orig;
+            return;
+        }
+        
+        // 显示操作表
+        [DYYYActionSheetView showWithTitle:@"选择操作" items:items];
+        
+        return;
+    }
+    
+    // 默认行为
     %orig;
 }
 

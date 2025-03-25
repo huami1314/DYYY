@@ -27,6 +27,7 @@
     [alertView show];
     return alertView;
 }
+
 - (instancetype)initWithTitle:(NSString *)title
                       message:(NSString *)message
                  cancelAction:(DYYYAlertActionHandler)cancelAction
@@ -74,14 +75,14 @@
         
         // 设置弹窗的大小和位置（考虑底部安全区域）
         CGFloat alertWidth = self.bounds.size.width;
-        CGFloat alertHeight = 180 + bottomSafeAreaHeight;
+        CGFloat alertHeight = 150 + bottomSafeAreaHeight; // 减小高度从180降至150
         _alertView.frame = CGRectMake(0, self.bounds.size.height, alertWidth, alertHeight);
         
         // 创建标题
         _titleLabel = [[UILabel alloc] init];
         _titleLabel.text = title;
         _titleLabel.textAlignment = NSTextAlignmentCenter;
-        _titleLabel.font = [UIFont boldSystemFontOfSize:18];
+        _titleLabel.font = [UIFont boldSystemFontOfSize:17]; // 字号从18减小到17
         [_alertView addSubview:_titleLabel];
         
         // 创建消息
@@ -89,7 +90,7 @@
         _messageLabel.text = message;
         _messageLabel.textAlignment = NSTextAlignmentCenter;
         _messageLabel.numberOfLines = 0;
-        _messageLabel.font = [UIFont systemFontOfSize:16];
+        _messageLabel.font = [UIFont systemFontOfSize:15]; // 字号从16减小到15
         [_alertView addSubview:_messageLabel];
         
         // 创建分隔线
@@ -116,16 +117,16 @@
         [_alertView addSubview:_confirmButton];
         
         // 设置布局（考虑底部安全区域）
-        CGFloat padding = 16.0;
-        CGFloat buttonHeight = 50.0;
+        CGFloat padding = 12.0; // 间距从16.0减小到12.0
+        CGFloat buttonHeight = 44.0; // 按钮高度从50.0减小到44.0
         
-        _titleLabel.frame = CGRectMake(padding, padding, alertWidth - padding * 2, 25);
-        _messageLabel.frame = CGRectMake(padding, CGRectGetMaxY(_titleLabel.frame) + padding/2, alertWidth - padding * 2, 50);
+        _titleLabel.frame = CGRectMake(padding, padding, alertWidth - padding * 2, 22); // 高度减小
+        _messageLabel.frame = CGRectMake(padding, CGRectGetMaxY(_titleLabel.frame) + padding/3, alertWidth - padding * 2, 40); // 间距和高度减小
         
-        separator.frame = CGRectMake(0, CGRectGetMaxY(_messageLabel.frame) + padding, alertWidth, 0.5);
+        separator.frame = CGRectMake(0, CGRectGetMaxY(_messageLabel.frame) + padding/2, alertWidth, 0.5); // 减小间距
         
         CGFloat buttonWidth = (alertWidth - padding * 3) / 2;
-        _cancelButton.frame = CGRectMake(padding, CGRectGetMaxY(separator.frame) + padding, buttonWidth, buttonHeight);
+        _cancelButton.frame = CGRectMake(padding, CGRectGetMaxY(separator.frame) + padding/2, buttonWidth, buttonHeight); // 减小间距
         _confirmButton.frame = CGRectMake(CGRectGetMaxX(_cancelButton.frame) + padding, _cancelButton.frame.origin.y, buttonWidth, buttonHeight);
     }
     return self;
