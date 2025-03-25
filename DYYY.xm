@@ -1395,7 +1395,7 @@
         
         // 创建右侧时间标签
         UILabel *rightLabel = [[UILabel alloc] init];
-        rightLabel.frame = CGRectMake(sliderFrame.origin.x + sliderFrame.size.width - 25, 
+        rightLabel.frame = CGRectMake(sliderFrame.origin.x + sliderFrame.size.width - 23, 
                                       sliderFrame.origin.y + verticalOffset, 
                                       50, 15);
         rightLabel.backgroundColor = [UIColor clearColor];
