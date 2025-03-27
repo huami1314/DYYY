@@ -986,18 +986,18 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                     
                     [videoItems addObject:item];
                 }
-                // 【系统功能】分类
-                NSMutableArray<AWESettingItemModel *> *systemItems = [NSMutableArray array];
-                NSArray *systemSettings = @[
+                // 【杂项设置】分类
+                NSMutableArray<AWESettingItemModel *> *miscellaneousItems = [NSMutableArray array];
+                NSArray *miscellaneousSettings = @[
                     @{@"identifier": @"DYYYisDarkKeyBoard", @"title": @"启用深色键盘", @"detail": @"", @"cellType": @6, @"imageName": @"ic_keyboard_outlined"},
                     @{@"identifier": @"DYYYisHideStatusbar", @"title": @"隐藏系统顶栏", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
                     @{@"identifier": @"DYYYisEnablePure", @"title": @"启用首页净化", @"detail": @"", @"cellType": @6, @"imageName": @"ic_broom_outlined"},
                     @{@"identifier": @"DYYYisEnableFullScreen", @"title": @"启用首页全屏", @"detail": @"", @"cellType": @6, @"imageName": @"ic_fullscreen_outlined_16"}
                 ];
                 
-                for (NSDictionary *dict in systemSettings) {
+                for (NSDictionary *dict in miscellaneousSettings) {
                     AWESettingItemModel *item = [self createSettingItem:dict cellTapHandlers:cellTapHandlers];
-                    [systemItems addObject:item];
+                    [miscellaneousItems addObject:item];
                 }
                 
                 // 【过滤与屏蔽】分类
@@ -1005,6 +1005,7 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                 NSArray *filterSettings = @[
                     @{@"identifier": @"DYYYisSkipLive", @"title": @"启用过滤直播", @"detail": @"", @"cellType": @6, @"imageName": @"ic_video_outlined_20"},
                     @{@"identifier": @"DYYYNoAds", @"title": @"启用屏蔽广告", @"detail": @"", @"cellType": @6, @"imageName": @"ic_ad_outlined_20"},
+                    @{@"identifier": @"DYYYNoUpdates", @"title": @"屏蔽检测更新", @"detail": @"", @"cellType": @6, @"imageName": @"ic_circletop_outlined"}
                 ];
                 
                 for (NSDictionary *dict in filterSettings) {
@@ -1028,7 +1029,7 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                 NSMutableArray *sections = [NSMutableArray array];
                 [sections addObject:createSection(@"外观设置", appearanceItems)];
                 [sections addObject:createSection(@"视频播放", videoItems)];
-                [sections addObject:createSection(@"系统功能", systemItems)];
+                [sections addObject:createSection(@"杂项设置", miscellaneousItems)];
                 [sections addObject:createSection(@"过滤与屏蔽", filterItems)];
                 [sections addObject:createSection(@"二次确认", securityItems)];
                 

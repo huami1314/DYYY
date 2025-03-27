@@ -2910,6 +2910,30 @@ static BOOL isDownloadFlied = NO;
 
 %end
 
+// 屏蔽版本更新
+%hook AWEVersionUpdateManager
+
+- (void)startVersionUpdateWorkflow:(id)arg1 completion:(id)arg2 {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYNoUpdates"]) {
+        if (arg2) {
+            void (^completionBlock)(void) = arg2;
+            completionBlock();
+        }
+    } else {
+        %orig;
+    }
+}
+
+- (id)workflow {
+    return [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYNoUpdates"] ? nil : %orig;
+}
+
+- (id)badgeModule {
+    return [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYNoUpdates"] ? nil : %orig;
+}
+
+%end
+
 %ctor {
     %init(DYYYSettingsGesture);
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {

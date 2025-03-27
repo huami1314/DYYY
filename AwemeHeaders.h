@@ -388,3 +388,23 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @property (nonatomic, strong, readonly) UIView *superview;
 @property (nonatomic, assign, getter=isHidden) BOOL hidden;
 @end
+
+// AWEVersionUpdateManager相关接口声明
+@interface AWEVersionUpdateManager : NSObject
+@property (nonatomic, strong) id networkModule;
+@property (nonatomic, strong) id badgeModule;
+@property (nonatomic, strong) id workflow;
+- (NSString *)currentVersion;
+- (void)startVersionUpdateWorkflow:(id)arg1 completion:(id)arg2;
+- (void)workflowDidFinish:(id)arg1;
++ (id)sharedInstance;
+@end
+
+@interface AWEVersionUpdateNetworkModule : NSObject
+@end
+
+@interface AWEVersionUpdateBadgeModule : NSObject
+@end
+
+@interface AWEVersionUpdateWorkflow : NSObject
+@end
