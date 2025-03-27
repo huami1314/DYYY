@@ -286,33 +286,6 @@
 }
 %end
 
-%hook AWEAwemeModel
-
-- (void)live_callInitWithDictyCategoryMethod:(id)arg1 {
-    if (self.currentAweme && [self.currentAweme isLive] && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipLive"]) {
-        return;
-    }
-    %orig;
-}
-
-+ (id)liveStreamURLJSONTransformer {
-    return [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipLive"] ? nil : %orig;
-}
-
-+ (id)relatedLiveJSONTransformer {
-    return [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipLive"] ? nil : %orig;
-}
-
-+ (id)rawModelFromLiveRoomModel:(id)arg1 {
-    return [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipLive"] ? nil : %orig;
-}
-
-+ (id)aweLiveRoom_subModelPropertyKey {
-    return [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipLive"] ? nil : %orig;
-}
-
-%end
-
 %hook AWEPlayInteractionViewController
 - (void)viewDidLayoutSubviews {
     %orig;
@@ -753,19 +726,30 @@
 
 - (id)initWithDictionary:(id)arg1 error:(id *)arg2 {
     id orig = %orig;
+    
     BOOL noAds = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYNoAds"];
-    return (noAds && self.isAds) ? nil : orig;
+    BOOL skipLive = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipLive"];
+    BOOL skipHotSpot = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipHotSpot"];
+    
+    BOOL shouldFilterAds = noAds && (self.hotSpotLynxCardModel || self.isAds);
+    BOOL shouldFilterRec = skipLive && [self.liveReason isEqualToString:@"rec"];
+    BOOL shouldFilterHotSpot = skipHotSpot && self.hotSpotLynxCardModel;
+    
+    return (shouldFilterAds || shouldFilterRec || shouldFilterHotSpot) ? nil : orig;
 }
 
 - (id)init {
     id orig = %orig;
+    
     BOOL noAds = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYNoAds"];
-    return (noAds && self.isAds) ? nil : orig;
-}
-
-- (void)setIsAds:(BOOL)isAds {
-    BOOL noAds = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYNoAds"];
-    %orig(noAds ? isAds : NO); 
+    BOOL skipLive = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipLive"];
+    BOOL skipHotSpot = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipHotSpot"];
+    
+    BOOL shouldFilterAds = noAds && (self.hotSpotLynxCardModel || self.isAds);
+    BOOL shouldFilterRec = skipLive && [self.liveReason isEqualToString:@"rec"];
+    BOOL shouldFilterHotSpot = skipHotSpot && self.hotSpotLynxCardModel;
+    
+    return (shouldFilterAds || shouldFilterRec || shouldFilterHotSpot) ? nil : orig;
 }
 
 %end

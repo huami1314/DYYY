@@ -56,6 +56,8 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @property (nonatomic, assign) BOOL isAds;
 @property (nonatomic, assign) BOOL isLive;
 @property (nonatomic, strong) NSString *shareURL;
+@property (nonatomic, strong) id hotSpotLynxCardModel;
+@property (nonatomic, copy) NSString *liveReason;
 - (BOOL)isLive;
 @end
 

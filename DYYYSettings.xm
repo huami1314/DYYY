@@ -1003,7 +1003,8 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                 // 【过滤与屏蔽】分类
                 NSMutableArray<AWESettingItemModel *> *filterItems = [NSMutableArray array];
                 NSArray *filterSettings = @[
-                    @{@"identifier": @"DYYYisSkipLive", @"title": @"启用过滤直播", @"detail": @"", @"cellType": @6, @"imageName": @"ic_video_outlined_20"},
+                    @{@"identifier": @"DYYYisSkipLive", @"title": @"首页过滤直播", @"detail": @"", @"cellType": @6, @"imageName": @"ic_video_outlined_20"},
+                    @{@"identifier": @"DYYYisSkipHotSpot", @"title": @"首页过滤热点", @"detail": @"", @"cellType": @6, @"imageName": @"ic_squaretriangletwo_outlined_20"},
                     @{@"identifier": @"DYYYNoAds", @"title": @"启用屏蔽广告", @"detail": @"", @"cellType": @6, @"imageName": @"ic_ad_outlined_20"},
                     @{@"identifier": @"DYYYNoUpdates", @"title": @"屏蔽检测更新", @"detail": @"", @"cellType": @6, @"imageName": @"ic_circletop_outlined"}
                 ];
