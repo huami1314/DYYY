@@ -696,7 +696,7 @@ static AWESettingItemModel *createIconCustomizationItem(NSString *identifier, NS
         
         // 确认按钮 - 颜色使用 #2d2f38，无背景色，调整位置
         self.confirmButton = [UIButton buttonWithType:UIButtonTypeSystem];
-        self.confirmButton.frame = CGRectMake(0, contentHeight - 58.5, 300, 55.5);
+        self.confirmButton.frame = CGRectMake(0, contentHeight - 53.5, 300, 55.5);
         self.confirmButton.backgroundColor = [UIColor clearColor];
         [self.confirmButton setTitle:@"确定" forState:UIControlStateNormal];
         [self.confirmButton setTitleColor:[UIColor colorWithRed:45/255.0 green:47/255.0 blue:56/255.0 alpha:1.0] forState:UIControlStateNormal]; // #2d2f38
