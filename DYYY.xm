@@ -721,7 +721,6 @@
 }
 
 %end
-
 %hook AWEAwemeModel
 
 - (id)initWithDictionary:(id)arg1 error:(id *)arg2 {
@@ -734,8 +733,21 @@
     BOOL shouldFilterAds = noAds && (self.hotSpotLynxCardModel || self.isAds);
     BOOL shouldFilterRec = skipLive && [self.liveReason isEqualToString:@"rec"];
     BOOL shouldFilterHotSpot = skipHotSpot && self.hotSpotLynxCardModel;
-    
-    return (shouldFilterAds || shouldFilterRec || shouldFilterHotSpot) ? nil : orig;
+
+    BOOL shouldFilterLowLikes = NO;
+
+    NSInteger filterLowLikesThreshold = [[NSUserDefaults standardUserDefaults] integerForKey:@"DYYYfilterLowLikes"];
+        
+    if (filterLowLikesThreshold > 0) {
+        AWESearchAwemeExtraModel *searchExtraModel = [self searchExtraModel];
+        if (!searchExtraModel) {
+            AWEAwemeStatisticsModel *statistics = self.statistics;
+            if (statistics && statistics.diggCount) {
+                shouldFilterLowLikes = statistics.diggCount.integerValue < filterLowLikesThreshold;
+            }
+        }
+    }
+    return (shouldFilterAds || shouldFilterRec || shouldFilterHotSpot || shouldFilterLowLikes) ? nil : orig;
 }
 
 - (id)init {
@@ -749,7 +761,20 @@
     BOOL shouldFilterRec = skipLive && [self.liveReason isEqualToString:@"rec"];
     BOOL shouldFilterHotSpot = skipHotSpot && self.hotSpotLynxCardModel;
     
-    return (shouldFilterAds || shouldFilterRec || shouldFilterHotSpot) ? nil : orig;
+    BOOL shouldFilterLowLikes = NO;
+    
+    NSInteger filterLowLikesThreshold = [[NSUserDefaults standardUserDefaults] integerForKey:@"DYYYfilterLowLikes"];
+        
+    if (filterLowLikesThreshold > 0) {
+        AWESearchAwemeExtraModel *searchExtraModel = [self searchExtraModel];
+        if (!searchExtraModel) {
+            AWEAwemeStatisticsModel *statistics = self.statistics;
+            if (statistics && statistics.diggCount) {
+                shouldFilterLowLikes = statistics.diggCount.integerValue < filterLowLikesThreshold;
+            }
+        }
+    }
+    return (shouldFilterAds || shouldFilterRec || shouldFilterHotSpot || shouldFilterLowLikes) ? nil : orig;
 }
 
 %end

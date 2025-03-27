@@ -42,6 +42,13 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @property (retain, nonatomic) AWEVideoModel *clipVideo;
 @end
 
+@interface AWEAwemeStatisticsModel : NSObject
+@property (nonatomic, strong) NSNumber *diggCount;
+@end
+
+@interface AWESearchAwemeExtraModel : NSObject
+@end
+
 @interface AWEAwemeModel : NSObject
 @property (nonatomic, assign,readwrite) CGFloat videoDuration;
 @property (nonatomic, strong) AWEVideoModel *video;
@@ -58,7 +65,9 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @property (nonatomic, strong) NSString *shareURL;
 @property (nonatomic, strong) id hotSpotLynxCardModel;
 @property (nonatomic, copy) NSString *liveReason;
+@property (nonatomic, strong) AWEAwemeStatisticsModel *statistics;
 - (BOOL)isLive;
+- (AWESearchAwemeExtraModel *)searchExtraModel;
 @end
 
 @interface AWELongPressPanelBaseViewModel : NSObject
