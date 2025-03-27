@@ -1,12 +1,12 @@
 #import <UIKit/UIKit.h>
 #import <objc/runtime.h>
 #import "AwemeHeaders.h"
+#import "DYYYManager.h"
 #import <MobileCoreServices/MobileCoreServices.h>
 
 @class DYYYIconOptionsDialogView;
 static void showIconOptionsDialog(NSString *title, UIImage *previewImage, NSString *saveFilename, void (^onClear)(void), void (^onSelect)(void));
 
-// 添加UIImagePickerController代理类
 @interface DYYYImagePickerDelegate : NSObject <UIImagePickerControllerDelegate, UINavigationControllerDelegate>
 @property (nonatomic, copy) void (^completionBlock)(NSDictionary *info);
 @end
@@ -592,7 +592,6 @@ static AWESettingItemModel *createIconCustomizationItem(NSString *identifier, NS
 - (void)dismiss;
 - (void)confirmTapped;
 @end
-
 @implementation DYYYAboutDialogView
 - (instancetype)initWithTitle:(NSString *)title message:(NSString *)message {
     if (self = [super initWithFrame:UIScreen.mainScreen.bounds]) {
@@ -604,8 +603,24 @@ static AWESettingItemModel *createIconCustomizationItem(NSString *identifier, NS
         self.blurView.alpha = 0.7;
         [self addSubview:self.blurView];
         
-        // 创建内容视图 - 使用纯白背景，增加高度到320以显示更多内容
-        self.contentView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 300, 320)];
+        // 计算文本高度，动态调整弹窗高度
+        UIFont *messageFont = [UIFont systemFontOfSize:15];
+        CGSize constraintSize = CGSizeMake(260, CGFLOAT_MAX);
+        NSAttributedString *attributedMessage = [[NSAttributedString alloc] initWithString:message attributes:@{NSFontAttributeName: messageFont}];
+        CGRect textRect = [attributedMessage boundingRectWithSize:constraintSize 
+                                                         options:NSStringDrawingUsesLineFragmentOrigin 
+                                                         context:nil];
+        
+        CGFloat textHeight = textRect.size.height;
+        CGFloat maxTextHeight = 280; 
+        CGFloat titleHeight = 44; 
+        CGFloat buttonHeight = 56; 
+        CGFloat actualTextHeight = MIN(textHeight, maxTextHeight);
+        CGFloat contentHeight = titleHeight + actualTextHeight + buttonHeight;
+        BOOL needsScrolling = textHeight > maxTextHeight;
+        
+        // 创建内容视图 - 使用纯白背景，高度根据内容调整
+        self.contentView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 300, contentHeight)];
         self.contentView.center = CGPointMake(self.frame.size.width / 2, self.frame.size.height / 2);
         self.contentView.backgroundColor = [UIColor whiteColor];
         self.contentView.layer.cornerRadius = 12;
@@ -622,24 +637,21 @@ static AWESettingItemModel *createIconCustomizationItem(NSString *identifier, NS
         self.titleLabel.font = [UIFont systemFontOfSize:18 weight:UIFontWeightMedium];
         [self.contentView addSubview:self.titleLabel];
         
-       // 消息内容 - 使用 UITextView 代替 UILabel 以支持链接点击
-        self.messageTextView = [[UITextView alloc] initWithFrame:CGRectMake(20, 54, 260, 210)];
+        // 消息内容
+        self.messageTextView = [[UITextView alloc] initWithFrame:CGRectMake(20, 54, 260, actualTextHeight)];
         self.messageTextView.backgroundColor = [UIColor clearColor];
         self.messageTextView.textAlignment = NSTextAlignmentCenter;
-        self.messageTextView.font = [UIFont systemFontOfSize:15];
+        self.messageTextView.font = messageFont;
         self.messageTextView.editable = NO;
-        self.messageTextView.scrollEnabled = NO;
+        self.messageTextView.scrollEnabled = needsScrolling;
+        self.messageTextView.showsVerticalScrollIndicator = needsScrolling;
         self.messageTextView.dataDetectorTypes = UIDataDetectorTypeLink;
         self.messageTextView.selectable = YES;
         
         // 创建段落样式并设置居中对齐
         NSMutableParagraphStyle *paragraphStyle = [[NSMutableParagraphStyle alloc] init];
         paragraphStyle.alignment = NSTextAlignmentCenter;
-        
-        // 创建带链接的富文本
         NSMutableAttributedString *attributedString = [[NSMutableAttributedString alloc] initWithString:message];
-        
-        // 应用段落样式到整个文本
         [attributedString addAttribute:NSParagraphStyleAttributeName 
                                  value:paragraphStyle 
                                  range:NSMakeRange(0, message.length)];
@@ -668,18 +680,23 @@ static AWESettingItemModel *createIconCustomizationItem(NSString *identifier, NS
                                      value:@"https://github.com/huami1314/DYYY" 
                                      range:huamiGithubRange];
         }
-        
+        NSRange huamiTGGroup = [message rangeOfString:@"Telegram@huami group"];
+        if (huamiTGGroup.location != NSNotFound) {
+            [attributedString addAttribute:NSLinkAttributeName 
+                                     value:@"https://t.me/huamichat" 
+                                     range:huamiTGGroup];
+        }
         self.messageTextView.attributedText = attributedString;
         [self.contentView addSubview:self.messageTextView];
         
         // 添加内容和按钮之间的分割线，调整位置
-        UIView *contentButtonSeparator = [[UIView alloc] initWithFrame:CGRectMake(0, 264, 300, 0.5)];
+        UIView *contentButtonSeparator = [[UIView alloc] initWithFrame:CGRectMake(0, contentHeight - 46, 300, 0.5)];
         contentButtonSeparator.backgroundColor = [UIColor colorWithRed:230/255.0 green:230/255.0 blue:230/255.0 alpha:1.0];
         [self.contentView addSubview:contentButtonSeparator];
         
         // 确认按钮 - 颜色使用 #2d2f38，无背景色，调整位置
         self.confirmButton = [UIButton buttonWithType:UIButtonTypeSystem];
-        self.confirmButton.frame = CGRectMake(0, 264.5, 300, 55.5);
+        self.confirmButton.frame = CGRectMake(0, contentHeight - 58.5, 300, 55.5);
         self.confirmButton.backgroundColor = [UIColor clearColor];
         [self.confirmButton setTitle:@"确定" forState:UIControlStateNormal];
         [self.confirmButton setTitleColor:[UIColor colorWithRed:45/255.0 green:47/255.0 blue:56/255.0 alpha:1.0] forState:UIControlStateNormal]; // #2d2f38
@@ -780,7 +797,6 @@ static void *kViewModelKey = &kViewModelKey;
 }
 %end
 
-// 修改方法以支持多个section
 static AWESettingBaseViewController* createSubSettingsViewController(NSString* title, NSArray* sectionsArray) {
     AWESettingBaseViewController *settingsVC = [[%c(AWESettingBaseViewController) alloc] init];
     
@@ -828,6 +844,7 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
         }
     }
     if (self.traceEnterFrom && !sectionExists) {
+        
         AWESettingItemModel *dyyyItem = [[%c(AWESettingItemModel) alloc] init];
         dyyyItem.identifier = @"DYYY";
         dyyyItem.title = @"DYYY";
@@ -840,7 +857,13 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
         dyyyItem.cellTappedBlock = ^{
             UIViewController *rootVC = self.controllerDelegate;
             AWESettingBaseViewController *settingsVC = [[%c(AWESettingBaseViewController) alloc] init];
-            
+            BOOL hasAgreed = getUserDefaults(@"DYYYUserAgreementAccepted");
+            if (!hasAgreed) {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    [DYYYManager showToast:@"当前设置无法生效，因为您还没有前往旧版界面同意使用协议。"];
+                });
+            }
+
             // 等待视图加载并使用KVO安全访问属性
             dispatch_async(dispatch_get_main_queue(), ^{
                 if ([settingsVC.view isKindOfClass:[UIView class]]) {
@@ -1495,14 +1518,44 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                     @"Telegram@vita_app\n\n"
                     @"开源地址@Wtrwx\n\n" 
                     @"感谢Huami开源\n\n"
-                    @"开源地址@huami1314\n\n" , nil);
+                    @"开源地址@huami1314\n\n"
+                    @"感谢huami group中群友的支持赞助\n\n"
+                    @"Telegram@huami group\n\n" , nil);
             };
             [aboutItems addObject:aboutItem];
             
+            AWESettingItemModel *licenseItem = [[%c(AWESettingItemModel) alloc] init];
+            licenseItem.identifier = @"DYYYLicense";
+            licenseItem.title = @"开源协议";
+            licenseItem.detail = @"MIT License";
+            licenseItem.type = 0;
+            licenseItem.iconImageName = @"awe-settings-icon-opensource-notice";
+            licenseItem.cellType = 26;
+            licenseItem.colorStyle = 0;
+            licenseItem.isEnable = YES;
+            licenseItem.cellTappedBlock = ^{
+                showAboutDialog(@"MIT License", 
+                    @"Copyright (c) 2024 huami.\n\n"
+                    @"Permission is hereby granted, free of charge, to any person obtaining a copy "
+                    @"of this software and associated documentation files (the \"Software\"), to deal "
+                    @"in the Software without restriction, including without limitation the rights "
+                    @"to use, copy, modify, merge, publish, distribute, sublicense, and/or sell "
+                    @"copies of the Software, and to permit persons to whom the Software is "
+                    @"furnished to do so, subject to the following conditions:\n\n"
+                    @"The above copyright notice and this permission notice shall be included in all "
+                    @"copies or substantial portions of the Software.\n\n"
+                    @"THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR "
+                    @"IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, "
+                    @"FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE "
+                    @"AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER "
+                    @"LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, "
+                    @"OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE "
+                    @"SOFTWARE.", nil);
+            };
+            [aboutItems addObject:licenseItem];
             mainSection.itemArray = mainItems;
             aboutSection.itemArray = aboutItems;
             
-            // 将两个section添加到viewModel
             viewModel.sectionDataArray = @[mainSection, aboutSection];
             objc_setAssociatedObject(settingsVC, kViewModelKey, viewModel, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
             [rootVC.navigationController pushViewController:(UIViewController *)settingsVC animated:YES];
@@ -1532,8 +1585,6 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
     
     // 获取保存的实际值
     NSString *savedDetail = [[NSUserDefaults standardUserDefaults] objectForKey:item.identifier];
-    
-    // 设置detail展示保存的值或空字符串，保留原始提示文本用作输入框占位符
     NSString *placeholder = dict[@"detail"];
     item.detail = savedDetail ?: @"";
     
