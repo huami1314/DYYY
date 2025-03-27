@@ -721,8 +721,8 @@
 }
 
 %end
-%hook AWEAwemeModel
 
+%hook AWEAwemeModel
 - (id)initWithDictionary:(id)arg1 error:(id *)arg2 {
     id orig = %orig;
     
@@ -735,19 +735,64 @@
     BOOL shouldFilterHotSpot = skipHotSpot && self.hotSpotLynxCardModel;
 
     BOOL shouldFilterLowLikes = NO;
+    BOOL shouldFilterKeywords = NO;
+    
+    // 获取用户设置的需要过滤的关键词
+    NSString *filterKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterKeywords"];
+    NSArray *keywordsList = nil;
+    
+    if (filterKeywords.length > 0) {
+        keywordsList = [filterKeywords componentsSeparatedByString:@","];
+    }
 
     NSInteger filterLowLikesThreshold = [[NSUserDefaults standardUserDefaults] integerForKey:@"DYYYfilterLowLikes"];
         
-    if (filterLowLikesThreshold > 0) {
-        AWESearchAwemeExtraModel *searchExtraModel = [self searchExtraModel];
-        if (!searchExtraModel) {
-            AWEAwemeStatisticsModel *statistics = self.statistics;
-            if (statistics && statistics.diggCount) {
-                shouldFilterLowLikes = statistics.diggCount.integerValue < filterLowLikesThreshold;
+    // 只有当shareRecExtra不为空时才过滤点赞量低的视频和关键词
+    if (self.shareRecExtra && ![self.shareRecExtra isEqual:@""]) {
+        // 过滤低点赞量视频
+        if (filterLowLikesThreshold > 0) {
+            AWESearchAwemeExtraModel *searchExtraModel = [self searchExtraModel];
+            if (!searchExtraModel) {
+                AWEAwemeStatisticsModel *statistics = self.statistics;
+                if (statistics && statistics.diggCount) {
+                    shouldFilterLowLikes = statistics.diggCount.integerValue < filterLowLikesThreshold;
+                }
+            }
+        }
+        
+        // 过滤包含特定关键词的视频
+        if (keywordsList.count > 0) {
+            // 检查视频标题
+            if (self.itemTitle.length > 0) {
+                for (NSString *keyword in keywordsList) {
+                    NSString *trimmedKeyword = [keyword stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+                    if (trimmedKeyword.length > 0 && [self.itemTitle containsString:trimmedKeyword]) {
+                        shouldFilterKeywords = YES;
+                        break;
+                    }
+                }
+            }
+            
+            // 如果标题中没有关键词，检查标签(textExtras)
+            if (!shouldFilterKeywords && self.textExtras.count > 0) {
+                for (AWEAwemeTextExtraModel *textExtra in self.textExtras) {
+                    NSString *hashtagName = textExtra.hashtagName;
+                    if (hashtagName.length > 0) {
+                        for (NSString *keyword in keywordsList) {
+                            NSString *trimmedKeyword = [keyword stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+                            if (trimmedKeyword.length > 0 && [hashtagName containsString:trimmedKeyword]) {
+                                shouldFilterKeywords = YES;
+                                break;
+                            }
+                        }
+                        if (shouldFilterKeywords) break;
+                    }
+                }
             }
         }
     }
-    return (shouldFilterAds || shouldFilterRec || shouldFilterHotSpot || shouldFilterLowLikes) ? nil : orig;
+    
+    return (shouldFilterAds || shouldFilterRec || shouldFilterHotSpot || shouldFilterLowLikes || shouldFilterKeywords) ? nil : orig;
 }
 
 - (id)init {
@@ -762,21 +807,65 @@
     BOOL shouldFilterHotSpot = skipHotSpot && self.hotSpotLynxCardModel;
     
     BOOL shouldFilterLowLikes = NO;
+    BOOL shouldFilterKeywords = NO;
+    
+    // 获取用户设置的需要过滤的关键词
+    NSString *filterKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterKeywords"];
+    NSArray *keywordsList = nil;
+    
+    if (filterKeywords.length > 0) {
+        keywordsList = [filterKeywords componentsSeparatedByString:@","];
+    }
     
     NSInteger filterLowLikesThreshold = [[NSUserDefaults standardUserDefaults] integerForKey:@"DYYYfilterLowLikes"];
         
-    if (filterLowLikesThreshold > 0) {
-        AWESearchAwemeExtraModel *searchExtraModel = [self searchExtraModel];
-        if (!searchExtraModel) {
-            AWEAwemeStatisticsModel *statistics = self.statistics;
-            if (statistics && statistics.diggCount) {
-                shouldFilterLowLikes = statistics.diggCount.integerValue < filterLowLikesThreshold;
+    // 只有当shareRecExtra不为空时才过滤点赞量低的视频和关键词
+    if (self.shareRecExtra && ![self.shareRecExtra isEqual:@""]) {
+        // 过滤低点赞量视频
+        if (filterLowLikesThreshold > 0) {
+            AWESearchAwemeExtraModel *searchExtraModel = [self searchExtraModel];
+            if (!searchExtraModel) {
+                AWEAwemeStatisticsModel *statistics = self.statistics;
+                if (statistics && statistics.diggCount) {
+                    shouldFilterLowLikes = statistics.diggCount.integerValue < filterLowLikesThreshold;
+                }
+            }
+        }
+        
+        // 过滤包含特定关键词的视频
+        if (keywordsList.count > 0) {
+            // 检查视频标题
+            if (self.itemTitle.length > 0) {
+                for (NSString *keyword in keywordsList) {
+                    NSString *trimmedKeyword = [keyword stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+                    if (trimmedKeyword.length > 0 && [self.itemTitle containsString:trimmedKeyword]) {
+                        shouldFilterKeywords = YES;
+                        break;
+                    }
+                }
+            }
+            
+            // 如果标题中没有关键词，检查标签(textExtras)
+            if (!shouldFilterKeywords && self.textExtras.count > 0) {
+                for (AWEAwemeTextExtraModel *textExtra in self.textExtras) {
+                    NSString *hashtagName = textExtra.hashtagName;
+                    if (hashtagName.length > 0) {
+                        for (NSString *keyword in keywordsList) {
+                            NSString *trimmedKeyword = [keyword stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+                            if (trimmedKeyword.length > 0 && [hashtagName containsString:trimmedKeyword]) {
+                                shouldFilterKeywords = YES;
+                                break;
+                            }
+                        }
+                        if (shouldFilterKeywords) break;
+                    }
+                }
             }
         }
     }
-    return (shouldFilterAds || shouldFilterRec || shouldFilterHotSpot || shouldFilterLowLikes) ? nil : orig;
+    
+    return (shouldFilterAds || shouldFilterRec || shouldFilterHotSpot || shouldFilterLowLikes || shouldFilterKeywords) ? nil : orig;
 }
-
 %end
 
 // 拦截开屏广告

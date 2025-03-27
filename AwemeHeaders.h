@@ -49,6 +49,17 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWESearchAwemeExtraModel : NSObject
 @end
 
+@interface AWEAwemeTextExtraModel : NSObject
+@property (nonatomic, copy) NSString *hashtagName;
+@property (nonatomic, copy) NSString *hashtagId;
+@property (nonatomic, copy) NSString *type;
+@property (nonatomic, assign) NSRange textRange;
+@property (nonatomic, copy) NSString *awemeId;
+@property (nonatomic, copy) NSString *userId;
+@property (nonatomic, copy) NSString *userUniqueId;
+@property (nonatomic, copy) NSString *secUid;
+@end
+
 @interface AWEAwemeModel : NSObject
 @property (nonatomic, assign,readwrite) CGFloat videoDuration;
 @property (nonatomic, strong) AWEVideoModel *video;
@@ -65,6 +76,12 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @property (nonatomic, strong) NSString *shareURL;
 @property (nonatomic, strong) id hotSpotLynxCardModel;
 @property (nonatomic, copy) NSString *liveReason;
+@property (nonatomic, strong) id shareRecExtra; // 推荐视频专有属性
+@property (nonatomic, strong) NSArray<AWEAwemeTextExtraModel *> *textExtras;
+@property (nonatomic, copy) NSString *itemTitle;
+@property (nonatomic, copy) NSString *descriptionSimpleString;
+@property (nonatomic, strong) NSString *itemID;
+
 @property (nonatomic, strong) AWEAwemeStatisticsModel *statistics;
 - (BOOL)isLive;
 - (AWESearchAwemeExtraModel *)searchExtraModel;
