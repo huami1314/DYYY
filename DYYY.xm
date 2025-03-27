@@ -418,6 +418,72 @@
             [actions addObject:downloadAudioAction];
         }
         
+
+        // 添加接口保存选项
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDoubleInterfaceDownload"]) {
+            NSString *apiKey = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYInterfaceDownload"];
+            if (apiKey.length > 0) {
+                AWEUserSheetAction *apiDownloadAction = [NSClassFromString(@"AWEUserSheetAction") 
+                                                       actionWithTitle:@"接口保存" 
+                                                       imgName:nil 
+                                                       handler:^{
+                    NSString *shareLink = [awemeModel valueForKey:@"shareURL"];
+                    if (shareLink.length == 0) {
+                        [DYYYManager showToast:@"无法获取分享链接"];
+                        return;
+                    }
+                    
+                    // 拼接API请求URL
+                    NSString *apiUrl = [NSString stringWithFormat:@"%@%@", apiKey, [shareLink stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLQueryAllowedCharacterSet]]];
+                    
+                    [DYYYManager showToast:@"正在通过接口解析..."];
+                    
+                    NSURL *url = [NSURL URLWithString:apiUrl];
+                    NSURLRequest *request = [NSURLRequest requestWithURL:url];
+                    
+                    NSURLSession *session = [NSURLSession sharedSession];
+                    NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+                        dispatch_async(dispatch_get_main_queue(), ^{
+                            if (error) {
+                                [DYYYManager showToast:[NSString stringWithFormat:@"接口请求失败: %@", error.localizedDescription]];
+                                return;
+                            }
+                            
+                            NSError *jsonError;
+                            NSDictionary *json = [NSJSONSerialization JSONObjectWithData:data options:0 error:&jsonError];
+                            
+                            if (jsonError) {
+                                [DYYYManager showToast:@"解析接口返回数据失败"];
+                                return;
+                            }
+                            
+                            NSInteger code = [json[@"code"] integerValue];
+                            if (code != 200) {
+                                [DYYYManager showToast:[NSString stringWithFormat:@"接口返回错误: %@", json[@"msg"] ?: @"未知错误"]];
+                                return;
+                            }
+                            
+                            NSDictionary *data = json[@"data"];
+                            NSString *videoUrl = data[@"video"] ?: data[@"video_url"];
+                            
+                            if (videoUrl.length == 0) {
+                                [DYYYManager showToast:@"接口未返回有效的视频链接"];
+                                return;
+                            }
+                            
+                            NSURL *videoDownloadUrl = [NSURL URLWithString:videoUrl];
+                            [DYYYManager downloadMedia:videoDownloadUrl mediaType:MediaTypeVideo completion:^{
+                                [DYYYManager showToast:@"视频已保存到相册"];
+                            }];
+                        });
+                    }];
+                    
+                    [dataTask resume];
+                }];
+                [actions addObject:apiDownloadAction];
+            }
+        }
+
         // 添加复制文案选项
         if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDoubleTapCopyDesc"] || 
             ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleTapCopyDesc"]) {
@@ -2254,11 +2320,80 @@
         };
         
         [viewModels addObject:copyShareLink];
-    
+
     }
-    
+
+    // 添加接口保存功能
+    NSString *apiKey = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYInterfaceDownload"];
+    if (apiKey.length > 0) {
+        AWELongPressPanelBaseViewModel *apiDownload = [[%c(AWELongPressPanelBaseViewModel) alloc] init];
+        apiDownload.awemeModel = self.awemeModel;
+        apiDownload.actionType = 673;
+        apiDownload.duxIconName = @"ic_cloudarrowdown_outlined_20";
+        apiDownload.describeString = @"接口保存视频";
+            
+        apiDownload.action = ^{
+            NSString *shareLink = [self.awemeModel valueForKey:@"shareURL"];
+            if (shareLink.length == 0) {
+                [DYYYManager showToast:@"无法获取分享链接"];
+                return;
+            }
+                
+            // 拼接API请求URL
+            NSString *apiUrl = [NSString stringWithFormat:@"%@%@", apiKey, [shareLink stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLQueryAllowedCharacterSet]]];
+                
+            [DYYYManager showToast:@"正在通过接口解析..."];
+
+            NSURL *url = [NSURL URLWithString:apiUrl];
+            NSURLRequest *request = [NSURLRequest requestWithURL:url];
+                
+            NSURLSession *session = [NSURLSession sharedSession];
+            NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    if (error) {
+                        [DYYYManager showToast:[NSString stringWithFormat:@"接口请求失败: %@", error.localizedDescription]];
+                        return;
+                    }
+                        
+                    NSError *jsonError;
+                    NSDictionary *json = [NSJSONSerialization JSONObjectWithData:data options:0 error:&jsonError];
+                        
+                    if (jsonError) {
+                        [DYYYManager showToast:@"解析接口返回数据失败"];
+                        return;
+                    }
+                        
+                    NSInteger code = [json[@"code"] integerValue];
+                    if (code != 200) {
+                        [DYYYManager showToast:[NSString stringWithFormat:@"接口返回错误: %@", json[@"msg"] ?: @"未知错误"]];
+                        return;
+                    }
+
+                    NSDictionary *data = json[@"data"];
+                    NSString *videoUrl = data[@"video"] ?: data[@"video_url"];
+                        
+                    if (videoUrl.length == 0) {
+                        [DYYYManager showToast:@"接口未返回有效的视频链接"];
+                        return;
+                    }
+                        
+                    NSURL *videoDownloadUrl = [NSURL URLWithString:videoUrl];
+                    [DYYYManager downloadMedia:videoDownloadUrl mediaType:MediaTypeVideo completion:^{
+                        [DYYYManager showToast:@"视频已保存到相册"];
+                    }];
+                });
+            }];
+                
+            [dataTask resume];
+                
+            AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
+            [panelManager dismissWithAnimation:YES completion:nil];
+         };
+            
+        [viewModels addObject:apiDownload];
+    }
+
     newGroupModel.groupArr = viewModels;
-    
     return [@[newGroupModel] arrayByAddingObjectsFromArray:originalArray];
 }
 
@@ -2504,7 +2639,77 @@
         [viewModels addObject:copyShareLink];
     
     }
-    
+
+    // 添加接口保存功能
+    NSString *apiKey = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYInterfaceDownload"];
+    if (apiKey.length > 0) {
+        AWELongPressPanelBaseViewModel *apiDownload = [[%c(AWELongPressPanelBaseViewModel) alloc] init];
+        apiDownload.awemeModel = self.awemeModel;
+        apiDownload.actionType = 673;
+        apiDownload.duxIconName = @"ic_cloudarrowdown_outlined_20";
+        apiDownload.describeString = @"接口保存视频";
+            
+        apiDownload.action = ^{
+            NSString *shareLink = [self.awemeModel valueForKey:@"shareURL"];
+            if (shareLink.length == 0) {
+                [DYYYManager showToast:@"无法获取分享链接"];
+                return;
+            }
+                
+            // 拼接API请求URL
+            NSString *apiUrl = [NSString stringWithFormat:@"%@%@", apiKey, [shareLink stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLQueryAllowedCharacterSet]]];
+                
+            [DYYYManager showToast:@"正在通过接口解析..."];
+
+            NSURL *url = [NSURL URLWithString:apiUrl];
+            NSURLRequest *request = [NSURLRequest requestWithURL:url];
+                
+            NSURLSession *session = [NSURLSession sharedSession];
+            NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    if (error) {
+                        [DYYYManager showToast:[NSString stringWithFormat:@"接口请求失败: %@", error.localizedDescription]];
+                        return;
+                    }
+                        
+                    NSError *jsonError;
+                    NSDictionary *json = [NSJSONSerialization JSONObjectWithData:data options:0 error:&jsonError];
+                        
+                    if (jsonError) {
+                        [DYYYManager showToast:@"解析接口返回数据失败"];
+                        return;
+                    }
+                        
+                    NSInteger code = [json[@"code"] integerValue];
+                    if (code != 200) {
+                        [DYYYManager showToast:[NSString stringWithFormat:@"接口返回错误: %@", json[@"msg"] ?: @"未知错误"]];
+                        return;
+                    }
+
+                    NSDictionary *data = json[@"data"];
+                    NSString *videoUrl = data[@"video"] ?: data[@"video_url"];
+                        
+                    if (videoUrl.length == 0) {
+                        [DYYYManager showToast:@"接口未返回有效的视频链接"];
+                        return;
+                    }
+                        
+                    NSURL *videoDownloadUrl = [NSURL URLWithString:videoUrl];
+                    [DYYYManager downloadMedia:videoDownloadUrl mediaType:MediaTypeVideo completion:^{
+                        [DYYYManager showToast:@"视频已保存到相册"];
+                    }];
+                });
+            }];
+                
+            [dataTask resume];
+                
+            AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
+            [panelManager dismissWithAnimation:YES completion:nil];
+         };
+            
+        [viewModels addObject:apiDownload];
+    }
+
     newGroupModel.groupArr = viewModels;
     
     return [@[newGroupModel] arrayByAddingObjectsFromArray:originalArray];
