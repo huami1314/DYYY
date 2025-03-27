@@ -464,7 +464,7 @@
                             }
                             
                             NSDictionary *data = json[@"data"];
-                            NSString *videoUrl = data[@"video"] ?: data[@"video_url"];
+                            NSString *videoUrl = data[@"video"] ?: data[@"video_url"] ?: data[@"url"];
                             
                             if (videoUrl.length == 0) {
                                 [DYYYManager showToast:@"接口未返回有效的视频链接"];
@@ -2370,7 +2370,7 @@
                     }
 
                     NSDictionary *data = json[@"data"];
-                    NSString *videoUrl = data[@"video"] ?: data[@"video_url"];
+                    NSString *videoUrl = data[@"video"] ?: data[@"video_url"] ?: data[@"url"];
                         
                     if (videoUrl.length == 0) {
                         [DYYYManager showToast:@"接口未返回有效的视频链接"];
@@ -2687,7 +2687,7 @@
                     }
 
                     NSDictionary *data = json[@"data"];
-                    NSString *videoUrl = data[@"video"] ?: data[@"video_url"];
+                    NSString *videoUrl = data[@"video"] ?: data[@"video_url"] ?: data[@"url"];
                         
                     if (videoUrl.length == 0) {
                         [DYYYManager showToast:@"接口未返回有效的视频链接"];
