@@ -15,9 +15,9 @@
 #define DYYY @"DYYY"
 #define tweakVersion @"2.2-2"
 
-// 添加DYYYManager的类别声明
 @interface DYYYManager (API)
 + (void)parseAndDownloadVideoWithShareLink:(NSString *)shareLink apiKey:(NSString *)apiKey;
++ (void)batchDownloadResources:(NSArray *)videos images:(NSArray *)images;
 @end
 
 @interface AWEUserActionSheetView : UIView
@@ -545,7 +545,6 @@
     }
 }
 %end
-
 %hook AWEFeedTableView
 - (void)layoutSubviews {
     %orig;
@@ -3226,143 +3225,205 @@ static BOOL isDownloadFlied = NO;
             
             NSArray *videos = dataDict[@"videos"];
             NSArray *images = dataDict[@"images"];
-			NSArray *videoList = dataDict[@"video_list"];
+            NSArray *videoList = dataDict[@"video_list"];
             BOOL hasVideos = [videos isKindOfClass:[NSArray class]] && videos.count > 0;
             BOOL hasImages = [images isKindOfClass:[NSArray class]] && images.count > 0;
+            BOOL hasVideoList = [videoList isKindOfClass:[NSArray class]] && videoList.count > 0;
+            BOOL shouldShowQualityOptions = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYShowAllVideoQuality"];
             
-            if (!hasVideos && !hasImages) {
-				if ([videoList isKindOfClass:[NSArray class]] && videoList.count > 0) {
-					AWEUserActionSheetView *actionSheet = [[NSClassFromString(@"AWEUserActionSheetView") alloc] init];
-					NSMutableArray *actions = [NSMutableArray array];
-					
-					for (NSDictionary *videoDict in videoList) {
-						NSString *url = videoDict[@"url"];
-						NSString *level = videoDict[@"level"];
-						if (url.length > 0 && level.length > 0) {
-							AWEUserSheetAction *qualityAction = [NSClassFromString(@"AWEUserSheetAction")
-								actionWithTitle:level
-								imgName:nil
-								handler:^{
-									NSURL *videoDownloadUrl = [NSURL URLWithString:url];
-									[self downloadMedia:videoDownloadUrl mediaType:MediaTypeVideo completion:^{
-										[self showToast:[NSString stringWithFormat:@"视频已保存到相册 (%@)", level]];
-									}];
-								}];
-							[actions addObject:qualityAction];
-						}
-					}
-					if (actions.count > 0) {
-						[actionSheet setActions:actions];
-						[actionSheet show];
-					} else {
-						return;
-					}
-				} else {
-					NSString *videoUrl = dataDict[@"url"];
-					if (videoUrl.length > 0) {
-						[self showToast:@"开始下载单个视频..."];
-						NSURL *videoDownloadUrl = [NSURL URLWithString:videoUrl];
-						[self downloadMedia:videoDownloadUrl mediaType:MediaTypeVideo completion:^{
-							[self showToast:@"视频已保存到相册"];
-						}];
-					} else {
-						[self showToast:@"接口未返回有效的视频链接"];
-						return;
-					}
-				}
-				
-				return;
+            // 如果启用了显示清晰度选项并且存在 videoList，或者原本就需要显示清晰度选项
+            if ((shouldShowQualityOptions && hasVideoList) || (!hasVideos && !hasImages && hasVideoList)) {
+                AWEUserActionSheetView *actionSheet = [[NSClassFromString(@"AWEUserActionSheetView") alloc] init];
+                NSMutableArray *actions = [NSMutableArray array];
+                
+                for (NSDictionary *videoDict in videoList) {
+                    NSString *url = videoDict[@"url"];
+                    NSString *level = videoDict[@"level"];
+                    if (url.length > 0 && level.length > 0) {
+                        AWEUserSheetAction *qualityAction = [NSClassFromString(@"AWEUserSheetAction")
+                            actionWithTitle:level
+                            imgName:nil
+                            handler:^{
+                                NSURL *videoDownloadUrl = [NSURL URLWithString:url];
+                                [self downloadMedia:videoDownloadUrl mediaType:MediaTypeVideo completion:^{
+                                    [self showToast:[NSString stringWithFormat:@"视频已保存到相册 (%@)", level]];
+                                }];
+                            }];
+                        [actions addObject:qualityAction];
+                    }
+                }
+                
+                // 如果用户选择了显示清晰度选项，并且有视频和图片需要下载，添加一个批量下载选项
+                if (shouldShowQualityOptions && (hasVideos || hasImages)) {
+                    AWEUserSheetAction *batchDownloadAction = [NSClassFromString(@"AWEUserSheetAction")
+                        actionWithTitle:@"批量下载所有资源"
+                        imgName:nil
+                        handler:^{
+                            // 执行批量下载
+                            [self batchDownloadResources:videos images:images];
+                        }];
+                    [actions addObject:batchDownloadAction];
+                }
+                
+                if (actions.count > 0) {
+                    [actionSheet setActions:actions];
+                    [actionSheet show];
+                    return;
+                }
             }
             
-			NSMutableArray<id> *videoFiles = [NSMutableArray arrayWithCapacity:videos.count];
-			NSMutableArray<id> *imageFiles = [NSMutableArray arrayWithCapacity:images.count];
-			for (NSInteger i = 0; i < videos.count; i++) [videoFiles addObject:[NSNull null]];
-			for (NSInteger i = 0; i < images.count; i++) [imageFiles addObject:[NSNull null]];
-            
-            dispatch_group_t downloadGroup = dispatch_group_create();
-            __block NSInteger totalDownloads = 0;
-            __block NSInteger completedDownloads = 0;
-            
-            if (hasVideos) {
-                totalDownloads += videos.count;
+            // 如果显示清晰度选项但是没有videoList，并且有videos数组（多个视频）
+            if (shouldShowQualityOptions && !hasVideoList && hasVideos && videos.count > 1) {
+                AWEUserActionSheetView *actionSheet = [[NSClassFromString(@"AWEUserActionSheetView") alloc] init];
+                NSMutableArray *actions = [NSMutableArray array];
+                
                 for (NSInteger i = 0; i < videos.count; i++) {
                     NSDictionary *videoDict = videos[i];
                     NSString *videoUrl = videoDict[@"url"];
-                    if (videoUrl.length == 0) {
-                        completedDownloads++;
-                        continue;
+                    NSString *desc = videoDict[@"desc"] ?: [NSString stringWithFormat:@"视频 %ld", (long)(i + 1)];
+                    
+                    if (videoUrl.length > 0) {
+                        AWEUserSheetAction *videoAction = [NSClassFromString(@"AWEUserSheetAction")
+                            actionWithTitle:[NSString stringWithFormat:@"%@", desc]
+                            imgName:nil
+                            handler:^{
+                                NSURL *videoDownloadUrl = [NSURL URLWithString:videoUrl];
+                                [self downloadMedia:videoDownloadUrl mediaType:MediaTypeVideo completion:^{
+                                    [self showToast:[NSString stringWithFormat:@"视频已保存到相册"]];
+                                }];
+                            }];
+                        [actions addObject:videoAction];
                     }
-                    dispatch_group_enter(downloadGroup);
-                    NSURL *videoDownloadUrl = [NSURL URLWithString:videoUrl];
-                    [self downloadMediaWithProgress:videoDownloadUrl mediaType:MediaTypeVideo progress:nil completion:^(BOOL success, NSURL *fileURL) {
-                        if (success && fileURL) {
-                            @synchronized (videoFiles) {
-                                videoFiles[i] = fileURL;
-                            }
-                        }
-                        completedDownloads++;
-                        dispatch_group_leave(downloadGroup);
-                    }];
                 }
-            }
-            
-            if (hasImages) {
-                totalDownloads += images.count;
-                for (NSInteger i = 0; i < images.count; i++) {
-                    NSString *imageUrl = images[i];
-                    if (imageUrl.length == 0) {
-                        completedDownloads++;
-                        continue;
-                    }
-                    dispatch_group_enter(downloadGroup);
-                    NSURL *imageDownloadUrl = [NSURL URLWithString:imageUrl];
-                    [self downloadMediaWithProgress:imageDownloadUrl mediaType:MediaTypeImage progress:nil completion:^(BOOL success, NSURL *fileURL) {
-                        if (success && fileURL) {
-                            @synchronized (imageFiles) {
-                                imageFiles[i] = fileURL;
-                            }
-                        }
-                        completedDownloads++;
-                        dispatch_group_leave(downloadGroup);
-                    }];
-                }
-            }
-            
-            dispatch_group_notify(downloadGroup, dispatch_get_main_queue(), ^{
-                if (completedDownloads < totalDownloads) {
-                    [self showToast:@"部分下载失败"];
-                }
-				
-				NSInteger videoSuccessCount = 0;
-				for (id file in videoFiles) {
-					if ([file isKindOfClass:[NSURL class]]) {
-						[self saveMedia:(NSURL *)file mediaType:MediaTypeVideo completion:nil];
-						videoSuccessCount++;
-					}
-				}
-
-				NSInteger imageSuccessCount = 0;
-				for (id file in imageFiles) {
-					if ([file isKindOfClass:[NSURL class]]) {
-						[self saveMedia:(NSURL *)file mediaType:MediaTypeImage completion:nil];
-						imageSuccessCount++;
-					}
-				}
                 
-                NSString *toastMessage;
-                if (hasVideos && hasImages) {
-                    toastMessage = [NSString stringWithFormat:@"已保存 %ld/%ld 个视频和 %ld/%ld 张图片", (long)videoSuccessCount, (long)videos.count, (long)imageSuccessCount, (long)images.count];
-                } else if (hasVideos) {
-                    toastMessage = [NSString stringWithFormat:@"已保存 %ld/%ld 个视频", (long)videoSuccessCount, (long)videos.count];
-                } else if (hasImages) {
-                    toastMessage = [NSString stringWithFormat:@"已保存 %ld/%ld 张图片", (long)imageSuccessCount, (long)images.count];
+                AWEUserSheetAction *batchDownloadAction = [NSClassFromString(@"AWEUserSheetAction")
+                    actionWithTitle:@"批量下载所有资源"
+                    imgName:nil
+                    handler:^{
+                        // 执行批量下载
+                        [self batchDownloadResources:videos images:images];
+                    }];
+                [actions addObject:batchDownloadAction];
+                
+                if (actions.count > 0) {
+                    [actionSheet setActions:actions];
+                    [actionSheet show];
+                    return;
                 }
-                [self showToast:toastMessage];
-            });
+            }
+            
+            // 如果没有视频或图片数组，但有单个视频URL
+            if (!hasVideos && !hasImages && !hasVideoList) {
+                NSString *videoUrl = dataDict[@"url"];
+                if (videoUrl.length > 0) {
+                    [self showToast:@"开始下载单个视频..."];
+                    NSURL *videoDownloadUrl = [NSURL URLWithString:videoUrl];
+                    [self downloadMedia:videoDownloadUrl mediaType:MediaTypeVideo completion:^{
+                        [self showToast:@"视频已保存到相册"];
+                    }];
+                } else {
+                    [self showToast:@"接口未返回有效的视频链接"];
+                }
+                return;
+            }
+            
+            [self batchDownloadResources:videos images:images];
         });
     }];
     
     [dataTask resume];
+}
+
+%new
++ (void)batchDownloadResources:(NSArray *)videos images:(NSArray *)images {
+    BOOL hasVideos = [videos isKindOfClass:[NSArray class]] && videos.count > 0;
+    BOOL hasImages = [images isKindOfClass:[NSArray class]] && images.count > 0;
+    
+    NSMutableArray<id> *videoFiles = [NSMutableArray arrayWithCapacity:videos.count];
+    NSMutableArray<id> *imageFiles = [NSMutableArray arrayWithCapacity:images.count];
+    for (NSInteger i = 0; i < videos.count; i++) [videoFiles addObject:[NSNull null]];
+    for (NSInteger i = 0; i < images.count; i++) [imageFiles addObject:[NSNull null]];
+    
+    dispatch_group_t downloadGroup = dispatch_group_create();
+    __block NSInteger totalDownloads = 0;
+    __block NSInteger completedDownloads = 0;
+    
+    if (hasVideos) {
+        totalDownloads += videos.count;
+        for (NSInteger i = 0; i < videos.count; i++) {
+            NSDictionary *videoDict = videos[i];
+            NSString *videoUrl = videoDict[@"url"];
+            if (videoUrl.length == 0) {
+                completedDownloads++;
+                continue;
+            }
+            dispatch_group_enter(downloadGroup);
+            NSURL *videoDownloadUrl = [NSURL URLWithString:videoUrl];
+            [self downloadMediaWithProgress:videoDownloadUrl mediaType:MediaTypeVideo progress:nil completion:^(BOOL success, NSURL *fileURL) {
+                if (success && fileURL) {
+                    @synchronized (videoFiles) {
+                        videoFiles[i] = fileURL;
+                    }
+                }
+                completedDownloads++;
+                dispatch_group_leave(downloadGroup);
+            }];
+        }
+    }
+    
+    if (hasImages) {
+        totalDownloads += images.count;
+        for (NSInteger i = 0; i < images.count; i++) {
+            NSString *imageUrl = images[i];
+            if (imageUrl.length == 0) {
+                completedDownloads++;
+                continue;
+            }
+            dispatch_group_enter(downloadGroup);
+            NSURL *imageDownloadUrl = [NSURL URLWithString:imageUrl];
+            [self downloadMediaWithProgress:imageDownloadUrl mediaType:MediaTypeImage progress:nil completion:^(BOOL success, NSURL *fileURL) {
+                if (success && fileURL) {
+                    @synchronized (imageFiles) {
+                        imageFiles[i] = fileURL;
+                    }
+                }
+                completedDownloads++;
+                dispatch_group_leave(downloadGroup);
+            }];
+        }
+    }
+    
+    dispatch_group_notify(downloadGroup, dispatch_get_main_queue(), ^{
+        if (completedDownloads < totalDownloads) {
+            [self showToast:@"部分下载失败"];
+        }
+        
+        NSInteger videoSuccessCount = 0;
+        for (id file in videoFiles) {
+            if ([file isKindOfClass:[NSURL class]]) {
+                [self saveMedia:(NSURL *)file mediaType:MediaTypeVideo completion:nil];
+                videoSuccessCount++;
+            }
+        }
+
+        NSInteger imageSuccessCount = 0;
+        for (id file in imageFiles) {
+            if ([file isKindOfClass:[NSURL class]]) {
+                [self saveMedia:(NSURL *)file mediaType:MediaTypeImage completion:nil];
+                imageSuccessCount++;
+            }
+        }
+        
+        NSString *toastMessage;
+        if (hasVideos && hasImages) {
+            toastMessage = [NSString stringWithFormat:@"已保存 %ld/%ld 个视频和 %ld/%ld 张图片", (long)videoSuccessCount, (long)videos.count, (long)imageSuccessCount, (long)images.count];
+        } else if (hasVideos) {
+            toastMessage = [NSString stringWithFormat:@"已保存 %ld/%ld 个视频", (long)videoSuccessCount, (long)videos.count];
+        } else if (hasImages) {
+            toastMessage = [NSString stringWithFormat:@"已保存 %ld/%ld 张图片", (long)imageSuccessCount, (long)images.count];
+        }
+        [self showToast:toastMessage];
+    });
 }
 
 %end
