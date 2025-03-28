@@ -15,6 +15,11 @@
 #define DYYY @"DYYY"
 #define tweakVersion @"2.2-2"
 
+// 添加DYYYManager的类别声明
+@interface DYYYManager (API)
++ (void)parseAndDownloadVideoWithShareLink:(NSString *)shareLink apiKey:(NSString *)apiKey;
+@end
+
 @interface AWEUserActionSheetView : UIView
 - (instancetype)init;
 - (void)setActions:(NSArray *)actions;
@@ -433,52 +438,8 @@
                         return;
                     }
                     
-                    // 拼接API请求URL
-                    NSString *apiUrl = [NSString stringWithFormat:@"%@%@", apiKey, [shareLink stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLQueryAllowedCharacterSet]]];
-                    
-                    [DYYYManager showToast:@"正在通过接口解析..."];
-                    
-                    NSURL *url = [NSURL URLWithString:apiUrl];
-                    NSURLRequest *request = [NSURLRequest requestWithURL:url];
-                    
-                    NSURLSession *session = [NSURLSession sharedSession];
-                    NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-                        dispatch_async(dispatch_get_main_queue(), ^{
-                            if (error) {
-                                [DYYYManager showToast:[NSString stringWithFormat:@"接口请求失败: %@", error.localizedDescription]];
-                                return;
-                            }
-                            
-                            NSError *jsonError;
-                            NSDictionary *json = [NSJSONSerialization JSONObjectWithData:data options:0 error:&jsonError];
-                            
-                            if (jsonError) {
-                                [DYYYManager showToast:@"解析接口返回数据失败"];
-                                return;
-                            }
-                            
-                            NSInteger code = [json[@"code"] integerValue];
-                            if (code != 200) {
-                                [DYYYManager showToast:[NSString stringWithFormat:@"接口返回错误: %@", json[@"msg"] ?: @"未知错误"]];
-                                return;
-                            }
-                            
-                            NSDictionary *data = json[@"data"];
-                            NSString *videoUrl = data[@"video"] ?: data[@"video_url"] ?: data[@"url"];
-                            
-                            if (videoUrl.length == 0) {
-                                [DYYYManager showToast:@"接口未返回有效的视频链接"];
-                                return;
-                            }
-                            
-                            NSURL *videoDownloadUrl = [NSURL URLWithString:videoUrl];
-                            [DYYYManager downloadMedia:videoDownloadUrl mediaType:MediaTypeVideo completion:^{
-                                [DYYYManager showToast:@"视频已保存到相册"];
-                            }];
-                        });
-                    }];
-                    
-                    [dataTask resume];
+                    // 使用封装的方法进行解析下载
+                    [DYYYManager parseAndDownloadVideoWithShareLink:shareLink apiKey:apiKey];
                 }];
                 [actions addObject:apiDownloadAction];
             }
@@ -2338,53 +2299,9 @@
                 [DYYYManager showToast:@"无法获取分享链接"];
                 return;
             }
-                
-            // 拼接API请求URL
-            NSString *apiUrl = [NSString stringWithFormat:@"%@%@", apiKey, [shareLink stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLQueryAllowedCharacterSet]]];
-                
-            [DYYYManager showToast:@"正在通过接口解析..."];
-
-            NSURL *url = [NSURL URLWithString:apiUrl];
-            NSURLRequest *request = [NSURLRequest requestWithURL:url];
-                
-            NSURLSession *session = [NSURLSession sharedSession];
-            NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    if (error) {
-                        [DYYYManager showToast:[NSString stringWithFormat:@"接口请求失败: %@", error.localizedDescription]];
-                        return;
-                    }
-                        
-                    NSError *jsonError;
-                    NSDictionary *json = [NSJSONSerialization JSONObjectWithData:data options:0 error:&jsonError];
-                        
-                    if (jsonError) {
-                        [DYYYManager showToast:@"解析接口返回数据失败"];
-                        return;
-                    }
-                        
-                    NSInteger code = [json[@"code"] integerValue];
-                    if (code != 200) {
-                        [DYYYManager showToast:[NSString stringWithFormat:@"接口返回错误: %@", json[@"msg"] ?: @"未知错误"]];
-                        return;
-                    }
-
-                    NSDictionary *data = json[@"data"];
-                    NSString *videoUrl = data[@"video"] ?: data[@"video_url"] ?: data[@"url"];
-                        
-                    if (videoUrl.length == 0) {
-                        [DYYYManager showToast:@"接口未返回有效的视频链接"];
-                        return;
-                    }
-                        
-                    NSURL *videoDownloadUrl = [NSURL URLWithString:videoUrl];
-                    [DYYYManager downloadMedia:videoDownloadUrl mediaType:MediaTypeVideo completion:^{
-                        [DYYYManager showToast:@"视频已保存到相册"];
-                    }];
-                });
-            }];
-                
-            [dataTask resume];
+            
+            // 使用封装的方法进行解析下载
+            [DYYYManager parseAndDownloadVideoWithShareLink:shareLink apiKey:apiKey];
                 
             AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
             [panelManager dismissWithAnimation:YES completion:nil];
@@ -2655,53 +2572,9 @@
                 [DYYYManager showToast:@"无法获取分享链接"];
                 return;
             }
-                
-            // 拼接API请求URL
-            NSString *apiUrl = [NSString stringWithFormat:@"%@%@", apiKey, [shareLink stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLQueryAllowedCharacterSet]]];
-                
-            [DYYYManager showToast:@"正在通过接口解析..."];
-
-            NSURL *url = [NSURL URLWithString:apiUrl];
-            NSURLRequest *request = [NSURLRequest requestWithURL:url];
-                
-            NSURLSession *session = [NSURLSession sharedSession];
-            NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    if (error) {
-                        [DYYYManager showToast:[NSString stringWithFormat:@"接口请求失败: %@", error.localizedDescription]];
-                        return;
-                    }
-                        
-                    NSError *jsonError;
-                    NSDictionary *json = [NSJSONSerialization JSONObjectWithData:data options:0 error:&jsonError];
-                        
-                    if (jsonError) {
-                        [DYYYManager showToast:@"解析接口返回数据失败"];
-                        return;
-                    }
-                        
-                    NSInteger code = [json[@"code"] integerValue];
-                    if (code != 200) {
-                        [DYYYManager showToast:[NSString stringWithFormat:@"接口返回错误: %@", json[@"msg"] ?: @"未知错误"]];
-                        return;
-                    }
-
-                    NSDictionary *data = json[@"data"];
-                    NSString *videoUrl = data[@"video"] ?: data[@"video_url"] ?: data[@"url"];
-                        
-                    if (videoUrl.length == 0) {
-                        [DYYYManager showToast:@"接口未返回有效的视频链接"];
-                        return;
-                    }
-                        
-                    NSURL *videoDownloadUrl = [NSURL URLWithString:videoUrl];
-                    [DYYYManager downloadMedia:videoDownloadUrl mediaType:MediaTypeVideo completion:^{
-                        [DYYYManager showToast:@"视频已保存到相册"];
-                    }];
-                });
-            }];
-                
-            [dataTask resume];
+            
+            // 使用封装的方法进行解析下载
+            [DYYYManager parseAndDownloadVideoWithShareLink:shareLink apiKey:apiKey];
                 
             AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
             [panelManager dismissWithAnimation:YES completion:nil];
@@ -3233,6 +3106,65 @@ static BOOL isDownloadFlied = NO;
 
 - (id)badgeModule {
     return [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYNoUpdates"] ? nil : %orig;
+}
+
+%end
+
+%hook DYYYManager
+
+%new
++ (void)parseAndDownloadVideoWithShareLink:(NSString *)shareLink apiKey:(NSString *)apiKey {
+    if (shareLink.length == 0 || apiKey.length == 0) {
+        [self showToast:@"分享链接或API密钥无效"];
+        return;
+    }
+    
+    // 拼接API请求URL
+    NSString *apiUrl = [NSString stringWithFormat:@"%@%@", apiKey, [shareLink stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLQueryAllowedCharacterSet]]];
+    
+    [self showToast:@"正在通过接口解析..."];
+    
+    NSURL *url = [NSURL URLWithString:apiUrl];
+    NSURLRequest *request = [NSURLRequest requestWithURL:url];
+    
+    NSURLSession *session = [NSURLSession sharedSession];
+    NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (error) {
+                [self showToast:[NSString stringWithFormat:@"接口请求失败: %@", error.localizedDescription]];
+                return;
+            }
+            
+            NSError *jsonError;
+            NSDictionary *json = [NSJSONSerialization JSONObjectWithData:data options:0 error:&jsonError];
+            
+            if (jsonError) {
+                [self showToast:@"解析接口返回数据失败"];
+                return;
+            }
+            
+            NSInteger code = [json[@"code"] integerValue];
+            if (code != 200) {
+                [self showToast:[NSString stringWithFormat:@"接口返回错误: %@", json[@"msg"] ?: @"未知错误"]];
+                return;
+            }
+            
+            NSDictionary *data = json[@"data"];
+            NSString *videoUrl = data[@"video"] ?: data[@"video_url"] ?: data[@"url"];
+            
+            if (videoUrl.length == 0) {
+                [self showToast:@"接口未返回有效的视频链接"];
+                return;
+            }
+            
+            NSURL *videoDownloadUrl = [NSURL URLWithString:videoUrl];
+            [self downloadMedia:videoDownloadUrl mediaType:MediaTypeVideo completion:^{
+                [self showToast:@"视频已保存到相册"];
+            }];
+        });
+    }];
+    
+    [dataTask resume];
 }
 
 %end
