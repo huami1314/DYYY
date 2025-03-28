@@ -1066,13 +1066,19 @@
 
 %end
 
-//隐藏作者声明
 %hook AWEAntiAddictedNoticeBarView
 
 - (void)layoutSubviews {
     %orig;
 
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAntiAddictedNotice"]) {
+    // 先检查 tips 属性是否存在且不为空
+    id tipsValue = [self valueForKey:@"tips"];
+    BOOL hasTips = (tipsValue != nil && 
+                   [tipsValue isKindOfClass:[NSString class]] && 
+                   [(NSString *)tipsValue length] > 0);
+    
+    // 只有当 tips 不为空且用户启用了隐藏选项时才隐藏视图
+    if (hasTips && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAntiAddictedNotice"]) {
         UIView *parentView = self.superview;
         if (parentView) {
             parentView.hidden = YES;

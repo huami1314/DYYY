@@ -148,8 +148,6 @@ static AWESettingItemModel *createIconCustomizationItem(NSString *identifier, NS
     item.cellType = 26;
     item.colorStyle = 0;
     item.isEnable = YES;
-    
-    // 其余代码保持不变
     item.cellTappedBlock = ^{
         // 创建文件夹（如果不存在）
         if (![[NSFileManager defaultManager] fileExistsAtPath:dyyyFolderPath]) {
