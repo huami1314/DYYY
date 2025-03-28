@@ -436,3 +436,8 @@ typedef NS_ENUM(NSInteger, MediaType) {
 
 @interface AWEVersionUpdateWorkflow : NSObject
 @end
+
+@interface AWEStoryProgressSlideView : UIView
+@property (nonatomic, strong, readonly) UIView *superview;
+@property (nonatomic, assign, getter=isHidden) BOOL hidden;
+@end
