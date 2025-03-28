@@ -199,7 +199,7 @@ static AWESettingItemModel *createIconCustomizationItem(NSString *identifier, NS
             UIImagePickerController *picker = [[UIImagePickerController alloc] init];
             picker.sourceType = UIImagePickerControllerSourceTypePhotoLibrary;
             picker.allowsEditing = NO;
-            picker.mediaTypes = @[@"public.image"];  // 使用字符串替代kUTTypeImage
+            picker.mediaTypes = @[@"public.image"]; 
             
             // 创建并设置代理
             DYYYImagePickerDelegate *pickerDelegate = [[DYYYImagePickerDelegate alloc] init];
@@ -672,7 +672,7 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                     @{@"identifier": @"DYYYNicknameScale", @"title": @"昵称文案缩放", @"detail": @"不填默认", @"cellType": @26, @"imageName": @"ic_zoomin_outlined_20"},
                     @{@"identifier": @"DYYYNicknameVerticalOffset", @"title": @"昵称下移距离", @"detail": @"不填默认", @"cellType": @26, @"imageName": @"ic_pensketch_outlined_20"},
                     @{@"identifier": @"DYYYDescriptionVerticalOffset", @"title": @"文案下移距离", @"detail": @"不填默认", @"cellType": @26, @"imageName": @"ic_pensketch_outlined_20"},
-                    @{@"identifier": @"DYYYIPLeftShiftFactor", @"title": @"属地左移系数", @"detail": @"2.84", @"cellType": @26, @"imageName": @"ic_pensketch_outlined_20"},
+                    @{@"identifier": @"DYYYIPLeftShiftOffset", @"title": @"属地左移距离", @"detail": @"", @"cellType": @26, @"imageName": @"ic_pensketch_outlined_20"},
                 ];
                 
                 for (NSDictionary *dict in scaleSettings) {
@@ -706,7 +706,6 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                 [iconItems addObject:createIconCustomizationItem(@"DYYYIconShare", @"分享图标", @"ic_share_outlined", @"share.png")];
                                 
                 // 将图标自定义section添加到sections数组
-                
                 NSMutableArray *sections = [NSMutableArray array];
                 [sections addObject:createSection(@"透明度设置", transparencyItems)];
                 [sections addObject:createSection(@"缩放与大小", scaleItems)];
@@ -766,19 +765,29 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                     [videoUiItems addObject:item];
                 }
                 
-                // 【侧边栏与消息页】分类
+                // 【侧边栏】分类
                 NSMutableArray<AWESettingItemModel *> *sidebarItems = [NSMutableArray array];
                 NSArray *sidebarSettings = @[
                     @{@"identifier": @"DYYYisHiddenSidebarDot", @"title": @"隐藏侧栏红点", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
                     @{@"identifier": @"DYYYisHiddenLeftSideBar", @"title": @"隐藏左侧边栏", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
-                    @{@"identifier": @"DYYYHidePushBanner", @"title": @"隐藏通知提示", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
-                    @{@"identifier": @"DYYYisHiddenAvatarList", @"title": @"隐藏头像列表", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
-                    @{@"identifier": @"DYYYisHiddenAvatarBubble", @"title": @"隐藏头像气泡", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"}
                 ];
                 
                 for (NSDictionary *dict in sidebarSettings) {
                     AWESettingItemModel *item = [self createSettingItem:dict];
                     [sidebarItems addObject:item];
+                }
+
+                // 【消息页与我的页】分类
+                NSMutableArray<AWESettingItemModel *> *messageAndMineItems = [NSMutableArray array];
+                NSArray *messageAndMineSettings = @[
+                    @{@"identifier": @"DYYYHidePushBanner", @"title": @"隐藏通知提示", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
+                    @{@"identifier": @"DYYYisHiddenAvatarList", @"title": @"隐藏头像列表", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
+                    @{@"identifier": @"DYYYisHiddenAvatarBubble", @"title": @"隐藏头像气泡", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
+                    @{@"identifier": @"DYYYHidePostView", @"title": @"隐藏发作品框", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"}];
+                
+                for (NSDictionary *dict in messageAndMineSettings) {
+                    AWESettingItemModel *item = [self createSettingItem:dict];
+                    [messageAndMineItems addObject:item];
                 }
 
                 // 【提示与位置信息】分类
@@ -794,6 +803,7 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                     @{@"identifier": @"DYYYHideGongChuang", @"title": @"隐藏共创头像", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
                     @{@"identifier": @"DYYYHideHotspot", @"title": @"隐藏热点提示", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
                     @{@"identifier": @"DYYYHideRecommendTips", @"title": @"隐藏推荐提示", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
+                    @{@"identifier": @"DYYYHideBottomRelated", @"title": @"隐藏底部相关", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},                    
                     @{@"identifier": @"DYYYHideShareContentView", @"title": @"隐藏分享提示", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
                     @{@"identifier": @"DYYYHideAntiAddictedNotice", @"title": @"隐藏作者声明", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
                     @{@"identifier": @"DYYYHideFeedAnchorContainer", @"title": @"隐藏拍摄同款", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
@@ -815,7 +825,8 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                 NSMutableArray *sections = [NSMutableArray array];
                 [sections addObject:createSection(@"主界面元素", mainUiItems)];
                 [sections addObject:createSection(@"视频播放界面", videoUiItems)];
-                [sections addObject:createSection(@"侧边栏与消息页", sidebarItems)];
+                [sections addObject:createSection(@"侧边栏元素", sidebarItems)];
+                [sections addObject:createSection(@"消息页与我的页", messageAndMineItems)];
                 [sections addObject:createSection(@"提示与位置信息", infoItems)];
                 
                 // 创建并推入二级设置页面

@@ -417,6 +417,17 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @property (nonatomic, assign, getter=isHidden) BOOL hidden;
 @end
 
+@interface AWEFeedRelatedSearchTipView : UIView
+@property (nonatomic, strong, readonly) UIView *superview;
+@property (nonatomic, assign, getter=isHidden) BOOL hidden;
+@end
+
+@interface AWEProfileMixCollectionViewCell : UIView
+@end
+
+@interface AWEProfileTaskCardStyleListCollectionViewCell : UIView
+@end
+
 // AWEVersionUpdateManager相关接口声明
 @interface AWEVersionUpdateManager : NSObject
 @property (nonatomic, strong) id networkModule;

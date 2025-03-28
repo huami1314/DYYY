@@ -1105,7 +1105,20 @@
 //移除下面推荐框黑条
 %hook AWEPlayInteractionRelatedVideoView
 - (void)layoutSubviews {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAntiAddictedNotice"]) {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideBottomRelated"]) {
+        if ([self respondsToSelector:@selector(removeFromSuperview)]) {
+            [self removeFromSuperview]; 
+        }
+        self.hidden = YES;
+        return; 
+    }
+    %orig;
+}
+%end
+
+%hook AWEFeedRelatedSearchTipView
+- (void)layoutSubviews {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideBottomRelated"]) {
         if ([self respondsToSelector:@selector(removeFromSuperview)]) {
             [self removeFromSuperview]; 
         }
@@ -1913,19 +1926,19 @@
             label.layer.anchorPoint = CGPointMake(0, label.layer.anchorPoint.y);
             label.layer.position = CGPointMake(originalFrame.origin.x, label.layer.position.y);
             
-            // 添加IP属地左移系数支持
-            NSString *leftShiftFactorValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYIPLeftShiftFactor"];
-            CGFloat leftShiftFactor = 2.84; // 默认值
-            if (leftShiftFactorValue.length > 0) {
-                CGFloat customShiftFactor = [leftShiftFactorValue floatValue];
-                if (customShiftFactor > 0) {
-                    leftShiftFactor = customShiftFactor;
+            // 使用距离值进行IP属地位置偏移
+            NSString *leftOffsetValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYIPLeftShiftOffset"];
+            CGFloat leftOffset = 100.0; 
+
+            if (leftOffsetValue.length > 0) {
+                CGFloat customOffset = [leftOffsetValue floatValue];
+                if (customOffset != 0) {
+                    leftOffset = customOffset;
                 }
             }
-            
-            CGFloat halfScreenWidth = [UIScreen mainScreen].bounds.size.width / leftShiftFactor;
+
             CGAffineTransform scaleTransform = CGAffineTransformMakeScale(ipScale, ipScale);
-            CGAffineTransform translationTransform = CGAffineTransformMakeTranslation(-halfScreenWidth, 0);
+            CGAffineTransform translationTransform = CGAffineTransformMakeTranslation(-leftOffset, 0);
             label.transform = CGAffineTransformConcat(scaleTransform, translationTransform);
            
             label.font = originalFont;
@@ -3126,6 +3139,25 @@ static BOOL isDownloadFlied = NO;
     return [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYNoUpdates"] ? nil : %orig;
 }
 
+%end
+
+//隐藏自己无公开作品的视图
+%hook AWEProfileMixCollectionViewCell
+- (void)layoutSubviews {
+    %orig;
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePostView"]) {
+        self.hidden = YES;
+    }
+}
+%end
+
+%hook AWEProfileTaskCardStyleListCollectionViewCell
+- (void)layoutSubviews {
+    %orig;
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePostView"]) {
+        self.hidden = YES;
+    }
+}
 %end
 
 %hook DYYYManager
