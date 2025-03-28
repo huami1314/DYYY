@@ -285,10 +285,17 @@
     
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenEntry"]) {
         self.hidden = YES;
+	
     }
 
     %orig(center);
 }
+
+- (void)setHidden:(BOOL)hidden {
+    BOOL shouldHide = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenEntry"];
+    %orig(shouldHide); 
+}
+
 %end
 
 %hook AWEPlayInteractionViewController
