@@ -520,7 +520,12 @@
 %hook AWEStoryContainerCollectionView
 - (void)layoutSubviews {
     %orig;
+    if ([self.subviews count] == 2) return;
     
+    id enableEnterProfile = [self valueForKey:@"enableEnterProfile"];
+    BOOL isHome = (enableEnterProfile != nil && [enableEnterProfile boolValue]);
+    if (!isHome) return; 
+
     for (UIView *subview in self.subviews) {
         if ([subview isKindOfClass:[UIView class]]) {
             UIView *nextResponder = (UIView *)subview.nextResponder;
@@ -1082,14 +1087,14 @@
 - (void)layoutSubviews {
     %orig;
 
-    // 先检查 tips 属性是否存在且不为空
     id tipsValue = [self valueForKey:@"tips"];
     BOOL hasTips = (tipsValue != nil && 
                    [tipsValue isKindOfClass:[NSString class]] && 
                    [(NSString *)tipsValue length] > 0);
-    
-    // 只有当 tips 不为空且用户启用了隐藏选项时才隐藏视图
-    if (hasTips && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAntiAddictedNotice"]) {
+    BOOL shouldHideView = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTemplateVideo"] || 
+                          (hasTips && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAntiAddictedNotice"]);
+                          
+    if (shouldHideView) {
         UIView *parentView = self.superview;
         if (parentView) {
             parentView.hidden = YES;
@@ -2566,7 +2571,33 @@
             }
         }
     }
-    
+
+    // 添加接口保存功能
+    NSString *apiKey = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYInterfaceDownload"];
+    if (apiKey.length > 0) {
+        AWELongPressPanelBaseViewModel *apiDownload = [[%c(AWELongPressPanelBaseViewModel) alloc] init];
+        apiDownload.awemeModel = self.awemeModel;
+        apiDownload.actionType = 673;
+        apiDownload.duxIconName = @"ic_cloudarrowdown_outlined_20";
+        apiDownload.describeString = @"接口保存";
+            
+        apiDownload.action = ^{
+            NSString *shareLink = [self.awemeModel valueForKey:@"shareURL"];
+            if (shareLink.length == 0) {
+                [DYYYManager showToast:@"无法获取分享链接"];
+                return;
+            }
+            
+            // 使用封装的方法进行解析下载
+            [DYYYManager parseAndDownloadVideoWithShareLink:shareLink apiKey:apiKey];
+                
+            AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
+            [panelManager dismissWithAnimation:YES completion:nil];
+         };
+            
+        [viewModels addObject:apiDownload];
+    }
+
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYCopyText"]) {
         AWELongPressPanelBaseViewModel *copyText = [[%c(AWELongPressPanelBaseViewModel) alloc] init];
         copyText.awemeModel = self.awemeModel;
@@ -2603,32 +2634,6 @@
         
         [viewModels addObject:copyShareLink];
     
-    }
-
-    // 添加接口保存功能
-    NSString *apiKey = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYInterfaceDownload"];
-    if (apiKey.length > 0) {
-        AWELongPressPanelBaseViewModel *apiDownload = [[%c(AWELongPressPanelBaseViewModel) alloc] init];
-        apiDownload.awemeModel = self.awemeModel;
-        apiDownload.actionType = 673;
-        apiDownload.duxIconName = @"ic_cloudarrowdown_outlined_20";
-        apiDownload.describeString = @"接口保存视频";
-            
-        apiDownload.action = ^{
-            NSString *shareLink = [self.awemeModel valueForKey:@"shareURL"];
-            if (shareLink.length == 0) {
-                [DYYYManager showToast:@"无法获取分享链接"];
-                return;
-            }
-            
-            // 使用封装的方法进行解析下载
-            [DYYYManager parseAndDownloadVideoWithShareLink:shareLink apiKey:apiKey];
-                
-            AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
-            [panelManager dismissWithAnimation:YES completion:nil];
-         };
-            
-        [viewModels addObject:apiDownload];
     }
 
     newGroupModel.groupArr = viewModels;
@@ -3186,15 +3191,13 @@ static BOOL isDownloadFlied = NO;
         return;
     }
     
-    // 拼接API请求URL
     NSString *apiUrl = [NSString stringWithFormat:@"%@%@", apiKey, [shareLink stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLQueryAllowedCharacterSet]]];
-    
     [self showToast:@"正在通过接口解析..."];
     
     NSURL *url = [NSURL URLWithString:apiUrl];
     NSURLRequest *request = [NSURLRequest requestWithURL:url];
-    
     NSURLSession *session = [NSURLSession sharedSession];
+    
     NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         dispatch_async(dispatch_get_main_queue(), ^{
             if (error) {
@@ -3204,30 +3207,158 @@ static BOOL isDownloadFlied = NO;
             
             NSError *jsonError;
             NSDictionary *json = [NSJSONSerialization JSONObjectWithData:data options:0 error:&jsonError];
-            
             if (jsonError) {
                 [self showToast:@"解析接口返回数据失败"];
                 return;
             }
             
             NSInteger code = [json[@"code"] integerValue];
-            if (code != 200) {
+            if (code != 0 && code != 200) {
                 [self showToast:[NSString stringWithFormat:@"接口返回错误: %@", json[@"msg"] ?: @"未知错误"]];
                 return;
             }
             
-            NSDictionary *data = json[@"data"];
-            NSString *videoUrl = data[@"video"] ?: data[@"video_url"] ?: data[@"url"];
-            
-            if (videoUrl.length == 0) {
-                [self showToast:@"接口未返回有效的视频链接"];
+            NSDictionary *dataDict = json[@"data"];
+            if (!dataDict) {
+                [self showToast:@"接口返回数据为空"];
                 return;
             }
             
-            NSURL *videoDownloadUrl = [NSURL URLWithString:videoUrl];
-            [self downloadMedia:videoDownloadUrl mediaType:MediaTypeVideo completion:^{
-                [self showToast:@"视频已保存到相册"];
-            }];
+            NSArray *videos = dataDict[@"videos"];
+            NSArray *images = dataDict[@"images"];
+			NSArray *videoList = dataDict[@"video_list"];
+            BOOL hasVideos = [videos isKindOfClass:[NSArray class]] && videos.count > 0;
+            BOOL hasImages = [images isKindOfClass:[NSArray class]] && images.count > 0;
+            
+            if (!hasVideos && !hasImages) {
+				if ([videoList isKindOfClass:[NSArray class]] && videoList.count > 0) {
+					AWEUserActionSheetView *actionSheet = [[NSClassFromString(@"AWEUserActionSheetView") alloc] init];
+					NSMutableArray *actions = [NSMutableArray array];
+					
+					for (NSDictionary *videoDict in videoList) {
+						NSString *url = videoDict[@"url"];
+						NSString *level = videoDict[@"level"];
+						if (url.length > 0 && level.length > 0) {
+							AWEUserSheetAction *qualityAction = [NSClassFromString(@"AWEUserSheetAction")
+								actionWithTitle:level
+								imgName:nil
+								handler:^{
+									NSURL *videoDownloadUrl = [NSURL URLWithString:url];
+									[self downloadMedia:videoDownloadUrl mediaType:MediaTypeVideo completion:^{
+										[self showToast:[NSString stringWithFormat:@"视频已保存到相册 (%@)", level]];
+									}];
+								}];
+							[actions addObject:qualityAction];
+						}
+					}
+					if (actions.count > 0) {
+						[actionSheet setActions:actions];
+						[actionSheet show];
+					} else {
+						return;
+					}
+				} else {
+					NSString *videoUrl = dataDict[@"url"];
+					if (videoUrl.length > 0) {
+						[self showToast:@"开始下载单个视频..."];
+						NSURL *videoDownloadUrl = [NSURL URLWithString:videoUrl];
+						[self downloadMedia:videoDownloadUrl mediaType:MediaTypeVideo completion:^{
+							[self showToast:@"视频已保存到相册"];
+						}];
+					} else {
+						[self showToast:@"接口未返回有效的视频链接"];
+						return;
+					}
+				}
+				
+				return;
+            }
+            
+			NSMutableArray<id> *videoFiles = [NSMutableArray arrayWithCapacity:videos.count];
+			NSMutableArray<id> *imageFiles = [NSMutableArray arrayWithCapacity:images.count];
+			for (NSInteger i = 0; i < videos.count; i++) [videoFiles addObject:[NSNull null]];
+			for (NSInteger i = 0; i < images.count; i++) [imageFiles addObject:[NSNull null]];
+            
+            dispatch_group_t downloadGroup = dispatch_group_create();
+            __block NSInteger totalDownloads = 0;
+            __block NSInteger completedDownloads = 0;
+            
+            if (hasVideos) {
+                totalDownloads += videos.count;
+                for (NSInteger i = 0; i < videos.count; i++) {
+                    NSDictionary *videoDict = videos[i];
+                    NSString *videoUrl = videoDict[@"url"];
+                    if (videoUrl.length == 0) {
+                        completedDownloads++;
+                        continue;
+                    }
+                    dispatch_group_enter(downloadGroup);
+                    NSURL *videoDownloadUrl = [NSURL URLWithString:videoUrl];
+                    [self downloadMediaWithProgress:videoDownloadUrl mediaType:MediaTypeVideo progress:nil completion:^(BOOL success, NSURL *fileURL) {
+                        if (success && fileURL) {
+                            @synchronized (videoFiles) {
+                                videoFiles[i] = fileURL;
+                            }
+                        }
+                        completedDownloads++;
+                        dispatch_group_leave(downloadGroup);
+                    }];
+                }
+            }
+            
+            if (hasImages) {
+                totalDownloads += images.count;
+                for (NSInteger i = 0; i < images.count; i++) {
+                    NSString *imageUrl = images[i];
+                    if (imageUrl.length == 0) {
+                        completedDownloads++;
+                        continue;
+                    }
+                    dispatch_group_enter(downloadGroup);
+                    NSURL *imageDownloadUrl = [NSURL URLWithString:imageUrl];
+                    [self downloadMediaWithProgress:imageDownloadUrl mediaType:MediaTypeImage progress:nil completion:^(BOOL success, NSURL *fileURL) {
+                        if (success && fileURL) {
+                            @synchronized (imageFiles) {
+                                imageFiles[i] = fileURL;
+                            }
+                        }
+                        completedDownloads++;
+                        dispatch_group_leave(downloadGroup);
+                    }];
+                }
+            }
+            
+            dispatch_group_notify(downloadGroup, dispatch_get_main_queue(), ^{
+                if (completedDownloads < totalDownloads) {
+                    [self showToast:@"部分下载失败"];
+                }
+				
+				NSInteger videoSuccessCount = 0;
+				for (id file in videoFiles) {
+					if ([file isKindOfClass:[NSURL class]]) {
+						[self saveMedia:(NSURL *)file mediaType:MediaTypeVideo completion:nil];
+						videoSuccessCount++;
+					}
+				}
+
+				NSInteger imageSuccessCount = 0;
+				for (id file in imageFiles) {
+					if ([file isKindOfClass:[NSURL class]]) {
+						[self saveMedia:(NSURL *)file mediaType:MediaTypeImage completion:nil];
+						imageSuccessCount++;
+					}
+				}
+                
+                NSString *toastMessage;
+                if (hasVideos && hasImages) {
+                    toastMessage = [NSString stringWithFormat:@"已保存 %ld/%ld 个视频和 %ld/%ld 张图片", (long)videoSuccessCount, (long)videos.count, (long)imageSuccessCount, (long)images.count];
+                } else if (hasVideos) {
+                    toastMessage = [NSString stringWithFormat:@"已保存 %ld/%ld 个视频", (long)videoSuccessCount, (long)videos.count];
+                } else if (hasImages) {
+                    toastMessage = [NSString stringWithFormat:@"已保存 %ld/%ld 张图片", (long)imageSuccessCount, (long)images.count];
+                }
+                [self showToast:toastMessage];
+            });
         });
     }];
     
