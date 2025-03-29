@@ -1040,6 +1040,26 @@
 
 %end
 
+//隐藏评论区定位
+%hook UIView
+- (void)layoutSubviews {
+    %orig;
+    
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePOIEntry"]) {
+        NSString *className = NSStringFromClass([self class]);
+        if ([className isEqualToString:@"AWEPOIEntryAnchorView"]) {
+            [self setHidden:YES];
+            
+            // 可选：禁用所有手势识别器
+            for (UIGestureRecognizer *gesture in self.gestureRecognizers) {
+                gesture.enabled = NO;
+            }
+        }
+    }
+}
+
+%end
+
 //隐藏校园提示
 %hook AWETemplateTagsCommonView
 
