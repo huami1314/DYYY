@@ -518,3 +518,9 @@ typedef NS_ENUM(NSInteger, MediaType) {
 
 @interface AWELiveFeedStatusLabel : UILabel
 @end
+
+@interface AWECommentSearchAnchorView : UIView
+- (void)setHidden:(BOOL)hidden;
+- (BOOL)isHidden;
+- (void)layoutSubviews;
+@end
