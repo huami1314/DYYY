@@ -1042,18 +1042,13 @@
 
 //隐藏评论区定位
 %hook UIView
-- (void)layoutSubviews {
+- (void)didMoveToWindow {
     %orig;
     
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePOIEntry"]) {
         NSString *className = NSStringFromClass([self class]);
         if ([className isEqualToString:@"AWEPOIEntryAnchorView"]) {
             [self setHidden:YES];
-            
-            // 可选：禁用所有手势识别器
-            for (UIGestureRecognizer *gesture in self.gestureRecognizers) {
-                gesture.enabled = NO;
-            }
         }
     }
 }
