@@ -1025,7 +1025,7 @@
 
 %end
 
-// 隐藏评论搜索栏
+// 隐藏评论搜索
 %hook AWECommentSearchAnchorView
 - (void)layoutSubviews {
     %orig;
@@ -1037,16 +1037,48 @@
 
 %end
 
-//隐藏评论区定位
-%hook UIView
-- (void)didMoveToWindow {
+//隐藏评论定位
+%hook AWEPOIEntryAnchorView
+- (void)layoutSubviews {
     %orig;
     
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePOIEntry"]) {
-        NSString *className = NSStringFromClass([self class]);
-        if ([className isEqualToString:@"AWEPOIEntryAnchorView"]) {
-            [self setHidden:YES];
-        }
+        [self setHidden:YES];
+    }
+}
+
+%end
+
+// 隐藏评论音乐
+%hook AWECommentPanelHeaderSwiftImpl_CommentHeaderGeneralView
+- (void)layoutSubviews {
+    %orig;
+    
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentHeaderGeneral"]) {
+        [self setHidden:YES];
+    }
+}
+
+%end
+
+// 隐藏评论商品
+%hook AWECommentPanelHeaderSwiftImpl.CommentHeaderGeneralView
+- (void)layoutSubviews {
+    %orig;
+    
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentGuideLuna"]) {
+        [self setHidden:YES];
+    }
+}
+%end
+
+//隐藏评论游戏
+%hook AWECommentPanelHeaderSwiftImpl.CommentHeaderTemplateAnchorView
+- (void)layoutSubviews {
+    %orig;
+    
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentHeaderTemplate"]) {
+        [self setHidden:YES];
     }
 }
 
