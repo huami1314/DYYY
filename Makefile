@@ -24,7 +24,6 @@ INSTALL_TARGET_PROCESSES = Aweme
 include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = DYYY
-DYYY_CFLAGS = -Wno-error
 
 DYYY_FILES = DYYY.xm DYYYSettings.xm DYYYSettingViewController.m DYYYBottomAlertView.m DYYYCustomInputView.m DYYYOptionsSelectionView.m DYYYIconOptionsDialogView.m DYYYAboutDialogView.m DYYYManager.m CityManager.m 
 DYYY_CFLAGS = -fobjc-arc -w
