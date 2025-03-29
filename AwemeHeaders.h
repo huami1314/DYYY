@@ -533,19 +533,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (void)p_processModels:(id)models withPOIName:(id)poiName;
 @end
 
-@interface AWECommentPanelHeaderSwiftImpl_CommentHeaderGeneralView : UIView
-- (void)setHidden:(BOOL)hidden;
-- (BOOL)isHidden;
-- (void)layoutSubviews;
-@end
-
 @interface AWECommentGuideLunaAnchorView : UIView
-- (void)setHidden:(BOOL)hidden;
-- (BOOL)isHidden;
-- (void)layoutSubviews;
-@end
-
-@interface AWECommentPanelHeaderSwiftImpl_CommentHeaderTemplateAnchorView : UIView
 - (void)setHidden:(BOOL)hidden;
 - (BOOL)isHidden;
 - (void)layoutSubviews;

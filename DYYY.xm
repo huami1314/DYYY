@@ -1050,39 +1050,70 @@
 %end
 
 // 隐藏评论音乐
+%hook AWECommentGuideLunaAnchorView
+- (void)layoutSubviews {
+    %orig;
+    
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentMusic"]) {
+        [self setHidden:YES];
+    }
+}
+
+%end
+
+// Swift 类组 - 这些会在 %ctor 中动态初始化
+%group CommentHeaderGeneralGroup
 %hook AWECommentPanelHeaderSwiftImpl_CommentHeaderGeneralView
 - (void)layoutSubviews {
     %orig;
     
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentHeaderGeneral"]) {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentReservation"]) {
         [self setHidden:YES];
     }
 }
-
 %end
-
-// 隐藏评论商品
-%hook AWECommentPanelHeaderSwiftImpl.CommentHeaderGeneralView
+%end
+%group CommentHeaderGoodsGroup
+%hook AWECommentPanelHeaderSwiftImpl_CommentHeaderGoodsView
 - (void)layoutSubviews {
     %orig;
     
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentGuideLuna"]) {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentGoods"]) {
         [self setHidden:YES];
     }
 }
 %end
-
-//隐藏评论游戏
-%hook AWECommentPanelHeaderSwiftImpl.CommentHeaderTemplateAnchorView
+%end
+%group CommentHeaderTemplateGroup
+%hook AWECommentPanelHeaderSwiftImpl_CommentHeaderTemplateAnchorView
 - (void)layoutSubviews {
     %orig;
     
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentHeaderTemplate"]) {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentGame"]) {
         [self setHidden:YES];
     }
 }
-
 %end
+%end
+// Swift 类初始化
+%ctor {
+    
+    // 动态获取 Swift 类并初始化对应的组
+    Class commentHeaderGeneralClass = objc_getClass("AWECommentPanelHeaderSwiftImpl.CommentHeaderGeneralView");
+    if (commentHeaderGeneralClass) {
+        %init(CommentHeaderGeneralGroup, AWECommentPanelHeaderSwiftImpl_CommentHeaderGeneralView = commentHeaderGeneralClass);
+    }
+    
+    Class commentHeaderGoodsClass = objc_getClass("AWECommentPanelHeaderSwiftImpl.CommentHeaderGoodsView");
+    if (commentHeaderGoodsClass) {
+        %init(CommentHeaderGoodsGroup, AWECommentPanelHeaderSwiftImpl_CommentHeaderGoodsView = commentHeaderGoodsClass);
+    }
+    
+    Class commentHeaderTemplateClass = objc_getClass("AWECommentPanelHeaderSwiftImpl.CommentHeaderTemplateAnchorView");
+    if (commentHeaderTemplateClass) {
+        %init(CommentHeaderTemplateGroup, AWECommentPanelHeaderSwiftImpl_CommentHeaderTemplateAnchorView = commentHeaderTemplateClass);
+    }
+}
 
 //隐藏校园提示
 %hook AWETemplateTagsCommonView
