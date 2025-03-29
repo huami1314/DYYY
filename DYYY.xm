@@ -489,18 +489,12 @@
             ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleTapLike"]) {
             
             AWEUserSheetAction *likeAction = [NSClassFromString(@"AWEUserSheetAction") 
-                                            actionWithTitle:@"点赞视频" 
-                                            imgName:nil 
-                                            handler:^{
-                %orig(arg0, arg1);
+                                             actionWithTitle:@"点赞视频" 
+                                             imgName:nil 
+                                             handler:^{
+                [self performLikeAction]; // 执行点赞操作
             }];
             [actions addObject:likeAction];
-        }
-        
-        // 如果没有任何功能项被选择，则执行默认行为
-        if (actions.count == 0) {
-            %orig;
-            return;
         }
         
         // 显示操作表
