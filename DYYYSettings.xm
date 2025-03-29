@@ -32,6 +32,7 @@ static void showIconOptionsDialog(NSString *title, UIImage *previewImage, NSStri
 
 @interface DYYYBackupPickerDelegate : NSObject <UIDocumentPickerDelegate>
 @property (nonatomic, copy) void (^completionBlock)(NSURL *url);
+@property (nonatomic, copy) NSString *tempFilePath; // 添加临时文件路径属性
 @end
 
 @implementation DYYYBackupPickerDelegate
@@ -39,10 +40,25 @@ static void showIconOptionsDialog(NSString *title, UIImage *previewImage, NSStri
     if (urls.count > 0 && self.completionBlock) {
         self.completionBlock(urls.firstObject);
     }
+    
+    // 清理临时文件
+    [self cleanupTempFile];
 }
 
 - (void)documentPickerWasCancelled:(UIDocumentPickerViewController *)controller {
-    // 用户取消操作
+    // 用户取消操作时清理临时文件
+    [self cleanupTempFile];
+}
+
+// 添加清理临时文件的方法
+- (void)cleanupTempFile {
+    if (self.tempFilePath && [[NSFileManager defaultManager] fileExistsAtPath:self.tempFilePath]) {
+        NSError *error = nil;
+        [[NSFileManager defaultManager] removeItemAtPath:self.tempFilePath error:&error];
+        if (error) {
+            NSLog(@"[DYYY] 清理临时文件失败: %@", error.localizedDescription);
+        }
+    }
 }
 @end
 
@@ -1153,12 +1169,10 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                                                                  inMode:UIDocumentPickerModeExportToService];
             
                 DYYYBackupPickerDelegate *pickerDelegate = [[DYYYBackupPickerDelegate alloc] init];
+                pickerDelegate.tempFilePath = tempFilePath; // 设置临时文件路径
                 pickerDelegate.completionBlock = ^(NSURL *url) {
                     // 备份成功
                     [DYYYManager showToast:@"备份成功"];
-                    
-                    // 删除临时文件
-                    [[NSFileManager defaultManager] removeItemAtPath:tempFilePath error:nil];
                 };
                 
                 static char kDYYYBackupPickerDelegateKey;
