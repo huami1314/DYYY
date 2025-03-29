@@ -1030,7 +1030,7 @@
 - (void)layoutSubviews {
     %orig;
     
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentSearch"]) {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"]) {
         [self setHidden:YES];
     }
 }
@@ -1042,7 +1042,7 @@
 - (void)layoutSubviews {
     %orig;
     
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePOIEntry"]) {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"]) {
         [self setHidden:YES];
     }
 }
@@ -1054,7 +1054,7 @@
 - (void)layoutSubviews {
     %orig;
     
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentMusic"]) {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"]) {
         [self setHidden:YES];
     }
 }
@@ -1067,7 +1067,7 @@
 - (void)layoutSubviews {
     %orig;
     
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentReservation"]) {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"]) {
         [self setHidden:YES];
     }
 }
@@ -1078,7 +1078,7 @@
 - (void)layoutSubviews {
     %orig;
     
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentGoods"]) {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"]) {
         [self setHidden:YES];
     }
 }
@@ -1089,7 +1089,7 @@
 - (void)layoutSubviews {
     %orig;
     
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentGame"]) {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"]) {
         [self setHidden:YES];
     }
 }
