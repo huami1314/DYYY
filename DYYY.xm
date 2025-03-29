@@ -1026,15 +1026,12 @@
 %end
 
 // 隐藏评论搜索栏
-%hook UIView
-- (void)didMoveToWindow {
+%hook AWECommentSearchAnchorView
+- (void)layoutSubviews {
     %orig;
     
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentSearch"]) {
-        NSString *className = NSStringFromClass([self class]);
-        if ([className isEqualToString:@"AWECommentSearchAnchorView"]) {
-            [self setHidden:YES];
-        }
+        [self setHidden:YES];
     }
 }
 
