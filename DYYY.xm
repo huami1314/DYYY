@@ -954,7 +954,7 @@
 //移除同城吃喝玩乐提示框
 %hook AWENearbySkyLightCapsuleView
 - (void)layoutSubviews {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCapsuleView"]) {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideNearbyCapsuleView"]) {
         if ([self respondsToSelector:@selector(removeFromSuperview)]) {
             [self removeFromSuperview];
         }
@@ -3100,7 +3100,7 @@ static BOOL isDownloadFlied = NO;
 
 %hook AWEConcernSkylightCapsuleView
 - (void)setHidden:(BOOL)hidden {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidenCapsuleView"]) {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidenConcernCapsuleView"]) {
         hidden = YES;
     }
 
@@ -3633,7 +3633,7 @@ static BOOL isDownloadFlied = NO;
 %hook AWELiveSkylightCatchView
 - (void)layoutSubviews {
 
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidenCapsuleView"]) {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidenLiveCapsuleView"]) {
         if ([self respondsToSelector:@selector(removeFromSuperview)]) {
             [self removeFromSuperview];
         }
