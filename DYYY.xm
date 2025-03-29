@@ -3645,6 +3645,26 @@ static BOOL isDownloadFlied = NO;
 
 %end
 
+//隐藏首页直播胶囊
+@interface AWEHPTopTabItemBadgeContentView : UIView
+@end
+%hook AWEHPTopTabItemBadgeContentView
+
+- (void)updateSmallRedDotLayout {
+    %orig;
+    
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveCapsuleView"]) {
+        UIView *parentView = self.superview; // 现在可以正确访问
+        if (parentView) {
+            parentView.hidden = YES;
+        } else {
+            self.hidden = YES;
+        }
+    }
+}
+
+%end
+
 //隐藏群商店
 %hook AWEIMFansGroupTopDynamicDomainTemplateView
 - (void)layoutSubviews {
