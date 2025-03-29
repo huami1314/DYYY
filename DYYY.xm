@@ -1025,6 +1025,18 @@
 
 %end
 
+// 隐藏评论搜索栏
+%hook AWECommentSearchAnchorView
+- (void)layoutSubviews {
+    %orig;
+    
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentSearch"]) {
+        self.hidden = YES;
+    }
+}
+
+%end
+
 //隐藏校园提示
 %hook AWETemplateTagsCommonView
 
