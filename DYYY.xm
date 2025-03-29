@@ -3738,6 +3738,35 @@ static BOOL isDownloadFlied = NO;
 }
 %end
 
+//隐藏侧栏红点
+%hook AWEHPTopBarCTAItemView
+
+- (void)showRedDot {
+    if (![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYisHiddenSidebarDot"]) %orig;
+}
+
+- (void)hideCountRedDot {
+    if (![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYisHiddenSidebarDot"]) %orig;
+}
+%end
+
+//隐藏搜同款
+@interface ACCStickerContainerView : UIView
+@end
+%hook ACCStickerContainerView
+- (void)layoutSubviews {
+    // 类型安全检查 + 隐藏逻辑
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideInteractionSearch"]) {
+        if ([self respondsToSelector:@selector(removeFromSuperview)]) {
+            [self removeFromSuperview];
+        }
+        self.hidden = YES; // 隐藏更彻底
+        return;
+    }
+    %orig;
+}
+%end
+
 %hook AWEVideoTypeTagView
 
 - (void)setupUI {
