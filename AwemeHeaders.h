@@ -143,6 +143,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWEPlayInteractionViewController : UIViewController
 @property (nonatomic, strong) UIView *view;
 - (void)performCommentAction;
+- (void)performLikeAction;
 - (void)onVideoPlayerViewDoubleClicked:(id)arg1;
 @end
 
@@ -517,24 +518,4 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 @interface AWELiveFeedStatusLabel : UILabel
-@end
-
-@interface AWECommentSearchAnchorView : UIView
-- (void)setHidden:(BOOL)hidden;
-- (BOOL)isHidden;
-- (void)layoutSubviews;
-@end
-
-
-@interface AWEPOIEntryAnchorView : UIView
-- (void)setHidden:(BOOL)hidden;
-- (BOOL)isHidden;
-- (void)layoutSubviews;
-- (void)p_processModels:(id)models withPOIName:(id)poiName;
-@end
-
-@interface AWECommentGuideLunaAnchorView : UIView
-- (void)setHidden:(BOOL)hidden;
-- (BOOL)isHidden;
-- (void)layoutSubviews;
 @end

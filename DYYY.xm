@@ -489,18 +489,12 @@
             ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleTapLike"]) {
             
             AWEUserSheetAction *likeAction = [NSClassFromString(@"AWEUserSheetAction") 
-                                            actionWithTitle:@"点赞视频" 
-                                            imgName:nil 
-                                            handler:^{
-                %orig(arg0, arg1);
+                                             actionWithTitle:@"点赞视频" 
+                                             imgName:nil 
+                                             handler:^{
+                [self performLikeAction]; // 执行点赞操作
             }];
             [actions addObject:likeAction];
-        }
-        
-        // 如果没有任何功能项被选择，则执行默认行为
-        if (actions.count == 0) {
-            %orig;
-            return;
         }
         
         // 显示操作表
@@ -3663,7 +3657,10 @@ static BOOL isDownloadFlied = NO;
 %hook AWEPlayInteractionViewController
 
 - (void)onVideoPlayerViewDoubleClicked:(id)arg1 {
-    if (![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDouble"]) %orig;
+    BOOL isSwitchOn = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDouble"];
+    if (!isSwitchOn) {
+        %orig;
+    }  
 }
 %end
 
@@ -3735,6 +3732,26 @@ static BOOL isDownloadFlied = NO;
 
 %end
 
+//隐藏首页直播胶囊
+@interface AWEHPTopTabItemBadgeContentView : UIView
+@end
+%hook AWEHPTopTabItemBadgeContentView
+
+- (void)updateSmallRedDotLayout {
+    %orig;
+    
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveCapsuleView"]) {
+        UIView *parentView = self.superview; // 现在可以正确访问
+        if (parentView) {
+            parentView.hidden = YES;
+        } else {
+            self.hidden = YES;
+        }
+    }
+}
+
+%end
+
 //隐藏群商店
 %hook AWEIMFansGroupTopDynamicDomainTemplateView
 - (void)layoutSubviews {
@@ -3802,6 +3819,35 @@ static BOOL isDownloadFlied = NO;
         return NO; 
     }
     return %orig;
+}
+%end
+
+//隐藏侧栏红点
+%hook AWEHPTopBarCTAItemView
+
+- (void)showRedDot {
+    if (![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYisHiddenSidebarDot"]) %orig;
+}
+
+- (void)hideCountRedDot {
+    if (![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYisHiddenSidebarDot"]) %orig;
+}
+%end
+
+//隐藏搜同款
+@interface ACCStickerContainerView : UIView
+@end
+%hook ACCStickerContainerView
+- (void)layoutSubviews {
+    // 类型安全检查 + 隐藏逻辑
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideInteractionSearch"]) {
+        if ([self respondsToSelector:@selector(removeFromSuperview)]) {
+            [self removeFromSuperview];
+        }
+        self.hidden = YES; // 隐藏更彻底
+        return;
+    }
+    %orig;
 }
 %end
 

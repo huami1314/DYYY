@@ -30,6 +30,38 @@ static void showIconOptionsDialog(NSString *title, UIImage *previewImage, NSStri
 }
 @end
 
+@interface DYYYBackupPickerDelegate : NSObject <UIDocumentPickerDelegate>
+@property (nonatomic, copy) void (^completionBlock)(NSURL *url);
+@property (nonatomic, copy) NSString *tempFilePath; // 添加临时文件路径属性
+@end
+
+@implementation DYYYBackupPickerDelegate
+- (void)documentPicker:(UIDocumentPickerViewController *)controller didPickDocumentsAtURLs:(NSArray<NSURL *> *)urls {
+    if (urls.count > 0 && self.completionBlock) {
+        self.completionBlock(urls.firstObject);
+    }
+    
+    // 清理临时文件
+    [self cleanupTempFile];
+}
+
+- (void)documentPickerWasCancelled:(UIDocumentPickerViewController *)controller {
+    // 用户取消操作时清理临时文件
+    [self cleanupTempFile];
+}
+
+// 添加清理临时文件的方法
+- (void)cleanupTempFile {
+    if (self.tempFilePath && [[NSFileManager defaultManager] fileExistsAtPath:self.tempFilePath]) {
+        NSError *error = nil;
+        [[NSFileManager defaultManager] removeItemAtPath:self.tempFilePath error:&error];
+        if (error) {
+            NSLog(@"[DYYY] 清理临时文件失败: %@", error.localizedDescription);
+        }
+    }
+}
+@end
+
 @interface AWESettingBaseViewModel : NSObject
 @end
 
@@ -754,6 +786,7 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                     @{@"identifier": @"DYYYHideCommentLabel", @"title": @"隐藏评论数值", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
                     @{@"identifier": @"DYYYHideCollectLabel", @"title": @"隐藏收藏数值", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
                     @{@"identifier": @"DYYYHideShareLabel", @"title": @"隐藏分享数值", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
+                    @{@"identifier": @"DYYYHideLikeButton", @"title": @"隐藏点赞按钮", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
                     @{@"identifier": @"DYYYHideCommentButton", @"title": @"隐藏评论按钮", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
                     @{@"identifier": @"DYYYHideCollectButton", @"title": @"隐藏收藏按钮", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
                     @{@"identifier": @"DYYYHideShareButton", @"title": @"隐藏分享按钮", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
@@ -1046,6 +1079,220 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
 
             [mainItems addObject:enhanceSettingItem];
             
+            // 创建备份设置分类（单独section）
+            AWESettingSectionModel *backupSection = [[%c(AWESettingSectionModel) alloc] init];
+            backupSection.sectionHeaderTitle = @"备份";
+            backupSection.sectionHeaderHeight = 40;
+            backupSection.type = 0;
+            NSMutableArray<AWESettingItemModel *> *backupItems = [NSMutableArray array];
+
+            AWESettingItemModel *backupItem = [[%c(AWESettingItemModel) alloc] init];
+            backupItem.identifier = @"DYYYBackupSettings";
+            backupItem.title = @"备份设置";
+            backupItem.detail = @"";
+            backupItem.type = 0;
+            backupItem.svgIconImageName = @"ic_memorycard_outlined_20";
+            backupItem.cellType = 26;
+            backupItem.colorStyle = 0;
+            backupItem.isEnable = YES;
+            backupItem.cellTappedBlock = ^{
+                // 获取所有以DYYY开头的NSUserDefaults键值
+                NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+                NSDictionary *allDefaults = [defaults dictionaryRepresentation];
+                NSMutableDictionary *dyyySettings = [NSMutableDictionary dictionary];
+                
+                for (NSString *key in allDefaults.allKeys) {
+                    if ([key hasPrefix:@"DYYY"]) {
+                        dyyySettings[key] = [defaults objectForKey:key];
+                    }
+                }
+                
+                // 查找并添加图标文件
+                NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
+                NSString *dyyyFolderPath = [documentsPath stringByAppendingPathComponent:@"DYYY"];
+                
+                NSArray *iconFileNames = @[
+                    @"like_before.png", 
+                    @"like_after.png", 
+                    @"comment.png", 
+                    @"unfavorite.png", 
+                    @"favorite.png", 
+                    @"share.png"
+                ];
+
+                NSMutableDictionary *iconBase64Dict = [NSMutableDictionary dictionary];
+                
+                for (NSString *iconFileName in iconFileNames) {
+                    NSString *iconPath = [dyyyFolderPath stringByAppendingPathComponent:iconFileName];
+                    if ([[NSFileManager defaultManager] fileExistsAtPath:iconPath]) {
+                        // 读取图片数据并转换为Base64
+                        NSData *imageData = [NSData dataWithContentsOfFile:iconPath];
+                        if (imageData) {
+                            NSString *base64String = [imageData base64EncodedStringWithOptions:0];
+                            iconBase64Dict[iconFileName] = base64String;
+                        }
+                    }
+                }
+                
+                // 将图标Base64数据添加到备份设置中
+                if (iconBase64Dict.count > 0) {
+                    dyyySettings[@"DYYYIconsBase64"] = iconBase64Dict;
+                }
+                
+                // 转换为JSON数据
+                NSError *error;
+                NSData *jsonData = [NSJSONSerialization dataWithJSONObject:dyyySettings 
+                                                                   options:NSJSONWritingPrettyPrinted 
+                                                                     error:&error];
+                
+                if (error) {
+                    [DYYYManager showToast:@"备份失败：无法序列化设置数据"];
+                    return;
+                }
+                
+                NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+                [formatter setDateFormat:@"yyyyMMdd_HHmmss"];
+                NSString *timestamp = [formatter stringFromDate:[NSDate date]];
+                NSString *backupFileName = [NSString stringWithFormat:@"DYYY_Backup_%@.json", timestamp];
+                NSString *tempDir = NSTemporaryDirectory();
+                NSString *tempFilePath = [tempDir stringByAppendingPathComponent:backupFileName];
+
+                BOOL success = [jsonData writeToFile:tempFilePath atomically:YES];
+                
+                if (!success) {
+                    [DYYYManager showToast:@"备份失败：无法创建临时文件"];
+                    return;
+                }
+                
+                // 创建文档选择器让用户选择保存位置
+                NSURL *tempFileURL = [NSURL fileURLWithPath:tempFilePath];
+                UIDocumentPickerViewController *documentPicker = [[UIDocumentPickerViewController alloc] 
+                                                                 initWithURLs:@[tempFileURL] 
+                                                                 inMode:UIDocumentPickerModeExportToService];
+            
+                DYYYBackupPickerDelegate *pickerDelegate = [[DYYYBackupPickerDelegate alloc] init];
+                pickerDelegate.tempFilePath = tempFilePath; // 设置临时文件路径
+                pickerDelegate.completionBlock = ^(NSURL *url) {
+                    // 备份成功
+                    [DYYYManager showToast:@"备份成功"];
+                };
+                
+                static char kDYYYBackupPickerDelegateKey;
+                documentPicker.delegate = pickerDelegate;
+                objc_setAssociatedObject(documentPicker, &kDYYYBackupPickerDelegateKey, pickerDelegate, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+                
+                // 显示文档选择器
+                UIViewController *topVC = topView();
+                [topVC presentViewController:documentPicker animated:YES completion:nil];
+            };
+            [backupItems addObject:backupItem];
+            
+            // 添加恢复设置
+            AWESettingItemModel *restoreItem = [[%c(AWESettingItemModel) alloc] init];
+            restoreItem.identifier = @"DYYYRestoreSettings";
+            restoreItem.title = @"恢复设置";
+            restoreItem.detail = @"";
+            restoreItem.type = 0;
+            restoreItem.svgIconImageName = @"ic_phonearrowup_outlined_20";
+            restoreItem.cellType = 26;
+            restoreItem.colorStyle = 0;
+            restoreItem.isEnable = YES;
+            restoreItem.cellTappedBlock = ^{
+                UIDocumentPickerViewController *documentPicker = [[UIDocumentPickerViewController alloc] 
+                                                                initWithDocumentTypes:@[@"public.json", @"public.text"] 
+                                                                inMode:UIDocumentPickerModeImport];
+                documentPicker.allowsMultipleSelection = NO;
+                
+                // 设置委托
+                DYYYBackupPickerDelegate *pickerDelegate = [[DYYYBackupPickerDelegate alloc] init];
+                pickerDelegate.completionBlock = ^(NSURL *url) {
+                    NSData *jsonData = [NSData dataWithContentsOfURL:url];
+                    
+                    if (!jsonData) {
+                        [DYYYManager showToast:@"无法读取备份文件"];
+                        return;
+                    }
+                    
+                    NSError *jsonError;
+                    NSDictionary *dyyySettings = [NSJSONSerialization JSONObjectWithData:jsonData 
+                                                                                 options:0 
+                                                                                   error:&jsonError];
+                    
+                    if (jsonError || ![dyyySettings isKindOfClass:[NSDictionary class]]) {
+                        [DYYYManager showToast:@"备份文件格式错误"];
+                        return;
+                    }
+                    
+                    // 恢复图标文件
+                    NSDictionary *iconBase64Dict = dyyySettings[@"DYYYIconsBase64"];
+                    if (iconBase64Dict && [iconBase64Dict isKindOfClass:[NSDictionary class]]) {
+                        NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
+                        NSString *dyyyFolderPath = [documentsPath stringByAppendingPathComponent:@"DYYY"];
+                        
+                        // 确保DYYY文件夹存在
+                        if (![[NSFileManager defaultManager] fileExistsAtPath:dyyyFolderPath]) {
+                            [[NSFileManager defaultManager] createDirectoryAtPath:dyyyFolderPath 
+                                                   withIntermediateDirectories:YES 
+                                                                    attributes:nil 
+                                                                         error:nil];
+                        }
+                        
+                        // 从Base64还原图标文件
+                        for (NSString *iconFileName in iconBase64Dict) {
+                            NSString *base64String = iconBase64Dict[iconFileName];
+                            if ([base64String isKindOfClass:[NSString class]]) {
+                                NSData *imageData = [[NSData alloc] initWithBase64EncodedString:base64String options:0];
+                                if (imageData) {
+                                    NSString *iconPath = [dyyyFolderPath stringByAppendingPathComponent:iconFileName];
+                                    [imageData writeToFile:iconPath atomically:YES];
+                                }
+                            }
+                        }
+                        
+                        NSMutableDictionary *cleanSettings = [dyyySettings mutableCopy];
+                        [cleanSettings removeObjectForKey:@"DYYYIconsBase64"];
+                        dyyySettings = cleanSettings;
+                    }
+                    
+                    // 恢复设置
+                    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+                    for (NSString *key in dyyySettings) {
+                        [defaults setObject:dyyySettings[key] forKey:key];
+                    }
+                    [defaults synchronize];
+                    
+                    [DYYYManager showToast:@"设置已恢复，请重启应用以应用所有更改"];
+                    
+                    // 刷新设置表格
+                    UIViewController *topVC = topView();
+                    if ([topVC isKindOfClass:%c(AWESettingBaseViewController)]) {
+                        dispatch_async(dispatch_get_main_queue(), ^{
+                            UITableView *tableView = nil;
+                            for (UIView *subview in topVC.view.subviews) {
+                                if ([subview isKindOfClass:[UITableView class]]) {
+                                    tableView = (UITableView *)subview;
+                                    break;
+                                }
+                            }
+                            
+                            if (tableView) {
+                                [tableView reloadData];
+                            }
+                        });
+                    }
+                };
+                
+                static char kDYYYRestorePickerDelegateKey;
+                documentPicker.delegate = pickerDelegate;
+                objc_setAssociatedObject(documentPicker, &kDYYYRestorePickerDelegateKey, pickerDelegate, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+                
+                // 显示文档选择器
+                UIViewController *topVC = topView();
+                [topVC presentViewController:documentPicker animated:YES completion:nil];
+            };
+            [backupItems addObject:restoreItem];
+            backupSection.itemArray = backupItems;
+            
             // 创建关于分类（单独section）
             AWESettingSectionModel *aboutSection = [[%c(AWESettingSectionModel) alloc] init];
             aboutSection.sectionHeaderTitle = @"关于";
@@ -1109,7 +1356,7 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
             mainSection.itemArray = mainItems;
             aboutSection.itemArray = aboutItems;
             
-            viewModel.sectionDataArray = @[mainSection, aboutSection];
+            viewModel.sectionDataArray = @[mainSection, backupSection, aboutSection];
             objc_setAssociatedObject(settingsVC, kViewModelKey, viewModel, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
             [rootVC.navigationController pushViewController:(UIViewController *)settingsVC animated:YES];
         };
