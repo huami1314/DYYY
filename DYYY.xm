@@ -3573,7 +3573,10 @@ static BOOL isDownloadFlied = NO;
 %hook AWEPlayInteractionViewController
 
 - (void)onVideoPlayerViewDoubleClicked:(id)arg1 {
-    if (![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDouble"]) %orig;
+    BOOL isSwitchOn = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDouble"];
+    if (!isSwitchOn) {
+        %orig;
+    }  
 }
 %end
 
