@@ -73,7 +73,7 @@
         
         // 创建取消按钮
         _cancelButton = [UIButton buttonWithType:UIButtonTypeSystem];
-        _cancelButton.frame = CGRectMake((CGRectGetWidth(_containerView.frame) - 80) / 2, CGRectGetMaxY(_progressLabel.frame) + 18, 80, 32);
+        _cancelButton.frame = CGRectMake((CGRectGetWidth(_containerView.frame) - 80) / 2, CGRectGetMaxY(_progressLabel.frame) + 10, 80, 32);
         _cancelButton.backgroundColor = [UIColor colorWithWhite:0.2 alpha:1.0];
         [_cancelButton setTitle:@"取消" forState:UIControlStateNormal];
         [_cancelButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
