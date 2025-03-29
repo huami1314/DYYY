@@ -3566,7 +3566,11 @@ static BOOL isDownloadFlied = NO;
     %orig;
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideEnterLive"]) {
         UIView *parentView = self.superview;
-        if (parentView) {
+        UIView *grandparentView = parentView.superview;
+        
+        if (grandparentView) {
+            grandparentView.hidden = YES;
+        } else if (parentView) {
             parentView.hidden = YES;
         } else {
             self.hidden = YES;
