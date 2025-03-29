@@ -518,3 +518,22 @@ typedef NS_ENUM(NSInteger, MediaType) {
 
 @interface AWELiveFeedStatusLabel : UILabel
 @end
+
+@interface AWECommentSearchAnchorView : UIView
+- (void)setHidden:(BOOL)hidden;
+- (BOOL)isHidden;
+- (void)layoutSubviews;
+@end
+
+@interface AWEPOIEntryAnchorView : UIView
+- (void)setHidden:(BOOL)hidden;
+- (BOOL)isHidden;
+- (void)layoutSubviews;
+- (void)p_processModels:(id)models withPOIName:(id)poiName;
+@end
+
+@interface AWECommentGuideLunaAnchorView : UIView
+- (void)setHidden:(BOOL)hidden;
+- (BOOL)isHidden;
+- (void)layoutSubviews;
+@end
