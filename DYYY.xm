@@ -2040,7 +2040,6 @@
     %orig;
 
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideQuqishuiting"]) {
-        // 找到父视图并隐藏
         UIView *parentView = self.superview;
         if (parentView) {
             parentView.hidden = YES;
@@ -3561,19 +3560,54 @@ static BOOL isDownloadFlied = NO;
 }
 %end
 
+//隐藏点击进入直播间
+%hook AWELiveFeedStatusLabel
+- (void)layoutSubviews {
+    %orig;
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideEnterLive"]) {
+        UIView *parentView = self.superview;
+        if (parentView) {
+            parentView.hidden = YES;
+        } else {
+            self.hidden = YES;
+        }
+    }
+}
+%end
+
 //去除消息群直播提示
 %hook AWEIMCellLiveStatusContainerView
 
 - (void)p_initUI {
-    if (![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYFamiliar"]) %orig;
+    if (![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYGroupLiving"]) %orig;
 }
 %end
 
+%hook AWELiveStatusIndicatorView
+
+- (void)layoutSubviews {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYGroupLiving"]) {
+        if ([self respondsToSelector:@selector(removeFromSuperview)]) {
+            [self removeFromSuperview];
+        }
+        self.hidden = YES; 
+        return;
+    }
+    %orig;
+}
+%end
 
 %hook AWELiveSkylightCatchView
+- (void)layoutSubviews {
 
-- (void)setupUI {
-   if (![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYHidenCapsuleView"]) %orig;
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidenCapsuleView"]) {
+        if ([self respondsToSelector:@selector(removeFromSuperview)]) {
+            [self removeFromSuperview];
+        }
+        self.hidden = YES; 
+        return;
+    }
+    %orig;
 }
 
 %end
@@ -3581,48 +3615,35 @@ static BOOL isDownloadFlied = NO;
 //隐藏群商店
 %hook AWEIMFansGroupTopDynamicDomainTemplateView
 - (void)layoutSubviews {
-    // 类型安全检查 + 隐藏逻辑
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideHisShop"]) {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideGroupShop"]) {
         if ([self respondsToSelector:@selector(removeFromSuperview)]) {
             [self removeFromSuperview];
         }
-        self.hidden = YES; // 隐藏更彻底
+        self.hidden = YES; 
         return;
     }
     %orig;
 }
 %end
 
+//去除群聊天输入框上方快捷方式
 %hook AWEIMInputActionBarInteractor
 
 - (void)p_setupUI {
-    // 类型安全检查 + 隐藏逻辑
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideInputActionBar"]) {
-        // 尝试获取视图属性并隐藏
-        if ([self respondsToSelector:@selector(view)]) {
-            UIView *view = [self performSelector:@selector(view)];
-            if ([view isKindOfClass:[UIView class]]) {
-                view.hidden = YES;
-            }
-        } else if ([self respondsToSelector:@selector(actionBar)]) {
-            // 或者尝试其他可能的视图属性
-            UIView *actionBar = [self performSelector:@selector(actionBar)];
-            if ([actionBar isKindOfClass:[UIView class]]) {
-                actionBar.hidden = YES;
-            }
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideGroupInputActionBar"]) {
+        if ([self respondsToSelector:@selector(removeFromSuperview)]) {
+            [self removeFromSuperview];
         }
-        // 如果找不到视图，就不执行原始方法
+        self.hidden = YES; 
         return;
     }
     %orig;
 }
-
 %end
 
 //隐藏相机定位
 %hook AWETemplateCommonView
 - (void)layoutSubviews {
-    // 类型安全检查 + 隐藏逻辑
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCameraLocation"]) {
         if ([self respondsToSelector:@selector(removeFromSuperview)]) {
             [self removeFromSuperview];

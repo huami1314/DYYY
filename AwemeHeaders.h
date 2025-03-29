@@ -490,10 +490,6 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (void)layoutSubviews;
 @end
 
-@interface AWEIMInputActionBarInteractor : NSObject
-- (void)p_setupUI;
-@end
-
 @interface AWETemplateCommonView : UIView
 - (void)layoutSubviews;
 @end
@@ -511,5 +507,14 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 @interface AWEVideoTypeTagView : UIView
-- (void)setupUI;
+@end
+
+@interface AWELiveStatusIndicatorView : UIView
+@end
+
+@interface AWEIMInputActionBarInteractor : UIView
+- (void)p_setupUI;
+@end
+
+@interface AWELiveFeedStatusLabel : UILabel
 @end
