@@ -143,6 +143,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWEPlayInteractionViewController : UIViewController
 @property (nonatomic, strong) UIView *view;
 - (void)performCommentAction;
+- (void)onVideoPlayerViewDoubleClicked:(id)arg1;
 @end
 
 @interface UIView (Transparency)
@@ -451,4 +452,64 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWEStoryProgressSlideView : UIView
 @property (nonatomic, strong, readonly) UIView *superview;
 @property (nonatomic, assign, getter=isHidden) BOOL hidden;
+@end
+
+
+@interface AWENewLiveSkylightViewController : UIViewController
+- (void)showSkylight:(BOOL)arg0 animated:(BOOL)arg1 actionMethod:(unsigned long long)arg2;
+- (void)updateIsSkylightShowing:(BOOL)arg0;
+@end
+
+@interface AWENearbyFullScreenViewModel : NSObject
+- (void)setShowSkyLight:(id)arg1;
+- (void)setHaveSkyLight:(id)arg1;
+@end
+
+@interface AWECorrelationItemTag : UIView
+- (void)layoutSubviews;
+@end
+
+@interface AWEPlayInteractionTemplateButtonGroup : UIView
+- (void)layoutSubviews;
+@end
+
+
+@interface AWEHPDiscoverFeedEntranceView : UIView
+- (void)configImage:(UIImageView *)imageView Label:(UILabel *)label position:(NSInteger)pos;
+@end
+
+@interface AWEIMCellLiveStatusContainerView : UIView
+- (void)p_initUI;
+@end
+
+@interface AWELiveSkylightCatchView : UIView
+- (void)setupUI;
+@end
+
+@interface AWEIMFansGroupTopDynamicDomainTemplateView : UIView
+- (void)layoutSubviews;
+@end
+
+@interface AWEIMInputActionBarInteractor : NSObject
+- (void)p_setupUI;
+@end
+
+@interface AWETemplateCommonView : UIView
+- (void)layoutSubviews;
+@end
+
+@interface AWEUIAlertView : UIView
+- (void)show;
+@end
+
+@interface AWETeenModeAlertView : UIView
+- (BOOL)show;
+@end
+
+@interface AWETeenModeSimpleAlertView : UIView
+- (BOOL)show;
+@end
+
+@interface AWEVideoTypeTagView : UIView
+- (void)setupUI;
 @end

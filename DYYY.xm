@@ -908,6 +908,24 @@
     
     return (shouldFilterAds || shouldFilterRec || shouldFilterHotSpot || shouldFilterLowLikes || shouldFilterKeywords) ? nil : orig;
 }
+
+- (bool)preventDownload {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYNoAds"]) { 
+        return NO;
+    } else {
+        return %orig;
+    }
+}
+
+- (void)setAdLinkType:(long long)arg1 {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYNoAds"]) {
+        arg1 = 0; 
+    } else {
+    }
+    
+    %orig;
+}
+
 %end
 
 // 拦截开屏广告
@@ -1990,18 +2008,6 @@
 
 %end
 
-%hook AWEHPDiscoverFeedEntranceView
-- (void)setAlpha:(CGFloat)alpha {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideDiscover"]) {
-        alpha = 0;
-        %orig(alpha);
-   }else {
-       %orig;
-    }
-}
-
-%end
-
 %hook AWEFeedTemplateAnchorView
 
 - (void)layoutSubviews {
@@ -3068,6 +3074,23 @@ static BOOL isDownloadFlied = NO;
 }
 %end
 
+//去除启动视频广告
+%hook AWEAwesomeSplashFeedCellOldAccessoryView
+
+// 在方法入口处添加控制逻辑
+- (id)ddExtraView {
+    // 检查用户是否启用了无广告模式
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYNoAds"]) {
+        NSLog(@"[AdControl] 无广告模式已启用 - 隐藏ddExtraView");
+        return NULL; // 返回空视图
+    }
+    
+    // 正常模式调用原始方法
+    return %orig;
+}
+
+%end
+
 // 去广告功能
 %hook AwemeAdManager
 - (void)showAd {
@@ -3426,6 +3449,223 @@ static BOOL isDownloadFlied = NO;
     });
 }
 
+%end
+
+//隐藏关注直播顶端
+%hook AWENewLiveSkylightViewController
+
+// 隐藏顶部直播视图 - 添加条件判断
+- (void)showSkylight:(BOOL)arg0 animated:(BOOL)arg1 actionMethod:(unsigned long long)arg2 {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidenLiveView"]) {
+        // 若开关开启则拦截方法，不执行原逻辑
+        return;
+    }
+    // 否则执行原始方法
+    %orig(arg0, arg1, arg2);
+}
+
+// 强制隐藏 Skylight 显示状态 - 动态控制参数
+- (void)updateIsSkylightShowing:(BOOL)arg0 {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidenLiveView"]) {
+        // 开关开启时强制隐藏（参数设为 NO）
+        %orig(NO);
+    } else {
+        // 开关关闭时保持原有状态传递
+        %orig(arg0);
+    }
+}
+
+%end
+
+//隐藏同城顶端
+%hook AWENearbyFullScreenViewModel
+
+- (void)setShowSkyLight:(id)arg1 {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMenuView"]) {
+        arg1 = nil;
+    }
+    %orig(arg1); 
+}
+
+- (void)setHaveSkyLight:(id)arg1 {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMenuView"]) {
+        arg1 = nil;
+    }
+    %orig(arg1);
+}
+
+%end
+
+
+//隐藏笔记
+%hook AWECorrelationItemTag
+- (void)layoutSubviews {
+   if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideItemTag"]) {
+      // 兼容性检查
+      if ([self respondsToSelector:@selector(removeFromSuperview)]) {
+         // 记录原始父视图
+         UIView *parent = self.superview;
+
+         // 先隐藏再移除确保动画同步
+         self.alpha = 0.f;
+         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.25 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [self removeFromSuperview];
+
+            // 手动触发父视图布局更新
+            [parent setNeedsLayout];
+            [parent layoutIfNeeded];
+         });
+      } else {
+         // 备用方案：调整位置并保持布局同步
+         self.frame = CGRectOffset(self.frame, 1, 0);
+         [self.superview setNeedsLayout];
+         [self.superview layoutIfNeeded];
+      }
+      return;
+   }
+   %orig;
+}
+%end
+
+//隐藏话题
+%hook AWEPlayInteractionTemplateButtonGroup
+- (void)layoutSubviews {
+    // 类型安全检查 + 隐藏逻辑
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTemplateGroup"]) {
+        if ([self respondsToSelector:@selector(removeFromSuperview)]) {
+            [self removeFromSuperview];
+        }
+        self.hidden = YES; // 隐藏更彻底
+        return;
+    }
+    %orig;
+}
+%end
+
+%hook AWEPlayInteractionViewController
+
+- (void)onVideoPlayerViewDoubleClicked:(id)arg1 {
+    if (![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDouble"]) %orig;
+}
+%end
+
+%hook AWEHPDiscoverFeedEntranceView
+- (void)configImage:(UIImageView *)imageView Label:(UILabel *)label position:(NSInteger)pos {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideDiscover"]) {
+        NSLog(@"[configImage] Hiding search elements.");
+        imageView.hidden = YES;
+        label.hidden = YES;
+        return;
+    }
+    %orig; // 保持原有逻辑不变
+}
+%end
+
+//去除消息群直播提示
+%hook AWEIMCellLiveStatusContainerView
+
+- (void)p_initUI {
+    if (![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYFamiliar"]) %orig;
+}
+%end
+
+
+%hook AWELiveSkylightCatchView
+
+- (void)setupUI {
+   if (![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYHidenCapsuleView"]) %orig;
+}
+
+%end
+
+//隐藏群商店
+%hook AWEIMFansGroupTopDynamicDomainTemplateView
+- (void)layoutSubviews {
+    // 类型安全检查 + 隐藏逻辑
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideHisShop"]) {
+        if ([self respondsToSelector:@selector(removeFromSuperview)]) {
+            [self removeFromSuperview];
+        }
+        self.hidden = YES; // 隐藏更彻底
+        return;
+    }
+    %orig;
+}
+%end
+
+%hook AWEIMInputActionBarInteractor
+
+- (void)p_setupUI {
+    // 类型安全检查 + 隐藏逻辑
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideInputActionBar"]) {
+        // 尝试获取视图属性并隐藏
+        if ([self respondsToSelector:@selector(view)]) {
+            UIView *view = [self performSelector:@selector(view)];
+            if ([view isKindOfClass:[UIView class]]) {
+                view.hidden = YES;
+            }
+        } else if ([self respondsToSelector:@selector(actionBar)]) {
+            // 或者尝试其他可能的视图属性
+            UIView *actionBar = [self performSelector:@selector(actionBar)];
+            if ([actionBar isKindOfClass:[UIView class]]) {
+                actionBar.hidden = YES;
+            }
+        }
+        // 如果找不到视图，就不执行原始方法
+        return;
+    }
+    %orig;
+}
+
+%end
+
+//隐藏相机定位
+%hook AWETemplateCommonView
+- (void)layoutSubviews {
+    // 类型安全检查 + 隐藏逻辑
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCameraLocation"]) {
+        if ([self respondsToSelector:@selector(removeFromSuperview)]) {
+            [self removeFromSuperview];
+        }
+        self.hidden = YES; 
+        return;
+    }
+    %orig;
+}
+%end
+
+//屏蔽青少年模式弹窗
+%hook AWEUIAlertView
+- (void)show {
+    if (![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYHideteenmode"]) %orig;
+}
+%end
+
+//隐藏青少年模式弹窗
+%hook AWETeenModeAlertView
+- (BOOL)show {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideteenmode"]) {
+        return NO; 
+    }
+    return %orig; 
+}
+%end
+
+//隐藏青少年模式弹窗
+%hook AWETeenModeSimpleAlertView
+- (BOOL)show {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideteenmode"]) {
+        return NO; 
+    }
+    return %orig;
+}
+%end
+
+%hook AWEVideoTypeTagView
+
+- (void)setupUI {
+   if (![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYHideLiveGIF"]) %orig;
+}
 %end
 
 %ctor {
