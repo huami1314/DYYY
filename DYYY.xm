@@ -56,10 +56,12 @@
 }
 %end
 
+@interface AWEHPTopBarCTAContainer : UIView
+- (void)applyDYYYTransparency;  // 声明方法
+@end
 %hook AWEFeedContainerContentView
 - (void)setAlpha:(CGFloat)alpha {
-    NSString *transparentValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYtopbartransparent"];
-    
+    // 纯净模式功能保持不变
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnablePure"]) {
         %orig(0.0);
         
@@ -106,18 +108,12 @@
         return;
     }
     
+    // 原来的透明度设置逻辑，保持不变
+    NSString *transparentValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYtopbartransparent"];
     if (transparentValue && transparentValue.length > 0) {
         CGFloat alphaValue = [transparentValue floatValue];
         if (alphaValue >= 0.0 && alphaValue <= 1.0) {
             %orig(alphaValue);
-            
-            // 设置所有子视图的透明度
-            [self applyAlphaToAllSubviews:alphaValue];
-            
-            // 延迟一点时间再次应用透明度，确保所有视图都被处理
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                [self applyAlphaToAllSubviews:alphaValue];
-            });
         } else {
             %orig(1.0);
         }
@@ -125,53 +121,7 @@
         %orig(1.0);
     }
 }
-%new
-- (void)applyAlphaToAllSubviews:(CGFloat)alpha {
-    // 递归查找顶栏相关视图并设置透明度
-    UIWindow *keyWindow = [DYYYManager getActiveWindow];
-    if (!keyWindow) return;
-    
-    // 查找顶栏视图
-    for (UIView *view in keyWindow.subviews) {
-        [self findAndSetAlphaForTopBarViews:view alpha:alpha];
-    }
-}
-%new
-- (void)findAndSetAlphaForTopBarViews:(UIView *)view alpha:(CGFloat)alpha {
-    NSString *className = NSStringFromClass([view class]);
-    
-    // 如果是顶栏相关的视图
-    if ([className containsString:@"TopBar"] || 
-        [className containsString:@"TabBar"] || 
-        [className containsString:@"Navigation"]) {
-        
-        // 设置背景视图的透明度
-        for (UIView *subview in view.subviews) {
-            if (![subview isKindOfClass:[UILabel class]] && 
-                ![subview isKindOfClass:[UIImageView class]] && 
-                ![subview isKindOfClass:[UIButton class]]) {
-                subview.alpha = alpha;
-            }
-        }
-        
-        // 如果视图有背景色，设置背景色的透明度
-        if ([view respondsToSelector:@selector(backgroundColor)]) {
-            UIColor *bgColor = [(UIView *)view backgroundColor];
-            if (bgColor) {
-                CGFloat r, g, b, a;
-                if ([bgColor getRed:&r green:&g blue:&b alpha:&a]) {
-                    [(UIView *)view setBackgroundColor:[UIColor colorWithRed:r green:g blue:b alpha:alpha * a]];
-                }
-            }
-        }
-    }
-    
-    // 递归处理子视图
-    for (UIView *subview in view.subviews) {
-        [self findAndSetAlphaForTopBarViews:subview alpha:alpha];
-    }
-}
-%new
+// 这个方法应该属于 AWEFeedContainerContentView 类
 - (UIViewController *)findViewController:(UIViewController *)vc ofClass:(Class)targetClass {
     if (!vc) return nil;
     if ([vc isKindOfClass:targetClass]) return vc;
@@ -182,6 +132,35 @@
     }
     
     return [self findViewController:vc.presentedViewController ofClass:targetClass];
+}
+%end
+// 添加新的 hook 来专门处理顶栏透明度
+%hook AWEHPTopBarCTAContainer
+- (void)layoutSubviews {
+    %orig;
+    [self applyDYYYTransparency];
+}
+- (void)didMoveToSuperview {
+    %orig;
+    [self applyDYYYTransparency];
+}
+%new
+- (void)applyDYYYTransparency {
+    // 如果启用了纯净模式，不做任何处理
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnablePure"]) {
+        return;
+    }
+    
+    NSString *transparentValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYtopbartransparent"];
+    if (transparentValue && transparentValue.length > 0) {
+        CGFloat alphaValue = [transparentValue floatValue];
+        if (alphaValue >= 0.0 && alphaValue <= 1.0) {
+            // 使用类型转换确保编译器知道这是一个 UIView
+            [(UIView *)self setAlpha:alphaValue];
+            
+            // 移除了透明度为0时的特殊处理，避免按钮消失无法点击
+        }
+    }
 }
 %end
 
