@@ -535,7 +535,6 @@
 
 %end
 
-
 %hook AWEStoryContainerCollectionView
 - (void)layoutSubviews {
     %orig;
@@ -564,6 +563,7 @@
     }
 }
 %end
+
 %hook AWEFeedTableView
 - (void)layoutSubviews {
     %orig;
