@@ -578,8 +578,5 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWEUserNameLabel : UIView
 @end
 
-@interface AWEHPTopTabItemBadgeContentView : UIView
-@end
-
 @interface AWEPlayInteractionDescriptionLabel : UILabel
 @end
