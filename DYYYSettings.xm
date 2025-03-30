@@ -106,6 +106,9 @@ static void showIconOptionsDialog(NSString *title, UIImage *previewImage, NSStri
 @interface AWESettingsViewModel (DYYYAdditions)
 - (AWESettingItemModel *)createSettingItem:(NSDictionary *)dict;
 - (AWESettingItemModel *)createSettingItem:(NSDictionary *)dict cellTapHandlers:(NSMutableDictionary *)cellTapHandlers;
+- (void)applyDependencyRulesForItem:(AWESettingItemModel *)item;
+- (void)handleConflictsAndDependenciesForSetting:(NSString *)identifier isEnabled:(BOOL)isEnabled;
+- (void)updateDependentItemsForSetting:(NSString *)identifier value:(id)value;
 @end
 
 // 获取顶级视图控制器
@@ -1395,15 +1398,19 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
     item.isEnable = YES;
     item.isSwitchOn = getUserDefaults(item.identifier);
     
+    [self applyDependencyRulesForItem:item];
     if (item.cellType == 26 && cellTapHandlers != nil) {
         cellTapHandlers[item.identifier] = ^{
-            // 使用新的方法，传递占位符
+            if (!item.isEnable) return;
+            
             showTextInputAlert(item.title, item.detail, placeholder, ^(NSString *text) {
                 setUserDefaults(text, item.identifier);
-                // 更新item的detail属性
                 item.detail = text;
                 
-                // 查找当前视图控制器并刷新设置表格
+                if ([item.identifier isEqualToString:@"DYYYInterfaceDownload"]) {
+                    [self updateDependentItemsForSetting:@"DYYYInterfaceDownload" value:text];
+                }
+                
                 UIViewController *topVC = topView();
                 if ([topVC isKindOfClass:%c(AWESettingBaseViewController)]) {
                     dispatch_async(dispatch_get_main_queue(), ^{
@@ -1428,13 +1435,152 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
         item.switchChangedBlock = ^{
             __strong AWESettingItemModel *strongItem = weakItem;
             if (strongItem) {
+                if (!strongItem.isEnable) return;
                 BOOL isSwitchOn = !strongItem.isSwitchOn;
                 strongItem.isSwitchOn = isSwitchOn;
                 setUserDefaults(@(isSwitchOn), strongItem.identifier);
+                [self handleConflictsAndDependenciesForSetting:strongItem.identifier isEnabled:isSwitchOn];
             }
         };
     }
     
     return item;
+}
+
+%new
+- (void)applyDependencyRulesForItem:(AWESettingItemModel *)item {
+    // 处理依赖关系
+    if ([item.identifier isEqualToString:@"DYYYdanmuColor"]) {
+        // 弹幕颜色设置依赖于弹幕改色开关
+        BOOL isEnabled = getUserDefaults(@"DYYYEnableDanmuColor");
+        item.isEnable = isEnabled;
+    } 
+    else if ([item.identifier isEqualToString:@"DYYYCommentBlurTransparent"]) {
+        // 毛玻璃透明度依赖于评论区毛玻璃开关
+        BOOL isEnabled = getUserDefaults(@"DYYYisEnableCommentBlur");
+        item.isEnable = isEnabled;
+    }
+    else if ([item.identifier isEqualToString:@"DYYYShowAllVideoQuality"]) {
+        // 清晰度选项依赖于接口解析URL是否设置
+        NSString *interfaceUrl = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYInterfaceDownload"];
+        item.isEnable = (interfaceUrl != nil && interfaceUrl.length > 0);
+    }
+    else if ([item.identifier isEqualToString:@"DYYYEnableDoubleOpenComment"]) {
+        // 双击打开评论依赖于双击打开菜单未启用
+        BOOL menuEnabled = getUserDefaults(@"DYYYEnableDoubleOpenAlertController");
+        item.isEnable = !menuEnabled;
+    }
+    else if ([item.identifier isEqualToString:@"DYYYEnableDoubleOpenAlertController"]) {
+        // 双击打开菜单依赖于双击打开评论未启用
+        BOOL commentEnabled = getUserDefaults(@"DYYYEnableDoubleOpenComment");
+        item.isEnable = !commentEnabled;
+    }
+    else if ([item.identifier isEqualToString:@"DYYYDoubleInterfaceDownload"]) {
+        // 接口保存功能依赖于接口解析URL是否设置
+        NSString *interfaceUrl = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYInterfaceDownload"];
+        item.isEnable = (interfaceUrl != nil && interfaceUrl.length > 0);
+    }
+}
+
+%new
+- (void)handleConflictsAndDependenciesForSetting:(NSString *)identifier isEnabled:(BOOL)isEnabled {
+    UIViewController *topVC = topView();
+    UITableView *tableView = nil;
+    
+    // 查找当前的表格视图
+    if ([topVC isKindOfClass:%c(AWESettingBaseViewController)]) {
+        for (UIView *subview in topVC.view.subviews) {
+            if ([subview isKindOfClass:[UITableView class]]) {
+                tableView = (UITableView *)subview;
+                break;
+            }
+        }
+    }
+
+    // 处理冲突和依赖关系逻辑
+    if ([identifier isEqualToString:@"DYYYEnableDanmuColor"]) {
+        // 更新对应的弹幕颜色设置的启用状态
+        [self updateDependentItemsForSetting:identifier value:@(isEnabled)];
+    }
+    else if ([identifier isEqualToString:@"DYYYisEnableCommentBlur"]) {
+        // 更新对应的毛玻璃透明度设置的启用状态
+        [self updateDependentItemsForSetting:identifier value:@(isEnabled)];
+    }
+    else if ([identifier isEqualToString:@"DYYYEnableDoubleOpenComment"]) {
+        if (isEnabled) {
+            // 如果启用双击打开评论，禁用双击打开菜单
+            setUserDefaults(@(NO), @"DYYYEnableDoubleOpenAlertController");
+            [self updateDependentItemsForSetting:@"DYYYEnableDoubleOpenAlertController" value:@(NO)];
+        }
+    }
+    else if ([identifier isEqualToString:@"DYYYEnableDoubleOpenAlertController"]) {
+        if (isEnabled) {
+            // 如果启用双击打开菜单，禁用双击打开评论
+            setUserDefaults(@(NO), @"DYYYEnableDoubleOpenComment");
+            [self updateDependentItemsForSetting:@"DYYYEnableDoubleOpenComment" value:@(NO)];
+        }
+    }
+    
+    // 刷新表格视图以反映状态变化
+    if (tableView) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [tableView reloadData];
+        });
+    }
+}
+
+%new
+- (void)updateDependentItemsForSetting:(NSString *)identifier value:(id)value {
+    // 寻找依赖于指定设置项的其他设置项并更新其状态
+    UIViewController *topVC = topView();
+    if (![topVC isKindOfClass:%c(AWESettingBaseViewController)]) return;
+    
+    AWESettingBaseViewController *settingsVC = (AWESettingBaseViewController *)topVC;
+    AWESettingsViewModel *viewModel = (AWESettingsViewModel *)[settingsVC viewModel];
+    if (!viewModel || ![viewModel respondsToSelector:@selector(sectionDataArray)]) return;
+    
+    NSArray *sectionDataArray = [viewModel sectionDataArray];
+    for (AWESettingSectionModel *section in sectionDataArray) {
+        if (![section respondsToSelector:@selector(itemArray)]) continue;
+        
+        NSArray *itemArray = section.itemArray;
+        for (id itemObj in itemArray) {
+            if (![itemObj isKindOfClass:%c(AWESettingItemModel)]) continue;
+            
+            AWESettingItemModel *item = (AWESettingItemModel *)itemObj;
+            
+            // 更新依赖项状态
+            if ([identifier isEqualToString:@"DYYYEnableDanmuColor"] && [item.identifier isEqualToString:@"DYYYdanmuColor"]) {
+                item.isEnable = [value boolValue];
+            }
+            else if ([identifier isEqualToString:@"DYYYisEnableCommentBlur"] && [item.identifier isEqualToString:@"DYYYCommentBlurTransparent"]) {
+                item.isEnable = [value boolValue];
+            }
+            else if ([identifier isEqualToString:@"DYYYInterfaceDownload"]) {
+                if ([item.identifier isEqualToString:@"DYYYShowAllVideoQuality"] || 
+                    [item.identifier isEqualToString:@"DYYYDoubleInterfaceDownload"]) {
+                    // 对于字符串值，检查是否有内容
+                    if ([value isKindOfClass:[NSString class]]) {
+                        NSString *strValue = (NSString *)value;
+                        item.isEnable = (strValue.length > 0);
+                    }
+                }
+            }
+            else if ([identifier isEqualToString:@"DYYYEnableDoubleOpenAlertController"] && 
+                     [item.identifier isEqualToString:@"DYYYEnableDoubleOpenComment"]) {
+                item.isEnable = ![value boolValue];
+                if ([value boolValue]) {
+                    item.isSwitchOn = NO;
+                }
+            }
+            else if ([identifier isEqualToString:@"DYYYEnableDoubleOpenComment"] && 
+                     [item.identifier isEqualToString:@"DYYYEnableDoubleOpenAlertController"]) {
+                item.isEnable = ![value boolValue];
+                if ([value boolValue]) {
+                    item.isSwitchOn = NO;
+                }
+            }
+        }
+    }
 }
 %end
