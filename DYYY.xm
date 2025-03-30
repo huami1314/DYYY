@@ -559,7 +559,7 @@
         }
     }
     
-    // 作者主页逻辑
+    // 作者主页作品图片逻辑
     if (isUserProfile) {
         // 作者主页特定处理
         for (UIView *subview in self.subviews) {
@@ -574,20 +574,31 @@
         return;
     }
     
-    // 以下是非作者主页的逻辑（首页或其他）
+    // 首页逻辑 - 只调整首页的图片
     id enableEnterProfile = [self valueForKey:@"enableEnterProfile"];
     BOOL isHome = (enableEnterProfile != nil && [enableEnterProfile boolValue]);
     if (!isHome) return; 
+    // 确保这是首页的 AWEStoryContainerCollectionView
+    BOOL isHomeStoryContainer = NO;
     for (UIView *subview in self.subviews) {
         if ([subview isKindOfClass:[UIView class]]) {
             UIView *nextResponder = (UIView *)subview.nextResponder;
             if ([nextResponder isKindOfClass:%c(AWEPlayInteractionViewController)]) {
                 UIViewController *awemeBaseViewController = [nextResponder valueForKey:@"awemeBaseViewController"];
-                if (![awemeBaseViewController isKindOfClass:%c(AWEFeedCellViewController)]) {
-                    return;
+                if ([awemeBaseViewController isKindOfClass:%c(AWEFeedCellViewController)]) {
+                    isHomeStoryContainer = YES;
+                    break;
                 }
             }
-            
+        }
+    }
+    
+    // 如果不是首页的 AWEStoryContainerCollectionView，直接返回
+    if (!isHomeStoryContainer) return;
+    
+    // 调整首页图片
+    for (UIView *subview in self.subviews) {
+        if ([subview isKindOfClass:[UIView class]]) {
             CGRect frame = subview.frame;
             if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
                 frame.size.height = subview.superview.frame.size.height - 83;
