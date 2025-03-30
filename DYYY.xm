@@ -542,7 +542,7 @@
     // 检查子视图数量，如果只有两个，直接返回
     if ([self.subviews count] == 2) return;
     
-    // 检查是否是作者主页
+    // 获取 throughDelegate 属性
     id throughDelegate = nil;
     @try {
         throughDelegate = [self valueForKey:@"throughDelegate"];
@@ -550,14 +550,22 @@
         // 忽略
     }
     
-    // 判断是否是作者主页
-    BOOL isUserProfile = NO;
-    if (throughDelegate != nil) {
-        NSString *delegatePointerString = [NSString stringWithFormat:@"%p", throughDelegate];
-        if (![delegatePointerString containsString:@"deadb33f"]) {
-            isUserProfile = YES;
-        }
-    }
+    // 如果 throughDelegate 为 nil，直接返回
+    if (throughDelegate == nil) return;
+    
+    // 获取 throughDelegate 的地址字符串
+    NSString *delegatePointerString = [NSString stringWithFormat:@"%p", throughDelegate];
+    
+    // 判断是哪种情况
+    BOOL isHomePage = [delegatePointerString containsString:@"deadb33f"];
+    BOOL isUserProfile = ![delegatePointerString containsString:@"deadb33f"] && 
+                          [delegatePointerString hasPrefix:@"0x28"] && 
+                          ![delegatePointerString hasPrefix:@"0x286"];
+    BOOL isOtherProfile = ![delegatePointerString containsString:@"deadb33f"] && 
+                           [delegatePointerString hasPrefix:@"0x286"];
+    
+    // 如果是其他作品图片，直接返回
+    if (isOtherProfile) return;
     
     // 作者主页逻辑
     if (isUserProfile) {
@@ -571,30 +579,12 @@
         
         // 如果 enableEnterProfile 为 nil 或为 NO，应用调整
         if (enableEnterProfile == nil || ![enableEnterProfile boolValue]) {
-            // 确认这是作者主页的作品图片
-            BOOL isUserProfileWorks = NO;
-            
-            // 检查父视图链，确认这是作者主页的作品图片
-            UIResponder *responder = self;
-            while ((responder = [responder nextResponder])) {
-                NSString *className = NSStringFromClass([responder class]);
-                if ([className containsString:@"UserProfile"] || 
-                    [className containsString:@"UserHome"] || 
-                    [className containsString:@"Profile"]) {
-                    isUserProfileWorks = YES;
-                    break;
-                }
-            }
-            
-            // 只有确认是作者主页的作品图片才调整
-            if (isUserProfileWorks) {
-                for (UIView *subview in self.subviews) {
-                    if ([subview isKindOfClass:[UIView class]]) {
-                        CGRect frame = subview.frame;
-                        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-                            frame.size.height = subview.superview.frame.size.height - 83;
-                            subview.frame = frame;
-                        }
+            for (UIView *subview in self.subviews) {
+                if ([subview isKindOfClass:[UIView class]]) {
+                    CGRect frame = subview.frame;
+                    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+                        frame.size.height = subview.superview.frame.size.height - 83;
+                        subview.frame = frame;
                     }
                 }
             }
@@ -602,28 +592,12 @@
         return;
     }
     
-    // 以下是原有的首页逻辑
-    id enableEnterProfile = [self valueForKey:@"enableEnterProfile"];
-    BOOL isHome = (enableEnterProfile != nil && [enableEnterProfile boolValue]);
-    if (!isHome) return; 
-    
-    // 确认这是首页的图片
-    BOOL isHomeStoryContainer = NO;
-    for (UIView *subview in self.subviews) {
-        if ([subview isKindOfClass:[UIView class]]) {
-            UIView *nextResponder = (UIView *)subview.nextResponder;
-            if ([nextResponder isKindOfClass:%c(AWEPlayInteractionViewController)]) {
-                UIViewController *awemeBaseViewController = [nextResponder valueForKey:@"awemeBaseViewController"];
-                if ([awemeBaseViewController isKindOfClass:%c(AWEFeedCellViewController)]) {
-                    isHomeStoryContainer = YES;
-                    break;
-                }
-            }
-        }
-    }
-    
-    // 只有确认是首页的图片才调整
-    if (isHomeStoryContainer) {
+    // 首页逻辑
+    if (isHomePage) {
+        id enableEnterProfile = [self valueForKey:@"enableEnterProfile"];
+        BOOL isHome = (enableEnterProfile != nil && [enableEnterProfile boolValue]);
+        if (!isHome) return; 
+        
         for (UIView *subview in self.subviews) {
             if ([subview isKindOfClass:[UIView class]]) {
                 UIView *nextResponder = (UIView *)subview.nextResponder;
