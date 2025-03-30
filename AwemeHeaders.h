@@ -539,3 +539,9 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (void)layoutSubviews;
 @end
 
+@interface AWEHPTopBarCTAContainer : UIView
+@end
+
+@interface AWEHPTopBarCTAContainer (DYYYTransparency)
+- (void)applyDYYYTransparency;
+@end
