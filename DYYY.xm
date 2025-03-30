@@ -535,40 +535,17 @@
 
 %end
 
-// 钩子实现
 %hook AWEStoryContainerCollectionView
 - (void)layoutSubviews {
     %orig;
+    
+    // 如果子视图数量为2，直接返回（这似乎是一个特殊情况）
     if ([self.subviews count] == 2) return;
     
-    // 检查是否为主页
-    id enableEnterProfile = [self valueForKey:@"enableEnterProfile"];
-    BOOL isHome = (enableEnterProfile != nil && [enableEnterProfile boolValue]);
-    
-    // 检查是否为照片/朋友页面
-    BOOL isPhotosFriendsPage = NO;
-    if ([self.nextResponder isKindOfClass:%c(RichContentNewListViewController)]) {
-        isPhotosFriendsPage = YES;
-    }
-    
-    // 如果既不是主页也不是照片页面，则返回
-    if (!isHome && !isPhotosFriendsPage) return;
-    
-    for (UIView *subview in self.subviews) {
-        if ([subview isKindOfClass:[UIView class]]) {
-            // 处理视频页面
-            if (isHome) {
-                UIView *nextResponder = (UIView *)subview.nextResponder;
-                if ([nextResponder isKindOfClass:%c(AWEPlayInteractionViewController)]) {
-                    UIViewController *awemeBaseViewController = [nextResponder valueForKey:@"awemeBaseViewController"];
-                    if (![awemeBaseViewController isKindOfClass:%c(AWEFeedCellViewController)]) {
-                        continue;
-                    }
-                }
-            }
-            
-            // 应用全屏设置
-            if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+    // 直接应用全屏设置，不区分页面类型
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+        for (UIView *subview in self.subviews) {
+            if ([subview isKindOfClass:[UIView class]]) {
                 CGRect frame = subview.frame;
                 frame.size.height = subview.superview.frame.size.height - 83;
                 subview.frame = frame;
