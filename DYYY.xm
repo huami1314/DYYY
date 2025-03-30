@@ -556,33 +556,39 @@
         }
     }
     
-    // 首页检查逻辑
-    BOOL isHome = NO;
-    if (!isUserProfile) {
-        if ([self.subviews count] == 2) return;
-        
-        id enableEnterProfile = [self valueForKey:@"enableEnterProfile"];
-        isHome = (enableEnterProfile != nil && [enableEnterProfile boolValue]);
-        if (!isHome) return;
+    // 作者主页逻辑
+    if (isUserProfile) {
+        // 应用作者主页的调整
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+            for (UIView *subview in self.subviews) {
+                if ([subview isKindOfClass:[UIView class]]) {
+                    CGRect frame = subview.frame;
+                    frame.size.height = subview.superview.frame.size.height - 83;
+                    subview.frame = frame;
+                }
+            }
+        }
+        return; // 处理完作者主页后返回，不执行首页逻辑
     }
     
-    // 无论是首页还是作者主页，都应用相同的逻辑
+    // 以下是原有的首页逻辑
+    if ([self.subviews count] == 2) return;
+    
+    id enableEnterProfile = [self valueForKey:@"enableEnterProfile"];
+    BOOL isHome = (enableEnterProfile != nil && [enableEnterProfile boolValue]);
+    if (!isHome) return; 
     for (UIView *subview in self.subviews) {
         if ([subview isKindOfClass:[UIView class]]) {
-            // 只在首页时执行特定检查
-            if (!isUserProfile) {
-                UIView *nextResponder = (UIView *)subview.nextResponder;
-                if ([nextResponder isKindOfClass:%c(AWEPlayInteractionViewController)]) {
-                    UIViewController *awemeBaseViewController = [nextResponder valueForKey:@"awemeBaseViewController"];
-                    if (![awemeBaseViewController isKindOfClass:%c(AWEFeedCellViewController)]) {
-                        return;
-                    }
+            UIView *nextResponder = (UIView *)subview.nextResponder;
+            if ([nextResponder isKindOfClass:%c(AWEPlayInteractionViewController)]) {
+                UIViewController *awemeBaseViewController = [nextResponder valueForKey:@"awemeBaseViewController"];
+                if (![awemeBaseViewController isKindOfClass:%c(AWEFeedCellViewController)]) {
+                    return;
                 }
             }
             
-            // 应用高度调整
+            CGRect frame = subview.frame;
             if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-                CGRect frame = subview.frame;
                 frame.size.height = subview.superview.frame.size.height - 83;
                 subview.frame = frame;
             }
