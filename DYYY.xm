@@ -544,53 +544,48 @@
     
     // 尝试获取logExtraDict
     NSDictionary *logExtraDict = nil;
+    BOOL logExtraDictFound = NO;
+    
     @try {
         logExtraDict = [self valueForKey:@"logExtraDict"];
+        if (logExtraDict) {
+            logExtraDictFound = YES;
+        }
     } @catch (NSException *exception) {
         // 忽略异常
     }
     
-    // 检查是否为推荐作品图片 - 如果logExtraDict不包含"click"字样，则认为是推荐作品图片
-    BOOL isRecommendImage = YES;
-    
-    if (logExtraDict) {
-        // 遍历字典的所有键和值，检查是否包含"click"字样
-        for (NSString *key in logExtraDict.allKeys) {
-            id value = logExtraDict[key];
-            
-            // 检查键是否包含"click"
-            if ([key rangeOfString:@"click" options:NSCaseInsensitiveSearch].location != NSNotFound) {
-                isRecommendImage = NO;
-                break;
-            }
-            
-            // 如果值是字符串，检查是否包含"click"
-            if ([value isKindOfClass:[NSString class]] && 
-                [value rangeOfString:@"click" options:NSCaseInsensitiveSearch].location != NSNotFound) {
-                isRecommendImage = NO;
-                break;
-            }
-            
-            // 如果值是字典，递归检查
-            if ([value isKindOfClass:[NSDictionary class]]) {
-                for (NSString *subKey in [(NSDictionary *)value allKeys]) {
-                    id subValue = [(NSDictionary *)value objectForKey:subKey];
-                    if (([subKey rangeOfString:@"click" options:NSCaseInsensitiveSearch].location != NSNotFound) ||
-                        ([subValue isKindOfClass:[NSString class]] && 
-                         [subValue rangeOfString:@"click" options:NSCaseInsensitiveSearch].location != NSNotFound)) {
-                        isRecommendImage = NO;
-                        break;
+    // 如果找不到logExtraDict，尝试其他方式获取
+    if (!logExtraDictFound) {
+        // 尝试从父视图或控制器获取
+        UIResponder *responder = self;
+        while (responder && !logExtraDictFound) {
+            responder = [responder nextResponder];
+            if ([responder respondsToSelector:@selector(valueForKey:)]) {
+                @try {
+                    id value = [(id)responder valueForKey:@"logExtraDict"];
+                    if ([value isKindOfClass:[NSDictionary class]]) {
+                        logExtraDict = value;
+                        logExtraDictFound = YES;
                     }
+                } @catch (NSException *exception) {
+                    // 忽略异常
                 }
-                if (!isRecommendImage) break;
             }
         }
     }
     
-    // 如果是推荐作品图片，直接返回不做处理
-    if (isRecommendImage) return;
+    // 测试：只有当previous_page为"homepage_hot"时才下移
+    BOOL shouldAdjust = NO;
     
-    // 处理非推荐作品图片
+    if (logExtraDict && [logExtraDict[@"previous_page"] isEqualToString:@"homepage_hot"]) {
+        shouldAdjust = YES;
+    }
+    
+    // 如果不需要调整，直接返回
+    if (!shouldAdjust) return;
+    
+    // 处理需要下移的视图
     for (UIView *subview in self.subviews) {
         if ([subview isKindOfClass:[UIView class]]) {
             // 如果启用了全屏模式，调整子视图高度
