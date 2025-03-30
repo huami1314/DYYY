@@ -538,41 +538,49 @@
 %hook AWEStoryContainerCollectionView
 - (void)layoutSubviews {
     %orig;
-    if ([self.subviews count] == 2) return;
     
-    // 检查是否在首页
-    id enableEnterProfile = [self valueForKey:@"enableEnterProfile"];
-    BOOL isHome = (enableEnterProfile != nil && [enableEnterProfile boolValue]);
+    // 获取 throughDelegate 属性来区分是否是作者主页
+    id throughDelegate = nil;
+    @try {
+        throughDelegate = [self valueForKey:@"throughDelegate"];
+    } @catch (NSException *exception) {
+        // 属性不存在或无法访问，忽略
+    }
     
-    // 检查是否在作者主页
+    // 检查是否是作者主页视图
     BOOL isUserProfile = NO;
-    UIResponder *responder = self;
-    while ((responder = [responder nextResponder])) {
-        NSString *className = NSStringFromClass([responder class]);
-        if ([className containsString:@"UserProfile"] || [className containsString:@"UserHome"]) {
+    if (throughDelegate != nil) {
+        NSString *delegatePointerString = [NSString stringWithFormat:@"%p", throughDelegate];
+        if (![delegatePointerString containsString:@"deadb33f"]) {
             isUserProfile = YES;
-            break;
         }
     }
     
-    // 如果既不是首页也不是作者主页，则返回
-    if (!isHome && !isUserProfile) return;
+    // 首页检查逻辑
+    BOOL isHome = NO;
+    if (!isUserProfile) {
+        if ([self.subviews count] == 2) return;
+        
+        id enableEnterProfile = [self valueForKey:@"enableEnterProfile"];
+        isHome = (enableEnterProfile != nil && [enableEnterProfile boolValue]);
+        if (!isHome) return;
+    }
     
-    // 处理子视图
+    // 无论是首页还是作者主页，都应用相同的逻辑
     for (UIView *subview in self.subviews) {
         if ([subview isKindOfClass:[UIView class]]) {
-            // 首页特定检查
-            if (isHome && !isUserProfile) {
+            // 只在首页时执行特定检查
+            if (!isUserProfile) {
                 UIView *nextResponder = (UIView *)subview.nextResponder;
                 if ([nextResponder isKindOfClass:%c(AWEPlayInteractionViewController)]) {
                     UIViewController *awemeBaseViewController = [nextResponder valueForKey:@"awemeBaseViewController"];
                     if (![awemeBaseViewController isKindOfClass:%c(AWEFeedCellViewController)]) {
-                        continue;
+                        return;
                     }
                 }
             }
             
-            // 应用全屏高度调整 (-83)，无论是首页还是作者主页
+            // 应用高度调整
             if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
                 CGRect frame = subview.frame;
                 frame.size.height = subview.superview.frame.size.height - 83;
