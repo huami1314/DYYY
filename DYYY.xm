@@ -1143,6 +1143,19 @@
 
 %end
 
+//去除“我的”加入挑战横幅
+%hook AWEPostWorkViewController
+- (BOOL)isDouGuideTipViewShow {
+    BOOL r = %orig;
+    NSLog(@"Original value: %@", @(r));
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideChallengeStickers"]) {
+        NSLog(@"Force return YES");
+        return YES;
+    }
+    return r;
+}
+%end
+
 //隐藏消息页顶栏头像气泡
 %hook AFDSkylightCellBubble
  - (void)layoutSubviews {
