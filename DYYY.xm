@@ -957,6 +957,7 @@
 }
 %end
 
+
 //移除同城吃喝玩乐提示框
 %hook AWENearbySkyLightCapsuleView
 - (void)layoutSubviews {
@@ -3780,6 +3781,58 @@ static BOOL isDownloadFlied = NO;
 
 - (void)setupUI {
    if (![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYHideLiveGIF"]) %orig;
+}
+%end
+
+//隐藏礼物展馆
+%hook WKScrollView
+- (void)layoutSubviews {
+    %orig;
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideGiftPavilion"]) {
+        self.hidden = YES;
+    }
+}
+
+%end
+
+%hook IESLiveActivityBannnerView
+- (void)layoutSubviews {
+    %orig;
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideGiftPavilion"]) {
+        self.hidden = YES;
+    }
+}
+
+%end
+
+//隐藏直播广场
+%hook IESLiveFeedDrawerEntranceView
+- (void)layoutSubviews {
+    %orig;
+
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLivePlayground"]) {
+        self.hidden = YES;
+    }
+}
+
+%end
+
+//隐藏顶栏红点
+%hook AWEHPTopTabItemBadgeContentView
+- (id)showBadgeWithBadgeStyle:(NSUInteger)style 
+                  badgeConfig:(id)config 
+                         count:(NSInteger)count 
+                          text:(id)text 
+{
+    BOOL hideEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTopBarBadge"];
+
+    if (hideEnabled) {
+        // 阻断徽章创建
+        return nil;  // 返回 nil 阻止视图生成
+    } else {
+        // 未启用隐藏功能时正常显示
+        return %orig(style, config, count, text);
+    }
 }
 %end
 
