@@ -539,9 +539,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (void)layoutSubviews;
 @end
 
-@interface AWEFeedContainerContentView (DYYYHelper)
-- (void)applyAlphaToAllSubviews:(CGFloat)alpha;
-- (void)findAndSetAlphaForTopBarViews:(UIView *)view alpha:(CGFloat)alpha;
-- (UIViewController *)findViewController:(UIViewController *)vc ofClass:(Class)targetClass;
+@interface AWEHPTopBarCTAContainer : UIView
+- (void)applyDYYYTransparency;  
 @end
 
