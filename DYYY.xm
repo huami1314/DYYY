@@ -551,14 +551,43 @@
     // 添加调试按钮（只添加一次）
     UIButton *debugButton = objc_getAssociatedObject(self, "debugButton");
     if (!debugButton) {
+        // 创建按钮
         debugButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        debugButton.frame = CGRectMake(10, 10, 40, 40);
-        debugButton.backgroundColor = [UIColor colorWithRed:1.0 green:0.0 blue:0.0 alpha:0.5];
-        debugButton.layer.cornerRadius = 20;
-        [debugButton setTitle:@"i" forState:UIControlStateNormal];
+        
+        // 设置按钮位置在左侧中间
+        CGFloat buttonSize = 50;
+        CGFloat buttonX = 20;
+        CGFloat buttonY = self.bounds.size.height / 2 - buttonSize / 2;
+        debugButton.frame = CGRectMake(buttonX, buttonY, buttonSize, buttonSize);
+        
+        // 设置按钮样式
+        debugButton.backgroundColor = [UIColor colorWithRed:1.0 green:0.0 blue:0.0 alpha:0.7];
+        debugButton.layer.cornerRadius = buttonSize / 2;
+        debugButton.layer.borderWidth = 2.0;
+        debugButton.layer.borderColor = [UIColor whiteColor].CGColor;
+        
+        // 设置按钮文字
+        [debugButton setTitle:@"调试" forState:UIControlStateNormal];
+        debugButton.titleLabel.font = [UIFont boldSystemFontOfSize:14];
+        
+        // 添加点击事件
         [debugButton addTarget:self action:@selector(debugButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
+        
+        // 确保按钮在最上层
+        debugButton.layer.zPosition = 1000;
+        
+        // 添加到视图
         [self addSubview:debugButton];
         objc_setAssociatedObject(self, "debugButton", debugButton, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        
+        // 打印日志确认按钮已添加
+        NSLog(@"[DYYY Debug] 调试按钮已添加到视图: %@", viewID);
+    } else {
+        // 更新按钮位置（以防视图大小变化）
+        CGFloat buttonSize = 50;
+        CGFloat buttonX = 20;
+        CGFloat buttonY = self.bounds.size.height / 2 - buttonSize / 2;
+        debugButton.frame = CGRectMake(buttonX, buttonY, buttonSize, buttonSize);
     }
     
     // 继续原来的逻辑...
@@ -586,6 +615,9 @@
 }
 %new
 - (void)debugButtonTapped:(UIButton *)sender {
+    // 打印日志确认按钮被点击
+    NSLog(@"[DYYY Debug] 调试按钮被点击");
+    
     NSString *viewID = objc_getAssociatedObject(self, "viewID");
     
     // 收集视图信息
@@ -609,7 +641,9 @@
     
     if (vc) {
         [debugInfo appendFormat:@"ViewController: %@\n", NSStringFromClass([vc class])];
-        [debugInfo appendFormat:@"ParentViewController: %@\n", NSStringFromClass([vc.parentViewController class])];
+        if (vc.parentViewController) {
+            [debugInfo appendFormat:@"ParentViewController: %@\n", NSStringFromClass([vc.parentViewController class])];
+        }
     }
     
     // 收集属性信息
@@ -619,9 +653,13 @@
     id throughDelegate = nil;
     @try {
         throughDelegate = [self valueForKey:@"throughDelegate"];
-        [debugInfo appendFormat:@"throughDelegate: %@ (%@)\n", 
-                               throughDelegate, 
-                               NSStringFromClass([throughDelegate class])];
+        if (throughDelegate) {
+            [debugInfo appendFormat:@"throughDelegate: %@ (%@)\n", 
+                                   throughDelegate, 
+                                   NSStringFromClass([throughDelegate class])];
+        } else {
+            [debugInfo appendString:@"throughDelegate: nil\n"];
+        }
     } @catch (NSException *exception) {
         [debugInfo appendFormat:@"throughDelegate: Exception - %@\n", exception.reason];
     }
@@ -637,13 +675,16 @@
     // 尝试获取其他可能的属性
     NSArray *possibleProperties = @[
         @"dataSource", @"delegate", @"model", @"viewModel", 
-        @"contentType", @"pageType", @"sceneType", @"viewType"
+        @"contentType", @"pageType", @"sceneType", @"viewType",
+        @"tag", @"accessibilityIdentifier"
     ];
     
     for (NSString *propName in possibleProperties) {
         @try {
             id propValue = [self valueForKey:propName];
-            [debugInfo appendFormat:@"%@: %@\n", propName, propValue];
+            if (propValue) {
+                [debugInfo appendFormat:@"%@: %@\n", propName, propValue];
+            }
         } @catch (NSException *exception) {
             // 忽略不存在的属性
         }
@@ -652,30 +693,70 @@
     // 打印到控制台
     NSLog(@"%@", debugInfo);
     
-    // 显示弹窗
-    UIAlertController *alert = [UIAlertController 
-                               alertControllerWithTitle:[NSString stringWithFormat:@"Debug Info (%@)", viewID]
-                               message:debugInfo
-                               preferredStyle:UIAlertControllerStyleAlert];
-    
-    [alert addAction:[UIAlertAction actionWithTitle:@"标记为作者主页" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-        objc_setAssociatedObject(self, "viewType", @"authorProfile", OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-        NSLog(@"[%@] 已标记为作者主页", viewID);
-    }]];
-    
-    [alert addAction:[UIAlertAction actionWithTitle:@"标记为推荐作品" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-        objc_setAssociatedObject(self, "viewType", @"recommendedContent", OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-        NSLog(@"[%@] 已标记为推荐作品", viewID);
-    }]];
-    
-    [alert addAction:[UIAlertAction actionWithTitle:@"关闭" style:UIAlertActionStyleCancel handler:nil]];
-    
-    UIViewController *topVC = [UIApplication sharedApplication].keyWindow.rootViewController;
-    while (topVC.presentedViewController) {
-        topVC = topVC.presentedViewController;
-    }
-    
-    [topVC presentViewController:alert animated:YES completion:nil];
+    // 确保在主线程显示弹窗
+    dispatch_async(dispatch_get_main_queue(), ^{
+        // 显示弹窗
+        UIAlertController *alert = [UIAlertController 
+                                   alertControllerWithTitle:[NSString stringWithFormat:@"Debug Info (%@)", viewID]
+                                   message:debugInfo
+                                   preferredStyle:UIAlertControllerStyleAlert];
+        
+        [alert addAction:[UIAlertAction actionWithTitle:@"标记为作者主页" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+            objc_setAssociatedObject(self, "viewType", @"authorProfile", OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+            NSLog(@"[%@] 已标记为作者主页", viewID);
+            
+            // 立即应用调整
+            for (UIView *subview in self.subviews) {
+                if ([subview isKindOfClass:[UIView class]]) {
+                    CGRect frame = subview.frame;
+                    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+                        frame.size.height = subview.superview.frame.size.height - 83;
+                        subview.frame = frame;
+                    }
+                }
+            }
+        }]];
+        
+        [alert addAction:[UIAlertAction actionWithTitle:@"标记为推荐作品" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+            objc_setAssociatedObject(self, "viewType", @"recommendedContent", OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+            NSLog(@"[%@] 已标记为推荐作品", viewID);
+        }]];
+        
+        [alert addAction:[UIAlertAction actionWithTitle:@"关闭" style:UIAlertActionStyleCancel handler:nil]];
+        
+        // 获取顶层视图控制器
+        UIViewController *topVC = nil;
+        UIWindow *keyWindow = nil;
+        
+        // iOS 13及以上使用windowScene
+        if (@available(iOS 13.0, *)) {
+            NSSet *connectedScenes = [UIApplication sharedApplication].connectedScenes;
+            for (UIWindowScene *windowScene in connectedScenes) {
+                if (windowScene.activationState == UISceneActivationStateForegroundActive) {
+                    for (UIWindow *window in windowScene.windows) {
+                        if (window.isKeyWindow) {
+                            keyWindow = window;
+                            break;
+                        }
+                    }
+                }
+            }
+        } else {
+            // iOS 13以下使用keyWindow
+            keyWindow = [UIApplication sharedApplication].keyWindow;
+        }
+        
+        if (keyWindow) {
+            topVC = keyWindow.rootViewController;
+            while (topVC.presentedViewController) {
+                topVC = topVC.presentedViewController;
+            }
+            
+            [topVC presentViewController:alert animated:YES completion:nil];
+        } else {
+            NSLog(@"[DYYY Debug] 无法获取keyWindow");
+        }
+    });
 }
 %end
 
