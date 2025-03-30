@@ -1328,7 +1328,7 @@
         }
         
         // 隐藏点赞数值标签
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLikeBLabel"]) {
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLikeLabel"]) {
             for (UIView *subview in self.subviews) {
                 if ([subview isKindOfClass:[UILabel class]]) {
                     subview.hidden = YES;
