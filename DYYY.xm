@@ -111,7 +111,7 @@
         if (alphaValue >= 0.0 && alphaValue <= 1.0) {
             %orig(alphaValue);
             
-            // 直接设置所有子视图的透明度
+            // 更简单的方法：直接设置所有子视图的透明度
             for (UIView *subview in self.subviews) {
                 if (![subview isKindOfClass:[UILabel class]] && 
                     ![subview isKindOfClass:[UIImageView class]]) {
