@@ -539,79 +539,62 @@
 - (void)layoutSubviews {
     %orig;
     
-    // 检查子视图数量，如果只有两个，直接返回
+    // 如果子视图只有2个，直接返回不做处理
     if ([self.subviews count] == 2) return;
     
-    // 使用多种特征综合判断
-    int authorProfileScore = 0; // 分数越高，越可能是作者主页视图
+    // 获取当前页面上下文信息
+    id enableEnterProfile = [self valueForKey:@"enableEnterProfile"];
+    id previousPage = nil;
+    id searchParams = nil;
+    id tabName = nil;
     
-    // 特征1: 检查视图控制器类名
-    UIViewController *currentVC = nil;
-    UIResponder *responder = self;
-    while (responder) {
-        responder = [responder nextResponder];
-        if ([responder isKindOfClass:[UIViewController class]]) {
-            currentVC = (UIViewController *)responder;
-            break;
-        }
-    }
-    
-    if (currentVC) {
-        NSString *vcClassName = NSStringFromClass([currentVC class]);
-        if ([vcClassName containsString:@"UserHome"] || 
-            [vcClassName containsString:@"Profile"]) {
-            authorProfileScore += 3;
-        }
-    }
-    
-    // 特征2: 检查父视图类名
-    UIView *parentView = self.superview;
-    if (parentView) {
-        NSString *parentClassName = NSStringFromClass([parentView class]);
-        if ([parentClassName containsString:@"Profile"] || 
-            [parentClassName containsString:@"UserHome"]) {
-            authorProfileScore += 2;
-        }
-    }
-    
-    // 特征3: 检查throughDelegate
-    id throughDelegate = nil;
+    // 尝试获取更多上下文信息以区分不同场景
     @try {
-        throughDelegate = [self valueForKey:@"throughDelegate"];
-        if (throughDelegate) {
-            NSString *delegateClassName = NSStringFromClass([throughDelegate class]);
-            if ([delegateClassName containsString:@"Profile"] || 
-                [delegateClassName containsString:@"UserHome"]) {
-                authorProfileScore += 2;
-            }
-        }
+        previousPage = [self valueForKey:@"previous_page"];
+        searchParams = [self valueForKey:@"search_params"];
+        tabName = [self valueForKey:@"tab_name"];
     } @catch (NSException *exception) {
-        // 忽略异常
+        // 忽略可能的异常
     }
     
-    // 特征4: 检查视图在屏幕上的位置
-    CGRect frameInWindow = [self convertRect:self.bounds toView:nil];
-    if (frameInWindow.origin.y < [UIScreen mainScreen].bounds.size.height / 2) {
-        authorProfileScore += 1;
-    }
+    // 判断是否为搜索页面
+    BOOL isSearch = (searchParams != nil && [searchParams isKindOfClass:[NSDictionary class]] && 
+                    [searchParams[@"enter_from"] isEqualToString:@"general_search"]);
     
-    // 根据综合得分判断
-    BOOL isAuthorProfileView = (authorProfileScore >= 3); // 设置一个合适的阈值
+    // 判断是否为推荐页面
+    BOOL isRecommend = (previousPage != nil && [previousPage isEqualToString:@"homepage_hot"]);
     
-    // 根据判断结果应用不同的调整
-    if (isAuthorProfileView) {
-        // 作者主页作品图片逻辑
-        for (UIView *subview in self.subviews) {
-            if ([subview isKindOfClass:[UIView class]]) {
-                CGRect frame = subview.frame;
-                if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-                    frame.size.height = subview.superview.frame.size.height - 83;
-                    subview.frame = frame;
+    // 判断是否为作者主页作品页面
+    BOOL isAuthorPage = (tabName != nil && [tabName isEqualToString:@"output"]) || 
+                        (previousPage != nil && [previousPage isEqualToString:@"following"]);
+    
+    // 如果是推荐页面，直接返回不做处理
+    if (isRecommend) return;
+    
+    // 处理搜索页面和作者主页
+    BOOL shouldAdjust = (isSearch && enableEnterProfile != nil && [enableEnterProfile boolValue]) || isAuthorPage;
+    
+    if (!shouldAdjust) return;
+    
+    for (UIView *subview in self.subviews) {
+        if ([subview isKindOfClass:[UIView class]]) {
+            UIView *nextResponder = (UIView *)subview.nextResponder;
+            
+            // 检查是否为播放控制器相关视图
+            if ([nextResponder isKindOfClass:%c(AWEPlayInteractionViewController)]) {
+                UIViewController *awemeBaseViewController = [nextResponder valueForKey:@"awemeBaseViewController"];
+                if (![awemeBaseViewController isKindOfClass:%c(AWEFeedCellViewController)]) {
+                    continue; // 使用continue而不是return，允许继续处理其他子视图
                 }
             }
+            
+            // 如果启用了全屏模式，调整子视图高度
+            if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+                CGRect frame = subview.frame;
+                frame.size.height = subview.superview.frame.size.height - 83;
+                subview.frame = frame;
+            }
         }
-    } else {
-        // 推荐作品图片逻辑 - 不做调整
     }
 }
 %end
