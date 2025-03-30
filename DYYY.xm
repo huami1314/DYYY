@@ -110,11 +110,65 @@
         CGFloat alphaValue = [transparentValue floatValue];
         if (alphaValue >= 0.0 && alphaValue <= 1.0) {
             %orig(alphaValue);
+            
+            // 设置所有子视图的透明度
+            [self applyAlphaToAllSubviews:alphaValue];
+            
+            // 延迟一点时间再次应用透明度，确保所有视图都被处理
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                [self applyAlphaToAllSubviews:alphaValue];
+            });
         } else {
             %orig(1.0);
         }
     } else {
         %orig(1.0);
+    }
+}
+%new
+- (void)applyAlphaToAllSubviews:(CGFloat)alpha {
+    // 递归查找顶栏相关视图并设置透明度
+    UIWindow *keyWindow = [DYYYManager getActiveWindow];
+    if (!keyWindow) return;
+    
+    // 查找顶栏视图
+    for (UIView *view in keyWindow.subviews) {
+        [self findAndSetAlphaForTopBarViews:view alpha:alpha];
+    }
+}
+%new
+- (void)findAndSetAlphaForTopBarViews:(UIView *)view alpha:(CGFloat)alpha {
+    NSString *className = NSStringFromClass([view class]);
+    
+    // 如果是顶栏相关的视图
+    if ([className containsString:@"TopBar"] || 
+        [className containsString:@"TabBar"] || 
+        [className containsString:@"Navigation"]) {
+        
+        // 设置背景视图的透明度
+        for (UIView *subview in view.subviews) {
+            if (![subview isKindOfClass:[UILabel class]] && 
+                ![subview isKindOfClass:[UIImageView class]] && 
+                ![subview isKindOfClass:[UIButton class]]) {
+                subview.alpha = alpha;
+            }
+        }
+        
+        // 如果视图有背景色，设置背景色的透明度
+        if ([view respondsToSelector:@selector(backgroundColor)]) {
+            UIColor *bgColor = [(UIView *)view backgroundColor];
+            if (bgColor) {
+                CGFloat r, g, b, a;
+                if ([bgColor getRed:&r green:&g blue:&b alpha:&a]) {
+                    [(UIView *)view setBackgroundColor:[UIColor colorWithRed:r green:g blue:b alpha:alpha * a]];
+                }
+            }
+        }
+    }
+    
+    // 递归处理子视图
+    for (UIView *subview in view.subviews) {
+        [self findAndSetAlphaForTopBarViews:subview alpha:alpha];
     }
 }
 %new
@@ -128,68 +182,6 @@
     }
     
     return [self findViewController:vc.presentedViewController ofClass:targetClass];
-}
-%end
-// 添加一个新的钩子来处理顶栏背景
-%hook AWEHPTopBar
-- (void)layoutSubviews {
-    %orig;
-    
-    NSString *transparentValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYtopbartransparent"];
-    if (transparentValue && transparentValue.length > 0) {
-        CGFloat alphaValue = [transparentValue floatValue];
-        if (alphaValue >= 0.0 && alphaValue <= 1.0) {
-            // 查找背景视图并设置透明度
-            for (UIView *subview in self.subviews) {
-                // 如果是背景视图（通常是第一个子视图或特定类型的视图）
-                if ([subview isKindOfClass:[UIView class]] && 
-                    ![subview isKindOfClass:[UILabel class]] && 
-                    ![subview isKindOfClass:[UIImageView class]] &&
-                    ![subview isKindOfClass:[UIButton class]]) {
-                    subview.alpha = alphaValue;
-                }
-            }
-            
-            // 设置自身的背景色透明度
-            UIColor *backgroundColor = self.backgroundColor;
-            if (backgroundColor) {
-                CGFloat r, g, b, a;
-                [backgroundColor getRed:&r green:&g blue:&b alpha:&a];
-                self.backgroundColor = [UIColor colorWithRed:r green:g blue:b alpha:alphaValue * a];
-            }
-        }
-    }
-}
-%end
-// 处理顶栏内的标签容器
-%hook AWEHPTopTabBar
-- (void)layoutSubviews {
-    %orig;
-    
-    NSString *transparentValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYtopbartransparent"];
-    if (transparentValue && transparentValue.length > 0) {
-        CGFloat alphaValue = [transparentValue floatValue];
-        if (alphaValue >= 0.0 && alphaValue <= 1.0) {
-            // 查找背景视图并设置透明度
-            for (UIView *subview in self.subviews) {
-                // 如果是背景视图（通常是第一个子视图或特定类型的视图）
-                if ([subview isKindOfClass:[UIView class]] && 
-                    ![subview isKindOfClass:[UILabel class]] && 
-                    ![subview isKindOfClass:[UIImageView class]] &&
-                    ![subview isKindOfClass:[UIButton class]]) {
-                    subview.alpha = alphaValue;
-                }
-            }
-            
-            // 设置自身的背景色透明度
-            UIColor *backgroundColor = self.backgroundColor;
-            if (backgroundColor) {
-                CGFloat r, g, b, a;
-                [backgroundColor getRed:&r green:&g blue:&b alpha:&a];
-                self.backgroundColor = [UIColor colorWithRed:r green:g blue:b alpha:alphaValue * a];
-            }
-        }
-    }
 }
 %end
 
