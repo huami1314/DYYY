@@ -558,14 +558,21 @@
     
     // 判断是哪种情况
     BOOL isHomePage = [delegatePointerString containsString:@"deadb33f"];
-    BOOL isUserProfile = ![delegatePointerString containsString:@"deadb33f"] && 
-                          [delegatePointerString hasPrefix:@"0x28"] && 
-                          ![delegatePointerString hasPrefix:@"0x286"];
-    BOOL isOtherProfile = ![delegatePointerString containsString:@"deadb33f"] && 
-                           [delegatePointerString hasPrefix:@"0x286"];
     
-    // 如果是其他作品图片，直接返回
-    if (isOtherProfile) return;
+    // 检查是否是作者主页作品图片
+    BOOL isUserProfile = NO;
+    if (!isHomePage && [delegatePointerString hasPrefix:@"0x28"]) {
+        // 确保地址格式为 0x28X... 其中 X 是一个字母
+        if (delegatePointerString.length >= 5) {
+            unichar fifthChar = [delegatePointerString characterAtIndex:4];
+            if (isalpha(fifthChar)) {
+                isUserProfile = YES;
+            }
+        }
+    }
+    
+    // 如果既不是作者主页也不是首页，直接返回
+    if (!isUserProfile && !isHomePage) return;
     
     // 作者主页逻辑
     if (isUserProfile) {
