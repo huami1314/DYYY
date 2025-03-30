@@ -3815,14 +3815,8 @@ static BOOL isDownloadFlied = NO;
     BOOL hideEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTopBarBadge"];
 
     if (hideEnabled) {
-        // 启用隐藏功能时的逻辑
-        // --------------------------------------
-        // 方案1：完全阻断徽章创建（推荐）
+        // 阻断徽章创建
         return nil;  // 返回 nil 阻止视图生成
-        
-        // 方案2：返回空视图（兼容性更强）
-        // UIView *dummyView = [[UIView alloc] initWithFrame:CGRectZero];
-        // return dummyView;
     } else {
         // 未启用隐藏功能时正常显示
         return %orig(style, config, count, text);
