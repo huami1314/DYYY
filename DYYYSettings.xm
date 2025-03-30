@@ -465,8 +465,7 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                 NSArray *appearanceSettings = @[
                     @{@"identifier": @"DYYYEnableDanmuColor", @"title": @"启用弹幕改色", @"detail": @"", @"cellType": @6, @"imageName": @"ic_dansquare_outlined_20"},
                     @{@"identifier": @"DYYYdanmuColor", @"title": @"自定弹幕颜色", @"detail": @"十六进制", @"cellType": @26, @"imageName": @"ic_dansquarenut_outlined_20"},
-                    @{@"identifier": @"DYYYLabelColor", @"title": @"时间标签颜色", @"detail": @"十六进制", @"cellType": @26, @"imageName": @"ic_clock_outlined_20"},
-               ];
+                ];
                 
                 for (NSDictionary *dict in appearanceSettings) {
                     AWESettingItemModel *item = [self createSettingItem:dict cellTapHandlers:cellTapHandlers];
@@ -478,11 +477,13 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                 NSArray *videoSettings = @[
                     @{@"identifier": @"DYYYisShowScheduleDisplay", @"title": @"显示进度时长", @"detail": @"", @"cellType": @6, @"imageName": @"ic_playertime_outlined_20"},
                     @{@"identifier": @"DYYYScheduleStyle", @"title": @"进度时长样式", @"detail": @"", @"cellType": @26, @"imageName": @"ic_playertime_outlined_20"},
-                    @{@"identifier": @"DYYYTimelineVerticalPosition", @"title": @"时长纵轴位置", @"detail": @"-12.5", @"cellType": @26, @"imageName": @"ic_playertime_outlined_20"},
+                    @{@"identifier": @"DYYYProgressLabelColor", @"title": @"进度标签颜色", @"detail": @"十六进制", @"cellType": @26, @"imageName": @"ic_playertime_outlined_20"},
+                    @{@"identifier": @"DYYYTimelineVerticalPosition", @"title": @"进度纵轴位置", @"detail": @"-12.5", @"cellType": @26, @"imageName": @"ic_playertime_outlined_20"},
                     @{@"identifier": @"DYYYHideVideoProgress", @"title": @"隐藏视频进度", @"detail": @"", @"cellType": @6, @"imageName": @"ic_playertime_outlined_20"},
                     @{@"identifier": @"DYYYisEnableAutoPlay", @"title": @"启用自动播放", @"detail": @"", @"cellType": @6, @"imageName": @"ic_play_outlined_12"},
                     @{@"identifier": @"DYYYDefaultSpeed", @"title": @"设置默认倍速", @"detail": @"", @"cellType": @26, @"imageName": @"ic_speed_outlined_20"},
-                    @{@"identifier": @"DYYYisEnableArea", @"title": @"时间属地显示", @"detail": @"", @"cellType": @6, @"imageName": @"ic_location_outlined_20"}
+                    @{@"identifier": @"DYYYisEnableArea", @"title": @"时间属地显示", @"detail": @"", @"cellType": @6, @"imageName": @"ic_location_outlined_20"},
+                    @{@"identifier": @"DYYYLabelColor", @"title": @"属地标签颜色", @"detail": @"十六进制", @"cellType": @26, @"imageName": @"ic_location_outlined_20"}
                 ];
                 
                 for (NSDictionary *dict in videoSettings) {
@@ -717,7 +718,7 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                 // 【标题自定义】分类
                 NSMutableArray<AWESettingItemModel *> *titleItems = [NSMutableArray array];
                 NSArray *titleSettings = @[
-                    @{@"identifier": @"DYYYIndexTitle", @"title": @"设置首页标题", @"detail": @"不填默认", @"cellType": @26, @"imageName": @"ic_horizontalbook_outlined_20"},
+                    @{@"identifier": @"DYYYIndexTitle", @"title": @"设置首页标题", @"detail": @"不填默认", @"cellType": @26, @"imageName": @"ic_squaretriangle_outlined_20"},
                     @{@"identifier": @"DYYYFriendsTitle", @"title": @"设置朋友标题", @"detail": @"不填默认", @"cellType": @26, @"imageName": @"ic_usertwo_outlined_20"},
                     @{@"identifier": @"DYYYMsgTitle", @"title": @"设置消息标题", @"detail": @"不填默认", @"cellType": @26, @"imageName": @"ic_msg_outlined_20"},
                     @{@"identifier": @"DYYYSelfTitle", @"title": @"设置我的标题", @"detail": @"不填默认", @"cellType": @26, @"imageName": @"ic_user_outlined_20"},
@@ -1448,6 +1449,7 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
 }
 
 %new
+%new
 - (void)applyDependencyRulesForItem:(AWESettingItemModel *)item {
     // 处理依赖关系
     if ([item.identifier isEqualToString:@"DYYYdanmuColor"]) {
@@ -1479,6 +1481,19 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
         // 接口保存功能依赖于接口解析URL是否设置
         NSString *interfaceUrl = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYInterfaceDownload"];
         item.isEnable = (interfaceUrl != nil && interfaceUrl.length > 0);
+    }
+    // 新增依赖关系
+    else if ([item.identifier isEqualToString:@"DYYYLabelColor"]) {
+        // 属地标签颜色依赖于时间属地显示开关
+        BOOL isEnabled = getUserDefaults(@"DYYYisEnableArea");
+        item.isEnable = isEnabled;
+    }
+    else if ([item.identifier isEqualToString:@"DYYYScheduleStyle"] || 
+             [item.identifier isEqualToString:@"DYYYProgressLabelColor"] || 
+             [item.identifier isEqualToString:@"DYYYTimelineVerticalPosition"]) {
+        // 进度时长相关设置依赖于显示进度时长开关
+        BOOL isEnabled = getUserDefaults(@"DYYYisShowScheduleDisplay");
+        item.isEnable = isEnabled;
     }
 }
 
@@ -1519,6 +1534,15 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
             setUserDefaults(@(NO), @"DYYYEnableDoubleOpenComment");
             [self updateDependentItemsForSetting:@"DYYYEnableDoubleOpenComment" value:@(NO)];
         }
+    }
+    // 新增依赖处理
+    else if ([identifier isEqualToString:@"DYYYisEnableArea"]) {
+        // 更新对应的属地标签颜色设置的启用状态
+        [self updateDependentItemsForSetting:identifier value:@(isEnabled)];
+    }
+    else if ([identifier isEqualToString:@"DYYYisShowScheduleDisplay"]) {
+        // 更新对应的进度时长相关设置的启用状态
+        [self updateDependentItemsForSetting:identifier value:@(isEnabled)];
     }
     
     // 刷新表格视图以反映状态变化
@@ -1579,6 +1603,17 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                 if ([value boolValue]) {
                     item.isSwitchOn = NO;
                 }
+            }
+            // 新增更新逻辑
+            else if ([identifier isEqualToString:@"DYYYisEnableArea"] && 
+                     [item.identifier isEqualToString:@"DYYYLabelColor"]) {
+                item.isEnable = [value boolValue];
+            }
+            else if ([identifier isEqualToString:@"DYYYisShowScheduleDisplay"] && 
+                    ([item.identifier isEqualToString:@"DYYYScheduleStyle"] || 
+                     [item.identifier isEqualToString:@"DYYYProgressLabelColor"] || 
+                     [item.identifier isEqualToString:@"DYYYTimelineVerticalPosition"])) {
+                item.isEnable = [value boolValue];
             }
         }
     }

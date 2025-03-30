@@ -1840,6 +1840,13 @@
         BOOL showRemainingTime = [scheduleStyle isEqualToString:@"进度条右侧剩余"];
         BOOL showCompleteTime = [scheduleStyle isEqualToString:@"进度条右侧完整"];
         
+        // 获取用户设置的时间标签颜色
+        NSString *labelColorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYProgressLabelColor"];
+        UIColor *labelColor = [UIColor whiteColor]; // 默认白色
+        if (labelColorHex && labelColorHex.length > 0) {
+            labelColor = [DYYYManager colorWithHexString:labelColorHex];
+        }
+        
         // 只有在非"进度条右侧剩余"和非"进度条右侧完整"模式时创建左侧时间标签
         if (!showRemainingTime && !showCompleteTime) {
             // 创建左侧时间标签
@@ -1849,7 +1856,7 @@
                                          50, 15);
             leftLabel.backgroundColor = [UIColor clearColor];
             [leftLabel setText:@"00:00"];
-            [leftLabel setTextColor:[UIColor whiteColor]];
+            [leftLabel setTextColor:labelColor];
             [leftLabel setFont:[UIFont systemFontOfSize:8]];
             leftLabel.tag = 10001;
             [parentView addSubview:leftLabel];
@@ -1870,7 +1877,7 @@
             [rightLabel setText:showRemainingTime ? @"00:00" : duration];
         }
         rightLabel.backgroundColor = [UIColor clearColor];
-        [rightLabel setTextColor:[UIColor whiteColor]];
+        [rightLabel setTextColor:labelColor];
         [rightLabel setFont:[UIFont systemFontOfSize:8]];
         rightLabel.tag = 10002;
         [parentView addSubview:rightLabel];
@@ -1927,6 +1934,13 @@
         UILabel *leftLabel = [parentView viewWithTag:10001];
         UILabel *rightLabel = [parentView viewWithTag:10002];
         
+        // 获取用户设置的时间标签颜色
+        NSString *labelColorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYProgressLabelColor"];
+        UIColor *labelColor = [UIColor whiteColor]; // 默认白色
+        if (labelColorHex && labelColorHex.length > 0) {
+            labelColor = [DYYYManager colorWithHexString:labelColorHex];
+        }
+        
         // 获取显示样式设置
         NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
         BOOL showRemainingTime = [scheduleStyle isEqualToString:@"进度条右侧剩余"];
@@ -1935,6 +1949,7 @@
         //如果检测到时间
         if (arg1 > 0 && leftLabel) {
             [leftLabel setText:[self formatTimeFromSeconds:arg1]];
+            [leftLabel setTextColor:labelColor];
         }
         if (arg2 > 0 && rightLabel) {
             if (showRemainingTime) {
@@ -1948,6 +1963,7 @@
             } else {
                 [rightLabel setText:[self formatTimeFromSeconds:arg2]];
             }
+            [rightLabel setTextColor:labelColor];
         }
     }
 }
