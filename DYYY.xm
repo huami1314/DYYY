@@ -110,14 +110,6 @@
         CGFloat alphaValue = [transparentValue floatValue];
         if (alphaValue >= 0.0 && alphaValue <= 1.0) {
             %orig(alphaValue);
-            
-            // 更简单的方法：直接设置所有子视图的透明度
-            for (UIView *subview in self.subviews) {
-                if (![subview isKindOfClass:[UILabel class]] && 
-                    ![subview isKindOfClass:[UIImageView class]]) {
-                    subview.alpha = alphaValue;
-                }
-            }
         } else {
             %orig(1.0);
         }
@@ -136,6 +128,68 @@
     }
     
     return [self findViewController:vc.presentedViewController ofClass:targetClass];
+}
+%end
+// 添加一个新的钩子来处理顶栏背景
+%hook AWEHPTopBar
+- (void)layoutSubviews {
+    %orig;
+    
+    NSString *transparentValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYtopbartransparent"];
+    if (transparentValue && transparentValue.length > 0) {
+        CGFloat alphaValue = [transparentValue floatValue];
+        if (alphaValue >= 0.0 && alphaValue <= 1.0) {
+            // 查找背景视图并设置透明度
+            for (UIView *subview in self.subviews) {
+                // 如果是背景视图（通常是第一个子视图或特定类型的视图）
+                if ([subview isKindOfClass:[UIView class]] && 
+                    ![subview isKindOfClass:[UILabel class]] && 
+                    ![subview isKindOfClass:[UIImageView class]] &&
+                    ![subview isKindOfClass:[UIButton class]]) {
+                    subview.alpha = alphaValue;
+                }
+            }
+            
+            // 设置自身的背景色透明度
+            UIColor *backgroundColor = self.backgroundColor;
+            if (backgroundColor) {
+                CGFloat r, g, b, a;
+                [backgroundColor getRed:&r green:&g blue:&b alpha:&a];
+                self.backgroundColor = [UIColor colorWithRed:r green:g blue:b alpha:alphaValue * a];
+            }
+        }
+    }
+}
+%end
+// 处理顶栏内的标签容器
+%hook AWEHPTopTabBar
+- (void)layoutSubviews {
+    %orig;
+    
+    NSString *transparentValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYtopbartransparent"];
+    if (transparentValue && transparentValue.length > 0) {
+        CGFloat alphaValue = [transparentValue floatValue];
+        if (alphaValue >= 0.0 && alphaValue <= 1.0) {
+            // 查找背景视图并设置透明度
+            for (UIView *subview in self.subviews) {
+                // 如果是背景视图（通常是第一个子视图或特定类型的视图）
+                if ([subview isKindOfClass:[UIView class]] && 
+                    ![subview isKindOfClass:[UILabel class]] && 
+                    ![subview isKindOfClass:[UIImageView class]] &&
+                    ![subview isKindOfClass:[UIButton class]]) {
+                    subview.alpha = alphaValue;
+                }
+            }
+            
+            // 设置自身的背景色透明度
+            UIColor *backgroundColor = self.backgroundColor;
+            if (backgroundColor) {
+                CGFloat r, g, b, a;
+                [backgroundColor getRed:&r green:&g blue:&b alpha:&a];
+                self.backgroundColor = [UIColor colorWithRed:r green:g blue:b alpha:alphaValue * a];
+            }
+        }
+    }
 }
 %end
 
