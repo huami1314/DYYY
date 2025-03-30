@@ -539,82 +539,40 @@
 - (void)layoutSubviews {
     %orig;
     
+    // 添加调试标识符
+    static NSInteger viewCounter = 0;
+    NSString *viewID = objc_getAssociatedObject(self, "viewID");
+    if (!viewID) {
+        viewCounter++;
+        viewID = [NSString stringWithFormat:@"AWEStoryView_%ld", (long)viewCounter];
+        objc_setAssociatedObject(self, "viewID", viewID, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    }
+    
+    // 添加调试按钮（只添加一次）
+    UIButton *debugButton = objc_getAssociatedObject(self, "debugButton");
+    if (!debugButton) {
+        debugButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        debugButton.frame = CGRectMake(10, 10, 40, 40);
+        debugButton.backgroundColor = [UIColor colorWithRed:1.0 green:0.0 blue:0.0 alpha:0.5];
+        debugButton.layer.cornerRadius = 20;
+        [debugButton setTitle:@"i" forState:UIControlStateNormal];
+        [debugButton addTarget:self action:@selector(debugButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
+        [self addSubview:debugButton];
+        objc_setAssociatedObject(self, "debugButton", debugButton, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    }
+    
+    // 继续原来的逻辑...
     // 检查子视图数量，如果只有两个，直接返回
     if ([self.subviews count] == 2) return;
     
-    // 获取 throughDelegate 属性
-    id throughDelegate = nil;
-    @try {
-        throughDelegate = [self valueForKey:@"throughDelegate"];
-    } @catch (NSException *exception) {
-        // 忽略
-    }
+    // 获取之前标记的视图类型
+    NSString *viewType = objc_getAssociatedObject(self, "viewType");
     
-    // 如果 throughDelegate 为 nil，直接返回
-    if (throughDelegate == nil) return;
-    
-    // 获取 throughDelegate 的地址字符串
-    NSString *delegatePointerString = [NSString stringWithFormat:@"%p", throughDelegate];
-    
-    // 判断是哪种情况
-    BOOL isHomePage = [delegatePointerString containsString:@"deadb33f"];
-    
-    // 检查是否是作者主页作品图片
-    BOOL isUserProfile = NO;
-    if (!isHomePage && [delegatePointerString hasPrefix:@"0x28"]) {
-        // 确保地址格式为 0x28X... 其中 X 是一个字母
-        if (delegatePointerString.length >= 5) {
-            unichar fifthChar = [delegatePointerString characterAtIndex:4];
-            if (isalpha(fifthChar)) {
-                isUserProfile = YES;
-            }
-        }
-    }
-    
-    // 如果既不是作者主页也不是首页，直接返回
-    if (!isUserProfile && !isHomePage) return;
-    
-    // 作者主页逻辑
-    if (isUserProfile) {
-        // 检查 enableEnterProfile 属性
-        id enableEnterProfile = nil;
-        @try {
-            enableEnterProfile = [self valueForKey:@"enableEnterProfile"];
-        } @catch (NSException *exception) {
-            // 属性不存在，忽略
-        }
-        
-        // 如果 enableEnterProfile 为 nil 或为 NO，应用调整
-        if (enableEnterProfile == nil || ![enableEnterProfile boolValue]) {
-            for (UIView *subview in self.subviews) {
-                if ([subview isKindOfClass:[UIView class]]) {
-                    CGRect frame = subview.frame;
-                    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-                        frame.size.height = subview.superview.frame.size.height - 83;
-                        subview.frame = frame;
-                    }
-                }
-            }
-        }
-        return;
-    }
-    
-    // 首页逻辑
-    if (isHomePage) {
-        id enableEnterProfile = [self valueForKey:@"enableEnterProfile"];
-        BOOL isHome = (enableEnterProfile != nil && [enableEnterProfile boolValue]);
-        if (!isHome) return; 
-        
+    // 根据标记应用不同的调整
+    if ([viewType isEqualToString:@"authorProfile"]) {
+        // 作者主页作品图片逻辑
         for (UIView *subview in self.subviews) {
             if ([subview isKindOfClass:[UIView class]]) {
-                UIView *nextResponder = (UIView *)subview.nextResponder;
-                if ([nextResponder isKindOfClass:%c(AWEPlayInteractionViewController)]) {
-                    UIViewController *awemeBaseViewController = [nextResponder valueForKey:@"awemeBaseViewController"];
-                    if (![awemeBaseViewController isKindOfClass:%c(AWEFeedCellViewController)]) {
-                        return;
-                    }
-                }
-                
                 CGRect frame = subview.frame;
                 if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
                     frame.size.height = subview.superview.frame.size.height - 83;
@@ -622,7 +580,102 @@
                 }
             }
         }
+    } else if ([viewType isEqualToString:@"recommendedContent"]) {
+        // 推荐作品图片逻辑 - 不做调整
     }
+}
+%new
+- (void)debugButtonTapped:(UIButton *)sender {
+    NSString *viewID = objc_getAssociatedObject(self, "viewID");
+    
+    // 收集视图信息
+    NSMutableString *debugInfo = [NSMutableString string];
+    [debugInfo appendFormat:@"=== Debug Info for %@ ===\n", viewID];
+    [debugInfo appendFormat:@"Class: %@\n", NSStringFromClass([self class])];
+    [debugInfo appendFormat:@"Frame: %@\n", NSStringFromCGRect(self.frame)];
+    [debugInfo appendFormat:@"Superview: %@\n", NSStringFromClass([self.superview class])];
+    [debugInfo appendFormat:@"Subviews count: %lu\n", (unsigned long)self.subviews.count];
+    
+    // 收集视图控制器信息
+    UIViewController *vc = nil;
+    UIResponder *responder = self;
+    while (responder) {
+        responder = [responder nextResponder];
+        if ([responder isKindOfClass:[UIViewController class]]) {
+            vc = (UIViewController *)responder;
+            break;
+        }
+    }
+    
+    if (vc) {
+        [debugInfo appendFormat:@"ViewController: %@\n", NSStringFromClass([vc class])];
+        [debugInfo appendFormat:@"ParentViewController: %@\n", NSStringFromClass([vc.parentViewController class])];
+    }
+    
+    // 收集属性信息
+    [debugInfo appendString:@"\nProperties:\n"];
+    
+    // 尝试获取throughDelegate
+    id throughDelegate = nil;
+    @try {
+        throughDelegate = [self valueForKey:@"throughDelegate"];
+        [debugInfo appendFormat:@"throughDelegate: %@ (%@)\n", 
+                               throughDelegate, 
+                               NSStringFromClass([throughDelegate class])];
+    } @catch (NSException *exception) {
+        [debugInfo appendFormat:@"throughDelegate: Exception - %@\n", exception.reason];
+    }
+    
+    // 尝试获取enableEnterProfile
+    @try {
+        id enableEnterProfile = [self valueForKey:@"enableEnterProfile"];
+        [debugInfo appendFormat:@"enableEnterProfile: %@\n", enableEnterProfile];
+    } @catch (NSException *exception) {
+        [debugInfo appendFormat:@"enableEnterProfile: Exception - %@\n", exception.reason];
+    }
+    
+    // 尝试获取其他可能的属性
+    NSArray *possibleProperties = @[
+        @"dataSource", @"delegate", @"model", @"viewModel", 
+        @"contentType", @"pageType", @"sceneType", @"viewType"
+    ];
+    
+    for (NSString *propName in possibleProperties) {
+        @try {
+            id propValue = [self valueForKey:propName];
+            [debugInfo appendFormat:@"%@: %@\n", propName, propValue];
+        } @catch (NSException *exception) {
+            // 忽略不存在的属性
+        }
+    }
+    
+    // 打印到控制台
+    NSLog(@"%@", debugInfo);
+    
+    // 显示弹窗
+    UIAlertController *alert = [UIAlertController 
+                               alertControllerWithTitle:[NSString stringWithFormat:@"Debug Info (%@)", viewID]
+                               message:debugInfo
+                               preferredStyle:UIAlertControllerStyleAlert];
+    
+    [alert addAction:[UIAlertAction actionWithTitle:@"标记为作者主页" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+        objc_setAssociatedObject(self, "viewType", @"authorProfile", OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        NSLog(@"[%@] 已标记为作者主页", viewID);
+    }]];
+    
+    [alert addAction:[UIAlertAction actionWithTitle:@"标记为推荐作品" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+        objc_setAssociatedObject(self, "viewType", @"recommendedContent", OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        NSLog(@"[%@] 已标记为推荐作品", viewID);
+    }]];
+    
+    [alert addAction:[UIAlertAction actionWithTitle:@"关闭" style:UIAlertActionStyleCancel handler:nil]];
+    
+    UIViewController *topVC = [UIApplication sharedApplication].keyWindow.rootViewController;
+    while (topVC.presentedViewController) {
+        topVC = topVC.presentedViewController;
+    }
+    
+    [topVC presentViewController:alert animated:YES completion:nil];
 }
 %end
 
