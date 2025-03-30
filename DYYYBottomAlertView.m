@@ -45,6 +45,8 @@
         _containerView = [[UIView alloc] initWithFrame:self.bounds];
         _containerView.backgroundColor = [UIColor blackColor];
         _containerView.alpha = 0.0;
+        // 确保容器视图能接收用户交互
+        _containerView.userInteractionEnabled = YES;
         [self addSubview:_containerView];
         
         // 添加点击手势来关闭弹窗
@@ -75,7 +77,7 @@
         
         // 设置弹窗的大小和位置（考虑底部安全区域）
         CGFloat alertWidth = self.bounds.size.width;
-        CGFloat alertHeight = 150 + bottomSafeAreaHeight;
+        CGFloat alertHeight = 170 + bottomSafeAreaHeight;
         _alertView.frame = CGRectMake(0, self.bounds.size.height, alertWidth, alertHeight);
         
         // 创建标题
@@ -116,7 +118,7 @@
         CGFloat padding = 12.0; 
         CGFloat buttonHeight = 44.0; 
         
-        _titleLabel.frame = CGRectMake(padding, padding, alertWidth - padding * 2, 22);
+        _titleLabel.frame = CGRectMake(padding, padding + 8.0, alertWidth - padding * 2, 22);
         _messageLabel.frame = CGRectMake(padding, CGRectGetMaxY(_titleLabel.frame) + padding/3, alertWidth - padding * 2, 40); 
         
         CGFloat buttonWidth = (alertWidth - padding * 3) / 2;
@@ -126,9 +128,30 @@
     return self;
 }
 
+// 添加以下方法确保视图能正确拦截所有触摸事件
+- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event {
+    UIView *hitView = [super hitTest:point withEvent:event];
+    
+    // 如果点击在alertView上，则返回相应的视图
+    if (hitView == self) {
+        // 检查是否点击在alertView区域内
+        CGPoint alertViewPoint = [self convertPoint:point toView:_alertView];
+        if ([_alertView pointInside:alertViewPoint withEvent:event]) {
+            return [_alertView hitTest:alertViewPoint withEvent:event];
+        }
+        // 否则返回containerView以拦截所有其他点击
+        return _containerView;
+    }
+    
+    return hitView;
+}
+
 - (void)show {
     UIWindow *window = [UIApplication sharedApplication].keyWindow;
     [window addSubview:self];
+    
+    // 确保在显示弹窗时设置为最高层级
+    [window bringSubviewToFront:self];
     
     [UIView animateWithDuration:0.2 
                           delay:0 
