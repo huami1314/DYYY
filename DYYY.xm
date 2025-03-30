@@ -561,30 +561,20 @@
     
     // 作者主页逻辑
     if (isUserProfile) {
-        // 检查 enableEnterProfile 属性
-        id enableEnterProfile = nil;
-        @try {
-            enableEnterProfile = [self valueForKey:@"enableEnterProfile"];
-        } @catch (NSException *exception) {
-            // 属性不存在，忽略
-        }
-        
-        // 如果 enableEnterProfile 为 nil 或为 NO，应用调整
-        if (enableEnterProfile == nil || ![enableEnterProfile boolValue]) {
-            for (UIView *subview in self.subviews) {
-                if ([subview isKindOfClass:[UIView class]]) {
-                    CGRect frame = subview.frame;
-                    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-                        frame.size.height = subview.superview.frame.size.height - 83;
-                        subview.frame = frame;
-                    }
+        // 作者主页特定处理
+        for (UIView *subview in self.subviews) {
+            if ([subview isKindOfClass:[UIView class]]) {
+                CGRect frame = subview.frame;
+                if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+                    frame.size.height = subview.superview.frame.size.height - 83;
+                    subview.frame = frame;
                 }
             }
         }
         return;
     }
     
-    // 以下是原有的首页逻辑
+    // 以下是非作者主页的逻辑（首页或其他）
     id enableEnterProfile = [self valueForKey:@"enableEnterProfile"];
     BOOL isHome = (enableEnterProfile != nil && [enableEnterProfile boolValue]);
     if (!isHome) return; 
