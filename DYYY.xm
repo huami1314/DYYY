@@ -120,8 +120,8 @@
     return [self findViewController:vc.presentedViewController ofClass:targetClass];
 }
 %end
-// 添加新的 hook 来专门处理顶栏透明度
-%hook AWEHPTopBarCTAContainer
+// 添加新的 hook 来处理顶栏透明度
+%hook AWEFeedTopBarContainer
 - (void)layoutSubviews {
     %orig;
     [self applyDYYYTransparency];
@@ -141,10 +141,22 @@
     if (transparentValue && transparentValue.length > 0) {
         CGFloat alphaValue = [transparentValue floatValue];
         if (alphaValue >= 0.0 && alphaValue <= 1.0) {
+            // 设置自身背景色的透明度
+            UIColor *backgroundColor = self.backgroundColor;
+            if (backgroundColor) {
+                CGFloat r, g, b, a;
+                if ([backgroundColor getRed:&r green:&g blue:&b alpha:&a]) {
+                    self.backgroundColor = [UIColor colorWithRed:r green:g blue:b alpha:alphaValue * a];
+                }
+            }
+            
             // 使用类型转换确保编译器知道这是一个 UIView
             [(UIView *)self setAlpha:alphaValue];
             
-            // 移除了透明度为0时的特殊处理，避免按钮消失无法点击
+            // 确保子视图不会叠加透明度
+            for (UIView *subview in self.subviews) {
+                subview.alpha = 1.0;
+            }
         }
     }
 }
