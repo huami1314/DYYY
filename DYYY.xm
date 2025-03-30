@@ -535,145 +535,43 @@
 
 %end
 
-// 修复故事容器视图的高度调整
+// 钩子实现
 %hook AWEStoryContainerCollectionView
 - (void)layoutSubviews {
     %orig;
     if ([self.subviews count] == 2) return;
     
+    // 检查是否为主页
     id enableEnterProfile = [self valueForKey:@"enableEnterProfile"];
     BOOL isHome = (enableEnterProfile != nil && [enableEnterProfile boolValue]);
-    if (!isHome) return; 
+    
+    // 检查是否为照片/朋友页面
+    BOOL isPhotosFriendsPage = NO;
+    if ([self.nextResponder isKindOfClass:%c(RichContentNewListViewController)]) {
+        isPhotosFriendsPage = YES;
+    }
+    
+    // 如果既不是主页也不是照片页面，则返回
+    if (!isHome && !isPhotosFriendsPage) return;
+    
     for (UIView *subview in self.subviews) {
         if ([subview isKindOfClass:[UIView class]]) {
-            UIView *nextResponder = (UIView *)subview.nextResponder;
-            if ([nextResponder isKindOfClass:%c(AWEPlayInteractionViewController)]) {
-                UIViewController *awemeBaseViewController = [nextResponder valueForKey:@"awemeBaseViewController"];
-                if (![awemeBaseViewController isKindOfClass:%c(AWEFeedCellViewController)]) {
-                    return;
+            // 处理视频页面
+            if (isHome) {
+                UIView *nextResponder = (UIView *)subview.nextResponder;
+                if ([nextResponder isKindOfClass:%c(AWEPlayInteractionViewController)]) {
+                    UIViewController *awemeBaseViewController = [nextResponder valueForKey:@"awemeBaseViewController"];
+                    if (![awemeBaseViewController isKindOfClass:%c(AWEFeedCellViewController)]) {
+                        continue;
+                    }
                 }
             }
             
-            CGRect frame = subview.frame;
+            // 应用全屏设置
             if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+                CGRect frame = subview.frame;
                 frame.size.height = subview.superview.frame.size.height - 83;
                 subview.frame = frame;
-            }
-        }
-    }
-}
-%end
-// 修复主页图片上移问题
-%hook AWEFeedImageView
-- (void)layoutSubviews {
-    %orig;
-    
-    // 如果不是全屏模式，直接返回
-    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-        return;
-    }
-    
-    // 检查是否是主页图片
-    BOOL isMainPage = NO;
-    
-    // 尝试获取父视图控制器
-    UIResponder *responder = self;
-    UIViewController *parentVC = nil;
-    
-    while (responder) {
-        if ([responder isKindOfClass:[UIViewController class]]) {
-            parentVC = (UIViewController *)responder;
-            break;
-        }
-        responder = [responder nextResponder];
-    }
-    
-    // 检查是否是主页视图控制器
-    if (parentVC && ([parentVC isKindOfClass:%c(AWEFeedTableViewController)] || 
-                     [parentVC isKindOfClass:%c(AWEFeedRootViewController)])) {
-        isMainPage = YES;
-    }
-    
-    // 如果是主页图片，确保不会上移
-    if (isMainPage) {
-        for (UIView *subview in self.subviews) {
-            if ([subview isKindOfClass:[UIView class]]) {
-                CGRect frame = subview.frame;
-                // 修复 -83 的问题
-                if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-                    if (frame.origin.y == -83) {
-                        frame.origin.y = 0;
-                        subview.frame = frame;
-                    }
-                }
-            }
-        }
-        
-        // 确保自身也不会上移
-        CGRect frame = self.frame;
-        // 修复 -83 的问题
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-            if (frame.origin.y == -83) {
-                frame.origin.y = 0;
-                self.frame = frame;
-            }
-        }
-    }
-}
-%end
-// 修复图片相册视图上移问题
-%hook AWEImageAlbumView
-- (void)layoutSubviews {
-    %orig;
-    
-    // 如果不是全屏模式，直接返回
-    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-        return;
-    }
-    
-    // 检查是否是主页图片
-    BOOL isMainPage = NO;
-    
-    // 尝试获取父视图控制器
-    UIResponder *responder = (UIResponder *)self;  // 添加类型转换
-    UIViewController *parentVC = nil;
-    
-    while (responder) {
-        if ([responder isKindOfClass:[UIViewController class]]) {
-            parentVC = (UIViewController *)responder;
-            break;
-        }
-        responder = [responder nextResponder];
-    }
-    
-    // 检查是否是主页视图控制器
-    if (parentVC && ([parentVC isKindOfClass:%c(AWEFeedTableViewController)] || 
-                     [parentVC isKindOfClass:%c(AWEFeedRootViewController)])) {
-        isMainPage = YES;
-    }
-    
-    // 如果是主页图片，确保不会上移
-    if (isMainPage) {
-        for (UIView *subview in self.subviews) {
-            if ([subview isKindOfClass:[UIView class]]) {
-                CGRect frame = subview.frame;
-                // 修复 -83 的问题
-                if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-                    if (frame.origin.y == -83) {
-                        frame.origin.y = 0;
-                        subview.frame = frame;
-                    }
-                }
-            }
-        }
-        
-        // 确保自身也不会上移
-        CGRect frame = self.frame;
-        // 修复 -83 的问题
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-            if (frame.origin.y == -83) {
-                frame.origin.y = 0;
-                self.frame = frame;
             }
         }
     }
