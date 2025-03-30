@@ -539,7 +539,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (void)layoutSubviews;
 @end
 
-@interface AWEFeedContainerContentView (DYYY)
+@interface AWEFeedContainerContentView (DYYYHelper)
 - (void)applyCustomAlphaToTopBar:(CGFloat)alpha;
 - (UIView *)findViewOfClassContaining:(UIView *)view classNameContains:(NSString *)className;
 - (void)applyAlphaToSubviews:(UIView *)view alpha:(CGFloat)alpha;
