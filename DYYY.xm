@@ -535,17 +535,22 @@
 
 %end
 
+// 修复故事容器视图的高度调整
 %hook AWEStoryContainerCollectionView
 - (void)layoutSubviews {
     %orig;
+    
+    // 如果子视图数量为2，可能是图片视图，直接返回
     if ([self.subviews count] == 2) return;
     
+    // 检查是否是主页视图
     id enableEnterProfile = [self valueForKey:@"enableEnterProfile"];
     BOOL isHome = (enableEnterProfile != nil && [enableEnterProfile boolValue]);
     if (!isHome) return; 
-
+    // 遍历子视图进行处理
     for (UIView *subview in self.subviews) {
         if ([subview isKindOfClass:[UIView class]]) {
+            // 检查响应链，判断是否是特定类型的视图
             UIView *nextResponder = (UIView *)subview.nextResponder;
             if ([nextResponder isKindOfClass:%c(AWEPlayInteractionViewController)]) {
                 UIViewController *awemeBaseViewController = [nextResponder valueForKey:@"awemeBaseViewController"];
@@ -554,6 +559,7 @@
                 }
             }
             
+            // 如果启用了全屏模式，调整子视图的高度
             CGRect frame = subview.frame;
             if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
                 frame.size.height = subview.superview.frame.size.height - 83;
@@ -561,6 +567,90 @@
             }
         }
     }
+}
+%end
+// 修复主页图片视图的上移问题
+%hook AWEFeedImageView
+- (void)layoutSubviews {
+    %orig;
+    
+    // 如果不是全屏模式，直接返回
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+        return;
+    }
+    
+    // 检查是否是主页图片
+    BOOL isMainPageImage = NO;
+    
+    // 获取父视图控制器
+    UIViewController *parentVC = [self _viewControllerForView:self];
+    if ([parentVC isKindOfClass:%c(AWEFeedTableViewController)] || 
+        [parentVC isKindOfClass:%c(AWEFeedRootViewController)]) {
+        isMainPageImage = YES;
+    }
+    
+    // 如果是主页图片，确保不会上移
+    if (isMainPageImage) {
+        CGRect frame = self.frame;
+        if (frame.origin.y < 0) {
+            frame.origin.y = 0;
+            self.frame = frame;
+        }
+    }
+}
+// 辅助方法：获取视图的视图控制器
+%new
+- (UIViewController *)_viewControllerForView:(UIView *)view {
+    UIResponder *responder = view;
+    while (responder) {
+        if ([responder isKindOfClass:[UIViewController class]]) {
+            return (UIViewController *)responder;
+        }
+        responder = [responder nextResponder];
+    }
+    return nil;
+}
+%end
+// 修复其他可能的图片视图上移问题
+%hook AWEImageView
+- (void)layoutSubviews {
+    %orig;
+    
+    // 如果不是全屏模式，直接返回
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+        return;
+    }
+    
+    // 检查是否是主页图片
+    BOOL isMainPageImage = NO;
+    
+    // 获取父视图控制器
+    UIViewController *parentVC = [self _viewControllerForView:self];
+    if ([parentVC isKindOfClass:%c(AWEFeedTableViewController)] || 
+        [parentVC isKindOfClass:%c(AWEFeedRootViewController)]) {
+        isMainPageImage = YES;
+    }
+    
+    // 如果是主页图片，确保不会上移
+    if (isMainPageImage) {
+        CGRect frame = self.frame;
+        if (frame.origin.y < 0) {
+            frame.origin.y = 0;
+            self.frame = frame;
+        }
+    }
+}
+// 辅助方法：获取视图的视图控制器
+%new
+- (UIViewController *)_viewControllerForView:(UIView *)view {
+    UIResponder *responder = view;
+    while (responder) {
+        if ([responder isKindOfClass:[UIViewController class]]) {
+            return (UIViewController *)responder;
+        }
+        responder = [responder nextResponder];
+    }
+    return nil;
 }
 %end
 
