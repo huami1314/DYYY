@@ -152,20 +152,6 @@
     if (transparentValue && transparentValue.length > 0) {
         CGFloat alphaValue = [transparentValue floatValue];
         if (alphaValue >= 0.0 && alphaValue <= 1.0) {
-            // 设置所有子视图的透明度
-            for (UIView *subview in self.subviews) {
-                NSString *className = NSStringFromClass([subview class]);
-                
-                // 设置所有容器视图的透明度，包括左侧和右侧
-                if ([className containsString:@"Container"] || 
-                    [className containsString:@"Left"] || 
-                    [className containsString:@"Right"] || 
-                    [className containsString:@"CTA"]) {
-                    
-                    subview.alpha = alphaValue;
-                }
-            }
-            
             // 设置自身背景色的透明度
             UIColor *backgroundColor = self.backgroundColor;
             if (backgroundColor) {
@@ -177,6 +163,11 @@
             
             // 使用类型转换确保编译器知道这是一个 UIView
             [(UIView *)self setAlpha:alphaValue];
+            
+            // 确保子视图不会叠加透明度
+            for (UIView *subview in self.subviews) {
+                subview.alpha = 1.0;
+            }
         }
     }
 }
