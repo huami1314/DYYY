@@ -535,10 +535,12 @@
 
 %end
 
-// 主要的 hook，在一个方法中分别处理首页和作者主页
 %hook AWEStoryContainerCollectionView
 - (void)layoutSubviews {
     %orig;
+    
+    // 检查子视图数量，如果只有两个，直接返回
+    if ([self.subviews count] == 2) return;
     
     // 检查是否是作者主页
     id throughDelegate = nil;
@@ -557,25 +559,32 @@
         }
     }
     
+    // 作者主页逻辑
     if (isUserProfile) {
-        // 作者主页逻辑
-        if ([self.subviews count] == 2) return;
+        // 检查 enableEnterProfile 属性
+        id enableEnterProfile = nil;
+        @try {
+            enableEnterProfile = [self valueForKey:@"enableEnterProfile"];
+        } @catch (NSException *exception) {
+            // 属性不存在，忽略
+        }
         
-        for (UIView *subview in self.subviews) {
-            if ([subview isKindOfClass:[UIView class]]) {
-                CGRect frame = subview.frame;
-                if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-                    frame.size.height = subview.superview.frame.size.height - 83;
-                    subview.frame = frame;
+        // 如果 enableEnterProfile 为 nil 或为 NO，应用调整
+        if (enableEnterProfile == nil || ![enableEnterProfile boolValue]) {
+            for (UIView *subview in self.subviews) {
+                if ([subview isKindOfClass:[UIView class]]) {
+                    CGRect frame = subview.frame;
+                    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+                        frame.size.height = subview.superview.frame.size.height - 83;
+                        subview.frame = frame;
+                    }
                 }
             }
         }
         return;
     }
     
-    // 以下是原有的首页逻辑，完全不变
-    if ([self.subviews count] == 2) return;
-    
+    // 以下是原有的首页逻辑
     id enableEnterProfile = [self valueForKey:@"enableEnterProfile"];
     BOOL isHome = (enableEnterProfile != nil && [enableEnterProfile boolValue]);
     if (!isHome) return; 
