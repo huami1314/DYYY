@@ -545,3 +545,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWEHPTopBarCTAContainer (DYYYTransparency)
 - (void)applyDYYYTransparency;
 @end
+
+@interface AWEHPTopBarLeftContainer (DYYYTransparency)
+- (void)applyDYYYTransparency;
+@end
