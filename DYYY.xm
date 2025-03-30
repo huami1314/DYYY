@@ -1495,61 +1495,18 @@
 
 %end
 
-%hook UITextInputTraits
-- (void)setKeyboardAppearance:(UIKeyboardAppearance)appearance {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisDarkKeyBoard"]) {
-        %orig(UIKeyboardAppearanceDark);
-    }else {
-        %orig;
-    }
-}
-%end
-
-%hook AWECommentMiniEmoticonPanelView
-
-- (void)layoutSubviews {
-    %orig;
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisDarkKeyBoard"]) {
-        
-        for (UIView *subview in self.subviews) {
-            if ([subview isKindOfClass:[UICollectionView class]]) {
-                subview.backgroundColor = [UIColor colorWithRed:115/255.0 green:115/255.0 blue:115/255.0 alpha:1.0];
-            }
-        }
-    }
-}
-%end
-
-%hook AWECommentPublishGuidanceView
-
-- (void)layoutSubviews {
-    %orig;
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisDarkKeyBoard"]) {
-        
-        for (UIView *subview in self.subviews) {
-            if ([subview isKindOfClass:[UICollectionView class]]) {
-                subview.backgroundColor = [UIColor colorWithRed:115/255.0 green:115/255.0 blue:115/255.0 alpha:1.0];
-            }
-        }
-    }
-}
-%end
-
 %hook UIView
 - (void)layoutSubviews {
     %orig;
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisDarkKeyBoard"]) {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"]) {
         for (UIView *subview in self.subviews) {
             if ([subview isKindOfClass:NSClassFromString(@"AWECommentInputViewSwiftImpl.CommentInputViewMiddleContainer")]) {
                 for (UIView *innerSubview in subview.subviews) {
                     if ([innerSubview isKindOfClass:[UIView class]]) {
-                        innerSubview.backgroundColor = [UIColor colorWithRed:31/255.0 green:33/255.0 blue:35/255.0 alpha:1.0];
+                        innerSubview.backgroundColor = [UIColor clearColor];
                         break;
                     }
                 }
-            }
-            if ([subview isKindOfClass:NSClassFromString(@"AWEIMEmoticonPanelBoxView")]) {
-                subview.backgroundColor = [UIColor colorWithRed:33/255.0 green:33/255.0 blue:33/255.0 alpha:1.0];
             }
         }
     }
@@ -1587,63 +1544,6 @@
         }
     }
 }
-%end
-
-%hook UILabel
-
-- (void)setText:(NSString *)text {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisDarkKeyBoard"]) {
-        if ([text hasPrefix:@"善语"] || [text hasPrefix:@"友爱评论"] || [text hasPrefix:@"回复"]) {
-            self.textColor = [UIColor colorWithRed:125/255.0 green:125/255.0 blue:125/255.0 alpha:0.6];
-        }
-    }
-    %orig;
-}
-
-%end
-
-%hook UIButton
-
-- (void)setImage:(UIImage *)image forState:(UIControlState)state {
-    NSString *label = self.accessibilityLabel;
-//    NSLog(@"Label -> %@",accessibilityLabel);
-    if ([label isEqualToString:@"表情"] || [label isEqualToString:@"at"] || [label isEqualToString:@"图片"] || [label isEqualToString:@"键盘"]) {
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisDarkKeyBoard"]) {
-            
-            UIImage *whiteImage = [image imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-            
-            self.tintColor = [UIColor whiteColor];
-            
-            %orig(whiteImage, state);
-        }else {
-            %orig(image, state);
-        }
-    } else {
-        %orig(image, state);
-    }
-}
-
-%end
-
-%hook AWETextViewInternal
-
-- (void)drawRect:(CGRect)rect {
-    %orig(rect);
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisDarkKeyBoard"]) {
-        
-        self.textColor = [UIColor whiteColor];
-    }
-}
-
-- (double)lineSpacing {
-    double r = %orig;
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisDarkKeyBoard"]) {
-        
-        self.textColor = [UIColor whiteColor];
-    }
-    return r;
-}
-
 %end
 
 %hook AWEPlayInteractionUserAvatarElement
