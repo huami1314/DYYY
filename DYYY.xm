@@ -635,7 +635,7 @@
     BOOL isMainPage = NO;
     
     // 尝试获取父视图控制器
-    UIResponder *responder = self;
+    UIResponder *responder = (UIResponder *)self;  // 添加类型转换
     UIViewController *parentVC = nil;
     
     while (responder) {
