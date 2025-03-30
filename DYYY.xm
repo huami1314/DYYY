@@ -56,9 +56,6 @@
 }
 %end
 
-@interface AWEHPTopBarCTAContainer : UIView
-- (void)applyDYYYTransparency;  // 声明方法
-@end
 %hook AWEFeedContainerContentView
 - (void)setAlpha:(CGFloat)alpha {
     // 纯净模式功能保持不变
