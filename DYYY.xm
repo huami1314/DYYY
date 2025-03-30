@@ -131,7 +131,7 @@
     return [self findViewController:vc.presentedViewController ofClass:targetClass];
 }
 %end
-// 添加新的 hook 来专门处理顶栏透明度
+// 添加新的 hook 来专门处理右侧顶栏透明度
 %hook AWEHPTopBarCTAContainer
 - (void)layoutSubviews {
     %orig;
@@ -154,8 +154,33 @@
         if (alphaValue >= 0.0 && alphaValue <= 1.0) {
             // 使用类型转换确保编译器知道这是一个 UIView
             [(UIView *)self setAlpha:alphaValue];
-            
-            // 移除了透明度为0时的特殊处理，避免按钮消失无法点击
+        }
+    }
+}
+%end
+// 添加新的 hook 来处理左侧顶栏透明度
+%hook AWEHPTopBarLeftContainer
+- (void)layoutSubviews {
+    %orig;
+    [self applyDYYYTransparency];
+}
+- (void)didMoveToSuperview {
+    %orig;
+    [self applyDYYYTransparency];
+}
+%new
+- (void)applyDYYYTransparency {
+    // 如果启用了纯净模式，不做任何处理
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnablePure"]) {
+        return;
+    }
+    
+    NSString *transparentValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYtopbartransparent"];
+    if (transparentValue && transparentValue.length > 0) {
+        CGFloat alphaValue = [transparentValue floatValue];
+        if (alphaValue >= 0.0 && alphaValue <= 1.0) {
+            // 使用类型转换确保编译器知道这是一个 UIView
+            [(UIView *)self setAlpha:alphaValue];
         }
     }
 }
