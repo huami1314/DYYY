@@ -1,6 +1,10 @@
 #import <UIKit/UIKit.h>
 #import "AwemeHeaders.h"
 
+@interface AWEUIThemeManager : NSObject
+@property (nonatomic, assign) BOOL isLightTheme;
+@end
+
 @interface DYYYManager : NSObject
 //存储文件类行
 @property (nonatomic, strong) NSMutableDictionary *fileLinks; 
@@ -24,5 +28,6 @@
 + (void)downloadAllImages:(NSMutableArray *)imageURLs;
 + (void)downloadAllImagesWithProgress:(NSMutableArray *)imageURLs progress:(void (^)(NSInteger current, NSInteger total))progressBlock completion:(void (^)(NSInteger successCount, NSInteger totalCount))completion;
 - (void)saveLivePhoto:(NSString *)imageSourcePath videoUrl:(NSString *)videoSourcePath;
-
+//获取主题状态
++ (BOOL)isDarkMode;
 @end 

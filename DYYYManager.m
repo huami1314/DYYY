@@ -228,53 +228,66 @@
 }
 
 + (UIColor *)colorWithHexString:(NSString *)hexString {
-    if ([[hexString lowercaseString] isEqualToString:@"random"] || 
-        [[hexString lowercaseString] isEqualToString:@"#random"]) {
-        CGFloat red = arc4random_uniform(200) / 255.0;
-        CGFloat green = arc4random_uniform(200) / 255.0;
-        CGFloat blue = arc4random_uniform(128) / 255.0;
-        CGFloat alpha = 1;
-        return [UIColor colorWithRed:red green:green blue:blue alpha:alpha];
+    // 处理随机颜色的情况
+    if ([hexString.lowercaseString isEqualToString:@"random"] || [hexString.lowercaseString isEqualToString:@"#random"]) {
+        return [UIColor colorWithRed:(CGFloat)arc4random_uniform(256)/255.0 
+                              green:(CGFloat)arc4random_uniform(256)/255.0 
+                               blue:(CGFloat)arc4random_uniform(256)/255.0 
+                              alpha:1.0];
     }
     
-    NSString *colorString = hexString;
-    if ([hexString hasPrefix:@"#"]) {
-        colorString = [hexString substringFromIndex:1];
-    }
-    
-    if (colorString.length == 3) {
-        NSString *r = [colorString substringWithRange:NSMakeRange(0, 1)];
-        NSString *g = [colorString substringWithRange:NSMakeRange(1, 1)];
-        NSString *b = [colorString substringWithRange:NSMakeRange(2, 1)];
-        colorString = [NSString stringWithFormat:@"%@%@%@%@%@%@", r, r, g, g, b, b];
-    }
-    
-    if (colorString.length == 6) {
-        unsigned int hexValue = 0;
-        NSScanner *scanner = [NSScanner scannerWithString:colorString];
-        [scanner scanHexInt:&hexValue];
-        
-        CGFloat red = ((hexValue & 0xFF0000) >> 16) / 255.0;
-        CGFloat green = ((hexValue & 0x00FF00) >> 8) / 255.0;
-        CGFloat blue = (hexValue & 0x0000FF) / 255.0;
-        
-        return [UIColor colorWithRed:red green:green blue:blue alpha:1.0];
-    }
+    // 去掉"#"前缀并转为大写
+    NSString *colorString = [[hexString stringByReplacingOccurrencesOfString:@"#" withString:@""] uppercaseString];
+    CGFloat alpha = 1.0;
+    CGFloat red = 0.0;
+    CGFloat green = 0.0;
+    CGFloat blue = 0.0;
     
     if (colorString.length == 8) {
+        // 8位十六进制：AARRGGBB，前两位为透明度
+        NSScanner *scanner = [NSScanner scannerWithString:[colorString substringWithRange:NSMakeRange(0, 2)]];
+        unsigned int alphaValue;
+        [scanner scanHexInt:&alphaValue];
+        alpha = (CGFloat)alphaValue / 255.0;
+        
+        scanner = [NSScanner scannerWithString:[colorString substringWithRange:NSMakeRange(2, 2)]];
+        unsigned int redValue;
+        [scanner scanHexInt:&redValue];
+        red = (CGFloat)redValue / 255.0;
+        
+        scanner = [NSScanner scannerWithString:[colorString substringWithRange:NSMakeRange(4, 2)]];
+        unsigned int greenValue;
+        [scanner scanHexInt:&greenValue];
+        green = (CGFloat)greenValue / 255.0;
+        
+        scanner = [NSScanner scannerWithString:[colorString substringWithRange:NSMakeRange(6, 2)]];
+        unsigned int blueValue;
+        [scanner scanHexInt:&blueValue];
+        blue = (CGFloat)blueValue / 255.0;
+    } else {
+        // 处理常规6位十六进制：RRGGBB
+        NSScanner *scanner = nil;
         unsigned int hexValue = 0;
-        NSScanner *scanner = [NSScanner scannerWithString:colorString];
-        [scanner scanHexInt:&hexValue];
         
-        CGFloat red = ((hexValue & 0xFF000000) >> 24) / 255.0;
-        CGFloat green = ((hexValue & 0x00FF0000) >> 16) / 255.0;
-        CGFloat blue = ((hexValue & 0x0000FF00) >> 8) / 255.0;
-        CGFloat alpha = (hexValue & 0x000000FF) / 255.0;
+        if (colorString.length == 6) {
+            scanner = [NSScanner scannerWithString:colorString];
+        } else if (colorString.length == 3) {
+            // 3位简写格式：RGB
+            NSString *r = [colorString substringWithRange:NSMakeRange(0, 1)];
+            NSString *g = [colorString substringWithRange:NSMakeRange(1, 1)];
+            NSString *b = [colorString substringWithRange:NSMakeRange(2, 1)];
+            colorString = [NSString stringWithFormat:@"%@%@%@%@%@%@", r, r, g, g, b, b];
+            scanner = [NSScanner scannerWithString:colorString];
+        }
         
-        return [UIColor colorWithRed:red green:green blue:blue alpha:alpha];
+        if (scanner && [scanner scanHexInt:&hexValue]) {
+            red = ((hexValue & 0xFF0000) >> 16) / 255.0;
+            green = ((hexValue & 0x00FF00) >> 8) / 255.0;
+            blue = (hexValue & 0x0000FF) / 255.0;
+        }
     }
     
-    return [UIColor whiteColor];
+    return [UIColor colorWithRed:red green:green blue:blue alpha:alpha];
 }
 
 + (void)showToast:(NSString *)text {
@@ -1441,6 +1454,10 @@
             });
         }
     });
+}
+
++ (BOOL)isDarkMode {
+    return [NSClassFromString(@"AWEUIThemeManager") isLightTheme] ? NO : YES;
 }
 
 @end 

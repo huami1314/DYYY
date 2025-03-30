@@ -106,6 +106,9 @@ static void showIconOptionsDialog(NSString *title, UIImage *previewImage, NSStri
 @interface AWESettingsViewModel (DYYYAdditions)
 - (AWESettingItemModel *)createSettingItem:(NSDictionary *)dict;
 - (AWESettingItemModel *)createSettingItem:(NSDictionary *)dict cellTapHandlers:(NSMutableDictionary *)cellTapHandlers;
+- (void)applyDependencyRulesForItem:(AWESettingItemModel *)item;
+- (void)handleConflictsAndDependenciesForSetting:(NSString *)identifier isEnabled:(BOOL)isEnabled;
+- (void)updateDependentItemsForSetting:(NSString *)identifier value:(id)value;
 @end
 
 // 获取顶级视图控制器
@@ -462,8 +465,7 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                 NSArray *appearanceSettings = @[
                     @{@"identifier": @"DYYYEnableDanmuColor", @"title": @"启用弹幕改色", @"detail": @"", @"cellType": @6, @"imageName": @"ic_dansquare_outlined_20"},
                     @{@"identifier": @"DYYYdanmuColor", @"title": @"自定弹幕颜色", @"detail": @"十六进制", @"cellType": @26, @"imageName": @"ic_dansquarenut_outlined_20"},
-                    @{@"identifier": @"DYYYLabelColor", @"title": @"时间标签颜色", @"detail": @"十六进制", @"cellType": @26, @"imageName": @"ic_clock_outlined_20"},
-               ];
+                ];
                 
                 for (NSDictionary *dict in appearanceSettings) {
                     AWESettingItemModel *item = [self createSettingItem:dict cellTapHandlers:cellTapHandlers];
@@ -475,11 +477,13 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                 NSArray *videoSettings = @[
                     @{@"identifier": @"DYYYisShowScheduleDisplay", @"title": @"显示进度时长", @"detail": @"", @"cellType": @6, @"imageName": @"ic_playertime_outlined_20"},
                     @{@"identifier": @"DYYYScheduleStyle", @"title": @"进度时长样式", @"detail": @"", @"cellType": @26, @"imageName": @"ic_playertime_outlined_20"},
-                    @{@"identifier": @"DYYYTimelineVerticalPosition", @"title": @"时长纵轴位置", @"detail": @"-12.5", @"cellType": @26, @"imageName": @"ic_playertime_outlined_20"},
+                    @{@"identifier": @"DYYYProgressLabelColor", @"title": @"进度标签颜色", @"detail": @"十六进制", @"cellType": @26, @"imageName": @"ic_playertime_outlined_20"},
+                    @{@"identifier": @"DYYYTimelineVerticalPosition", @"title": @"进度纵轴位置", @"detail": @"-12.5", @"cellType": @26, @"imageName": @"ic_playertime_outlined_20"},
                     @{@"identifier": @"DYYYHideVideoProgress", @"title": @"隐藏视频进度", @"detail": @"", @"cellType": @6, @"imageName": @"ic_playertime_outlined_20"},
                     @{@"identifier": @"DYYYisEnableAutoPlay", @"title": @"启用自动播放", @"detail": @"", @"cellType": @6, @"imageName": @"ic_play_outlined_12"},
                     @{@"identifier": @"DYYYDefaultSpeed", @"title": @"设置默认倍速", @"detail": @"", @"cellType": @26, @"imageName": @"ic_speed_outlined_20"},
-                    @{@"identifier": @"DYYYisEnableArea", @"title": @"时间属地显示", @"detail": @"", @"cellType": @6, @"imageName": @"ic_location_outlined_20"}
+                    @{@"identifier": @"DYYYisEnableArea", @"title": @"时间属地显示", @"detail": @"", @"cellType": @6, @"imageName": @"ic_location_outlined_20"},
+                    @{@"identifier": @"DYYYLabelColor", @"title": @"属地标签颜色", @"detail": @"十六进制", @"cellType": @26, @"imageName": @"ic_location_outlined_20"}
                 ];
                 
                 for (NSDictionary *dict in videoSettings) {
@@ -552,7 +556,6 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                 // 【杂项设置】分类
                 NSMutableArray<AWESettingItemModel *> *miscellaneousItems = [NSMutableArray array];
                 NSArray *miscellaneousSettings = @[
-                    @{@"identifier": @"DYYYisDarkKeyBoard", @"title": @"启用深色键盘", @"detail": @"", @"cellType": @6, @"imageName": @"ic_keyboard_outlined"},
                     @{@"identifier": @"DYYYisHideStatusbar", @"title": @"隐藏系统顶栏", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
                     @{@"identifier": @"DYYYisEnablePure", @"title": @"启用首页净化", @"detail": @"", @"cellType": @6, @"imageName": @"ic_broom_outlined"},
                     @{@"identifier": @"DYYYisEnableFullScreen", @"title": @"启用首页全屏", @"detail": @"", @"cellType": @6, @"imageName": @"ic_fullscreen_outlined_16"}
@@ -714,7 +717,7 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                 // 【标题自定义】分类
                 NSMutableArray<AWESettingItemModel *> *titleItems = [NSMutableArray array];
                 NSArray *titleSettings = @[
-                    @{@"identifier": @"DYYYIndexTitle", @"title": @"设置首页标题", @"detail": @"不填默认", @"cellType": @26, @"imageName": @"ic_horizontalbook_outlined_20"},
+                    @{@"identifier": @"DYYYIndexTitle", @"title": @"设置首页标题", @"detail": @"不填默认", @"cellType": @26, @"imageName": @"ic_squaretriangle_outlined_20"},
                     @{@"identifier": @"DYYYFriendsTitle", @"title": @"设置朋友标题", @"detail": @"不填默认", @"cellType": @26, @"imageName": @"ic_usertwo_outlined_20"},
                     @{@"identifier": @"DYYYMsgTitle", @"title": @"设置消息标题", @"detail": @"不填默认", @"cellType": @26, @"imageName": @"ic_msg_outlined_20"},
                     @{@"identifier": @"DYYYSelfTitle", @"title": @"设置我的标题", @"detail": @"不填默认", @"cellType": @26, @"imageName": @"ic_user_outlined_20"},
@@ -1314,13 +1317,13 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                 showAboutDialog(@"关于DYYY", 
                     @"版本: v2.2-2\n\n"
                     @"感谢使用DYYY\n\n"
+                    @"感谢huami开源\n\n"
                     @"@维他入我心 基于DYYY二次开发\n\n"
-                    @"Telegram@vita_app\n\n"
-                    @"开源地址@Wtrwx\n\n" 
-                    @"感谢Huami开源\n\n"
-                    @"开源地址@huami1314\n\n"
                     @"感谢huami group中群友的支持赞助\n\n"
-                    @"Telegram@huami group\n\n" , nil);
+                    @"Telegram @huamidev\n\n"
+                    @"Telegram @vita_app\n\n"
+                    @"开源地址 huami1314/DYYY\n\n"
+                    @"仓库地址 Wtrwx/DYYY\n\n" , nil);
             };
             [aboutItems addObject:aboutItem];
             
@@ -1395,15 +1398,19 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
     item.isEnable = YES;
     item.isSwitchOn = getUserDefaults(item.identifier);
     
+    [self applyDependencyRulesForItem:item];
     if (item.cellType == 26 && cellTapHandlers != nil) {
         cellTapHandlers[item.identifier] = ^{
-            // 使用新的方法，传递占位符
+            if (!item.isEnable) return;
+            
             showTextInputAlert(item.title, item.detail, placeholder, ^(NSString *text) {
                 setUserDefaults(text, item.identifier);
-                // 更新item的detail属性
                 item.detail = text;
                 
-                // 查找当前视图控制器并刷新设置表格
+                if ([item.identifier isEqualToString:@"DYYYInterfaceDownload"]) {
+                    [self updateDependentItemsForSetting:@"DYYYInterfaceDownload" value:text];
+                }
+                
                 UIViewController *topVC = topView();
                 if ([topVC isKindOfClass:%c(AWESettingBaseViewController)]) {
                     dispatch_async(dispatch_get_main_queue(), ^{
@@ -1428,13 +1435,186 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
         item.switchChangedBlock = ^{
             __strong AWESettingItemModel *strongItem = weakItem;
             if (strongItem) {
+                if (!strongItem.isEnable) return;
                 BOOL isSwitchOn = !strongItem.isSwitchOn;
                 strongItem.isSwitchOn = isSwitchOn;
                 setUserDefaults(@(isSwitchOn), strongItem.identifier);
+                [self handleConflictsAndDependenciesForSetting:strongItem.identifier isEnabled:isSwitchOn];
             }
         };
     }
     
     return item;
+}
+
+%new
+%new
+- (void)applyDependencyRulesForItem:(AWESettingItemModel *)item {
+    // 处理依赖关系
+    if ([item.identifier isEqualToString:@"DYYYdanmuColor"]) {
+        // 弹幕颜色设置依赖于弹幕改色开关
+        BOOL isEnabled = getUserDefaults(@"DYYYEnableDanmuColor");
+        item.isEnable = isEnabled;
+    } 
+    else if ([item.identifier isEqualToString:@"DYYYCommentBlurTransparent"]) {
+        // 毛玻璃透明度依赖于评论区毛玻璃开关
+        BOOL isEnabled = getUserDefaults(@"DYYYisEnableCommentBlur");
+        item.isEnable = isEnabled;
+    }
+    else if ([item.identifier isEqualToString:@"DYYYShowAllVideoQuality"]) {
+        // 清晰度选项依赖于接口解析URL是否设置
+        NSString *interfaceUrl = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYInterfaceDownload"];
+        item.isEnable = (interfaceUrl != nil && interfaceUrl.length > 0);
+    }
+    else if ([item.identifier isEqualToString:@"DYYYEnableDoubleOpenComment"]) {
+        // 双击打开评论依赖于双击打开菜单未启用
+        BOOL menuEnabled = getUserDefaults(@"DYYYEnableDoubleOpenAlertController");
+        item.isEnable = !menuEnabled;
+    }
+    else if ([item.identifier isEqualToString:@"DYYYEnableDoubleOpenAlertController"]) {
+        // 双击打开菜单依赖于双击打开评论未启用
+        BOOL commentEnabled = getUserDefaults(@"DYYYEnableDoubleOpenComment");
+        item.isEnable = !commentEnabled;
+    }
+    else if ([item.identifier isEqualToString:@"DYYYDoubleInterfaceDownload"]) {
+        // 接口保存功能依赖于接口解析URL是否设置
+        NSString *interfaceUrl = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYInterfaceDownload"];
+        item.isEnable = (interfaceUrl != nil && interfaceUrl.length > 0);
+    }
+    // 新增依赖关系
+    else if ([item.identifier isEqualToString:@"DYYYLabelColor"]) {
+        // 属地标签颜色依赖于时间属地显示开关
+        BOOL isEnabled = getUserDefaults(@"DYYYisEnableArea");
+        item.isEnable = isEnabled;
+    }
+    else if ([item.identifier isEqualToString:@"DYYYScheduleStyle"] || 
+             [item.identifier isEqualToString:@"DYYYProgressLabelColor"] || 
+             [item.identifier isEqualToString:@"DYYYTimelineVerticalPosition"]) {
+        // 进度时长相关设置依赖于显示进度时长开关
+        BOOL isEnabled = getUserDefaults(@"DYYYisShowScheduleDisplay");
+        item.isEnable = isEnabled;
+    }
+}
+
+%new
+- (void)handleConflictsAndDependenciesForSetting:(NSString *)identifier isEnabled:(BOOL)isEnabled {
+    UIViewController *topVC = topView();
+    UITableView *tableView = nil;
+    
+    // 查找当前的表格视图
+    if ([topVC isKindOfClass:%c(AWESettingBaseViewController)]) {
+        for (UIView *subview in topVC.view.subviews) {
+            if ([subview isKindOfClass:[UITableView class]]) {
+                tableView = (UITableView *)subview;
+                break;
+            }
+        }
+    }
+
+    // 处理冲突和依赖关系逻辑
+    if ([identifier isEqualToString:@"DYYYEnableDanmuColor"]) {
+        // 更新对应的弹幕颜色设置的启用状态
+        [self updateDependentItemsForSetting:identifier value:@(isEnabled)];
+    }
+    else if ([identifier isEqualToString:@"DYYYisEnableCommentBlur"]) {
+        // 更新对应的毛玻璃透明度设置的启用状态
+        [self updateDependentItemsForSetting:identifier value:@(isEnabled)];
+    }
+    else if ([identifier isEqualToString:@"DYYYEnableDoubleOpenComment"]) {
+        if (isEnabled) {
+            // 如果启用双击打开评论，禁用双击打开菜单
+            setUserDefaults(@(NO), @"DYYYEnableDoubleOpenAlertController");
+            [self updateDependentItemsForSetting:@"DYYYEnableDoubleOpenAlertController" value:@(NO)];
+        }
+    }
+    else if ([identifier isEqualToString:@"DYYYEnableDoubleOpenAlertController"]) {
+        if (isEnabled) {
+            // 如果启用双击打开菜单，禁用双击打开评论
+            setUserDefaults(@(NO), @"DYYYEnableDoubleOpenComment");
+            [self updateDependentItemsForSetting:@"DYYYEnableDoubleOpenComment" value:@(NO)];
+        }
+    }
+    // 新增依赖处理
+    else if ([identifier isEqualToString:@"DYYYisEnableArea"]) {
+        // 更新对应的属地标签颜色设置的启用状态
+        [self updateDependentItemsForSetting:identifier value:@(isEnabled)];
+    }
+    else if ([identifier isEqualToString:@"DYYYisShowScheduleDisplay"]) {
+        // 更新对应的进度时长相关设置的启用状态
+        [self updateDependentItemsForSetting:identifier value:@(isEnabled)];
+    }
+    
+    // 刷新表格视图以反映状态变化
+    if (tableView) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [tableView reloadData];
+        });
+    }
+}
+
+%new
+- (void)updateDependentItemsForSetting:(NSString *)identifier value:(id)value {
+    // 寻找依赖于指定设置项的其他设置项并更新其状态
+    UIViewController *topVC = topView();
+    if (![topVC isKindOfClass:%c(AWESettingBaseViewController)]) return;
+    
+    AWESettingBaseViewController *settingsVC = (AWESettingBaseViewController *)topVC;
+    AWESettingsViewModel *viewModel = (AWESettingsViewModel *)[settingsVC viewModel];
+    if (!viewModel || ![viewModel respondsToSelector:@selector(sectionDataArray)]) return;
+    
+    NSArray *sectionDataArray = [viewModel sectionDataArray];
+    for (AWESettingSectionModel *section in sectionDataArray) {
+        if (![section respondsToSelector:@selector(itemArray)]) continue;
+        
+        NSArray *itemArray = section.itemArray;
+        for (id itemObj in itemArray) {
+            if (![itemObj isKindOfClass:%c(AWESettingItemModel)]) continue;
+            
+            AWESettingItemModel *item = (AWESettingItemModel *)itemObj;
+            
+            // 更新依赖项状态
+            if ([identifier isEqualToString:@"DYYYEnableDanmuColor"] && [item.identifier isEqualToString:@"DYYYdanmuColor"]) {
+                item.isEnable = [value boolValue];
+            }
+            else if ([identifier isEqualToString:@"DYYYisEnableCommentBlur"] && [item.identifier isEqualToString:@"DYYYCommentBlurTransparent"]) {
+                item.isEnable = [value boolValue];
+            }
+            else if ([identifier isEqualToString:@"DYYYInterfaceDownload"]) {
+                if ([item.identifier isEqualToString:@"DYYYShowAllVideoQuality"] || 
+                    [item.identifier isEqualToString:@"DYYYDoubleInterfaceDownload"]) {
+                    // 对于字符串值，检查是否有内容
+                    if ([value isKindOfClass:[NSString class]]) {
+                        NSString *strValue = (NSString *)value;
+                        item.isEnable = (strValue.length > 0);
+                    }
+                }
+            }
+            else if ([identifier isEqualToString:@"DYYYEnableDoubleOpenAlertController"] && 
+                     [item.identifier isEqualToString:@"DYYYEnableDoubleOpenComment"]) {
+                item.isEnable = ![value boolValue];
+                if ([value boolValue]) {
+                    item.isSwitchOn = NO;
+                }
+            }
+            else if ([identifier isEqualToString:@"DYYYEnableDoubleOpenComment"] && 
+                     [item.identifier isEqualToString:@"DYYYEnableDoubleOpenAlertController"]) {
+                item.isEnable = ![value boolValue];
+                if ([value boolValue]) {
+                    item.isSwitchOn = NO;
+                }
+            }
+            // 新增更新逻辑
+            else if ([identifier isEqualToString:@"DYYYisEnableArea"] && 
+                     [item.identifier isEqualToString:@"DYYYLabelColor"]) {
+                item.isEnable = [value boolValue];
+            }
+            else if ([identifier isEqualToString:@"DYYYisShowScheduleDisplay"] && 
+                    ([item.identifier isEqualToString:@"DYYYScheduleStyle"] || 
+                     [item.identifier isEqualToString:@"DYYYProgressLabelColor"] || 
+                     [item.identifier isEqualToString:@"DYYYTimelineVerticalPosition"])) {
+                item.isEnable = [value boolValue];
+            }
+        }
+    }
 }
 %end
