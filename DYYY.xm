@@ -542,52 +542,83 @@
     // 如果子视图只有2个，直接返回不做处理
     if ([self.subviews count] == 2) return;
     
-    // 获取当前页面上下文信息
-    id enableEnterProfile = [self valueForKey:@"enableEnterProfile"];
-    id previousPage = nil;
-    id searchParams = nil;
-    id tabName = nil;
+    // 尝试获取当前视图的上下文信息
+    BOOL shouldAdjust = NO;
     
-    // 尝试获取更多上下文信息以区分不同场景
+    // 获取当前视图所在的控制器
+    UIViewController *parentVC = nil;
+    UIResponder *responder = self;
+    while ((responder = [responder nextResponder])) {
+        if ([responder isKindOfClass:[UIViewController class]]) {
+            parentVC = (UIViewController *)responder;
+            break;
+        }
+    }
+    
+    // 尝试获取logExtraDict或其他上下文信息
+    NSDictionary *logExtraDict = nil;
+    
     @try {
-        previousPage = [self valueForKey:@"previous_page"];
-        searchParams = [self valueForKey:@"search_params"];
-        tabName = [self valueForKey:@"tab_name"];
+        // 尝试从视图或控制器中获取logExtraDict
+        if ([self respondsToSelector:@selector(valueForKey:)]) {
+            logExtraDict = [self valueForKey:@"logExtraDict"];
+        }
+        
+        if (!logExtraDict && parentVC && [parentVC respondsToSelector:@selector(valueForKey:)]) {
+            logExtraDict = [parentVC valueForKey:@"logExtraDict"];
+        }
+        
+        // 如果还没找到，尝试从AWEAwemeModel中获取
+        if (!logExtraDict) {
+            // 尝试获取当前的awemeModel
+            id awemeModel = nil;
+            if ([self respondsToSelector:@selector(valueForKey:)]) {
+                awemeModel = [self valueForKey:@"awemeModel"];
+            }
+            
+            if (!awemeModel && parentVC && [parentVC respondsToSelector:@selector(valueForKey:)]) {
+                awemeModel = [parentVC valueForKey:@"awemeModel"];
+            }
+            
+            if (awemeModel && [awemeModel respondsToSelector:@selector(valueForKey:)]) {
+                logExtraDict = [awemeModel valueForKey:@"logExtraDict"];
+            }
+        }
     } @catch (NSException *exception) {
         // 忽略可能的异常
     }
     
-    // 判断是否为搜索页面
-    BOOL isSearch = (searchParams != nil && [searchParams isKindOfClass:[NSDictionary class]] && 
-                    [searchParams[@"enter_from"] isEqualToString:@"general_search"]);
+    // 根据logExtraDict判断页面类型
+    if (logExtraDict) {
+        NSString *previousPage = logExtraDict[@"previous_page"];
+        NSDictionary *searchParams = logExtraDict[@"search_params"];
+        
+        // 判断是否为推荐页面
+        BOOL isRecommend = (previousPage && [previousPage isEqualToString:@"homepage_hot"]);
+        
+        // 判断是否为搜索页面
+        BOOL isSearch = (searchParams && [searchParams isKindOfClass:[NSDictionary class]] && 
+                        searchParams[@"enter_from"] && 
+                        [searchParams[@"enter_from"] isEqualToString:@"general_search"]);
+        
+        // 判断是否为作者主页
+        BOOL isAuthorPage = (previousPage && ([previousPage isEqualToString:@"following"] || 
+                                             [previousPage isEqualToString:@"user_profile"]));
+        
+        // 确定是否应该调整
+        shouldAdjust = (isSearch || isAuthorPage) && !isRecommend;
+    } else {
+        // 如果无法获取logExtraDict，尝试使用原来的方法
+        id enableEnterProfile = [self valueForKey:@"enableEnterProfile"];
+        shouldAdjust = (enableEnterProfile != nil && [enableEnterProfile boolValue]);
+    }
     
-    // 判断是否为推荐页面
-    BOOL isRecommend = (previousPage != nil && [previousPage isEqualToString:@"homepage_hot"]);
-    
-    // 判断是否为作者主页作品页面
-    BOOL isAuthorPage = (tabName != nil && [tabName isEqualToString:@"output"]) || 
-                        (previousPage != nil && [previousPage isEqualToString:@"following"]);
-    
-    // 如果是推荐页面，直接返回不做处理
-    if (isRecommend) return;
-    
-    // 处理搜索页面和作者主页
-    BOOL shouldAdjust = (isSearch && enableEnterProfile != nil && [enableEnterProfile boolValue]) || isAuthorPage;
-    
+    // 如果不需要调整，直接返回
     if (!shouldAdjust) return;
     
+    // 对需要调整的视图进行处理
     for (UIView *subview in self.subviews) {
         if ([subview isKindOfClass:[UIView class]]) {
-            UIView *nextResponder = (UIView *)subview.nextResponder;
-            
-            // 检查是否为播放控制器相关视图
-            if ([nextResponder isKindOfClass:%c(AWEPlayInteractionViewController)]) {
-                UIViewController *awemeBaseViewController = [nextResponder valueForKey:@"awemeBaseViewController"];
-                if (![awemeBaseViewController isKindOfClass:%c(AWEFeedCellViewController)]) {
-                    continue; // 使用continue而不是return，允许继续处理其他子视图
-                }
-            }
-            
             // 如果启用了全屏模式，调整子视图高度
             if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
                 CGRect frame = subview.frame;
