@@ -391,6 +391,22 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
     return section;
 }
 
+static void showUserAgreementAlert() {
+    showTextInputAlert(@"用户协议", @"", @"", ^(NSString *text) {
+            if ([text isEqualToString:@"我已阅读并同意继续使用"]) {
+                setUserDefaults(@"YES", @"DYYYUserAgreementAccepted");
+            } else {
+                [DYYYManager showToast:@"请正确输入内容"];
+                showUserAgreementAlert();
+            }
+        }, ^(void) {
+            [DYYYManager showToast:@"请立即卸载本插件"];
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                exit(0);
+            });
+        });
+}
+
 %hook AWESettingsViewModel
 - (NSArray *)sectionDataArray {
     NSArray *originalSections = %orig;
@@ -417,8 +433,8 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
             AWESettingBaseViewController *settingsVC = [[%c(AWESettingBaseViewController) alloc] init];
             BOOL hasAgreed = getUserDefaults(@"DYYYUserAgreementAccepted");
             if (!hasAgreed) {
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    [DYYYManager showToast:@"当前设置无法生效，因为您还没有前往旧版界面同意使用协议。"];
+                showAboutDialog(@"用户协议", @"本插件为开源项目\n仅供学习交流用途\n如有侵权请联系, GitHub 仓库：huami1314/DYYY\n请遵守当地法律法规, 逆向工程仅为学习目的\n盗用源码进行商业用途/发布但未标记开源项目必究\n详情请参阅项目内 MIT 许可证\n\n请输入\"我已阅读并同意继续使用\"以继续", ^{
+                    showUserAgreementAlert();
                 });
             }
 

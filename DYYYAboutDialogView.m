@@ -13,7 +13,7 @@
         [self addSubview:self.blurView];
         
         // 计算文本高度，动态调整弹窗高度
-        UIFont *messageFont = [UIFont systemFontOfSize:16];
+        UIFont *messageFont = [UIFont systemFontOfSize:14];
         CGSize constraintSize = CGSizeMake(260, CGFLOAT_MAX);
         NSAttributedString *attributedMessage = [[NSAttributedString alloc] initWithString:message attributes:@{NSFontAttributeName: messageFont}];
         CGRect textRect = [attributedMessage boundingRectWithSize:constraintSize 
@@ -55,6 +55,7 @@
         self.messageTextView.scrollEnabled = needsScrolling;
         self.messageTextView.showsVerticalScrollIndicator = needsScrolling;
         self.messageTextView.dataDetectorTypes = UIDataDetectorTypeLink;
+        self.messageTextView.transform = CGAffineTransformMakeScale(1.05, 1.05);
         self.messageTextView.selectable = YES;
         
         // 创建段落样式并设置居中对齐
@@ -111,6 +112,8 @@
         [self.confirmButton setTitleColor:[UIColor colorWithRed:45/255.0 green:47/255.0 blue:56/255.0 alpha:1.0] forState:UIControlStateNormal]; // #2d2f38
         [self.confirmButton addTarget:self action:@selector(confirmTapped) forControlEvents:UIControlEventTouchUpInside];
         [self.contentView addSubview:self.confirmButton];
+        
+        self.messageTextView.textAlignment = NSTextAlignmentCenter;
     }
     return self;
 }
