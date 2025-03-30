@@ -3184,7 +3184,7 @@ static BOOL isDownloadFlied = NO;
 
 %hook AWEConcernSkylightCapsuleView
 - (void)setHidden:(BOOL)hidden {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidenConcernCapsuleView"]) {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideConcernCapsuleView"]) {
         hidden = YES;
     }
 
