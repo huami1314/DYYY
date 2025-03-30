@@ -1318,13 +1318,13 @@ static AWESettingSectionModel* createSection(NSString* title, NSArray* items) {
                 showAboutDialog(@"关于DYYY", 
                     @"版本: v2.2-2\n\n"
                     @"感谢使用DYYY\n\n"
+                    @"感谢huami开源\n\n"
                     @"@维他入我心 基于DYYY二次开发\n\n"
-                    @"Telegram@vita_app\n\n"
-                    @"开源地址@Wtrwx\n\n" 
-                    @"感谢Huami开源\n\n"
-                    @"开源地址@huami1314\n\n"
                     @"感谢huami group中群友的支持赞助\n\n"
-                    @"Telegram@huami group\n\n" , nil);
+                    @"Telegram @huamidev\n\n"
+                    @"Telegram @vita_app\n\n"
+                    @"开源地址 huami1314/DYYY\n\n"
+                    @"仓库地址 Wtrwx/DYYY\n\n" , nil);
             };
             [aboutItems addObject:aboutItem];
             

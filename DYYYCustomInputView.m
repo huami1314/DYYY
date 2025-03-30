@@ -8,14 +8,17 @@
         self.placeholderText = placeholder;
         self.backgroundColor = [UIColor colorWithWhite:0 alpha:0.2];
         
-        self.blurView = [[UIVisualEffectView alloc] initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleDark]];
+        BOOL isDarkMode = [DYYYManager isDarkMode];
+        
+        self.blurView = [[UIVisualEffectView alloc] initWithEffect:[UIBlurEffect effectWithStyle:isDarkMode ? UIBlurEffectStyleDark : UIBlurEffectStyleLight]];
         self.blurView.frame = self.bounds;
-        self.blurView.alpha = 0.2; 
+        self.blurView.alpha = isDarkMode ? 0.3 : 0.2;
         [self addSubview:self.blurView];
         
         // 创建内容视图 - 改为纯白背景
         self.contentView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 300, 180)];
-        self.contentView.center = CGPointMake(self.frame.size.width / 2, self.frame.size.height / 2);
+        CGFloat screenHeight = UIScreen.mainScreen.bounds.size.height;
+        self.contentView.center = CGPointMake(self.frame.size.width / 2, screenHeight / 3);
         self.originalFrame = self.contentView.frame;
         self.contentView.backgroundColor = [UIColor whiteColor];
         self.contentView.layer.cornerRadius = 12;

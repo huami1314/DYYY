@@ -1,4 +1,5 @@
 #import <UIKit/UIKit.h>
+#import "DYYYManager.h"
 
 // 自定义文本输入视图
 @interface DYYYCustomInputView : UIView <UITextFieldDelegate>

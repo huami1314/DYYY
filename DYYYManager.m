@@ -1456,4 +1456,8 @@
     });
 }
 
++ (BOOL)isDarkMode {
+    return [NSClassFromString(@"AWEUIThemeManager") isLightTheme] ? NO : YES;
+}
+
 @end 

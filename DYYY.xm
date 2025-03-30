@@ -19,18 +19,7 @@
 + (void)parseAndDownloadVideoWithShareLink:(NSString *)shareLink apiKey:(NSString *)apiKey;
 + (void)batchDownloadResources:(NSArray *)videos images:(NSArray *)images;
 @end
-
-@interface AWEUserActionSheetView : UIView
-- (instancetype)init;
-- (void)setActions:(NSArray *)actions;
-- (void)show;
-@end
-
-@interface AWEUserSheetAction : NSObject
-+ (instancetype)actionWithTitle:(NSString *)title imgName:(NSString *)imgName handler:(id)handler;
-+ (instancetype)actionWithTitle:(NSString *)title style:(NSUInteger)style imgName:(NSString *)imgName handler:(id)handler;
-@end
-
+                                                                                                                                                                       
 %hook AWEAwemePlayVideoViewController
 
 - (void)setIsAutoPlay:(BOOL)arg0 {
@@ -310,11 +299,6 @@
 - (void)setCenter:(CGPoint)center {
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"] || [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"]) {
         center.y += 60;
-    }
-    
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenEntry"]) {
-        self.hidden = YES;
-	
     }
 
     %orig(center);
@@ -666,20 +650,7 @@
             }
         }
 
-        BOOL isDarkMode = YES;
-
-        UILabel *commentLabel = [self findCommentLabel:self.view];
-        if (commentLabel) {
-            UIColor *textColor = commentLabel.textColor;
-            CGFloat red, green, blue, alpha;
-            [textColor getRed:&red green:&green blue:&blue alpha:&alpha];
-
-            if (red > 0.7 && green > 0.7 && blue > 0.7) {
-                isDarkMode = YES;
-            } else if (red < 0.3 && green < 0.3 && blue < 0.3) {
-                isDarkMode = NO;
-            }
-        }
+        BOOL isDarkMode = [DYYYManager isDarkMode];
 
         UIBlurEffectStyle blurStyle = isDarkMode ? UIBlurEffectStyleDark : UIBlurEffectStyleLight;
 
@@ -1720,10 +1691,6 @@
     return r;
 }
 %end
-
-@interface AWEFeedProgressSlider (CustomAdditions)
-- (void)applyCustomProgressStyle;
-@end
 
 // 然后是现有的 hook 实现
 %hook AWEFeedProgressSlider
@@ -2910,9 +2877,6 @@ static CGFloat currentScale = 1.0;
 
 %end
 
-@interface AWEPlayInteractionDescriptionScrollView : UIScrollView
-@end
-
 %hook AWEPlayInteractionDescriptionScrollView
 
 - (void)layoutSubviews {
@@ -2961,8 +2925,6 @@ static CGFloat currentScale = 1.0;
 %end
 
 // 对新版文案的缩放（33.0以上）
-@interface AWEPlayInteractionDescriptionLabel : UILabel
-@end
 
 %hook AWEPlayInteractionDescriptionLabel
 
@@ -3010,9 +2972,6 @@ static CGFloat currentScale = 1.0;
 }
 
 %end
-
-@interface AWEUserNameLabel : UIView
-@end
 
 %hook AWEUserNameLabel
 
@@ -3791,8 +3750,6 @@ static BOOL isDownloadFlied = NO;
 %end
 
 //隐藏首页直播胶囊
-@interface AWEHPTopTabItemBadgeContentView : UIView
-@end
 %hook AWEHPTopTabItemBadgeContentView
 
 - (void)updateSmallRedDotLayout {
@@ -3893,8 +3850,6 @@ static BOOL isDownloadFlied = NO;
 %end
 
 //隐藏搜同款
-@interface ACCStickerContainerView : UIView
-@end
 %hook ACCStickerContainerView
 - (void)layoutSubviews {
     // 类型安全检查 + 隐藏逻辑

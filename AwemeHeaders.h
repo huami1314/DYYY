@@ -540,8 +540,35 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 @interface AWEHPTopBarCTAContainer : UIView
+- (void)applyDYYYTransparency;
 @end
 
-@interface AWEHPTopBarCTAContainer (DYYYTransparency)
-- (void)applyDYYYTransparency;
+@interface ACCStickerContainerView : UIView
+@end
+
+@interface AWEUserActionSheetView : UIView
+- (instancetype)init;
+- (void)setActions:(NSArray *)actions;
+- (void)show;
+@end
+
+@interface AWEUserSheetAction : NSObject
++ (instancetype)actionWithTitle:(NSString *)title imgName:(NSString *)imgName handler:(id)handler;
++ (instancetype)actionWithTitle:(NSString *)title style:(NSUInteger)style imgName:(NSString *)imgName handler:(id)handler;
+@end
+
+@interface AWEFeedProgressSlider (CustomAdditions)
+- (void)applyCustomProgressStyle;
+@end
+
+@interface AWEPlayInteractionDescriptionScrollView : UIScrollView
+@end
+
+@interface AWEUserNameLabel : UIView
+@end
+
+@interface AWEHPTopTabItemBadgeContentView : UIView
+@end
+
+@interface AWEPlayInteractionDescriptionLabel : UILabel
 @end

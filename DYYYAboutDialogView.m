@@ -13,7 +13,7 @@
         [self addSubview:self.blurView];
         
         // 计算文本高度，动态调整弹窗高度
-        UIFont *messageFont = [UIFont systemFontOfSize:15];
+        UIFont *messageFont = [UIFont systemFontOfSize:16];
         CGSize constraintSize = CGSizeMake(260, CGFLOAT_MAX);
         NSAttributedString *attributedMessage = [[NSAttributedString alloc] initWithString:message attributes:@{NSFontAttributeName: messageFont}];
         CGRect textRect = [attributedMessage boundingRectWithSize:constraintSize 
@@ -69,30 +69,30 @@
         [attributedString addAttribute:NSForegroundColorAttributeName 
                                  value:[UIColor colorWithRed:124/255.0 green:124/255.0 blue:130/255.0 alpha:1.0] 
                                  range:NSMakeRange(0, message.length)];
-        NSRange telegramRange = [message rangeOfString:@"Telegram@vita_app"];
+        NSRange telegramRange = [message rangeOfString:@"Telegram @vita_app"];
         if (telegramRange.location != NSNotFound) {
             [attributedString addAttribute:NSLinkAttributeName 
                                      value:@"https://t.me/vita_app" 
                                      range:telegramRange];
         }
         
-        NSRange githubRange = [message rangeOfString:@"开源地址@Wtrwx"];
+        NSRange githubRange = [message rangeOfString:@"仓库地址 Wtrwx/DYYY"];
         if (githubRange.location != NSNotFound) {
             [attributedString addAttribute:NSLinkAttributeName 
                                      value:@"https://github.com/Wtrwx/DYYY" 
                                      range:githubRange];
         }
 
-        NSRange huamiGithubRange = [message rangeOfString:@"开源地址@huami1314"];
+        NSRange huamiGithubRange = [message rangeOfString:@"开源地址 huami1314/DYYY"];
         if (huamiGithubRange.location != NSNotFound) {
             [attributedString addAttribute:NSLinkAttributeName 
                                      value:@"https://github.com/huami1314/DYYY" 
                                      range:huamiGithubRange];
         }
-        NSRange huamiTGGroup = [message rangeOfString:@"Telegram@huami group"];
+        NSRange huamiTGGroup = [message rangeOfString:@"Telegram @huamidev"];
         if (huamiTGGroup.location != NSNotFound) {
             [attributedString addAttribute:NSLinkAttributeName 
-                                     value:@"https://t.me/huamichat" 
+                                     value:@"https://t.me/huamidev" 
                                      range:huamiTGGroup];
         }
         self.messageTextView.attributedText = attributedString;
