@@ -542,81 +542,55 @@
     // 如果子视图只有2个，直接返回不做处理
     if ([self.subviews count] == 2) return;
     
-    // 尝试获取当前视图的上下文信息
-    BOOL shouldAdjust = NO;
-    
-    // 获取当前视图所在的控制器
-    UIViewController *parentVC = nil;
-    UIResponder *responder = self;
-    while ((responder = [responder nextResponder])) {
-        if ([responder isKindOfClass:[UIViewController class]]) {
-            parentVC = (UIViewController *)responder;
-            break;
-        }
-    }
-    
-    // 尝试获取logExtraDict或其他上下文信息
+    // 尝试获取logExtraDict
     NSDictionary *logExtraDict = nil;
-    
     @try {
-        // 尝试从视图或控制器中获取logExtraDict
-        if ([self respondsToSelector:@selector(valueForKey:)]) {
-            logExtraDict = [self valueForKey:@"logExtraDict"];
-        }
-        
-        if (!logExtraDict && parentVC && [parentVC respondsToSelector:@selector(valueForKey:)]) {
-            logExtraDict = [parentVC valueForKey:@"logExtraDict"];
-        }
-        
-        // 如果还没找到，尝试从AWEAwemeModel中获取
-        if (!logExtraDict) {
-            // 尝试获取当前的awemeModel
-            id awemeModel = nil;
-            if ([self respondsToSelector:@selector(valueForKey:)]) {
-                awemeModel = [self valueForKey:@"awemeModel"];
-            }
-            
-            if (!awemeModel && parentVC && [parentVC respondsToSelector:@selector(valueForKey:)]) {
-                awemeModel = [parentVC valueForKey:@"awemeModel"];
-            }
-            
-            if (awemeModel && [awemeModel respondsToSelector:@selector(valueForKey:)]) {
-                logExtraDict = [awemeModel valueForKey:@"logExtraDict"];
-            }
-        }
+        logExtraDict = [self valueForKey:@"logExtraDict"];
     } @catch (NSException *exception) {
-        // 忽略可能的异常
+        // 忽略异常
     }
     
-    // 根据logExtraDict判断页面类型
+    // 检查是否为推荐作品图片 - 如果logExtraDict不包含"click"字样，则认为是推荐作品图片
+    BOOL isRecommendImage = YES;
+    
     if (logExtraDict) {
-        NSString *previousPage = logExtraDict[@"previous_page"];
-        NSDictionary *searchParams = logExtraDict[@"search_params"];
-        
-        // 判断是否为推荐页面
-        BOOL isRecommend = (previousPage && [previousPage isEqualToString:@"homepage_hot"]);
-        
-        // 判断是否为搜索页面
-        BOOL isSearch = (searchParams && [searchParams isKindOfClass:[NSDictionary class]] && 
-                        searchParams[@"enter_from"] && 
-                        [searchParams[@"enter_from"] isEqualToString:@"general_search"]);
-        
-        // 判断是否为作者主页
-        BOOL isAuthorPage = (previousPage && ([previousPage isEqualToString:@"following"] || 
-                                             [previousPage isEqualToString:@"user_profile"]));
-        
-        // 确定是否应该调整
-        shouldAdjust = (isSearch || isAuthorPage) && !isRecommend;
-    } else {
-        // 如果无法获取logExtraDict，尝试使用原来的方法
-        id enableEnterProfile = [self valueForKey:@"enableEnterProfile"];
-        shouldAdjust = (enableEnterProfile != nil && [enableEnterProfile boolValue]);
+        // 遍历字典的所有键和值，检查是否包含"click"字样
+        for (NSString *key in logExtraDict.allKeys) {
+            id value = logExtraDict[key];
+            
+            // 检查键是否包含"click"
+            if ([key rangeOfString:@"click" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+                isRecommendImage = NO;
+                break;
+            }
+            
+            // 如果值是字符串，检查是否包含"click"
+            if ([value isKindOfClass:[NSString class]] && 
+                [value rangeOfString:@"click" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+                isRecommendImage = NO;
+                break;
+            }
+            
+            // 如果值是字典，递归检查
+            if ([value isKindOfClass:[NSDictionary class]]) {
+                for (NSString *subKey in [(NSDictionary *)value allKeys]) {
+                    id subValue = [(NSDictionary *)value objectForKey:subKey];
+                    if (([subKey rangeOfString:@"click" options:NSCaseInsensitiveSearch].location != NSNotFound) ||
+                        ([subValue isKindOfClass:[NSString class]] && 
+                         [subValue rangeOfString:@"click" options:NSCaseInsensitiveSearch].location != NSNotFound)) {
+                        isRecommendImage = NO;
+                        break;
+                    }
+                }
+                if (!isRecommendImage) break;
+            }
+        }
     }
     
-    // 如果不需要调整，直接返回
-    if (!shouldAdjust) return;
+    // 如果是推荐作品图片，直接返回不做处理
+    if (isRecommendImage) return;
     
-    // 对需要调整的视图进行处理
+    // 处理非推荐作品图片
     for (UIView *subview in self.subviews) {
         if ([subview isKindOfClass:[UIView class]]) {
             // 如果启用了全屏模式，调整子视图高度
