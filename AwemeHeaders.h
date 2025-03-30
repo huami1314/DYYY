@@ -584,3 +584,6 @@ typedef NS_ENUM(NSInteger, MediaType) {
 
 @interface AWEPlayInteractionDescriptionLabel : UILabel
 @end
+
+@interface AWEConcernSkylightCapsuleView : UIView
+@end
