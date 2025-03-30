@@ -4,12 +4,12 @@
 
 - (instancetype)initWithTitle:(NSString *)title previewImage:(UIImage *)image {
     if (self = [super initWithFrame:UIScreen.mainScreen.bounds]) {
-        self.backgroundColor = [UIColor colorWithWhite:0 alpha:0.4];
+        self.backgroundColor = [UIColor colorWithWhite:0 alpha:0.2];
         
         // 创建模糊效果视图
         self.blurView = [[UIVisualEffectView alloc] initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleDark]];
         self.blurView.frame = self.bounds;
-        self.blurView.alpha = 0.7;
+        self.blurView.alpha = 0.2;
         [self addSubview:self.blurView];
         
         // 创建内容视图 - 使用纯白背景

@@ -4,12 +4,12 @@
 
 - (instancetype)initWithTitle:(NSString *)title message:(NSString *)message {
     if (self = [super initWithFrame:UIScreen.mainScreen.bounds]) {
-        self.backgroundColor = [UIColor colorWithWhite:0 alpha:0.4];
+        self.backgroundColor = [UIColor colorWithWhite:0 alpha:0.2];
         
         // 创建模糊效果视图
         self.blurView = [[UIVisualEffectView alloc] initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleDark]];
         self.blurView.frame = self.bounds;
-        self.blurView.alpha = 0.7;
+        self.blurView.alpha = 0.2;
         [self addSubview:self.blurView];
         
         // 计算文本高度，动态调整弹窗高度
