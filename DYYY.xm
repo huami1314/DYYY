@@ -110,6 +110,9 @@
         CGFloat alphaValue = [transparentValue floatValue];
         if (alphaValue >= 0.0 && alphaValue <= 1.0) {
             %orig(alphaValue);
+            
+            // 处理顶栏透明度
+            [self applyCustomAlphaToTopBar:alphaValue];
         } else {
             %orig(1.0);
         }
@@ -117,7 +120,61 @@
         %orig(1.0);
     }
 }
-
+%new
+- (void)applyCustomAlphaToTopBar:(CGFloat)alpha {
+    // 查找并应用透明度到所有可能的顶栏容器
+    for (UIView *subview in self.subviews) {
+        // 应用透明度到当前视图
+        if (![subview isKindOfClass:[UILabel class]] && 
+            ![subview isKindOfClass:[UIImageView class]]) {
+            subview.alpha = alpha;
+        }
+        
+        // 递归处理子视图
+        for (UIView *childView in subview.subviews) {
+            if ([NSStringFromClass([childView class]) containsString:@"TabBar"] || 
+                [NSStringFromClass([childView class]) containsString:@"Container"] ||
+                [NSStringFromClass([childView class]) containsString:@"AWEHPTopBar"]) {
+                childView.alpha = alpha;
+                [self applyAlphaToSubviews:childView alpha:alpha];
+            }
+        }
+    }
+    
+    // 特别处理单标签情况
+    UIView *tabBarView = [self findViewOfClassContaining:self classNameContains:@"TabBar"];
+    if (tabBarView) {
+        tabBarView.alpha = alpha;
+        [self applyAlphaToSubviews:tabBarView alpha:alpha];
+    }
+}
+%new
+- (UIView *)findViewOfClassContaining:(UIView *)view classNameContains:(NSString *)className {
+    if ([NSStringFromClass([view class]) containsString:className]) {
+        return view;
+    }
+    
+    for (UIView *subview in view.subviews) {
+        UIView *result = [self findViewOfClassContaining:subview classNameContains:className];
+        if (result) {
+            return result;
+        }
+    }
+    
+    return nil;
+}
+%new
+- (void)applyAlphaToSubviews:(UIView *)view alpha:(CGFloat)alpha {
+    for (UIView *subview in view.subviews) {
+        // 避免修改文本和图标的透明度，保持它们可见
+        if (![subview isKindOfClass:[UILabel class]] && 
+            ![subview isKindOfClass:[UIImageView class]] &&
+            ![NSStringFromClass([subview class]) containsString:@"Button"]) {
+            subview.alpha = alpha;
+            [self applyAlphaToSubviews:subview alpha:alpha];
+        }
+    }
+}
 %new
 - (UIViewController *)findViewController:(UIViewController *)vc ofClass:(Class)targetClass {
     if (!vc) return nil;
