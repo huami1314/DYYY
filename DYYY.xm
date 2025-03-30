@@ -535,7 +535,7 @@
 
 %end
 
-// 首页的 hook - 保持原样不变
+// 主要的 hook，在一个方法中分别处理首页和作者主页
 %hook AWEStoryContainerCollectionView
 - (void)layoutSubviews {
     %orig;
@@ -548,12 +548,29 @@
         // 忽略
     }
     
-    // 如果是作者主页，直接返回，由另一个 hook 处理
+    // 判断是否是作者主页
+    BOOL isUserProfile = NO;
     if (throughDelegate != nil) {
         NSString *delegatePointerString = [NSString stringWithFormat:@"%p", throughDelegate];
         if (![delegatePointerString containsString:@"deadb33f"]) {
-            return; // 是作者主页，直接返回
+            isUserProfile = YES;
         }
+    }
+    
+    if (isUserProfile) {
+        // 作者主页逻辑
+        if ([self.subviews count] == 2) return;
+        
+        for (UIView *subview in self.subviews) {
+            if ([subview isKindOfClass:[UIView class]]) {
+                CGRect frame = subview.frame;
+                if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+                    frame.size.height = subview.superview.frame.size.height - 83;
+                    subview.frame = frame;
+                }
+            }
+        }
+        return;
     }
     
     // 以下是原有的首页逻辑，完全不变
@@ -572,45 +589,6 @@
                 }
             }
             
-            CGRect frame = subview.frame;
-            if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-                frame.size.height = subview.superview.frame.size.height - 83;
-                subview.frame = frame;
-            }
-        }
-    }
-}
-%end
-// 作者主页的 hook - 单独处理
-%hook AWEUserProfileStoryContainerCollectionView
-- (void)layoutSubviews {
-    %orig;
-    
-    // 检查是否是作者主页
-    id throughDelegate = nil;
-    @try {
-        throughDelegate = [self valueForKey:@"throughDelegate"];
-    } @catch (NSException *exception) {
-        // 忽略
-    }
-    
-    // 确认是作者主页
-    BOOL isUserProfile = NO;
-    if (throughDelegate != nil) {
-        NSString *delegatePointerString = [NSString stringWithFormat:@"%p", throughDelegate];
-        if (![delegatePointerString containsString:@"deadb33f"]) {
-            isUserProfile = YES;
-        }
-    }
-    
-    // 如果不是作者主页，直接返回
-    if (!isUserProfile) return;
-    
-    // 作者主页的处理逻辑，模仿首页的逻辑
-    if ([self.subviews count] == 2) return;
-    
-    for (UIView *subview in self.subviews) {
-        if ([subview isKindOfClass:[UIView class]]) {
             CGRect frame = subview.frame;
             if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
                 frame.size.height = subview.superview.frame.size.height - 83;
