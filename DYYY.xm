@@ -547,43 +547,38 @@
     // 检查是否为照片/朋友页面
     BOOL isPhotosFriendsPage = [self.nextResponder isKindOfClass:NSClassFromString(@"AWEFriendsImpl.RichContentNewListViewController")];
     
+    // 如果既不是主页也不是照片页面，则返回
+    if (!isHome && !isPhotosFriendsPage) return;
+    
     // 处理主页
     if (isHome) {
-        [self handleHomePageLayout];
-    }
-    // 处理照片/朋友页面
-    else if (isPhotosFriendsPage) {
-        [self handlePhotosPageLayout];
-    }
-}
-%new
-- (void)handleHomePageLayout {
-    for (UIView *subview in self.subviews) {
-        if ([subview isKindOfClass:[UIView class]]) {
-            UIView *nextResponder = (UIView *)subview.nextResponder;
-            if ([nextResponder isKindOfClass:%c(AWEPlayInteractionViewController)]) {
-                UIViewController *awemeBaseViewController = [nextResponder valueForKey:@"awemeBaseViewController"];
-                if (![awemeBaseViewController isKindOfClass:%c(AWEFeedCellViewController)]) {
-                    return;
+        for (UIView *subview in self.subviews) {
+            if ([subview isKindOfClass:[UIView class]]) {
+                UIView *nextResponder = (UIView *)subview.nextResponder;
+                if ([nextResponder isKindOfClass:%c(AWEPlayInteractionViewController)]) {
+                    UIViewController *awemeBaseViewController = [nextResponder valueForKey:@"awemeBaseViewController"];
+                    if (![awemeBaseViewController isKindOfClass:%c(AWEFeedCellViewController)]) {
+                        return;
+                    }
                 }
-            }
-            
-            CGRect frame = subview.frame;
-            if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-                frame.size.height = subview.superview.frame.size.height - 83;
-                subview.frame = frame;
+                
+                CGRect frame = subview.frame;
+                if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+                    frame.size.height = subview.superview.frame.size.height - 83;
+                    subview.frame = frame;
+                }
             }
         }
     }
-}
-%new
-- (void)handlePhotosPageLayout {
-    for (UIView *subview in self.subviews) {
-        if ([subview isKindOfClass:[UIView class]]) {
-            CGRect frame = subview.frame;
-            if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-                frame.size.height = subview.superview.frame.size.height - 83;
-                subview.frame = frame;
+    // 处理照片/朋友页面
+    else if (isPhotosFriendsPage) {
+        for (UIView *subview in self.subviews) {
+            if ([subview isKindOfClass:[UIView class]]) {
+                CGRect frame = subview.frame;
+                if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+                    frame.size.height = subview.superview.frame.size.height - 83;
+                    subview.frame = frame;
+                }
             }
         }
     }
