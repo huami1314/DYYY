@@ -546,6 +546,9 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (void)applyDYYYTransparency;
 @end
 
+@interface AWEHPTopBarLeftContainer : UIView
+@end
+
 @interface AWEHPTopBarLeftContainer (DYYYTransparency)
 - (void)applyDYYYTransparency;
 @end
