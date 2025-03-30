@@ -584,18 +584,3 @@ typedef NS_ENUM(NSInteger, MediaType) {
 
 @interface AWEPlayInteractionDescriptionLabel : UILabel
 @end
-
-@interface AWEFeedImageView : UIImageView
-- (UIViewController *)_viewControllerForView:(UIView *)view;
-@end
-
-@interface AWEImageView : UIImageView
-- (UIViewController *)_viewControllerForView:(UIView *)view;
-@end
-
-@interface AWEFeedRootViewController : UIViewController
-@end
-
-@interface AWEImageAlbumView : UIView
-@end
-
