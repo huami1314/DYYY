@@ -540,45 +540,43 @@
     %orig;
     if ([self.subviews count] == 2) return;
     
-    // 检查是否为主页
+    // 检查是否在首页
     id enableEnterProfile = [self valueForKey:@"enableEnterProfile"];
     BOOL isHome = (enableEnterProfile != nil && [enableEnterProfile boolValue]);
     
-    // 检查是否为照片/朋友页面
-    BOOL isPhotosFriendsPage = [self.nextResponder isKindOfClass:NSClassFromString(@"AWEFriendsImpl.RichContentNewListViewController")];
+    // 检查是否在作者主页
+    BOOL isUserProfile = NO;
+    UIResponder *responder = self;
+    while ((responder = [responder nextResponder])) {
+        NSString *className = NSStringFromClass([responder class]);
+        if ([className containsString:@"UserProfile"] || [className containsString:@"UserHome"]) {
+            isUserProfile = YES;
+            break;
+        }
+    }
     
-    // 如果既不是主页也不是照片页面，则返回
-    if (!isHome && !isPhotosFriendsPage) return;
+    // 如果既不是首页也不是作者主页，则返回
+    if (!isHome && !isUserProfile) return;
     
-    // 处理主页
-    if (isHome) {
-        for (UIView *subview in self.subviews) {
-            if ([subview isKindOfClass:[UIView class]]) {
+    // 处理子视图
+    for (UIView *subview in self.subviews) {
+        if ([subview isKindOfClass:[UIView class]]) {
+            // 首页特定检查
+            if (isHome && !isUserProfile) {
                 UIView *nextResponder = (UIView *)subview.nextResponder;
                 if ([nextResponder isKindOfClass:%c(AWEPlayInteractionViewController)]) {
                     UIViewController *awemeBaseViewController = [nextResponder valueForKey:@"awemeBaseViewController"];
                     if (![awemeBaseViewController isKindOfClass:%c(AWEFeedCellViewController)]) {
-                        return;
+                        continue;
                     }
                 }
-                
-                CGRect frame = subview.frame;
-                if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-                    frame.size.height = subview.superview.frame.size.height - 83;
-                    subview.frame = frame;
-                }
             }
-        }
-    }
-    // 处理照片/朋友页面
-    else if (isPhotosFriendsPage) {
-        for (UIView *subview in self.subviews) {
-            if ([subview isKindOfClass:[UIView class]]) {
+            
+            // 应用全屏高度调整 (-83)，无论是首页还是作者主页
+            if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
                 CGRect frame = subview.frame;
-                if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-                    frame.size.height = subview.superview.frame.size.height - 83;
-                    subview.frame = frame;
-                }
+                frame.size.height = subview.superview.frame.size.height - 83;
+                subview.frame = frame;
             }
         }
     }
