@@ -594,6 +594,5 @@ MediaTypeHeic
 @end
 
 @interface UllmageView : UIView
-@property(nonatomic, assign) CGRect frame;
 @property(nonatomic, strong) UIColor *tintColor;
 @end
