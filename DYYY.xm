@@ -1322,32 +1322,37 @@ BOOL forceHide = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFee
 
 %end
 
-//隐藏视频合集
 %hook AWEAntiAddictedNoticeBarView
 - (void)layoutSubviews {
-%orig;
-
-if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTemplateVideo"]) {
-// 直接隐藏此视图
-self.hidden = YES;
-}
-}
-
-%end
-
-//隐藏作者声明
-%hook UILabel
-- (void)layoutSubviews {
-%orig;
-
-// 检查是否启用了隐藏设置
-if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAntiAddictedNotice"]) {
-// 检查文本是否包含"作者声明"
-if (self.text && [self.text containsString:@"作者声明"]) {
-// 隐藏整个标签
-[self setHidden:YES];
-}
-}
+    %orig;
+    
+    // 查找子视图中的UllmageView
+    UllmageView *targetImageView = nil;
+    
+    for (UIView *subview in self.subviews) {
+        if ([subview isKindOfClass:%c(UllmageView)]) {
+            targetImageView = (UllmageView *)subview;
+            break;
+        }
+    }
+    
+    // 如果找到了UllmageView子视图
+    if (targetImageView) {
+        CGRect frame = targetImageView.frame;
+        
+        // 第一种情况: 16x16的图标 
+        if (CGRectGetWidth(frame) == 16 && CGRectGetHeight(frame) == 16 && CGRectGetMinY(frame) == 8) {
+            if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAntiAddictedNotice"]) {
+                [self setHidden:YES];
+            }
+        }
+        // 第二种情况: 20x20的图标
+        else if (CGRectGetWidth(frame) == 20 && CGRectGetHeight(frame) == 20 && CGRectGetMinY(frame) == 10) {
+            if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTemplateVideo"]) {
+                [self setHidden:YES];
+            }
+        }
+    }
 }
 %end
 
