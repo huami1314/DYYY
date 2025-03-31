@@ -869,6 +869,20 @@
     BOOL shouldFilterLowLikes = NO;
     BOOL shouldFilterKeywords = NO;
     
+    BOOL shouldFilterTime = NO;
+    long long currentTimestamp = (long long)[[NSDate date] timeIntervalSince1970];
+    NSInteger daysThreshold = [[NSUserDefaults standardUserDefaults] integerForKey:@"DYYYfiltertimelimit"];
+    if (daysThreshold > 0) {
+        NSTimeInterval videoTimestamp = [self.createTime doubleValue]; 
+        if (videoTimestamp > 0) {
+            NSTimeInterval threshold = daysThreshold * 86400.0; 
+            NSTimeInterval current = (NSTimeInterval)currentTimestamp; 
+            NSTimeInterval timeDifference = current - videoTimestamp;
+            shouldFilterTime = (timeDifference > threshold);
+        }
+    }
+
+    
     // 获取用户设置的需要过滤的关键词
     NSString *filterKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterKeywords"];
     NSArray *keywordsList = nil;
@@ -924,7 +938,7 @@
         }
     }
     
-    return (shouldFilterAds || shouldFilterRec || shouldFilterHotSpot || shouldFilterLowLikes || shouldFilterKeywords) ? nil : orig;
+    return (shouldFilterAds || shouldFilterRec || shouldFilterHotSpot || shouldFilterLowLikes || shouldFilterKeywords || shouldFilterTime) ? nil : orig;
 }
 
 - (id)init {
@@ -940,6 +954,20 @@
     
     BOOL shouldFilterLowLikes = NO;
     BOOL shouldFilterKeywords = NO;
+
+    BOOL shouldFilterTime = NO;
+    long long currentTimestamp = (long long)[[NSDate date] timeIntervalSince1970];
+    NSInteger daysThreshold = [[NSUserDefaults standardUserDefaults] integerForKey:@"DYYYfiltertimelimit"];
+    if (daysThreshold > 0) {
+        NSTimeInterval videoTimestamp = [self.createTime doubleValue]; 
+        if (videoTimestamp > 0) {
+            NSTimeInterval threshold = daysThreshold * 86400.0; 
+            NSTimeInterval current = (NSTimeInterval)currentTimestamp; 
+            NSTimeInterval timeDifference = current - videoTimestamp;
+            shouldFilterTime = (timeDifference > threshold);
+        }
+    }
+
     
     // 获取用户设置的需要过滤的关键词
     NSString *filterKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterKeywords"];
@@ -996,7 +1024,7 @@
         }
     }
     
-    return (shouldFilterAds || shouldFilterRec || shouldFilterHotSpot || shouldFilterLowLikes || shouldFilterKeywords) ? nil : orig;
+    return (shouldFilterAds || shouldFilterRec || shouldFilterHotSpot || shouldFilterLowLikes || shouldFilterKeywords || shouldFilterTime) ? nil : orig;
 }
 
 - (bool)preventDownload {
