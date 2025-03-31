@@ -3917,22 +3917,22 @@ static BOOL isDownloadFlied = NO;
 %hook WKScrollView
 - (void)layoutSubviews {
     %orig; 
-    
+
     if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideGiftPavilion"]) {
         return;
     }
     
     UIView *superview = self.superview;
-    NSString *title = nil;
-    
-    if ([superview respondsToSelector:@selector(title)]) {
-        title = [superview title];
+    if (![superview isKindOfClass:NSClassFromString(@"WDXWebView")]) {
+        return; 
     }
     
-    // title 包含 任务banner或活动banner就隐藏
+    NSString *title = [(id)superview title];
+    
+    // 如果 title 包含任务banner或活动banner就隐藏
     if (title && (
-        [title rangeOfString:@"任务Banner"].location != NSNotFound ||
-        [title rangeOfString:@"活动Banner"].location != NSNotFound
+        [title rangeOfString:@"任务banner"].location != NSNotFound ||
+        [title rangeOfString:@"活动banner"].location != NSNotFound
     )) {
         self.hidden = YES;
     }
