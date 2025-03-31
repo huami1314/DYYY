@@ -3917,7 +3917,7 @@ static BOOL isDownloadFlied = NO;
 %hook WKScrollView
 - (void)layoutSubviews {
     %orig; 
-
+    
     if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideGiftPavilion"]) {
         return;
     }
@@ -3929,15 +3929,15 @@ static BOOL isDownloadFlied = NO;
     
     NSString *title = [(id)superview title];
     
-    // 如果 title 包含任务banner或活动banner就隐藏
+    // 如果 title 包含任务banner或 活动banner，就移除
     if (title && (
-        [title rangeOfString:@"任务banner"].location != NSNotFound ||
-        [title rangeOfString:@"活动banner"].location != NSNotFound
+        [title rangeOfString:@"任务Banner"].location != NSNotFound ||
+        [title rangeOfString:@"活动Banner"].location != NSNotFound
     )) {
-        self.hidden = YES;
+        [self removeFromSuperview]; 
     }
 }
-%end
+%end    
 
 %hook IESLiveActivityBannnerView
 - (void)layoutSubviews {
