@@ -3927,21 +3927,21 @@ if (![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYHideLiveGIF"]) %o
 //隐藏礼物展馆
 %hook WKCompositingView
 - (void)layoutSubviews {
-    %orig;
-    
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideGiftPavilion"]) {
-        [self setHidden:YES];
-    }
+%orig;
+
+if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideGiftPavilion"]) {
+[self setHidden:YES];
+}
 }
 %end
 
-%hook IESLiveActivityBannnerView
+%hook UllmageView
 - (void)layoutSubviews {
-    %orig;
-    
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideGiftPavilion"]) {
-        [self setHidden:YES];
-    }
+%orig;
+
+if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideGiftPavilion"]) {
+[self setHidden:YES];
+}
 }
 %end
 
