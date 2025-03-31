@@ -1330,18 +1330,17 @@ BOOL forceHide = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFee
     for (UIView *subview in self.subviews) {
         if ([subview isKindOfClass:%c(UllmageView)]) {
             UllmageView *imageView = (UllmageView *)subview;
-            CGRect frame = imageView.frame;
             
-            // 第一种情况: 16x16的图标 
-            if (CGRectGetWidth(frame) == 16 && CGRectGetHeight(frame) == 16) {
+            // 第一种情况: 有tintColor属性的视图
+            if (imageView.tintColor != nil) {
                 if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAntiAddictedNotice"]) {
                     [self setHidden:YES];
                 }
                 return;
             }
             
-            // 第二种情况: 20x20的图标 
-            if (CGRectGetWidth(frame) == 20 && CGRectGetHeight(frame) == 20) {
+            // 第二种情况: 没有tintColor属性的
+            else {
                 if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTemplateVideo"]) {
                     [self setHidden:YES];
                 }
