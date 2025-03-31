@@ -593,6 +593,6 @@ MediaTypeHeic
 @interface AWEConcernSkylightCapsuleView : UIView
 @end
 
-@interface UllmageView : UIView
-@property(nonatomic, strong) UIColor *tintColor;
+@interface UILabel : UIView
+@property(nonatomic, copy) NSString *text;
 @end
