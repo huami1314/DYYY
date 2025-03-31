@@ -3299,6 +3299,24 @@ static BOOL isDownloadFlied = NO;
 }
 %end
 
+//隐藏直播发现
+%hook AWEFeedLiveTabRevisitControlView 
+ 
+- (void)layoutSubviews {
+    %orig;
+    
+    // 判断是否需要隐藏 
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveDiscovery"]) {
+        // 如果需要隐藏，则移除或隐藏视图
+        if ([self respondsToSelector:@selector(removeFromSuperview)]) {
+            [self removeFromSuperview];
+        }
+        self.hidden = YES;
+        return;
+    }
+}
+%end
+
 //去除启动视频广告
 %hook AWEAwesomeSplashFeedCellOldAccessoryView
 
