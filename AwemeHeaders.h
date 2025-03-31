@@ -592,7 +592,3 @@ MediaTypeHeic
 
 @interface AWEConcernSkylightCapsuleView : UIView
 @end
-
-@interface UILabel : UIView
-@property(nonatomic, copy) NSString *text;
-@end
