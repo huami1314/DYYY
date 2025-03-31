@@ -585,24 +585,63 @@
     %orig;
     if ([self.subviews count] == 2) return;
     
+    // 获取 enableEnterProfile 属性来判断是否是主页
     id enableEnterProfile = [self valueForKey:@"enableEnterProfile"];
     BOOL isHome = (enableEnterProfile != nil && [enableEnterProfile boolValue]);
-    if (!isHome) return; 
-
+    
+    // 检查是否在作者主页
+    BOOL isAuthorProfile = NO;
+    UIResponder *responder = self;
+    while ((responder = [responder nextResponder])) {
+        if ([NSStringFromClass([responder class]) containsString:@"UserHomeViewController"] ||
+            [NSStringFromClass([responder class]) containsString:@"ProfileViewController"]) {
+            isAuthorProfile = YES;
+            break;
+        }
+    }
+    
+    // 如果不是主页也不是作者主页，直接返回
+    if (!isHome && !isAuthorProfile) return;
+    
     for (UIView *subview in self.subviews) {
         if ([subview isKindOfClass:[UIView class]]) {
             UIView *nextResponder = (UIView *)subview.nextResponder;
-            if ([nextResponder isKindOfClass:%c(AWEPlayInteractionViewController)]) {
+            
+            // 处理主页的情况
+            if (isHome && [nextResponder isKindOfClass:%c(AWEPlayInteractionViewController)]) {
                 UIViewController *awemeBaseViewController = [nextResponder valueForKey:@"awemeBaseViewController"];
                 if (![awemeBaseViewController isKindOfClass:%c(AWEFeedCellViewController)]) {
-                    return;
+                    continue;
+                }
+                
+                CGRect frame = subview.frame;
+                if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+                    frame.size.height = subview.superview.frame.size.height - 83;
+                    subview.frame = frame;
                 }
             }
-            
-            CGRect frame = subview.frame;
-            if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-                frame.size.height = subview.superview.frame.size.height - 83;
-                subview.frame = frame;
+            // 处理作者主页的情况
+            else if (isAuthorProfile) {
+                // 检查是否是作品图片
+                BOOL isWorkImage = NO;
+                
+                // 可以通过检查子视图、标签或其他特性来确定是否是作品图片
+                for (UIView *childView in subview.subviews) {
+                    if ([NSStringFromClass([childView class]) containsString:@"ImageView"] ||
+                        [NSStringFromClass([childView class]) containsString:@"ThumbnailView"]) {
+                        isWorkImage = YES;
+                        break;
+                    }
+                }
+                
+                if (isWorkImage) {
+                    // 修复作者主页作品图片上移问题
+                    CGRect frame = subview.frame;
+                    // 这里可以根据需要调整位置
+                    // 例如，如果图片上移了，可以将其下移
+                    frame.origin.y += 83; // 假设需要下移83像素
+                    subview.frame = frame;
+                }
             }
         }
     }
