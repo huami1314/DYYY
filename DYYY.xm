@@ -3062,19 +3062,9 @@ static CGFloat currentScale = 1.0;
         responder = [responder nextResponder];
     }
     
-    // 检查是否有文案
+    // 递归查找 AWEDescriptionLabel
     if (viewController) {
-        for (UIView *view in viewController.view.subviews) {
-            if ([NSStringFromClass([view class]) isEqualToString:@"AWEDescriptionLabel"]) {
-                if ([view isKindOfClass:[UILabel class]]) {
-                    UILabel *label = (UILabel *)view;
-                    if (label.text.length > 0) {
-                        hasDescription = YES;
-                        break;
-                    }
-                }
-            }
-        }
+        hasDescription = [self findDescriptionLabelInView:viewController.view];
     }
     
     // 获取垂直偏移值
@@ -3086,25 +3076,35 @@ static CGFloat currentScale = 1.0;
             verticalOffset = [verticalOffsetValue floatValue];
         }
     }
-    // 如果没有描述，不应用垂直偏移（保持默认状态）
+    // 如果没有描述，不应用垂直偏移
     
-    UIView *parentView = self.superview;
-    UIView *grandParentView = nil;
-    if (parentView) {
-        grandParentView = parentView.superview;
+    // 直接修改 frame
+    CGRect frame = self.frame;
+    frame.origin.y += verticalOffset;
+    self.frame = frame;
+    
+    // 应用缩放
+    self.transform = CGAffineTransformMakeScale(scale, scale);
+}
+%new
+- (BOOL)findDescriptionLabelInView:(UIView *)view {
+    // 检查当前视图是否是 AWEDescriptionLabel
+    if ([NSStringFromClass([view class]) isEqualToString:@"AWEDescriptionLabel"]) {
+        // 检查文本是否为空
+        if ([view isKindOfClass:[UILabel class]]) {
+            UILabel *label = (UILabel *)view;
+            return (label.text.length > 0);
+        }
     }
-    // 检查祖父视图是否为 AWEBaseElementView 类型
-    if (grandParentView && [grandParentView.superview isKindOfClass:%c(AWEBaseElementView)]) {
-        CGAffineTransform scaleTransform = CGAffineTransformMakeScale(scale, scale);
-        grandParentView.transform = scaleTransform;
-        CGRect scaledFrame = grandParentView.frame;
-        CGFloat translationX = -scaledFrame.origin.x;
-  
-        CGAffineTransform translationTransform = CGAffineTransformMakeTranslation(translationX, verticalOffset);
-        CGAffineTransform combinedTransform = CGAffineTransformConcat(scaleTransform, translationTransform);
-        
-        grandParentView.transform = combinedTransform;
+    
+    // 递归检查子视图
+    for (UIView *subview in view.subviews) {
+        if ([self findDescriptionLabelInView:subview]) {
+            return YES;
+        }
     }
+    
+    return NO;
 }
 %end
 
@@ -4023,4 +4023,3 @@ static BOOL isDownloadFlied = NO;
         %init;
     }
 }
- 
