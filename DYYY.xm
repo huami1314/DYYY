@@ -3062,9 +3062,27 @@ static CGFloat currentScale = 1.0;
         responder = [responder nextResponder];
     }
     
-    // 递归查找 AWEDescriptionLabel
+    // 使用迭代方法查找 AWEDescriptionLabel
     if (viewController) {
-        hasDescription = [self findDescriptionLabelInView:viewController.view];
+        NSMutableArray *viewsToCheck = [NSMutableArray arrayWithObject:viewController.view];
+        NSInteger index = 0;
+        
+        while (index < viewsToCheck.count && !hasDescription) {
+            UIView *currentView = viewsToCheck[index];
+            index++;
+            
+            // 检查当前视图是否是 AWEDescriptionLabel
+            if ([NSStringFromClass([currentView class]) isEqualToString:@"AWEDescriptionLabel"]) {
+                // 检查文本是否为空
+                if ([currentView isKindOfClass:[UILabel class]]) {
+                    UILabel *label = (UILabel *)currentView;
+                    hasDescription = (label.text.length > 0);
+                }
+            }
+            
+            // 添加子视图到检查列表
+            [viewsToCheck addObjectsFromArray:currentView.subviews];
+        }
     }
     
     // 获取垂直偏移值
@@ -3085,26 +3103,6 @@ static CGFloat currentScale = 1.0;
     
     // 应用缩放
     self.transform = CGAffineTransformMakeScale(scale, scale);
-}
-%new
-- (BOOL)findDescriptionLabelInView:(UIView *)view {
-    // 检查当前视图是否是 AWEDescriptionLabel
-    if ([NSStringFromClass([view class]) isEqualToString:@"AWEDescriptionLabel"]) {
-        // 检查文本是否为空
-        if ([view isKindOfClass:[UILabel class]]) {
-            UILabel *label = (UILabel *)view;
-            return (label.text.length > 0);
-        }
-    }
-    
-    // 递归检查子视图
-    for (UIView *subview in view.subviews) {
-        if ([self findDescriptionLabelInView:subview]) {
-            return YES;
-        }
-    }
-    
-    return NO;
 }
 %end
 
