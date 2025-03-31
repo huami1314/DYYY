@@ -3030,12 +3030,10 @@ static CGFloat currentScale = 1.0;
 %end
 
 %hook AWEUserNameLabel
-
 - (void)layoutSubviews {
     %orig;
     
     self.transform = CGAffineTransformIdentity;
-
     NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
     CGFloat scale = 1.0; 
     
@@ -3043,28 +3041,62 @@ static CGFloat currentScale = 1.0;
         CGFloat customScale = [scaleValue floatValue];
         if (customScale > 0 && customScale != 1.0) {
             scale = customScale;
+        } else {
+            return; // 如果缩放值无效或等于1.0，直接返回
+        }
+    } else {
+        return; // 如果没有设置缩放值，直接返回
+    }
+    
+    // 查找描述文本标签
+    BOOL hasDescription = NO;
+    
+    // 获取当前视图所在的视图控制器
+    UIViewController *viewController = nil;
+    UIResponder *responder = self;
+    while (responder) {
+        if ([responder isKindOfClass:[UIViewController class]]) {
+            viewController = (UIViewController *)responder;
+            break;
+        }
+        responder = [responder nextResponder];
+    }
+    
+    // 检查是否有文案
+    if (viewController) {
+        for (UIView *view in viewController.view.subviews) {
+            if ([NSStringFromClass([view class]) isEqualToString:@"AWEDescriptionLabel"]) {
+                if ([view isKindOfClass:[UILabel class]]) {
+                    UILabel *label = (UILabel *)view;
+                    if (label.text.length > 0) {
+                        hasDescription = YES;
+                        break;
+                    }
+                }
+            }
         }
     }
     
-    // 添加垂直偏移支持
-    NSString *verticalOffsetValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameVerticalOffset"];
+    // 获取垂直偏移值
     CGFloat verticalOffset = 0;
-    if (verticalOffsetValue.length > 0) {
-        verticalOffset = [verticalOffsetValue floatValue];
+    if (hasDescription) {
+        // 如果有描述，应用用户设置的垂直偏移
+        NSString *verticalOffsetValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameVerticalOffset"];
+        if (verticalOffsetValue.length > 0) {
+            verticalOffset = [verticalOffsetValue floatValue];
+        }
     }
+    // 如果没有描述，不应用垂直偏移（保持默认状态）
     
     UIView *parentView = self.superview;
     UIView *grandParentView = nil;
-
     if (parentView) {
         grandParentView = parentView.superview;
     }
-
     // 检查祖父视图是否为 AWEBaseElementView 类型
     if (grandParentView && [grandParentView.superview isKindOfClass:%c(AWEBaseElementView)]) {
         CGAffineTransform scaleTransform = CGAffineTransformMakeScale(scale, scale);
         grandParentView.transform = scaleTransform;
-
         CGRect scaledFrame = grandParentView.frame;
         CGFloat translationX = -scaledFrame.origin.x;
   
@@ -3074,7 +3106,6 @@ static CGFloat currentScale = 1.0;
         grandParentView.transform = combinedTransform;
     }
 }
-
 %end
 
 %hook AWEFeedVideoButton
