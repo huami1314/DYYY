@@ -2170,14 +2170,44 @@
 }
 
 %end
+// 隐藏视频滑条 
+%hook AWEStoryProgressSlideView 
+ 
+- (void)layoutSubviews {
+    %orig;
+    
+    // 1.判断是否启用隐藏 
+    BOOL shouldHide = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideStoryProgressSlide"];
+    if (!shouldHide) return;
+    
+    // 2.精准定位目标视图（核心修改）
+    __block UIView *targetView = nil;
+    [self.subviews enumerateObjectsUsingBlock:^(__kindof UIView * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        // 通过特征识别进度条（可结合类名/tag/尺寸等）
+        if ([obj isKindOfClass:NSClassFromString(@"UISlider")] || obj.frame.size.height < 5) {
+            targetView = obj.superview; // 通常进度条容器才是需要隐藏的 
+            *stop = YES;
+        }
+    }];
+    
+    // 3.执行隐藏并验证 
+    if (targetView) {
+        targetView.hidden = YES;
+        NSLog(@"成功隐藏进度条容器：%@", targetView);
+    } else {
+        NSLog(@"⚠ ️ 未找到进度条，可能层级已变化");
+    }
+}
+ 
+%end
 
-%hook AWEStoryProgressSlideView
+//隐藏好友分享私信
+%hook AFDNewFastReplyView
 
 - (void)layoutSubviews {
     %orig;
 
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideStoryProgressSlide"]) {
-        // 找到父视图并隐藏
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePrivateMessages"]) {
         UIView *parentView = self.superview;
         if (parentView) {
             parentView.hidden = YES;
@@ -3157,13 +3187,21 @@ static BOOL isDownloadFlied = NO;
 }
 %end
 
-%hook AWEConcernSkylightCapsuleView
+//隐藏关注直播
+%hook AWEConcernSkylightCapsuleView 
 - (void)setHidden:(BOOL)hidden {
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideConcernCapsuleView"]) {
         hidden = YES;
     }
-
     %orig(hidden);
+}
+ 
+- (void)layoutSubviews {
+    %orig;
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideConcernCapsuleView"]) {
+        self.hidden = YES;
+        self.alpha = 0;
+    }
 }
 %end
 

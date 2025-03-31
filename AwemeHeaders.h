@@ -461,6 +461,10 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @property (nonatomic, assign, getter=isHidden) BOOL hidden;
 @end
 
+//隐藏好友分享私信
+@interface AFDNewFastReplyView @property (nonatomic, weak) UIView *superview;
+@property (nonatomic) BOOL hidden;
+@end
 
 @interface AWENewLiveSkylightViewController : UIViewController
 - (void)showSkylight:(BOOL)arg0 animated:(BOOL)arg1 actionMethod:(unsigned long long)arg2;
