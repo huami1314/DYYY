@@ -593,10 +593,7 @@ MediaTypeHeic
 @interface AWEConcernSkylightCapsuleView : UIView
 @end
 
-@interface UllmageView : UIView
-- (void)setHidden:(BOOL)hidden;
-@end
-
-@interface WKCompositingView : UIView
+@interface UILabel : UIView
+@property(nonatomic, copy) NSString *text;
 - (void)setHidden:(BOOL)hidden;
 @end
