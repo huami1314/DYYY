@@ -3805,16 +3805,11 @@ static BOOL isDownloadFlied = NO;
 //隐藏首页直播胶囊
 %hook AWEHPTopTabItemBadgeContentView
 
-- (void)updateSmallRedDotLayout {
-    %orig;
-    
+- (void)layoutSubviews {
+    %orig; 
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveCapsuleView"]) {
-        UIView *parentView = self.superview; // 现在可以正确访问
-        if (parentView) {
-            parentView.hidden = YES;
-        } else {
-            self.hidden = YES;
-        }
+        self.frame = CGRectMake(0, 0, 0, 0);
+        self.hidden = YES;
     }
 }
 
