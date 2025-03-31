@@ -3082,6 +3082,12 @@ static CGFloat currentScale = 1.0;
     NSString *customFileName = nil;
     if ([nameString containsString:@"_comment"]) {
         customFileName = @"comment.png";
+    } else if ([nameString containsString:@"_like"]) {
+        customFileName = @"like_before.png";
+    } else if ([nameString containsString:@"_collect"]) {
+        customFileName = @"favorite.png";
+    } else if ([nameString containsString:@"_share"]) {
+        customFileName = @"share.png";
     }
 
     for (NSString *prefix in iconMapping.allKeys) {
