@@ -3048,7 +3048,7 @@ static CGFloat currentScale = 1.0;
         return; // 如果没有设置缩放值，直接返回
     }
     
-    // 查找描述文本标签
+    // 查找描述文本视图
     BOOL hasDescription = NO;
     
     // 获取当前视图所在的视图控制器
@@ -3062,26 +3062,31 @@ static CGFloat currentScale = 1.0;
         responder = [responder nextResponder];
     }
     
-    // 使用迭代方法查找 AWEDescriptionLabel
+    // 检查是否有文案视图，通过检查视图的高度
     if (viewController) {
-        NSMutableArray *viewsToCheck = [NSMutableArray arrayWithObject:viewController.view];
-        NSInteger index = 0;
-        
-        while (index < viewsToCheck.count && !hasDescription) {
-            UIView *currentView = viewsToCheck[index];
-            index++;
-            
-            // 检查当前视图是否是 AWEDescriptionLabel
-            if ([NSStringFromClass([currentView class]) isEqualToString:@"AWEDescriptionLabel"]) {
-                // 检查文本是否为空
-                if ([currentView isKindOfClass:[UILabel class]]) {
-                    UILabel *label = (UILabel *)currentView;
-                    hasDescription = (label.text.length > 0);
+        for (UIView *subview in viewController.view.subviews) {
+            if ([NSStringFromClass([subview class]) isEqualToString:@"AWEDescriptionLabel"]) {
+                // 检查视图的高度是否大于0
+                CGFloat height = subview.frame.size.height;
+                if (height > 0) {
+                    hasDescription = YES;
+                    break;
                 }
             }
             
-            // 添加子视图到检查列表
-            [viewsToCheck addObjectsFromArray:currentView.subviews];
+            // 检查子视图
+            for (UIView *childView in subview.subviews) {
+                if ([NSStringFromClass([childView class]) isEqualToString:@"AWEDescriptionLabel"]) {
+                    // 检查视图的高度是否大于0
+                    CGFloat height = childView.frame.size.height;
+                    if (height > 0) {
+                        hasDescription = YES;
+                        break;
+                    }
+                }
+            }
+            
+            if (hasDescription) break;
         }
     }
     
