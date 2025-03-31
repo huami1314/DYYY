@@ -3664,32 +3664,15 @@ static BOOL isDownloadFlied = NO;
 
 //隐藏笔记
 %hook AWECorrelationItemTag
+
 - (void)layoutSubviews {
-   if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideItemTag"]) {
-      // 兼容性检查
-      if ([self respondsToSelector:@selector(removeFromSuperview)]) {
-         // 记录原始父视图
-         UIView *parent = self.superview;
-
-         // 先隐藏再移除确保动画同步
-         self.alpha = 0.f;
-         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.25 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            [self removeFromSuperview];
-
-            // 手动触发父视图布局更新
-            [parent setNeedsLayout];
-            [parent layoutIfNeeded];
-         });
-      } else {
-         // 备用方案：调整位置并保持布局同步
-         self.frame = CGRectOffset(self.frame, 1, 0);
-         [self.superview setNeedsLayout];
-         [self.superview layoutIfNeeded];
-      }
-      return;
-   }
-   %orig;
+    %orig; 
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"Hidenote"]) {
+        self.frame = CGRectMake(0, 0, 0, 0);
+        self.hidden = YES;
+    }
 }
+
 %end
 
 //隐藏话题
