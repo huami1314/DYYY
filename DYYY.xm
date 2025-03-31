@@ -870,19 +870,7 @@
     BOOL shouldFilterKeywords = NO;
     
     BOOL shouldFilterTime = NO;
-    long long currentTimestamp = (long long)[[NSDate date] timeIntervalSince1970];
-    NSInteger daysThreshold = [[NSUserDefaults standardUserDefaults] integerForKey:@"DYYYfiltertimelimit"];
-    if (daysThreshold > 0) {
-        NSTimeInterval videoTimestamp = [self.createTime doubleValue]; 
-        if (videoTimestamp > 0) {
-            NSTimeInterval threshold = daysThreshold * 86400.0; 
-            NSTimeInterval current = (NSTimeInterval)currentTimestamp; 
-            NSTimeInterval timeDifference = current - videoTimestamp;
-            shouldFilterTime = (timeDifference > threshold);
-        }
-    }
 
-    
     // 获取用户设置的需要过滤的关键词
     NSString *filterKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterKeywords"];
     NSArray *keywordsList = nil;
@@ -936,8 +924,20 @@
                 }
             }
         }
+        
+        // 过滤视频发布时间
+        long long currentTimestamp = (long long)[[NSDate date] timeIntervalSince1970];
+        NSInteger daysThreshold = [[NSUserDefaults standardUserDefaults] integerForKey:@"DYYYfiltertimelimit"];
+        if (daysThreshold > 0) {
+            NSTimeInterval videoTimestamp = [self.createTime doubleValue]; 
+            if (videoTimestamp > 0) {
+                NSTimeInterval threshold = daysThreshold * 86400.0; 
+                NSTimeInterval current = (NSTimeInterval)currentTimestamp; 
+                NSTimeInterval timeDifference = current - videoTimestamp;
+                shouldFilterTime = (timeDifference > threshold);
+            }
+        }
     }
-    
     return (shouldFilterAds || shouldFilterRec || shouldFilterHotSpot || shouldFilterLowLikes || shouldFilterKeywords || shouldFilterTime) ? nil : orig;
 }
 
@@ -956,18 +956,6 @@
     BOOL shouldFilterKeywords = NO;
 
     BOOL shouldFilterTime = NO;
-    long long currentTimestamp = (long long)[[NSDate date] timeIntervalSince1970];
-    NSInteger daysThreshold = [[NSUserDefaults standardUserDefaults] integerForKey:@"DYYYfiltertimelimit"];
-    if (daysThreshold > 0) {
-        NSTimeInterval videoTimestamp = [self.createTime doubleValue]; 
-        if (videoTimestamp > 0) {
-            NSTimeInterval threshold = daysThreshold * 86400.0; 
-            NSTimeInterval current = (NSTimeInterval)currentTimestamp; 
-            NSTimeInterval timeDifference = current - videoTimestamp;
-            shouldFilterTime = (timeDifference > threshold);
-        }
-    }
-
     
     // 获取用户设置的需要过滤的关键词
     NSString *filterKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterKeywords"];
@@ -979,7 +967,7 @@
     
     NSInteger filterLowLikesThreshold = [[NSUserDefaults standardUserDefaults] integerForKey:@"DYYYfilterLowLikes"];
         
-    // 只有当shareRecExtra不为空时才过滤点赞量低的视频和关键词
+    // 只有当shareRecExtra不为空时才过滤
     if (self.shareRecExtra && ![self.shareRecExtra isEqual:@""]) {
         // 过滤低点赞量视频
         if (filterLowLikesThreshold > 0) {
@@ -1020,6 +1008,19 @@
                         if (shouldFilterKeywords) break;
                     }
                 }
+            }
+        }
+        
+        // 过滤视频发布时间
+        long long currentTimestamp = (long long)[[NSDate date] timeIntervalSince1970];
+        NSInteger daysThreshold = [[NSUserDefaults standardUserDefaults] integerForKey:@"DYYYfiltertimelimit"];
+        if (daysThreshold > 0) {
+            NSTimeInterval videoTimestamp = [self.createTime doubleValue]; 
+            if (videoTimestamp > 0) {
+                NSTimeInterval threshold = daysThreshold * 86400.0; 
+                NSTimeInterval current = (NSTimeInterval)currentTimestamp; 
+                NSTimeInterval timeDifference = current - videoTimestamp;
+                shouldFilterTime = (timeDifference > threshold);
             }
         }
     }

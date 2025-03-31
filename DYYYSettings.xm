@@ -588,6 +588,7 @@ static void showUserAgreementAlert() {
                     @{@"identifier": @"DYYYisSkipHotSpot", @"title": @"推荐过滤热点", @"detail": @"", @"cellType": @6, @"imageName": @"ic_squaretriangletwo_outlined_20"},
                     @{@"identifier": @"DYYYfilterLowLikes", @"title": @"推荐过滤低赞", @"detail": @"0", @"cellType": @26, @"imageName": @"ic_thumbsdown_outlined_20"},
                     @{@"identifier": @"DYYYfilterKeywords", @"title": @"推荐过滤文案", @"detail": @"", @"cellType": @26, @"imageName": @"ic_tag_outlined_20"},
+                    @{@"identifier": @"DYYYfiltertimelimit", @"title": @"推荐视频时限", @"detail": @"", @"cellType": @26, @"imageName": @"ic_tag_outlined_20"},
                     @{@"identifier": @"DYYYNoAds", @"title": @"启用屏蔽广告", @"detail": @"", @"cellType": @6, @"imageName": @"ic_ad_outlined_20"},
                     @{@"identifier": @"DYYYNoUpdates", @"title": @"屏蔽检测更新", @"detail": @"", @"cellType": @6, @"imageName": @"ic_circletop_outlined"},
                     @{@"identifier": @"DYYYHideteenmode", @"title": @"屏蔽青少年模式弹窗", @"detail": @"", @"cellType": @6, @"imageName": @"ic_personcircleclean_outlined_20"}
@@ -640,6 +641,31 @@ static void showUserAgreementAlert() {
                             showTextInputAlert(@"设置过滤关键词", item.detail, @"用半角逗号(,)分隔关键词", ^(NSString *text) {
                                 NSString *trimmedText = [text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
                                 setUserDefaults(trimmedText, @"DYYYfilterKeywords");
+                                item.detail = trimmedText ?: @"";
+                                UIViewController *topVC = topView();
+                                if ([topVC isKindOfClass:%c(AWESettingBaseViewController)]) {
+                                    dispatch_async(dispatch_get_main_queue(), ^{
+                                        UITableView *tableView = nil;
+                                        for (UIView *subview in topVC.view.subviews) {
+                                            if ([subview isKindOfClass:[UITableView class]]) {
+                                                tableView = (UITableView *)subview;
+                                                break;
+                                            }
+                                        }
+                                        if (tableView) {
+                                            [tableView reloadData];
+                                        }
+                                    });
+                                }
+                            }, nil);
+                        };
+                    } else if ([item.identifier isEqualToString:@"DYYYfiltertimelimit"]) {
+                        NSString *savedValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfiltertimelimit"];
+                        item.detail = savedValue ?: @"";
+                        item.cellTappedBlock = ^{
+                            showTextInputAlert(@"过滤视频的发布时间", item.detail, @"单位为天", ^(NSString *text) {
+                                NSString *trimmedText = [text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+                                setUserDefaults(trimmedText, @"DYYYfiltertimelimit");
                                 item.detail = trimmedText ?: @"";
                                 UIViewController *topVC = topView();
                                 if ([topVC isKindOfClass:%c(AWESettingBaseViewController)]) {
