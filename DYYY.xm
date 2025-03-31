@@ -3899,6 +3899,16 @@ static BOOL isDownloadFlied = NO;
 %hook WKScrollView
 - (void)layoutSubviews {
     %orig;
+    
+    UIResponder *responder = self;
+    while (responder) {
+        NSString *className = NSStringFromClass([responder class]);
+        if ([className isEqualToString:@"BDPAppPageController"] || [className isEqualToString:@"BDPStarkController"]) {
+            return; //排除小程序和游戏的影响
+        }
+        responder = responder.nextResponder;
+    }
+
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideGiftPavilion"]) {
         self.hidden = YES;
     }
