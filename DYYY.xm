@@ -3085,7 +3085,7 @@ static CGFloat currentScale = 1.0;
     } else if ([nameString containsString:@"_like"]) {
         customFileName = @"like_before.png";
     } else if ([nameString containsString:@"_collect"]) {
-        customFileName = @"favorite.png";
+        customFileName = @"unfavorite.png";
     } else if ([nameString containsString:@"_share"]) {
         customFileName = @"share.png";
     }
