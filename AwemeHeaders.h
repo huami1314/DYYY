@@ -592,3 +592,7 @@ MediaTypeHeic
 
 @interface AWEConcernSkylightCapsuleView : UIView
 @end
+
+@interface UllmageView : UIView
+@property(nonatomic, assign) CGRect frame;
+@end
