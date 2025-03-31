@@ -588,7 +588,7 @@ static void showUserAgreementAlert() {
                     @{@"identifier": @"DYYYisSkipHotSpot", @"title": @"推荐过滤热点", @"detail": @"", @"cellType": @6, @"imageName": @"ic_squaretriangletwo_outlined_20"},
                     @{@"identifier": @"DYYYfilterLowLikes", @"title": @"推荐过滤低赞", @"detail": @"0", @"cellType": @26, @"imageName": @"ic_thumbsdown_outlined_20"},
                     @{@"identifier": @"DYYYfilterKeywords", @"title": @"推荐过滤文案", @"detail": @"", @"cellType": @26, @"imageName": @"ic_tag_outlined_20"},
-                    @{@"identifier": @"DYYYfiltertimelimit", @"title": @"推荐视频时限", @"detail": @"", @"cellType": @26, @"imageName": @"ic_tag_outlined_20"},
+                    @{@"identifier": @"DYYYfiltertimelimit", @"title": @"推荐视频时限", @"detail": @"", @"cellType": @26, @"imageName": @"ic_playertime_outlined_20"},
                     @{@"identifier": @"DYYYNoAds", @"title": @"启用屏蔽广告", @"detail": @"", @"cellType": @6, @"imageName": @"ic_ad_outlined_20"},
                     @{@"identifier": @"DYYYNoUpdates", @"title": @"屏蔽检测更新", @"detail": @"", @"cellType": @6, @"imageName": @"ic_circletop_outlined"},
                     @{@"identifier": @"DYYYHideteenmode", @"title": @"屏蔽青少年模式弹窗", @"detail": @"", @"cellType": @6, @"imageName": @"ic_personcircleclean_outlined_20"}
