@@ -333,99 +333,12 @@
     if (![self.parentViewController isKindOfClass:%c(AWEFeedCellViewController)]) {
         return;
     }
-    
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-        // 保存原始高度
-        CGFloat originalHeight = self.view.frame.size.height;
-        
-        // 调整视图高度
         CGRect frame = self.view.frame;
         frame.size.height = self.view.superview.frame.size.height - 83;
         self.view.frame = frame;
-        
-        // 计算高度变化比例
-        CGFloat heightRatio = originalHeight / frame.size.height;
-        
-        // 找到并调整关键子视图的位置
-        [self adjustSubviewsForFullscreenMode:heightRatio];
     }
 }
-%new
-- (void)adjustSubviewsForFullscreenMode:(CGFloat)heightRatio {
-    // 找到昵称、文案和进度条等关键元素
-    UIView *nicknameView = nil;
-    UIView *descriptionView = nil;
-    UIView *progressView = nil;
-    
-    // 查找这些视图
-    for (UIView *subview in self.view.subviews) {
-        if ([NSStringFromClass([subview class]) containsString:@"UserNameLabel"]) {
-            nicknameView = subview;
-        } else if ([NSStringFromClass([subview class]) containsString:@"Description"]) {
-            descriptionView = subview;
-        } else if ([NSStringFromClass([subview class]) containsString:@"Progress"]) {
-            progressView = subview;
-        }
-    }
-    
-    // 调整昵称视图位置
-    if (nicknameView) {
-        CGRect frame = nicknameView.frame;
-        // 确保不会移到底部，保持在原来的相对位置
-        frame.origin.y = frame.origin.y / heightRatio;
-        nicknameView.frame = frame;
-    }
-    
-    // 调整文案视图位置
-    if (descriptionView) {
-        CGRect frame = descriptionView.frame;
-        // 确保不会移到底部，保持在原来的相对位置
-        frame.origin.y = frame.origin.y / heightRatio;
-        descriptionView.frame = frame;
-    }
-    
-    // 调整进度条位置
-    if (progressView) {
-        CGRect frame = progressView.frame;
-        // 进度条通常在底部，需要特别处理
-        CGFloat maxY = self.view.frame.size.height - 60; // 距离底部60像素
-        if (CGRectGetMaxY(frame) > maxY) {
-            frame.origin.y = maxY - frame.size.height;
-        }
-        progressView.frame = frame;
-    }
-    
-    // 递归调整所有子视图容器
-    [self adjustContainerSubviews:self.view heightRatio:heightRatio];
-}
-%new
-- (void)adjustContainerSubviews:(UIView *)containerView heightRatio:(CGFloat)heightRatio {
-    for (UIView *subview in containerView.subviews) {
-        // 如果是容器视图，递归调整其子视图
-        if (subview.subviews.count > 0) {
-            [self adjustContainerSubviews:subview heightRatio:heightRatio];
-        }
-        
-        // 特别处理一些关键视图类型
-        NSString *className = NSStringFromClass([subview class]);
-        if ([className containsString:@"ElementStackView"] ||
-            [className containsString:@"InteractionView"] ||
-            [className containsString:@"DescriptionView"]) {
-            
-            CGRect frame = subview.frame;
-            // 调整垂直位置，确保不会移到底部
-            if (frame.origin.y > self.view.frame.size.height * 0.7) {
-                // 如果位置太靠下，将其移到合适的位置
-                frame.origin.y = self.view.frame.size.height * 0.6;
-            } else {
-                // 否则按比例调整
-                frame.origin.y = frame.origin.y / heightRatio;
-            }
-            subview.frame = frame;
-        }
-    }
-}
-
 - (void)onPlayer:(id)arg0 didDoubleClick:(id)arg1 {
     BOOL isPopupEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableDoubleOpenAlertController"];
     BOOL isDirectCommentEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableDoubleOpenComment"];
@@ -620,6 +533,74 @@
     %orig;
 }
 
+%end
+
+%hook AWEStoryContainerCollectionView
+- (void)layoutSubviews {
+    %orig;
+    if ([self.subviews count] == 2) return;
+    
+    // 获取 enableEnterProfile 属性来判断是否是主页
+    id enableEnterProfile = [self valueForKey:@"enableEnterProfile"];
+    BOOL isHome = (enableEnterProfile != nil && [enableEnterProfile boolValue]);
+    
+    // 检查是否在作者主页
+    BOOL isAuthorProfile = NO;
+    UIResponder *responder = self;
+    while ((responder = [responder nextResponder])) {
+        if ([NSStringFromClass([responder class]) containsString:@"UserHomeViewController"] ||
+            [NSStringFromClass([responder class]) containsString:@"ProfileViewController"]) {
+            isAuthorProfile = YES;
+            break;
+        }
+    }
+    
+    // 如果不是主页也不是作者主页，直接返回
+    if (!isHome && !isAuthorProfile) return;
+    
+    for (UIView *subview in self.subviews) {
+        if ([subview isKindOfClass:[UIView class]]) {
+            UIView *nextResponder = (UIView *)subview.nextResponder;
+            
+            // 处理主页的情况
+            if (isHome && [nextResponder isKindOfClass:%c(AWEPlayInteractionViewController)]) {
+                UIViewController *awemeBaseViewController = [nextResponder valueForKey:@"awemeBaseViewController"];
+                if (![awemeBaseViewController isKindOfClass:%c(AWEFeedCellViewController)]) {
+                    continue;
+                }
+                
+                CGRect frame = subview.frame;
+                if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+                    frame.size.height = subview.superview.frame.size.height - 83;
+                    subview.frame = frame;
+                }
+            }
+            // 处理作者主页的情况
+            else if (isAuthorProfile) {
+                // 检查是否是作品图片
+                BOOL isWorkImage = NO;
+                
+                // 可以通过检查子视图、标签或其他特性来确定是否是作品图片
+                for (UIView *childView in subview.subviews) {
+                    if ([NSStringFromClass([childView class]) containsString:@"ImageView"] ||
+                        [NSStringFromClass([childView class]) containsString:@"ThumbnailView"]) {
+                        isWorkImage = YES;
+                        break;
+                    }
+                }
+                
+                if (isWorkImage) {
+                    // 修复作者主页作品图片上移问题
+                    CGRect frame = subview.frame;
+                    // 这里可以根据需要调整位置
+                    // 例如，如果图片上移了，可以将其下移
+                    frame.origin.y += 83; // 假设需要下移83像素
+                    subview.frame = frame;
+                }
+            }
+        }
+    }
+}
 %end
 
 %hook AWEFeedTableView
