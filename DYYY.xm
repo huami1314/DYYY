@@ -3034,6 +3034,40 @@ grandParentView.transform = combinedTransform;
 
 %end
 
+%hook AWEAntiAddictedNoticeBarView
+- (void)layoutSubviews {
+    %orig;
+    // 查找子视图中的UllmageView
+    for (UIView *subview in self.subviews) {
+        if ([subview isKindOfClass:%c(UllmageView)]) {
+            UIView *imageView = (UIView *)subview;
+            
+            // 安全地检查tintColor属性
+            BOOL hasTintColor = NO;
+            if ([imageView respondsToSelector:@selector(tintColor)]) {
+                id tintColor = [imageView performSelector:@selector(tintColor)];
+                hasTintColor = (tintColor != nil);
+            }
+            
+            // 第一种情况: 有tintColor属性的视图
+            if (hasTintColor) {
+                if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAntiAddictedNotice"]) {
+                    [self setHidden:YES];
+                }
+                return;
+            }
+            
+            // 第二种情况: 没有tintColor属性的
+            else {
+                if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTemplateVideo"]) {
+                    [self setHidden:YES];
+                }
+                return;
+            }
+        }
+    }
+}
+%end
 %hook AWEUserNameLabel
 - (void)layoutSubviews {
     %orig;
