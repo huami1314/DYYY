@@ -3701,7 +3701,7 @@ static BOOL isDownloadFlied = NO;
 
 - (void)layoutSubviews {
     %orig; 
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"Hidenote"]) {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideItemTag"]) {
         self.frame = CGRectMake(0, 0, 0, 0);
         self.hidden = YES;
     }
