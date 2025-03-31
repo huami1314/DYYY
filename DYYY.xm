@@ -1326,26 +1326,38 @@ BOOL forceHide = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFee
 - (void)layoutSubviews {
     %orig;
     
-    // 查找子视图中的UllmageView
+    // 查找子视图中的UILabel
+    BOOL isAntiAddictedNotice = NO;
+    BOOL isTemplateVideo = NO;
+    
     for (UIView *subview in self.subviews) {
-        if ([subview isKindOfClass:%c(UllmageView)]) {
-            UllmageView *imageView = (UllmageView *)subview;
+        if ([subview isKindOfClass:%c(UILabel)]) {
+            UILabel *label = (UILabel *)subview;
+            NSString *labelText = label.text;
             
-            // 第一种情况: 有tintColor属性的视图
-            if (imageView.tintColor != nil) {
-                if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAntiAddictedNotice"]) {
-                    [self setHidden:YES];
+            // 检查文本内容
+            if (labelText) {
+                // 包含"作者声明"的是防沉迷通知
+                if ([labelText containsString:@"作者声明"]) {
+                    isAntiAddictedNotice = YES;
                 }
-                return;
-            }
-            
-            // 第二种情况: 没有tintColor属性的
-            else {
-                if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTemplateVideo"]) {
-                    [self setHidden:YES];
+                // 包含"合集"的是模板视频
+                else if ([labelText containsString:@"合集"]) {
+                    isTemplateVideo = YES;
                 }
-                return;
             }
+        }
+    }
+    
+    // 根据判断结果应用相应的开关
+    if (isAntiAddictedNotice) {
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAntiAddictedNotice"]) {
+            [self setHidden:YES];
+        }
+    }
+    else if (isTemplateVideo) {
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTemplateVideo"]) {
+            [self setHidden:YES];
         }
     }
 }
