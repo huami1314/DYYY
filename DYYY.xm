@@ -1324,42 +1324,30 @@ BOOL forceHide = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFee
 
 %hook AWEAntiAddictedNoticeBarView
 - (void)layoutSubviews {
-    %orig;
-    
-    // 查找子视图中的UILabel
-    BOOL isAntiAddictedNotice = NO;
-    BOOL isTemplateVideo = NO;
-    
-    for (UIView *subview in self.subviews) {
-        if ([subview isKindOfClass:%c(UILabel)]) {
-            UILabel *label = (UILabel *)subview;
-            NSString *labelText = label.text;
-            
-            // 检查文本内容
-            if (labelText) {
-                // 包含"作者声明"的是防沉迷通知
-                if ([labelText containsString:@"作者声明"]) {
-                    isAntiAddictedNotice = YES;
-                }
-                // 包含"合集"的是模板视频
-                else if ([labelText containsString:@"合集"]) {
-                    isTemplateVideo = YES;
-                }
-            }
-        }
-    }
-    
-    // 根据判断结果应用相应的开关
-    if (isAntiAddictedNotice) {
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAntiAddictedNotice"]) {
-            [self setHidden:YES];
-        }
-    }
-    else if (isTemplateVideo) {
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTemplateVideo"]) {
-            [self setHidden:YES];
-        }
-    }
+%orig;
+
+// 查找子视图中的UllmageView
+for (UIView *subview in self.subviews) {
+if ([subview isKindOfClass:%c(UllmageView)]) {
+UllmageView *imageView = (UllmageView *)subview;
+
+// 第一种情况: 有tintColor属性的视图
+if (imageView.tintColor != nil) {
+if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAntiAddictedNotice"]) {
+[self setHidden:YES];
+}
+return;
+}
+
+// 第二种情况: 没有tintColor属性的
+else {
+if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTemplateVideo"]) {
+[self setHidden:YES];
+}
+return;
+}
+}
+}
 }
 %end
 
@@ -3047,51 +3035,93 @@ grandParentView.transform = combinedTransform;
 %end
 
 %hook AWEUserNameLabel
-
 - (void)layoutSubviews {
-%orig;
-
-self.transform = CGAffineTransformIdentity;
-
-NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
-CGFloat scale = 1.0;
-
-if (scaleValue.length > 0) {
-CGFloat customScale = [scaleValue floatValue];
-if (customScale > 0 && customScale != 1.0) {
-scale = customScale;
+    %orig;
+    self.transform = CGAffineTransformIdentity;
+    NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
+    CGFloat scale = 1.0;
+    if (scaleValue.length > 0) {
+        CGFloat customScale = [scaleValue floatValue];
+        if (customScale > 0 && customScale != 1.0) {
+            scale = customScale;
+        }
+    }
+    // 添加垂直偏移支持
+    NSString *verticalOffsetValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameVerticalOffset"];
+    CGFloat verticalOffset = 0;
+    if (verticalOffsetValue.length > 0) {
+        verticalOffset = [verticalOffsetValue floatValue];
+    }
+    UIView *parentView = self.superview;
+    UIView *grandParentView = nil;
+    if (parentView) {
+        grandParentView = parentView.superview;
+    }
+    // 检查祖父视图是否为 AWEBaseElementView 类型
+    if (grandParentView && [grandParentView.superview isKindOfClass:%c(AWEBaseElementView)]) {
+        // 检查是否存在文案视图及其内容
+        BOOL hasDescription = NO;
+        
+        // 在视图层次结构中查找描述视图
+        UIView *baseElementView = grandParentView.superview;
+        if ([baseElementView isKindOfClass:%c(AWEBaseElementView)]) {
+            UIView *stackView = baseElementView.superview;
+            if (stackView) {
+                // 遍历同级视图查找描述标签
+                for (UIView *siblingView in stackView.subviews) {
+                    if ([siblingView isKindOfClass:%c(AWEBaseElementView)]) {
+                        // 查找描述视图
+                        for (UIView *elementSubview in siblingView.subviews) {
+                            if ([NSStringFromClass([elementSubview class]) containsString:@"Description"] ||
+                                [NSStringFromClass([elementSubview class]) containsString:@"AWEPlayInteraction"]) {
+                                // 检查是否有内容
+                                for (UIView *contentView in elementSubview.subviews) {
+                                    if ([contentView isKindOfClass:[UILabel class]]) {
+                                        UILabel *label = (UILabel *)contentView;
+                                        if (label.text.length > 0) {
+                                            hasDescription = YES;
+                                            break;
+                                        }
+                                    } else if ([NSStringFromClass([contentView class]) containsString:@"YYLabel"]) {
+                                        // 尝试获取 YYLabel 的文本
+                                        if ([contentView respondsToSelector:@selector(text)]) {
+                                            NSString *text = [contentView performSelector:@selector(text)];
+                                            if (text.length > 0) {
+                                                hasDescription = YES;
+                                                break;
+                                            }
+                                        } else if ([contentView respondsToSelector:@selector(attributedText)]) {
+                                            NSAttributedString *attrText = [contentView performSelector:@selector(attributedText)];
+                                            if (attrText.length > 0) {
+                                                hasDescription = YES;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                                if (hasDescription) break;
+                            }
+                        }
+                        if (hasDescription) break;
+                    }
+                }
+            }
+        }
+        
+        // 如果没有描述内容且垂直偏移为正值，则不应用垂直偏移
+        if (!hasDescription && verticalOffset > 0) {
+            verticalOffset = 0;
+        }
+        // 应用变换
+        CGAffineTransform scaleTransform = CGAffineTransformMakeScale(scale, scale);
+        grandParentView.transform = scaleTransform;
+        CGRect scaledFrame = grandParentView.frame;
+        CGFloat translationX = -scaledFrame.origin.x;
+        CGAffineTransform translationTransform = CGAffineTransformMakeTranslation(translationX, verticalOffset);
+        CGAffineTransform combinedTransform = CGAffineTransformConcat(scaleTransform, translationTransform);
+        grandParentView.transform = combinedTransform;
+    }
 }
-}
-
-// 添加垂直偏移支持
-NSString *verticalOffsetValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameVerticalOffset"];
-CGFloat verticalOffset = 0;
-if (verticalOffsetValue.length > 0) {
-verticalOffset = [verticalOffsetValue floatValue];
-}
-
-UIView *parentView = self.superview;
-UIView *grandParentView = nil;
-
-if (parentView) {
-grandParentView = parentView.superview;
-}
-
-// 检查祖父视图是否为 AWEBaseElementView 类型
-if (grandParentView && [grandParentView.superview isKindOfClass:%c(AWEBaseElementView)]) {
-CGAffineTransform scaleTransform = CGAffineTransformMakeScale(scale, scale);
-grandParentView.transform = scaleTransform;
-
-CGRect scaledFrame = grandParentView.frame;
-CGFloat translationX = -scaledFrame.origin.x;
-
-CGAffineTransform translationTransform = CGAffineTransformMakeTranslation(translationX, verticalOffset);
-CGAffineTransform combinedTransform = CGAffineTransformConcat(scaleTransform, translationTransform);
-
-grandParentView.transform = combinedTransform;
-}
-}
-
 %end
 
 %hook AWEFeedVideoButton
