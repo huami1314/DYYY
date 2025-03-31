@@ -1324,43 +1324,42 @@ BOOL forceHide = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFee
 
 %hook AWEAntiAddictedNoticeBarView
 - (void)layoutSubviews {
-    %orig;
-    
-    // 查找子视图中的UllmageView
-    UllmageView *targetImageView = nil;
-    
-    for (UIView *subview in self.subviews) {
-        if ([subview isKindOfClass:%c(UllmageView)]) {
-            targetImageView = (UllmageView *)subview;
-            break;
-        }
-    }
-    
-    // 如果找到了UllmageView子视图
-    if (targetImageView) {
-        CGRect frame = targetImageView.frame;
-        
-        // 第一种情况: 16x16的图标，Y=8，有tintColor
-        // 对应描述: <UllmageView: 0x2b8650580; frame = (12 8; 16 16); ... tintColor = <AWEUIDynamicColor: 0x284546c40> ...>
-        if (CGRectGetWidth(frame) == 16 && CGRectGetHeight(frame) == 16 && 
-            CGRectGetMinX(frame) == 12 && CGRectGetMinY(frame) == 8 && 
-            targetImageView.tintColor != nil) {
-            
-            if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAntiAddictedNotice"]) {
-                [self setHidden:YES];
-            }
-        }
-        
-        // 第二种情况: 20x20的图标，Y=10，没有提到tintColor
-        // 对应描述: <UllmageView: 0x1714d8010; frame = (12 10; 20 20); ... layer = <CALayer: 0×286ff9f80>>
-        else if (CGRectGetWidth(frame) == 20 && CGRectGetHeight(frame) == 20 && 
-                 CGRectGetMinX(frame) == 12 && CGRectGetMinY(frame) == 10) {
-            
-            if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTemplateVideo"]) {
-                [self setHidden:YES];
-            }
-        }
-    }
+%orig;
+
+// 查找子视图中的UllmageView
+UllmageView *targetImageView = nil;
+
+for (UIView *subview in self.subviews) {
+if ([subview isKindOfClass:%c(UllmageView)]) {
+targetImageView = (UllmageView *)subview;
+}
+}
+
+// 如果找到了UllmageView子视图
+if (targetImageView) {
+CGRect frame = targetImageView.frame;
+
+// 第一种情况: 16x16的图标，Y=8，有tintColor
+// 对应描述: <UllmageView: 0x2b8650580; frame = (12 8; 16 16); ... tintColor = <AWEUIDynamicColor: 0x284546c40> ...>
+if (CGRectGetWidth(frame) == 16 && CGRectGetHeight(frame) == 16 &&
+CGRectGetMinX(frame) == 12 && CGRectGetMinY(frame) == 8 &&
+targetImageView.tintColor != nil) {
+
+if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAntiAddictedNotice"]) {
+[self setHidden:YES];
+}
+}
+
+// 第二种情况: 20x20的图标，Y=10，没有提到tintColor
+// 对应描述: <UllmageView: 0x1714d8010; frame = (12 10; 20 20); ... layer = <CALayer: 0×286ff9f80>>
+else if (CGRectGetWidth(frame) == 20 && CGRectGetHeight(frame) == 20 &&
+CGRectGetMinX(frame) == 12 && CGRectGetMinY(frame) == 10) {
+
+if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTemplateVideo"]) {
+[self setHidden:YES];
+}
+}
+}
 }
 %end
 
