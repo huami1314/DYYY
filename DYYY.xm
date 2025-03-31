@@ -1322,28 +1322,33 @@ BOOL forceHide = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFee
 
 %end
 
+//隐藏视频合集
 %hook AWEAntiAddictedNoticeBarView
-
 - (void)layoutSubviews {
 %orig;
 
-id tipsValue = [self valueForKey:@"tips"];
-BOOL hasTips = (tipsValue != nil &&
-[tipsValue isKindOfClass:[NSString class]] &&
-[(NSString *)tipsValue length] > 0);
-BOOL shouldHideView = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTemplateVideo"] ||
-(hasTips && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAntiAddictedNotice"]);
-
-if (shouldHideView) {
-UIView *parentView = self.superview;
-if (parentView) {
-parentView.hidden = YES;
-} else {
+if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTemplateVideo"]) {
+// 直接隐藏此视图
 self.hidden = YES;
 }
 }
-}
 
+%end
+
+//隐藏作者声明
+%hook UILabel
+- (void)layoutSubviews {
+%orig;
+
+// 检查是否启用了隐藏设置
+if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAntiAddictedNotice"]) {
+// 检查文本是否包含"作者声明"
+if (self.text && [self.text containsString:@"作者声明"]) {
+// 隐藏整个标签
+[self setHidden:YES];
+}
+}
+}
 %end
 
 //隐藏分享给朋友提示
@@ -3925,24 +3930,34 @@ if (![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYHideLiveGIF"]) %o
 %end
 
 //隐藏礼物展馆
-%hook WKCompositingView
+%hook WKScrollView
 - (void)layoutSubviews {
 %orig;
 
+UIResponder *responder = self;
+while (responder) {
+NSString *className = NSStringFromClass([responder class]);
+if ([className isEqualToString:@"BDPAppPageController"] || [className isEqualToString:@"BDPStarkController"]) {
+return; //排除小程序和游戏的影响
+}
+responder = responder.nextResponder;
+}
+
 if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideGiftPavilion"]) {
-[self setHidden:YES];
+self.hidden = YES;
 }
 }
+
 %end
 
-%hook UllmageView
+%hook IESLiveActivityBannnerView
 - (void)layoutSubviews {
 %orig;
-
 if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideGiftPavilion"]) {
-[self setHidden:YES];
+self.hidden = YES;
 }
 }
+
 %end
 
 //隐藏直播广场
