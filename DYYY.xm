@@ -4021,8 +4021,8 @@ static BOOL isDownloadFlied = NO;
 %end
 
 //隐藏礼物展馆
-%hook BDXView
-- (void)layoutSubviews {
+%hook BDXWebView
+- (void)didMoveToSuperview {
     %orig;
 
     BOOL enabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideGiftPavilion"];
