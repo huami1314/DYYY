@@ -4,10 +4,10 @@
 #define DYYY 100
 
 typedef NS_ENUM(NSInteger, MediaType) {
-MediaTypeVideo,
-MediaTypeImage,
-MediaTypeAudio,
-MediaTypeHeic
+    MediaTypeVideo,
+    MediaTypeImage,
+    MediaTypeAudio,
+    MediaTypeHeic
 };
 
 @interface URLModel : NSObject
@@ -556,7 +556,7 @@ MediaTypeHeic
 @end
 
 @interface AWEFeedTopBarContainer : UIView
-- (void)applyDYYYTransparency;
+- (void)applyDYYYTransparency; 
 @end
 
 @interface AWEHPTopBarCTAContainer : UIView
@@ -592,8 +592,6 @@ MediaTypeHeic
 //关注直播
 @interface AWEConcernSkylightCapsuleView : UIView
 @end
-
 //直播发现
 @interface AWEFeedLiveTabRevisitControlView : UIView
 @end
-
