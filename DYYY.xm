@@ -19,7 +19,57 @@
 + (void)parseAndDownloadVideoWithShareLink:(NSString *)shareLink apiKey:(NSString *)apiKey;
 + (void)batchDownloadResources:(NSArray *)videos images:(NSArray *)images;
 @end
-                                                                                                                                                                       
+
+
+static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
+    if (!parentView) return;
+    
+    parentView.backgroundColor = [UIColor clearColor];
+    
+    UIVisualEffectView *existingBlurView = nil;
+    for (UIView *subview in parentView.subviews) {
+        if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == 999) {
+            existingBlurView = (UIVisualEffectView *)subview;
+            break;
+        }
+    }
+    
+    BOOL isDarkMode = [DYYYManager isDarkMode];
+    UIBlurEffectStyle blurStyle = isDarkMode ? UIBlurEffectStyleDark : UIBlurEffectStyleLight;
+    
+    if (transparency <= 0 || transparency > 1) {
+        transparency = 0.5;
+    }
+    
+    if (!existingBlurView) {
+        UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurStyle];
+        UIVisualEffectView *blurEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
+        blurEffectView.frame = parentView.bounds;
+        blurEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        blurEffectView.alpha = transparency;
+        blurEffectView.tag = 999;
+        
+        UIView *overlayView = [[UIView alloc] initWithFrame:parentView.bounds];
+        CGFloat alpha = isDarkMode ? 0.2 : 0.1;
+        overlayView.backgroundColor = [UIColor colorWithWhite:(isDarkMode ? 0 : 1) alpha:alpha];
+        overlayView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        [blurEffectView.contentView addSubview:overlayView];
+        
+        [parentView insertSubview:blurEffectView atIndex:0];
+    } else {
+        UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurStyle];
+        [existingBlurView setEffect:blurEffect];
+        existingBlurView.alpha = transparency;
+        
+        for (UIView *subview in existingBlurView.contentView.subviews) {
+            CGFloat alpha = isDarkMode ? 0.2 : 0.1;
+            subview.backgroundColor = [UIColor colorWithWhite:(isDarkMode ? 0 : 1) alpha:alpha];
+        }
+        
+        [parentView insertSubview:existingBlurView atIndex:0];
+    }
+}
+
 %hook AWEAwemePlayVideoViewController
 
 - (void)setIsAutoPlay:(BOOL)arg0 {
@@ -47,7 +97,7 @@
 
 %hook AWEFeedContainerContentView
 - (void)setAlpha:(CGFloat)alpha {
-    // 纯净模式功能保持不变
+    // 纯净模式功能
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnablePure"]) {
         %orig(0.0);
         
@@ -107,7 +157,8 @@
         %orig(1.0);
     }
 }
-// 这个方法应该属于 AWEFeedContainerContentView 类
+
+%new
 - (UIViewController *)findViewController:(UIViewController *)vc ofClass:(Class)targetClass {
     if (!vc) return nil;
     if ([vc isKindOfClass:targetClass]) return vc;
@@ -120,6 +171,7 @@
     return [self findViewController:vc.presentedViewController ofClass:targetClass];
 }
 %end
+
 // 添加新的 hook 来处理顶栏透明度
 %hook AWEFeedTopBarContainer
 - (void)layoutSubviews {
@@ -788,26 +840,7 @@
         }
     }
 }
-%new
-- (UILabel *)findCommentLabel:(UIView *)view {
-    if ([view isKindOfClass:[UILabel class]]) {
-        UILabel *label = (UILabel *)view;
-        if (label.text && ([label.text hasSuffix:@"条评论"] || [label.text hasSuffix:@"暂无评论"])) {
-            return label;
-        }
-    }
-
-    for (UIView *subview in view.subviews) {
-        UILabel *result = [self findCommentLabel:subview];
-        if (result) {
-            return result;
-        }
-    }
-
-    return nil;
-}
 %end
-//评论区微透
 
 %hook AFDFastSpeedView
 - (void)layoutSubviews {
@@ -1629,7 +1662,11 @@
             if ([subview isKindOfClass:NSClassFromString(@"AWECommentInputViewSwiftImpl.CommentInputViewMiddleContainer")]) {
                 for (UIView *innerSubview in subview.subviews) {
                     if ([innerSubview isKindOfClass:[UIView class]]) {
-                        innerSubview.backgroundColor = [UIColor clearColor];
+                        float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
+                        if (userTransparency <= 0 || userTransparency > 1) {
+                            userTransparency = 0.95;
+                        }
+                        DYYYAddCustomViewToParent(innerSubview, userTransparency);
                         break;
                     }
                 }
@@ -1638,20 +1675,6 @@
     }
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"] || 
     [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"]) {
-        NSString *className = NSStringFromClass([self class]);
-        if ([className isEqualToString:@"AWECommentInputViewSwiftImpl.CommentInputContainerView"]) {
-            for (UIView *subview in self.subviews) {
-                if ([subview isKindOfClass:[UIView class]] && subview.backgroundColor) {
-                    CGFloat red = 0, green = 0, blue = 0, alpha = 0;
-                    [subview.backgroundColor getRed:&red green:&green blue:&blue alpha:&alpha];
-                    
-                    if ((red == 22/255.0 && green == 22/255.0 && blue == 22/255.0) || 
-                        (red == 1.0 && green == 1.0 && blue == 1.0)) {
-                        subview.backgroundColor = [UIColor clearColor];
-                    }
-                }
-            }
-        }
         
         UIViewController *vc = [self firstAvailableUIViewController];
         if ([vc isKindOfClass:%c(AWEPlayInteractionViewController)]) {
@@ -1664,6 +1687,26 @@
                         subview.backgroundColor && 
                         CGColorEqualToColor(subview.backgroundColor.CGColor, [UIColor blackColor].CGColor)) {
                         subview.hidden = YES;
+                    }
+                }
+            }
+        }
+    }
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"]) {
+        NSString *className = NSStringFromClass([self class]);
+        if ([className isEqualToString:@"AWECommentInputViewSwiftImpl.CommentInputContainerView"]) {
+            for (UIView *subview in self.subviews) {
+                if ([subview isKindOfClass:[UIView class]] && subview.backgroundColor) {
+                    CGFloat red = 0, green = 0, blue = 0, alpha = 0;
+                    [subview.backgroundColor getRed:&red green:&green blue:&blue alpha:&alpha];
+                    
+                    if ((red == 22/255.0 && green == 22/255.0 && blue == 22/255.0) || 
+                        (red == 1.0 && green == 1.0 && blue == 1.0)) {
+                        float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
+                        if (userTransparency <= 0 || userTransparency > 1) {
+                            userTransparency = 0.95;
+                        }
+                        DYYYAddCustomViewToParent(subview, userTransparency);
                     }
                 }
             }
@@ -2029,6 +2072,32 @@
      return r;
  }
  
+%end
+
+%hook AWEFeedModuleService
+ 
+- (BOOL)getFeedIphoneAutoPlayState {
+      BOOL r = %orig;
+      
+      if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableAutoPlay"]) {
+          return YES;
+      }
+      return %orig;
+  }
+%end
+
+%hook AWEFeedGuideManager
+
+- (bool)enableAutoplay {
+
+    BOOL featureEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableAutoPlay"];
+    
+    if (!featureEnabled) {
+
+        return %orig;
+    }
+    return YES;
+}
 %end
 
 %hook AWEFeedChannelManager
@@ -3273,6 +3342,24 @@ static BOOL isDownloadFlied = NO;
 }
 %end
 
+//隐藏直播发现
+%hook AWEFeedLiveTabRevisitControlView 
+ 
+- (void)layoutSubviews {
+    %orig;
+    
+    // 判断是否需要隐藏 
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveDiscovery"]) {
+        // 如果需要隐藏，则移除或隐藏视图
+        if ([self respondsToSelector:@selector(removeFromSuperview)]) {
+            [self removeFromSuperview];
+        }
+        self.hidden = YES;
+        return;
+    }
+}
+%end
+
 //去除启动视频广告
 %hook AWEAwesomeSplashFeedCellOldAccessoryView
 
@@ -3977,6 +4064,25 @@ static BOOL isDownloadFlied = NO;
         // 未启用隐藏功能时正常显示
         return %orig(style, config, count, text);
     }
+}
+%end
+
+//隐藏直播退出清屏
+%hook IESLiveButton
+- (instancetype)init {
+    self = %orig;
+    if (self) {
+        if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveRoomClear"]) {
+            return self;
+        }
+
+        if ([self.accessibilityLabel isEqualToString:@"退出清屏"]) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self.superview removeFromSuperview];
+            });
+        }
+    }
+    return self;
 }
 %end
 
