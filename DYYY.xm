@@ -47,7 +47,7 @@
 
 %hook AWEFeedContainerContentView
 - (void)setAlpha:(CGFloat)alpha {
-    // 纯净模式功能保持不变
+    // 纯净模式功能
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnablePure"]) {
         %orig(0.0);
         
@@ -107,7 +107,8 @@
         %orig(1.0);
     }
 }
-// 这个方法应该属于 AWEFeedContainerContentView 类
+
+%new
 - (UIViewController *)findViewController:(UIViewController *)vc ofClass:(Class)targetClass {
     if (!vc) return nil;
     if ([vc isKindOfClass:targetClass]) return vc;
@@ -120,6 +121,7 @@
     return [self findViewController:vc.presentedViewController ofClass:targetClass];
 }
 %end
+
 // 添加新的 hook 来处理顶栏透明度
 %hook AWEFeedTopBarContainer
 - (void)layoutSubviews {
