@@ -4095,6 +4095,17 @@ static BOOL isDownloadFlied = NO;
 
 %end
 
+//隐藏用户进入特效
+%hook IESLiveDynamicUserEnterView
+- (void)setNeedsLayout {
+    %orig;
+
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideUserEnterView"]) {
+        return;
+    }
+}
+%end
+
 %ctor {
     %init(DYYYSettingsGesture);
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {

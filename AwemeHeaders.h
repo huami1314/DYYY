@@ -598,3 +598,6 @@ typedef NS_ENUM(NSInteger, MediaType) {
 //直播退出清屏
 @interface IESLiveButton : UIView
 @end
+//直播隐藏用户进入特效
+@interface IESLiveDynamicUserEnterView : UIView
+@end
