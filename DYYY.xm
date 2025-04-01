@@ -21,7 +21,7 @@
 @end
 
 
-static void DYYYAddCustomViewToParent(UIView *parentView, BOOL isDarkMode, float transparency) {
+static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
     if (!parentView) return;
     
     parentView.backgroundColor = [UIColor clearColor];
@@ -34,6 +34,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, BOOL isDarkMode, float
         }
     }
     
+    BOOL isDarkMode = [DYYYManager isDarkMode];
     UIBlurEffectStyle blurStyle = isDarkMode ? UIBlurEffectStyleDark : UIBlurEffectStyleLight;
     
     if (transparency <= 0 || transparency > 1) {
@@ -1665,7 +1666,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, BOOL isDarkMode, float
                         if (userTransparency <= 0 || userTransparency > 1) {
                             userTransparency = 0.95;
                         }
-                        DYYYAddCustomViewToParent(innerSubview, self, userTransparency);
+                        DYYYAddCustomViewToParent(innerSubview, userTransparency);
                         break;
                     }
                 }
@@ -1674,6 +1675,24 @@ static void DYYYAddCustomViewToParent(UIView *parentView, BOOL isDarkMode, float
     }
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"] || 
     [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"]) {
+        
+        UIViewController *vc = [self firstAvailableUIViewController];
+        if ([vc isKindOfClass:%c(AWEPlayInteractionViewController)]) {
+            BOOL shouldHideSubview = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"] || 
+                                [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"];
+
+            if (shouldHideSubview) {
+                for (UIView *subview in self.subviews) {
+                    if ([subview isKindOfClass:[UIView class]] && 
+                        subview.backgroundColor && 
+                        CGColorEqualToColor(subview.backgroundColor.CGColor, [UIColor blackColor].CGColor)) {
+                        subview.hidden = YES;
+                    }
+                }
+            }
+        }
+    }
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"]) {
         NSString *className = NSStringFromClass([self class]);
         if ([className isEqualToString:@"AWECommentInputViewSwiftImpl.CommentInputContainerView"]) {
             for (UIView *subview in self.subviews) {
@@ -1687,23 +1706,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, BOOL isDarkMode, float
                         if (userTransparency <= 0 || userTransparency > 1) {
                             userTransparency = 0.95;
                         }
-                        DYYYAddCustomViewToParent(subview, self, userTransparency);
-                    }
-                }
-            }
-        }
-        
-        UIViewController *vc = [self firstAvailableUIViewController];
-        if ([vc isKindOfClass:%c(AWEPlayInteractionViewController)]) {
-            BOOL shouldHideSubview = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"] || 
-                                [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"];
-
-            if (shouldHideSubview) {
-                for (UIView *subview in self.subviews) {
-                    if ([subview isKindOfClass:[UIView class]] && 
-                        subview.backgroundColor && 
-                        CGColorEqualToColor(subview.backgroundColor.CGColor, [UIColor blackColor].CGColor)) {
-                        subview.hidden = YES;
+                        DYYYAddCustomViewToParent(subview, userTransparency);
                     }
                 }
             }
