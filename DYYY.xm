@@ -678,12 +678,12 @@
 
 - (void)setFrame:(CGRect)frame {
 
-    %orig;
     if ([self isKindOfClass:%c(AWEIMSkylightListView)] && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenAvatarList"]) {
         frame = CGRectZero;
     }
 
     if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"] && ![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+        %orig;
         return;
     }
     
@@ -707,6 +707,7 @@
             }
         }
     }
+    %orig;
 }
 
 %end
