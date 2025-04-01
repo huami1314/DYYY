@@ -1355,28 +1355,48 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 
 %end
 
+//隐藏作者声明和视频合集
 %hook AWEAntiAddictedNoticeBarView
-
 - (void)layoutSubviews {
     %orig;
-
-    id tipsValue = [self valueForKey:@"tips"];
-    BOOL hasTips = (tipsValue != nil && 
-                   [tipsValue isKindOfClass:[NSString class]] && 
-                   [(NSString *)tipsValue length] > 0);
-    BOOL shouldHideView = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTemplateVideo"] || 
-                          (hasTips && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAntiAddictedNotice"]);
-                          
-    if (shouldHideView) {
-        UIView *parentView = self.superview;
-        if (parentView) {
-            parentView.hidden = YES;
-        } else {
-            self.hidden = YES;
+    
+    // 查找子视图中的UILabel
+    BOOL isAntiAddictedNotice = NO;
+    BOOL isTemplateVideo = NO;
+    
+    for (UIView *subview in self.subviews) {
+        if ([subview isKindOfClass:%c(UILabel)]) {
+            UILabel *label = (UILabel *)subview;
+            NSString *labelText = label.text;
+            
+            // 检查文本内容
+            if (labelText) {
+                // 包含"作者声明"、"就医"或"生成"
+                if ([labelText containsString:@"作者声明"] || 
+                    [labelText containsString:@"就医"] || 
+                    [labelText containsString:@"生成"]) {
+                    isAntiAddictedNotice = YES;
+                }
+                // 包含"合集"
+                else if ([labelText containsString:@"合集"]) {
+                    isTemplateVideo = YES;
+                }
+            }
+        }
+    }
+    
+    // 根据判断结果应用相应的开关
+    if (isAntiAddictedNotice) {
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAntiAddictedNotice"]) {
+            [self setHidden:YES];
+        }
+    }
+    else if (isTemplateVideo) {
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTemplateVideo"]) {
+            [self setHidden:YES];
         }
     }
 }
-
 %end
 
 //隐藏分享给朋友提示
