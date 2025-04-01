@@ -589,6 +589,11 @@ MediaTypeHeic
 
 @interface AWEPlayInteractionDescriptionLabel : UILabel
 @end
-
+//关注直播
 @interface AWEConcernSkylightCapsuleView : UIView
 @end
+
+//直播发现
+@interface AWEFeedLiveTabRevisitControlView : UIView
+@end
+

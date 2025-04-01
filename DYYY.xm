@@ -552,6 +552,35 @@ handler:^{
 [self performCommentAction];
 }];
 [actions addObject:openCommentAction];
+    %orig;
+    if ([self isKindOfClass:%c(AWEIMSkylightListView)] && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenAvatarList"]) {
+        frame = CGRectZero;
+    }
+
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"] && ![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+        return;
+    }
+    
+    UIViewController *vc = [self firstAvailableUIViewController];
+    if ([vc isKindOfClass:%c(AWEAwemePlayVideoViewController)]) {
+        if (frame.origin.x != 0 || frame.origin.y != 0) {
+            return;
+        } else {
+            CGRect superviewFrame = self.superview.frame;
+            
+            if (superviewFrame.size.height > 0 && frame.size.height > 0 && 
+                frame.size.height < superviewFrame.size.height && 
+                frame.origin.x == 0 && frame.origin.y == 0) {
+                
+                CGFloat heightDifference = superviewFrame.size.height - frame.size.height;
+                if (fabs(heightDifference - 83) < 1.0) {
+                    frame.size.height = superviewFrame.size.height;
+                    %orig(frame);
+                    return;
+                }
+            }
+        }
+    }
 }
 
 // 添加点赞视频选项
@@ -2036,6 +2065,32 @@ return r;
 
 %end
 
+%hook AWEFeedModuleService
+ 
+- (BOOL)getFeedIphoneAutoPlayState {
+      BOOL r = %orig;
+      
+      if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableAutoPlay"]) {
+          return YES;
+      }
+      return %orig;
+  }
+%end
+
+%hook AWEFeedGuideManager
+
+- (bool)enableAutoplay {
+
+    BOOL featureEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableAutoPlay"];
+    
+    if (!featureEnabled) {
+
+        return %orig;
+    }
+    return YES;
+}
+%end
+
 %hook AWEFeedChannelManager
 
 - (void)reloadChannelWithChannelModels:(id)arg1 currentChannelIDList:(id)arg2 reloadType:(id)arg3 selectedChannelID:(id)arg4 {
@@ -3345,6 +3400,7 @@ NSString *descText = [selectdComment content];
 //隐藏关注直播
 %hook AWEConcernSkylightCapsuleView
 - (void)setHidden:(BOOL)hidden {
+
 if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideConcernCapsuleView"]) {
 hidden = YES;
 }
@@ -3357,6 +3413,30 @@ if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideConcernCapsuleVi
 self.hidden = YES;
 self.alpha = 0;
 }
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideConcernCapsuleView"]) {
+        [self removeFromSuperview];
+        return;
+    }
+    
+    %orig(hidden);
+}
+%end
+
+//隐藏直播发现
+%hook AWEFeedLiveTabRevisitControlView 
+ 
+- (void)layoutSubviews {
+    %orig;
+    
+    // 判断是否需要隐藏 
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveDiscovery"]) {
+        // 如果需要隐藏，则移除或隐藏视图
+        if ([self respondsToSelector:@selector(removeFromSuperview)]) {
+            [self removeFromSuperview];
+        }
+        self.hidden = YES;
+        return;
+    }
 }
 %end
 
@@ -3787,6 +3867,11 @@ if ([[NSUserDefaults standardUserDefaults] boolForKey:@"Hidenote"]) {
 self.frame = CGRectMake(0, 0, 0, 0);
 self.hidden = YES;
 }
+    %orig; 
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideItemTag"]) {
+        self.frame = CGRectMake(0, 0, 0, 0);
+        self.hidden = YES;
+    }
 }
 
 %end
@@ -3897,6 +3982,12 @@ parentView.hidden = YES;
 self.hidden = YES;
 }
 }
+- (void)layoutSubviews {
+    %orig; 
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveCapsuleView"]) {
+        self.frame = CGRectMake(0, 0, 0, 0);
+        self.hidden = YES;
+    }
 }
 
 %end
@@ -4022,9 +4113,29 @@ responder = responder.nextResponder;
 if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideGiftPavilion"]) {
 self.hidden = YES;
 }
-}
 
-%end
+    %orig; 
+    
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideGiftPavilion"]) {
+        return;
+    }
+    
+    UIView *superview = self.superview;
+    if (![superview isKindOfClass:NSClassFromString(@"WDXWebView")]) {
+        return; 
+    }
+    
+    NSString *title = [(id)superview title];
+    
+    // 如果 title 包含任务banner或 活动banner，就移除
+    if (title && (
+        [title rangeOfString:@"任务Banner"].location != NSNotFound ||
+        [title rangeOfString:@"活动Banner"].location != NSNotFound
+    )) {
+        [self removeFromSuperview]; 
+    }
+}
+%end    
 
 %hook IESLiveActivityBannnerView
 - (void)layoutSubviews {
