@@ -531,7 +531,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWELiveFeedStatusLabel : UILabel
 @end
 
-@interface WKScrollView : UIView
+@interface BDXWebView : UIView
 @end
 
 @interface IESLiveActivityBannnerView : UIView
@@ -594,4 +594,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 //直播发现
 @interface AWEFeedLiveTabRevisitControlView : UIView
+@end
+//直播退出清屏
+@interface IESLiveButton : UIView
 @end

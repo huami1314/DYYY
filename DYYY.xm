@@ -4021,30 +4021,21 @@ static BOOL isDownloadFlied = NO;
 %end
 
 //隐藏礼物展馆
-%hook WKScrollView
+%hook BDXWebView
 - (void)layoutSubviews {
-    %orig; 
-    
-    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideGiftPavilion"]) {
-        return;
-    }
-    
-    UIView *superview = self.superview;
-    if (![superview isKindOfClass:NSClassFromString(@"WDXWebView")]) {
-        return; 
-    }
-    
-    NSString *title = [(id)superview title];
-    
-    // 如果 title 包含任务banner或 活动banner，就移除
-    if (title && (
-        [title rangeOfString:@"任务Banner"].location != NSNotFound ||
-        [title rangeOfString:@"活动Banner"].location != NSNotFound
-    )) {
-        [self removeFromSuperview]; 
+    %orig;
+
+    BOOL enabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideGiftPavilion"];
+    if (!enabled) return;
+
+    NSString *title = [self valueForKey:@"title"];
+
+    if ([title containsString:@"任务Banner"] || 
+        [title containsString:@"活动Banner"]) {
+        [self removeFromSuperview];
     }
 }
-%end    
+%end
 
 %hook IESLiveActivityBannnerView
 - (void)layoutSubviews {
@@ -4085,6 +4076,23 @@ static BOOL isDownloadFlied = NO;
         return %orig(style, config, count, text);
     }
 }
+%end
+
+//隐藏直播退出清屏
+%hook IESLiveButton
+
+- (void)layoutSubviews {
+    %orig; 
+
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveRoomClear"]) {
+        return;
+    }
+
+    if ([self.accessibilityLabel isEqualToString:@"退出清屏"] && self.superview) {
+        [self.superview removeFromSuperview];
+    }
+}
+
 %end
 
 %ctor {
