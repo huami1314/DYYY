@@ -4078,18 +4078,24 @@ static BOOL isDownloadFlied = NO;
 }
 %end
 
-//隐藏直播退出清屏
+//隐藏直播退出清屏、投屏按钮
 %hook IESLiveButton
 
 - (void)layoutSubviews {
     %orig; 
 
-    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveRoomClear"]) {
-        return;
+    // 处理清屏按钮
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveRoomClear"]) {
+        if ([self.accessibilityLabel isEqualToString:@"退出清屏"] && self.superview) {
+            [self.superview removeFromSuperview];
+        }
     }
 
-    if ([self.accessibilityLabel isEqualToString:@"退出清屏"] && self.superview) {
-        [self.superview removeFromSuperview];
+    // 投屏按钮
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveRoomMirroring"]) {
+        if ([self.accessibilityLabel isEqualToString:@"投屏"] && self.superview) {
+            [self.superview removeFromSuperview];
+        }
     }
 }
 
@@ -4107,6 +4113,8 @@ static BOOL isDownloadFlied = NO;
     }
 }
 %end
+
+//
 
 %ctor {
     %init(DYYYSettingsGesture);
