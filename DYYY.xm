@@ -4069,21 +4069,20 @@ static BOOL isDownloadFlied = NO;
 
 //隐藏直播退出清屏
 %hook IESLiveButton
-- (instancetype)init {
-    self = %orig;
-    if (self) {
-        if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveRoomClear"]) {
-            return self;
-        }
 
-        if ([self.accessibilityLabel isEqualToString:@"退出清屏"]) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                [self.superview removeFromSuperview];
-            });
-        }
+// Hook 布局方法
+- (void)layoutSubviews {
+    %orig; 
+
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveRoomClear"]) {
+        return;
     }
-    return self;
+
+    if ([self.accessibilityLabel isEqualToString:@"退出清屏"] && self.superview) {
+        [self.superview removeFromSuperview];
+    }
 }
+
 %end
 
 %ctor {
