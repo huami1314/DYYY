@@ -4098,10 +4098,13 @@ static BOOL isDownloadFlied = NO;
 //隐藏用户进入特效
 %hook IESLiveDynamicUserEnterView
 - (void)setNeedsLayout {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideUserEnterView"]) {
-        return; 
+    BOOL hideEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideUserEnterView"];
+
+    if (hideEnabled) {
+        return ;
+    } else {
+        %orig;
     }
-    %orig;
 }
 %end
 
