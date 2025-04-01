@@ -19,7 +19,56 @@
 + (void)parseAndDownloadVideoWithShareLink:(NSString *)shareLink apiKey:(NSString *)apiKey;
 + (void)batchDownloadResources:(NSArray *)videos images:(NSArray *)images;
 @end
-                                                                                                                                                                       
+
+
+static void DYYYAddCustomViewToParent(UIView *parentView, BOOL isDarkMode, float transparency) {
+    if (!parentView) return;
+    
+    parentView.backgroundColor = [UIColor clearColor];
+    
+    UIVisualEffectView *existingBlurView = nil;
+    for (UIView *subview in parentView.subviews) {
+        if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == 999) {
+            existingBlurView = (UIVisualEffectView *)subview;
+            break;
+        }
+    }
+    
+    UIBlurEffectStyle blurStyle = isDarkMode ? UIBlurEffectStyleDark : UIBlurEffectStyleLight;
+    
+    if (transparency <= 0 || transparency > 1) {
+        transparency = 0.5;
+    }
+    
+    if (!existingBlurView) {
+        UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurStyle];
+        UIVisualEffectView *blurEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
+        blurEffectView.frame = parentView.bounds;
+        blurEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        blurEffectView.alpha = transparency;
+        blurEffectView.tag = 999;
+        
+        UIView *overlayView = [[UIView alloc] initWithFrame:parentView.bounds];
+        CGFloat alpha = isDarkMode ? 0.2 : 0.1;
+        overlayView.backgroundColor = [UIColor colorWithWhite:(isDarkMode ? 0 : 1) alpha:alpha];
+        overlayView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        [blurEffectView.contentView addSubview:overlayView];
+        
+        [parentView insertSubview:blurEffectView atIndex:0];
+    } else {
+        UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurStyle];
+        [existingBlurView setEffect:blurEffect];
+        existingBlurView.alpha = transparency;
+        
+        for (UIView *subview in existingBlurView.contentView.subviews) {
+            CGFloat alpha = isDarkMode ? 0.2 : 0.1;
+            subview.backgroundColor = [UIColor colorWithWhite:(isDarkMode ? 0 : 1) alpha:alpha];
+        }
+        
+        [parentView insertSubview:existingBlurView atIndex:0];
+    }
+}
+
 %hook AWEAwemePlayVideoViewController
 
 - (void)setIsAutoPlay:(BOOL)arg0 {
@@ -790,26 +839,7 @@
         }
     }
 }
-%new
-- (UILabel *)findCommentLabel:(UIView *)view {
-    if ([view isKindOfClass:[UILabel class]]) {
-        UILabel *label = (UILabel *)view;
-        if (label.text && ([label.text hasSuffix:@"条评论"] || [label.text hasSuffix:@"暂无评论"])) {
-            return label;
-        }
-    }
-
-    for (UIView *subview in view.subviews) {
-        UILabel *result = [self findCommentLabel:subview];
-        if (result) {
-            return result;
-        }
-    }
-
-    return nil;
-}
 %end
-//评论区微透
 
 %hook AFDFastSpeedView
 - (void)layoutSubviews {
@@ -1631,7 +1661,11 @@
             if ([subview isKindOfClass:NSClassFromString(@"AWECommentInputViewSwiftImpl.CommentInputViewMiddleContainer")]) {
                 for (UIView *innerSubview in subview.subviews) {
                     if ([innerSubview isKindOfClass:[UIView class]]) {
-                        innerSubview.backgroundColor = [UIColor clearColor];
+                        float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
+                        if (userTransparency <= 0 || userTransparency > 1) {
+                            userTransparency = 0.95;
+                        }
+                        DYYYAddCustomViewToParent(innerSubview, self, userTransparency);
                         break;
                     }
                 }
@@ -1649,7 +1683,11 @@
                     
                     if ((red == 22/255.0 && green == 22/255.0 && blue == 22/255.0) || 
                         (red == 1.0 && green == 1.0 && blue == 1.0)) {
-                        subview.backgroundColor = [UIColor clearColor];
+                        float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
+                        if (userTransparency <= 0 || userTransparency > 1) {
+                            userTransparency = 0.95;
+                        }
+                        DYYYAddCustomViewToParent(subview, self, userTransparency);
                     }
                 }
             }
