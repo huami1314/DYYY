@@ -725,13 +725,19 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 %end
 
 %hook UIView
-
 - (void)setFrame:(CGRect)frame {
-
     if ([self isKindOfClass:%c(AWEIMSkylightListView)] && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenAvatarList"]) {
         frame = CGRectZero;
     }
-
+    
+    //隐藏声明和合集的留白
+    if ([self isKindOfClass:%c(AWEAntiAddictedNoticeBarView)] && 
+        ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTemplateVideo"] || 
+         [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAntiAddictedNotice"])) {
+        frame = CGRectZero;
+        %orig(frame);
+        return;
+    }
     if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"] && ![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
         %orig;
         return;
@@ -759,7 +765,6 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
     }
     %orig;
 }
-
 %end
 
 %hook AWEBaseListViewController
@@ -1301,16 +1306,6 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 
 // 隐藏大家都在搜留白
 %hook AWESearchAnchorListModel
-- (id)init {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"]) {
-        return nil;
-    }
-    return %orig;
-}
-%end
-
-// 隐藏评论定位留白
-%hook AWEPOlinfoModel
 - (id)init {
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"]) {
         return nil;
