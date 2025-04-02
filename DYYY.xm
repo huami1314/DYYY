@@ -1400,32 +1400,32 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 %hook AWEAntiAddictedNoticeBarView
 - (void)layoutSubviews {
     %orig;
-    
     BOOL isTemplateVideo = NO;
-    
     // 查找子视图中的UILabel，检查是否包含"合集"
     for (UIView *subview in self.subviews) {
         if ([subview isKindOfClass:%c(UILabel)]) {
             UILabel *label = (UILabel *)subview;
             NSString *labelText = label.text;
-            
             if (labelText && [labelText containsString:@"合集"]) {
                 isTemplateVideo = YES;
                 break;
             }
         }
     }
-    
-    // 根据判断结果应用谁的开关
+    // 根据判断结果应用相应的开关
     if (isTemplateVideo) {
         // 如果是合集，使用合集的开关
         if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTemplateVideo"]) {
             [self setHidden:YES];
+        } else {
+            [self setHidden:NO]; 
         }
     } else {
-        // 如果是作者声明，使用声明的开关
+        // 如果是声明，使用声明的开关
         if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAntiAddictedNotice"]) {
             [self setHidden:YES];
+        } else {
+            [self setHidden:NO]; 
         }
     }
 }
