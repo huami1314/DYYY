@@ -1096,13 +1096,13 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 - (void)layoutSubviews {
     %orig;
     
-    // 首先检查是否需要隐藏头像加号
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAvatarButton"]) {
+    // 检查是否需要隐藏加号
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLOTAnimationView"]) {
         [self removeFromSuperview];
         return;
     }
     
-    // 如果不需要隐藏，则应用透明度
+    // 应用透明度设置
     NSString *transparencyValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYAvatarViewTransparency"];
     if (transparencyValue && transparencyValue.length > 0) {
         CGFloat alphaValue = [transparencyValue floatValue];
@@ -1118,13 +1118,13 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 - (void)layoutSubviews {
     %orig;
     
-    // 首先检查是否需要隐藏头像
+    // 检查是否需要隐藏头像
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAvatarButton"]) {
         [self removeFromSuperview];
         return;
     }
     
-    // 如果不需要隐藏，则应用透明度
+    // 应用透明度设置
     NSString *transparencyValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYAvatarViewTransparency"];
     if (transparencyValue && transparencyValue.length > 0) {
         CGFloat alphaValue = [transparencyValue floatValue];
@@ -1134,7 +1134,6 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
     }
 }
 %end
-
 
 //移除同城吃喝玩乐提示框
 %hook AWENearbySkyLightCapsuleView
