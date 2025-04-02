@@ -1355,6 +1355,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 
 %end
 
+
 //隐藏作者声明和视频合集
 %hook AWEAntiAddictedNoticeBarView
 - (void)layoutSubviews {
@@ -1371,10 +1372,15 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
             
             // 检查文本内容
             if (labelText) {
-                // 包含"作者声明"、"就医"或"生成"
+
+                // 包含"作者声明"、"就医"、"野生"、"存在"、"生成"或"理性"
                 if ([labelText containsString:@"作者声明"] || 
                     [labelText containsString:@"就医"] || 
-                    [labelText containsString:@"生成"]) {
+                    [labelText containsString:@"生成"] ||
+                    [labelText containsString:@"存在"] ||
+                    [labelText containsString:@"野生"] ||
+                    [labelText containsString:@"理性"]) {
+
                     isAntiAddictedNotice = YES;
                 }
                 // 包含"合集"
@@ -1644,7 +1650,21 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
         return [@(a.frame.origin.x) compare:@(b.frame.origin.x)];
     }];
 
-    CGFloat totalWidth = self.bounds.size.width;
+    CGFloat totalWidth;
+    if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+        // iPad
+        totalWidth = self.bounds.size.width; 
+        for (UIView *subview in self.subviews) {
+            if ([subview class] == [UIView class] && 
+                fabs(subview.frame.size.width - self.bounds.size.width) > 0.1) {  
+                totalWidth = subview.frame.size.width;
+                break;
+            }
+        }
+    } else {
+        // iPhone
+        totalWidth = self.bounds.size.width;
+    }
     CGFloat buttonWidth = totalWidth / visibleButtons.count;
     
     for (NSInteger i = 0; i < visibleButtons.count; i++) {
@@ -3380,6 +3400,32 @@ static BOOL isDownloadFlied = NO;
 }
 %end
 
+
+//隐藏直播点歌
+%hook IESLiveKTVSongIndicatorView 
+- (void)layoutSubviews {
+    %orig;
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideKTVSongIndicator"]) {
+        self.hidden = YES;
+        [self removeFromSuperview];
+    }
+}
+%end
+
+//隐藏图片滑条
+%hook AWEStoryProgressContainerView
+- (BOOL)isHidden {
+    BOOL originalValue = %orig;
+    BOOL customHide = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideDotsIndicator"];
+    return originalValue || customHide; 
+}
+ 
+- (void)setHidden:(BOOL)hidden {
+    BOOL forceHide = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideDotsIndicator"];
+    %orig(forceHide ? YES : hidden); 
+}
+%end
+
 //去除启动视频广告
 %hook AWEAwesomeSplashFeedCellOldAccessoryView
 
@@ -4100,21 +4146,6 @@ static BOOL isDownloadFlied = NO;
 }
 
 %end
-
-//隐藏用户进入特效
-%hook IESLiveDynamicUserEnterView
-- (void)setNeedsLayout {
-    BOOL hideEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideUserEnterView"];
-
-    if (hideEnabled) {
-        return ;
-    } else {
-        %orig;
-    }
-}
-%end
-
-//
 
 %ctor {
     %init(DYYYSettingsGesture);
