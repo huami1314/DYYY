@@ -1095,17 +1095,17 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 %hook LOTAnimationView
 - (void)layoutSubviews {
     %orig;
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAvatarButton"]) {
+    
+    // 检查是否需要隐藏加号
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLOTAnimationView"]) {
         [self removeFromSuperview];
         return;
     }
     
-    // 添加透明度
+    // 应用透明度设置
     NSString *transparencyValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYAvatarViewTransparency"];
-    
     if (transparencyValue && transparencyValue.length > 0) {
         CGFloat alphaValue = [transparencyValue floatValue];
-        
         if (alphaValue >= 0.0 && alphaValue <= 1.0) {
             self.alpha = alphaValue;
         }
@@ -1113,6 +1113,27 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 }
 %end
 
+//首页头像隐藏和透明
+%hook AWEAdAvatarView
+- (void)layoutSubviews {
+    %orig;
+    
+    // 检查是否需要隐藏头像
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAvatarButton"]) {
+        [self removeFromSuperview];
+        return;
+    }
+    
+    // 应用透明度设置
+    NSString *transparencyValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYAvatarViewTransparency"];
+    if (transparencyValue && transparencyValue.length > 0) {
+        CGFloat alphaValue = [transparencyValue floatValue];
+        if (alphaValue >= 0.0 && alphaValue <= 1.0) {
+            self.alpha = alphaValue;
+        }
+    }
+}
+%end
 
 //移除同城吃喝玩乐提示框
 %hook AWENearbySkyLightCapsuleView
@@ -1198,6 +1219,16 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
     }
 }
 
+%end
+
+// 隐藏大家都在搜留白
+%hook AWESearchAnchorListModel
+- (id)init {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"]) {
+        return nil;
+    }
+    return %orig;
+}
 %end
 
 //隐藏评论定位
@@ -1608,28 +1639,6 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
     }
 }
 
-%end
-
-//推荐头像隐藏和透明
-%hook AWEAdAvatarView
-- (void)layoutSubviews {
-    %orig;
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAvatarButton"]) {
-        [self removeFromSuperview];
-        return;
-    }
-    
-    // 添加透明度
-    NSString *transparencyValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYAvatarViewTransparency"];
-    
-    if (transparencyValue && transparencyValue.length > 0) {
-        CGFloat alphaValue = [transparencyValue floatValue];
-        
-        if (alphaValue >= 0.0 && alphaValue <= 1.0) {
-            self.alpha = alphaValue;
-        }
-    }
-}
 %end
 
 %hook AWENormalModeTabBar
