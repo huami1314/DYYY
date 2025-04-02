@@ -608,3 +608,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (void)layoutSubviews; 
 - (void)updateIndicatorWithPageCount:(NSInteger)count; 
 @end
+
+@interface AWESearchAnchorListModel : NSObject
+- (id)init;
+@end
