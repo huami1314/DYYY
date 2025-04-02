@@ -924,7 +924,8 @@ static void showUserAgreementAlert() {
                     @{@"identifier": @"DYYYHideLiveRoomClear", @"title": @"隐藏退出清屏", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
                     @{@"identifier": @"DYYYHideLiveRoomMirroring", @"title": @"隐藏投屏按钮", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
                     @{@"identifier": @"DYYYHideLiveDiscovery", @"title": @"隐藏直播发现", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
-                    @{@"identifier": @"DYYYHideKTVSongIndicator", @"title": @"隐藏直播点歌", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"}
+                    @{@"identifier": @"DYYYHideKTVSongIndicator", @"title": @"隐藏直播点歌", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
+                    @{@"identifier": @"DYYYHideCellularAlert", @"title": @"隐藏流量提醒", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"}
                     
                 ];
                 for (NSDictionary *dict in livestreamSettings) {
