@@ -621,3 +621,16 @@ typedef NS_ENUM(NSInteger, MediaType) {
 //直播间流量提醒弹窗
 @interface AWELiveFlowAlertView : UIView
 @end
+
+@interface AWEPOlinfoModel : NSObject
+- (id)init;
+@end
+
+@interface AWEMusicModel : NSObject
+- (id)init;
+@end
+
+@interface AWEAnchorlnfoModel : NSObject
+- (id)init;
+@end
+
