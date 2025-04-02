@@ -1091,14 +1091,6 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 }
 %end
 
-@interface AWEPlayInteractionAvatarView : UIView
-@end
-@interface LOTAnimationView : UIView
-@property(nonatomic, copy) NSString *accessibilityLabel;
-@end
-@interface AWEAdAvatarView : UIView
-@end
-
 //隐藏头像和透明
 %hook AWEPlayInteractionAvatarView
 - (void)layoutSubviews {
