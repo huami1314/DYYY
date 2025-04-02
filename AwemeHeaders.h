@@ -608,3 +608,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (void)layoutSubviews; 
 - (void)updateIndicatorWithPageCount:(NSInteger)count; 
 @end
+
+//直播间流量提醒弹窗
+@interface AWELiveFlowAlertView : UIView
+@end

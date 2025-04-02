@@ -1650,26 +1650,44 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
         return [@(a.frame.origin.x) compare:@(b.frame.origin.x)];
     }];
 
-    CGFloat totalWidth;
     if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
-        // iPad
-        totalWidth = self.bounds.size.width; 
+        // iPad端布局逻辑
+        UIView *targetView = nil;
+        CGFloat containerWidth = self.bounds.size.width;
+        CGFloat offsetX = 0;
+        
+        // 查找目标容器视图
         for (UIView *subview in self.subviews) {
             if ([subview class] == [UIView class] && 
-                fabs(subview.frame.size.width - self.bounds.size.width) > 0.1) {  
-                totalWidth = subview.frame.size.width;
+                fabs(subview.frame.size.width - self.bounds.size.width) > 0.1) {
+                targetView = subview;
+                containerWidth = subview.frame.size.width;
+                offsetX = subview.frame.origin.x;
                 break;
             }
         }
+        
+        // 在目标容器内均匀分布按钮
+        CGFloat buttonWidth = containerWidth / visibleButtons.count;
+        for (NSInteger i = 0; i < visibleButtons.count; i++) {
+            UIView *button = visibleButtons[i];
+            button.frame = CGRectMake(offsetX + (i * buttonWidth), 
+                                    button.frame.origin.y, 
+                                    buttonWidth, 
+                                    button.frame.size.height);
+        }
     } else {
-        // iPhone
-        totalWidth = self.bounds.size.width;
-    }
-    CGFloat buttonWidth = totalWidth / visibleButtons.count;
-    
-    for (NSInteger i = 0; i < visibleButtons.count; i++) {
-        UIView *button = visibleButtons[i];
-        button.frame = CGRectMake(i * buttonWidth, button.frame.origin.y, buttonWidth, button.frame.size.height);
+        // iPhone端布局逻辑
+        CGFloat totalWidth = self.bounds.size.width;
+        CGFloat buttonWidth = totalWidth / visibleButtons.count;
+        
+        for (NSInteger i = 0; i < visibleButtons.count; i++) {
+            UIView *button = visibleButtons[i];
+            button.frame = CGRectMake(i * buttonWidth, 
+                                    button.frame.origin.y, 
+                                    buttonWidth, 
+                                    button.frame.size.height);
+        }
     }
 
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenBottomBg"] || [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
@@ -4145,6 +4163,16 @@ static BOOL isDownloadFlied = NO;
     }
 }
 
+%end
+
+//隐藏直播间流量弹窗
+%hook AWELiveFlowAlertView
+- (void)layoutSubviews {
+    %orig;
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCellularAlert"]) {
+    self.hidden = YES;
+    }
+}
 %end
 
 %ctor {
