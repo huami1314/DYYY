@@ -1098,7 +1098,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
     %orig;
     
     // 首先检查是否需要隐藏头像加号
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAvatarPlus"]) {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLOTAnimationView"]) {
         // 找到加号视图并隐藏
         for (UIView *subview in self.subviews) {
             if ([subview isKindOfClass:[UIImageView class]] && 
