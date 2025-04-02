@@ -1221,16 +1221,6 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 
 %end
 
-// 隐藏大家都在搜留白
-%hook AWESearchAnchorListModel
-- (id)init {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"]) {
-        return nil;
-    }
-    return %orig;
-}
-%end
-
 //隐藏评论定位
 %hook AWEPOIEntryAnchorView
 - (void)layoutSubviews {
@@ -1308,6 +1298,46 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
         %init(CommentHeaderTemplateGroup, AWECommentPanelHeaderSwiftImpl_CommentHeaderTemplateAnchorView = commentHeaderTemplateClass);
     }
 }
+
+// 隐藏大家都在搜留白
+%hook AWESearchAnchorListModel
+- (id)init {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"]) {
+        return nil;
+    }
+    return %orig;
+}
+%end
+
+// 隐藏评论定位留白
+%hook AWEPOlinfoModel
+- (id)init {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"]) {
+        return nil;
+    }
+    return %orig;
+}
+%end
+
+// 隐藏评论汽水音乐留白
+%hook AWEMusicModel
+- (id)init {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"]) {
+        return nil;
+    }
+    return %orig;
+}
+%end
+
+// 隐藏评论其他留白
+%hook AWEAnchorlnfoModel
+- (id)init {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"]) {
+        return nil;
+    }
+    return %orig;
+}
+%end
 
 //隐藏校园提示
 %hook AWETemplateTagsCommonView
