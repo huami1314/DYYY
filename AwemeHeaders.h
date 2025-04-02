@@ -595,7 +595,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 //直播发现
 @interface AWEFeedLiveTabRevisitControlView : UIView
 @end
-//直播退出清屏
+//直播 退出清屏、投屏按钮
 @interface IESLiveButton : UIView
 @end
 //直播点歌
@@ -607,4 +607,8 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @property (nonatomic, assign, getter=isHidden) BOOL hidden;
 - (void)layoutSubviews; 
 - (void)updateIndicatorWithPageCount:(NSInteger)count; 
+@end
+
+//直播间流量提醒弹窗
+@interface AWELiveFlowAlertView : UIView
 @end
