@@ -1091,44 +1091,23 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 }
 %end
 
-//隐藏头像和透明
-%hook AWEPlayInteractionAvatarView
-- (void)layoutSubviews {
-    %orig;
-    
-    // 处理头像透明度
-    NSString *alphaStr = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYAvatarViewTransparency"];
-    if (alphaStr.length > 0) {
-        CGFloat alpha = [alphaStr floatValue];
-        if (alpha >= 0.0 && alpha <= 1.0) {
-            for (UIView *subview in self.subviews) {
-                if ([subview isKindOfClass:[UIImageView class]] && 
-                    CGRectGetWidth(subview.frame) >= CGRectGetWidth(self.frame) * 0.8) {
-                    subview.alpha = alpha;
-                }
-            }
-        }
-    }
-}
-%end
-
-//隐藏头像加号
+//隐藏头像加号和透明
 %hook LOTAnimationView
 - (void)layoutSubviews {
     %orig;
     
-    // 第一个功能：根据DYYYHideLOTAnimationView设置隐藏整个视图
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLOTAnimationView"]) {
-        self.hidden = YES;
-        return; // 已经隐藏了，不需要处理下面的逻辑
+    // 首先检查是否需要隐藏头像加号
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAvatarButton"]) {
+        [self removeFromSuperview];
+        return;
     }
     
-    // 第二个功能：根据accessibilityLabel和DYYYHideAvatarButton设置移除视图
-    NSString *accessibilityLabel = self.accessibilityLabel;
-    if ([accessibilityLabel isEqualToString:@"关注"]) {
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAvatarButton"]) {
-            [self removeFromSuperview];
-            return;
+    // 如果不需要隐藏，则应用透明度
+    NSString *transparencyValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYAvatarViewTransparency"];
+    if (transparencyValue && transparencyValue.length > 0) {
+        CGFloat alphaValue = [transparencyValue floatValue];
+        if (alphaValue >= 0.0 && alphaValue <= 1.0) {
+            self.alpha = alphaValue;
         }
     }
 }
@@ -1139,13 +1118,15 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 - (void)layoutSubviews {
     %orig;
     
+    // 首先检查是否需要隐藏头像
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAvatarButton"]) {
         [self removeFromSuperview];
         return;
     }
     
+    // 如果不需要隐藏，则应用透明度
     NSString *transparencyValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYAvatarViewTransparency"];
-    if (transparencyValue.length > 0) {
+    if (transparencyValue && transparencyValue.length > 0) {
         CGFloat alphaValue = [transparencyValue floatValue];
         if (alphaValue >= 0.0 && alphaValue <= 1.0) {
             self.alpha = alphaValue;
@@ -1153,6 +1134,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
     }
 }
 %end
+
 
 //移除同城吃喝玩乐提示框
 %hook AWENearbySkyLightCapsuleView
@@ -1240,7 +1222,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 
 %end
 
-// 隐藏评论搜索留白
+// 隐藏大家都在搜留白
 %hook AWESearchAnchorListModel
 - (id)init {
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"]) {
@@ -1641,6 +1623,23 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
         return;
     }
 }
+%end
+
+%hook AWEPlayInteractionFollowPromptView
+
+- (void)layoutSubviews {
+    %orig;
+
+    NSString *accessibilityLabel = self.accessibilityLabel;
+
+    if ([accessibilityLabel isEqualToString:@"关注"]) {
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAvatarButton"]) {
+            [self removeFromSuperview];
+            return;
+        }
+    }
+}
+
 %end
 
 %hook AWENormalModeTabBar
