@@ -1111,13 +1111,25 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
     }
 }
 %end
-//隐藏头像加号
+
+//隐藏加号和透明度
 %hook AWEPlayInteractionFollowPromptView
 - (void)layoutSubviews {
     %orig;
     
+    // 第一个功能：DYYYHideLOTAnimationView设置隐藏整个视图
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLOTAnimationView"]) {
         self.hidden = YES;
+        return; // 已经隐藏了，不需要处理下面的逻辑
+    }
+    
+    // 第二个功能：DYYYHideAvatarButton设置移除视图
+    NSString *accessibilityLabel = self.accessibilityLabel;
+    if ([accessibilityLabel isEqualToString:@"关注"]) {
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAvatarButton"]) {
+            [self removeFromSuperview];
+            return;
+        }
     }
 }
 %end
@@ -1629,23 +1641,6 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
         return;
     }
 }
-%end
-
-%hook AWEPlayInteractionFollowPromptView
-
-- (void)layoutSubviews {
-    %orig;
-
-    NSString *accessibilityLabel = self.accessibilityLabel;
-
-    if ([accessibilityLabel isEqualToString:@"关注"]) {
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAvatarButton"]) {
-            [self removeFromSuperview];
-            return;
-        }
-    }
-}
-
 %end
 
 %hook AWENormalModeTabBar
