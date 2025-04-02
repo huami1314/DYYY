@@ -1645,28 +1645,6 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 
 %end
 
-//推荐头像隐藏和透明
-%hook AWEAdAvatarView
-- (void)layoutSubviews {
-    %orig;
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAvatarButton"]) {
-        [self removeFromSuperview];
-        return;
-    }
-    
-    // 添加透明度
-    NSString *transparencyValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYAvatarViewTransparency"];
-    
-    if (transparencyValue && transparencyValue.length > 0) {
-        CGFloat alphaValue = [transparencyValue floatValue];
-        
-        if (alphaValue >= 0.0 && alphaValue <= 1.0) {
-            self.alpha = alphaValue;
-        }
-    }
-}
-%end
-
 %hook AWENormalModeTabBar
 
 - (void)layoutSubviews {
