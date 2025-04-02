@@ -1091,6 +1091,14 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 }
 %end
 
+@interface AWEPlayInteractionAvatarView : UIView
+@end
+@interface LOTAnimationView : UIView
+@property(nonatomic, copy) NSString *accessibilityLabel;
+@end
+@interface AWEAdAvatarView : UIView
+@end
+
 //隐藏头像和透明
 %hook AWEPlayInteractionAvatarView
 - (void)layoutSubviews {
@@ -1112,18 +1120,18 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 }
 %end
 
-//隐藏加号和透明度
-%hook AWEPlayInteractionFollowPromptView
+//隐藏头像加号
+%hook LOTAnimationView
 - (void)layoutSubviews {
     %orig;
     
-    // 第一个功能：DYYYHideLOTAnimationView设置隐藏整个视图
+    // 第一个功能：根据DYYYHideLOTAnimationView设置隐藏整个视图
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLOTAnimationView"]) {
         self.hidden = YES;
         return; // 已经隐藏了，不需要处理下面的逻辑
     }
     
-    // 第二个功能：DYYYHideAvatarButton设置移除视图
+    // 第二个功能：根据accessibilityLabel和DYYYHideAvatarButton设置移除视图
     NSString *accessibilityLabel = self.accessibilityLabel;
     if ([accessibilityLabel isEqualToString:@"关注"]) {
         if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAvatarButton"]) {
