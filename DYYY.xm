@@ -1092,27 +1092,39 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 %end
 
 //隐藏头像加号和透明
-%hook LOTAnimationView
+%hook AWEPlayInteractionAvatarView
+
 - (void)layoutSubviews {
     %orig;
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAvatarButton"]) {
-        [self removeFromSuperview];
-        return;
+    
+    // 首先检查是否需要隐藏头像加号
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAvatarPlus"]) {
+        // 找到加号视图并隐藏
+        for (UIView *subview in self.subviews) {
+            if ([subview isKindOfClass:[UIImageView class]] && 
+                CGRectGetWidth(subview.frame) < CGRectGetWidth(self.frame) * 0.5) {
+                subview.hidden = YES;
+            }
+        }
     }
     
-    // 添加透明度
-    NSString *transparencyValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYAvatarViewTransparency"];
-    
-    if (transparencyValue && transparencyValue.length > 0) {
-        CGFloat alphaValue = [transparencyValue floatValue];
-        
-        if (alphaValue >= 0.0 && alphaValue <= 1.0) {
-            self.alpha = alphaValue;
+    // 然后处理头像透明度
+    NSString *alphaValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYAvatarAlpha"];
+    if (alphaValue.length > 0) {
+        CGFloat alpha = [alphaValue floatValue];
+        if (alpha >= 0 && alpha <= 1.0) {
+            // 找到头像视图并设置透明度
+            for (UIView *subview in self.subviews) {
+                if ([subview isKindOfClass:[UIImageView class]] && 
+                    CGRectGetWidth(subview.frame) >= CGRectGetWidth(self.frame) * 0.8) {
+                    subview.alpha = alpha;
+                }
+            }
         }
     }
 }
-%end
 
+%end
 
 //移除同城吃喝玩乐提示框
 %hook AWENearbySkyLightCapsuleView
