@@ -1109,7 +1109,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
     }
     
     // 然后处理头像透明度
-    NSString *alphaValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYAvatarAlpha"];
+    NSString *alphaValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYAvatarViewTransparency"];
     if (alphaValue.length > 0) {
         CGFloat alpha = [alphaValue floatValue];
         if (alpha >= 0 && alpha <= 1.0) {
