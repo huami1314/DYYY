@@ -172,6 +172,23 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 }
 %end
 
+// 头像透明度
+%hook AWEAdAvatarView
+- (void)layoutSubviews {
+    %orig;
+    
+    NSString *transparencyValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYAvatarViewTransparency"];
+    
+    if (transparencyValue && transparencyValue.length > 0) {
+        CGFloat alphaValue = [transparencyValue floatValue];
+        
+        if (alphaValue >= 0.0 && alphaValue <= 1.0) {
+            self.alpha = alphaValue;
+        }
+    }
+}
+%end
+
 // 添加新的 hook 来处理顶栏透明度
 %hook AWEFeedTopBarContainer
 - (void)layoutSubviews {
