@@ -1093,37 +1093,50 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 
 //隐藏头像加号和透明
 %hook AWEPlayInteractionAvatarView
-
 - (void)layoutSubviews {
     %orig;
     
-    // 首先检查是否需要隐藏头像加号
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLOTAnimationView"]) {
-        // 找到加号视图并隐藏
-        for (UIView *subview in self.subviews) {
-            if ([subview isKindOfClass:[UIImageView class]] && 
-                CGRectGetWidth(subview.frame) < CGRectGetWidth(self.frame) * 0.5) {
-                subview.hidden = YES;
-            }
-        }
-    }
+    BOOL shouldHidePlus = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLOTAnimationView"];
+    NSString *alphaStr = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYAvatarViewTransparency"];
+    CGFloat alpha = [alphaStr floatValue];
     
-    // 然后处理头像透明度
-    NSString *alphaValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYAvatarViewTransparency"];
-    if (alphaValue.length > 0) {
-        CGFloat alpha = [alphaValue floatValue];
-        if (alpha >= 0 && alpha <= 1.0) {
-            // 找到头像视图并设置透明度
-            for (UIView *subview in self.subviews) {
-                if ([subview isKindOfClass:[UIImageView class]] && 
-                    CGRectGetWidth(subview.frame) >= CGRectGetWidth(self.frame) * 0.8) {
-                    subview.alpha = alpha;
-                }
+    for (UIView *subview in self.subviews) {
+        if (![subview isKindOfClass:[UIImageView class]]) continue;
+        
+        CGFloat relativeWidth = CGRectGetWidth(subview.frame) / CGRectGetWidth(self.frame);
+        
+        // 加号视图
+        if (relativeWidth < 0.5) {
+            subview.hidden = shouldHidePlus;
+        } 
+        // 头像视图
+        else if (relativeWidth >= 0.8 && alphaStr.length > 0) {
+            if (alpha >= 0.0 && alpha <= 1.0) {
+                subview.alpha = alpha;
             }
         }
     }
 }
+%end
 
+//推荐头像隐藏和透明
+%hook AWEAdAvatarView
+- (void)layoutSubviews {
+    %orig;
+    
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAvatarButton"]) {
+        [self removeFromSuperview];
+        return;
+    }
+    
+    NSString *transparencyValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYAvatarViewTransparency"];
+    if (transparencyValue.length > 0) {
+        CGFloat alphaValue = [transparencyValue floatValue];
+        if (alphaValue >= 0.0 && alphaValue <= 1.0) {
+            self.alpha = alphaValue;
+        }
+    }
+}
 %end
 
 //移除同城吃喝玩乐提示框
