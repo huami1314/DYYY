@@ -1396,52 +1396,35 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 
 %end
 
-
 //隐藏作者声明和视频合集
 %hook AWEAntiAddictedNoticeBarView
 - (void)layoutSubviews {
     %orig;
     
-    // 查找子视图中的UILabel
-    BOOL isAntiAddictedNotice = NO;
     BOOL isTemplateVideo = NO;
     
+    // 查找子视图中的UILabel，只检查是否包含"合集"
     for (UIView *subview in self.subviews) {
         if ([subview isKindOfClass:%c(UILabel)]) {
             UILabel *label = (UILabel *)subview;
             NSString *labelText = label.text;
             
-            // 检查文本内容
-            if (labelText) {
-
-                // 包含的关键词
-                if ([labelText containsString:@"作者声明"] || 
-                    [labelText containsString:@"就医"] || 
-                    [labelText containsString:@"生成"] ||
-                    [labelText containsString:@"风险"] ||
-                    [labelText containsString:@"存在"] ||
-                    [labelText containsString:@"野生"] ||
-                    [labelText containsString:@"理性"] ||
-                    [labelText containsString:@"仅供"]) {
-
-                    isAntiAddictedNotice = YES;
-                }
-                // 包含"合集"
-                else if ([labelText containsString:@"合集"]) {
-                    isTemplateVideo = YES;
-                }
+            // 只检查是否包含"合集"
+            if (labelText && [labelText containsString:@"合集"]) {
+                isTemplateVideo = YES;
+                break; 
             }
         }
     }
     
-    // 根据判断结果应用相应的开关
-    if (isAntiAddictedNotice) {
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAntiAddictedNotice"]) {
+    if (isTemplateVideo) {
+        // 如果是合集，根据分开的按钮隐藏
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTemplateVideo"]) {
             [self setHidden:YES];
         }
-    }
-    else if (isTemplateVideo) {
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTemplateVideo"]) {
+    } else {
+        // 不是合集，视为声明
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAntiAddictedNotice"]) {
             [self setHidden:YES];
         }
     }
