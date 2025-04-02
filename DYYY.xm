@@ -3385,6 +3385,18 @@ static BOOL isDownloadFlied = NO;
 }
 %end
 
+
+//隐藏直播点歌
+%hook IESLiveKTVSongIndicatorView 
+- (void)layoutSubviews {
+    %orig;
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideKTVSongIndicator"]) {
+        self.hidden = YES;
+        [self removeFromSuperview];
+    }
+}
+%end
+
 //去除启动视频广告
 %hook AWEAwesomeSplashFeedCellOldAccessoryView
 

@@ -897,7 +897,6 @@ static void showUserAgreementAlert() {
                     @{@"identifier": @"DYYYHideTemplateTags", @"title": @"隐藏校园提示", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
                     @{@"identifier": @"DYYYHideHisShop", @"title": @"隐藏作者店铺", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
                     @{@"identifier": @"DYYYHideConcernCapsuleView", @"title": @"隐藏关注直播", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
-                    @{@"identifier": @"DYYYHideLiveDiscovery", @"title": @"隐藏直播发现", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
                     @{@"identifier": @"DYYYHidentopbarprompt", @"title": @"隐藏顶栏横线", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
                     @{@"identifier": @"DYYYHideTemplateVideo", @"title": @"隐藏视频合集", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
                     @{@"identifier": @"DYYYHideTemplatePlaylet", @"title": @"隐藏短剧合集", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
@@ -922,6 +921,8 @@ static void showUserAgreementAlert() {
                     @{@"identifier": @"DYYYHideEnterLive", @"title": @"隐藏进入直播", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
                     @{@"identifier": @"DYYYHideGiftPavilion", @"title": @"隐藏礼物展馆", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
                     @{@"identifier": @"DYYYHideLiveRoomClear", @"title": @"隐藏退出清屏", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
+                    @{@"identifier": @"DYYYHideLiveDiscovery", @"title": @"隐藏直播发现", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
+                    @{@"identifier": @"DYYYHideKTVSongIndicator", @"title": @"隐藏直播点歌", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"}
                     
                 ];
                 for (NSDictionary *dict in livestreamSettings) {

@@ -598,3 +598,6 @@ typedef NS_ENUM(NSInteger, MediaType) {
 //直播退出清屏
 @interface IESLiveButton : UIView
 @end
+//直播点歌
+@interface IESLiveKTVSongIndicatorView : UIView
+@end
