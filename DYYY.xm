@@ -3398,6 +3398,20 @@ static BOOL isDownloadFlied = NO;
 }
 %end
 
+//隐藏图片滑条
+%hook AWEStoryProgressContainerView
+- (BOOL)isHidden {
+    BOOL originalValue = %orig;
+    BOOL customHide = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideDotsIndicator"];
+    return originalValue || customHide; 
+}
+ 
+- (void)setHidden:(BOOL)hidden {
+    BOOL forceHide = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideDotsIndicator"];
+    %orig(forceHide ? YES : hidden); 
+}
+%end
+
 //去除启动视频广告
 %hook AWEAwesomeSplashFeedCellOldAccessoryView
 
