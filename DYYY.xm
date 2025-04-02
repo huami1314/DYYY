@@ -1091,35 +1091,38 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 }
 %end
 
-//隐藏头像加号和透明
+//隐藏头像和透明
 %hook AWEPlayInteractionAvatarView
 - (void)layoutSubviews {
     %orig;
     
-    BOOL shouldHidePlus = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLOTAnimationView"];
+    // 处理头像透明度
     NSString *alphaStr = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYAvatarViewTransparency"];
-    CGFloat alpha = [alphaStr floatValue];
-    
-    for (UIView *subview in self.subviews) {
-        if (![subview isKindOfClass:[UIImageView class]]) continue;
-        
-        CGFloat relativeWidth = CGRectGetWidth(subview.frame) / CGRectGetWidth(self.frame);
-        
-        // 加号视图
-        if (relativeWidth < 0.5) {
-            subview.hidden = shouldHidePlus;
-        } 
-        // 头像视图
-        else if (relativeWidth >= 0.8 && alphaStr.length > 0) {
-            if (alpha >= 0.0 && alpha <= 1.0) {
-                subview.alpha = alpha;
+    if (alphaStr.length > 0) {
+        CGFloat alpha = [alphaStr floatValue];
+        if (alpha >= 0.0 && alpha <= 1.0) {
+            for (UIView *subview in self.subviews) {
+                if ([subview isKindOfClass:[UIImageView class]] && 
+                    CGRectGetWidth(subview.frame) >= CGRectGetWidth(self.frame) * 0.8) {
+                    subview.alpha = alpha;
+                }
             }
         }
     }
 }
 %end
+//隐藏头像加号
+%hook AWEPlayInteractionFollowPromptView
+- (void)layoutSubviews {
+    %orig;
+    
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLOTAnimationView"]) {
+        self.hidden = YES;
+    }
+}
+%end
 
-//推荐头像隐藏和透明
+//首页头像隐藏和透明
 %hook AWEAdAvatarView
 - (void)layoutSubviews {
     %orig;
