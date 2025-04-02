@@ -601,3 +601,10 @@ typedef NS_ENUM(NSInteger, MediaType) {
 //直播点歌
 @interface IESLiveKTVSongIndicatorView : UIView
 @end
+//图片滑条
+@interface AWEStoryProgressContainerView : UIView 
+@property (nonatomic, strong, readonly) UIView *superview;
+@property (nonatomic, assign, getter=isHidden) BOOL hidden;
+- (void)layoutSubviews; 
+- (void)updateIndicatorWithPageCount:(NSInteger)count; 
+@end
