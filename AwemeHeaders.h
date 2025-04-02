@@ -612,3 +612,8 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWESearchAnchorListModel : NSObject
 - (id)init;
 @end
+
+@interface AWEPlayInteractionAvatarView : UIView
+@property(nonatomic, readonly) NSArray *subviews;
+@property(nonatomic, readonly) CGRect frame;
+@end
