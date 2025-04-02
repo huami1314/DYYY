@@ -626,7 +626,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (id)init;
 @end
 
-@interface AWEAnchorlnfoModel : NSObject
+@interface AWEMusicModel : NSObject
 - (id)init;
 @end
 
