@@ -1212,6 +1212,16 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 
 %end
 
+// 隐藏评论搜索留白
+%hook AWESearchAnchorListModel
+- (id)init {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"]) {
+        return nil;
+    }
+    return %orig;
+}
+%end
+
 //隐藏评论定位
 %hook AWEPOIEntryAnchorView
 - (void)layoutSubviews {
