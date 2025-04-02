@@ -730,13 +730,33 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
         frame = CGRectZero;
     }
     
-    //隐藏声明和合集的留白
-    if ([self isKindOfClass:%c(AWEAntiAddictedNoticeBarView)] && 
-        ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTemplateVideo"] || 
-         [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAntiAddictedNotice"])) {
-        frame = CGRectZero;
-        %orig(frame);
-        return;
+    // 区分合集和声明
+    if ([self isKindOfClass:%c(AWEAntiAddictedNoticeBarView)]) {
+        BOOL isTemplateVideo = NO;
+        // 查找子视图中的UILabel，检查是否包含"合集"
+        for (UIView *subview in self.subviews) {
+            if ([subview isKindOfClass:%c(UILabel)]) {
+                UILabel *label = (UILabel *)subview;
+                NSString *labelText = label.text;
+                if (labelText && [labelText containsString:@"合集"]) {
+                    isTemplateVideo = YES;
+                    break;
+                }
+            }
+        }
+        
+        // 根据判断结果应用相应的开关
+        if (isTemplateVideo) {
+            // 如果是合集，使用合集的开关
+            if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTemplateVideo"]) {
+                frame = CGRectZero;
+            }
+        } else {
+            // 如果是声明，使用声明的开关
+            if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAntiAddictedNotice"]) {
+                frame = CGRectZero;
+            }
+        }
     }
     if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"] && ![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
         %orig;
