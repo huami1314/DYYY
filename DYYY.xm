@@ -1421,8 +1421,8 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
                     [labelText containsString:@"风险"] ||
                     [labelText containsString:@"存在"] ||
                     [labelText containsString:@"野生"] ||
-                    [labelText containsString:@"理性"]) ||
-                    [labelText containsString:@"仅供"] {
+                    [labelText containsString:@"理性"] ||
+                    [labelText containsString:@"仅供"]) {
 
                     isAntiAddictedNotice = YES;
                 }
