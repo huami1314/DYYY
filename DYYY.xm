@@ -1091,14 +1091,24 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 }
 %end
 
-//隐藏头像加号
+//隐藏头像加号和透明
 %hook LOTAnimationView
 - (void)layoutSubviews {
     %orig;
-
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLOTAnimationView"]) {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAvatarButton"]) {
         [self removeFromSuperview];
         return;
+    }
+    
+    // 添加透明度
+    NSString *transparencyValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYAvatarViewTransparency"];
+    
+    if (transparencyValue && transparencyValue.length > 0) {
+        CGFloat alphaValue = [transparencyValue floatValue];
+        
+        if (alphaValue >= 0.0 && alphaValue <= 1.0) {
+            self.alpha = alphaValue;
+        }
     }
 }
 %end
@@ -1373,10 +1383,11 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
             // 检查文本内容
             if (labelText) {
 
-                // 包含"作者声明"、"就医"、"野生"、"存在"、"生成"或"理性"
+                // 包含的关键词
                 if ([labelText containsString:@"作者声明"] || 
                     [labelText containsString:@"就医"] || 
                     [labelText containsString:@"生成"] ||
+                    [labelText containsString:@"风险"] ||
                     [labelText containsString:@"存在"] ||
                     [labelText containsString:@"野生"] ||
                     [labelText containsString:@"理性"]) {
@@ -1599,17 +1610,26 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 
 %end
 
+//推荐头像隐藏和透明
 %hook AWEAdAvatarView
-
 - (void)layoutSubviews {
     %orig;
-
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAvatarButton"]) {
         [self removeFromSuperview];
         return;
     }
+    
+    // 添加透明度
+    NSString *transparencyValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYAvatarViewTransparency"];
+    
+    if (transparencyValue && transparencyValue.length > 0) {
+        CGFloat alphaValue = [transparencyValue floatValue];
+        
+        if (alphaValue >= 0.0 && alphaValue <= 1.0) {
+            self.alpha = alphaValue;
+        }
+    }
 }
-
 %end
 
 %hook AWENormalModeTabBar
