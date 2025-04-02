@@ -2287,7 +2287,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
         CGRect originalFrame = label.frame;
         CGFloat offset = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYIPLabelVerticalOffset"];
         if (offset > 0) {
-            CGAffineTransform translationTransform = CGAffineTransformMakeTranslation(0, offset);
+            CGAffineTransform translationTransform = CGAffineTransformMakeTranslation(0, -offset);
             label.transform = translationTransform;
         } else {
             CGAffineTransform translationTransform = CGAffineTransformMakeTranslation(0, -3);
@@ -2999,7 +2999,7 @@ static CGFloat currentScale = 1.0;
 
 - (void)viewWillAppear:(BOOL)animated {
     %orig;
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
         UIResponder *nextResponder = [self nextResponder];
         if ([nextResponder isKindOfClass:[UIView class]]) {
             UIView *parentView = (UIView *)nextResponder;
@@ -3014,10 +3014,50 @@ static CGFloat currentScale = 1.0;
             }
         }
     }
+    
+    NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYElementScale"];
+    if ([self.accessibilityLabel isEqualToString:@"right"]) {
+        if (scaleValue.length > 0) {
+            CGFloat scale = [scaleValue floatValue];
+            if(currentScale !=  scale){
+                currentScale = scale;
+                right_tx = 0;
+                left_tx = 0;
+            }
+            if (scale > 0 && scale != 1.0) {
+                CGFloat ty = 0;
+                for(UIView *view in self.subviews){
+                    ty += (view.frame.size.height - view.frame.size.height * scale)/2;
+                }
+                if(right_tx == 0){
+                    right_tx = (self.frame.size.width - self.frame.size.width * scale)/2;
+                }
+                self.transform = CGAffineTransformMake(scale, 0, 0, scale, right_tx, ty);
+            }
+        }
+    }
+
+    if ([self.accessibilityLabel isEqualToString:@"left"]) {
+        NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
+        if (scaleValue.length > 0) {
+            CGFloat scale = [scaleValue floatValue];
+            if (scale > 0 && scale != 1.0) {
+                CGFloat ty = 0;
+                for(UIView *view in self.subviews){
+                    ty += (view.frame.size.height - view.frame.size.height * scale)/2;
+                }
+                if(left_tx == 0){
+                    left_tx = (self.frame.size.width - self.frame.size.width * scale)/2 - self.frame.size.width * (1 -scale);
+                }
+                self.transform = CGAffineTransformMake(scale, 0, 0, scale, left_tx, ty);
+            }
+        }
+    }
 }
+
 - (void)viewDidAppear:(BOOL)animated {
     %orig;
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
         UIResponder *nextResponder = [self nextResponder];
         if ([nextResponder isKindOfClass:[UIView class]]) {
             UIView *parentView = (UIView *)nextResponder;
@@ -3032,7 +3072,47 @@ static CGFloat currentScale = 1.0;
             }
         }
     }
+    
+    NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYElementScale"];
+    if ([self.accessibilityLabel isEqualToString:@"right"]) {
+        if (scaleValue.length > 0) {
+            CGFloat scale = [scaleValue floatValue];
+            if(currentScale !=  scale){
+                currentScale = scale;
+                right_tx = 0;
+                left_tx = 0;
+            }
+            if (scale > 0 && scale != 1.0) {
+                CGFloat ty = 0;
+                for(UIView *view in self.subviews){
+                    ty += (view.frame.size.height - view.frame.size.height * scale)/2;
+                }
+                if(right_tx == 0){
+                    right_tx = (self.frame.size.width - self.frame.size.width * scale)/2;
+                }
+                self.transform = CGAffineTransformMake(scale, 0, 0, scale, right_tx, ty);
+            }
+        }
+    }
+
+    if ([self.accessibilityLabel isEqualToString:@"left"]) {
+        NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
+        if (scaleValue.length > 0) {
+            CGFloat scale = [scaleValue floatValue];
+            if (scale > 0 && scale != 1.0) {
+                CGFloat ty = 0;
+                for(UIView *view in self.subviews){
+                    ty += (view.frame.size.height - view.frame.size.height * scale)/2;
+                }
+                if(left_tx == 0){
+                    left_tx = (self.frame.size.width - self.frame.size.width * scale)/2 - self.frame.size.width * (1 -scale);
+                }
+                self.transform = CGAffineTransformMake(scale, 0, 0, scale, left_tx, ty);
+            }
+        }
+    }
 }
+
 - (void)layoutSubviews {
     %orig;
 
@@ -3089,7 +3169,6 @@ static CGFloat currentScale = 1.0;
             }
         }
     }
-
 }
 
 %end
