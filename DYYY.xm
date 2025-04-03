@@ -1411,6 +1411,12 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 - (void)layoutSubviews {
     %orig;
     BOOL isTemplateVideo = NO;
+    // 保存原始高度，以便在需要时恢复
+    static CGFloat originalHeight = 0;
+    if (originalHeight == 0) {
+        originalHeight = self.frame.size.height;
+    }
+    
     // 查找子视图中的UILabel，检查是否包含"合集"
     for (UIView *subview in self.subviews) {
         if ([subview isKindOfClass:%c(UILabel)]) {
@@ -1422,22 +1428,41 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
             }
         }
     }
+    
     // 根据判断结果应用相应的开关
     if (isTemplateVideo) {
-        // 如果是合集，使用合集的开关
+        // 如果是合集视图，使用合集的开关
         if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTemplateVideo"]) {
+            CGRect frame = self.frame;
+            frame.size.height = 0;
+            self.frame = frame;
             [self setHidden:YES];
         } else {
-            [self setHidden:NO]; 
+            // 恢复原始高度
+            CGRect frame = self.frame;
+            frame.size.height = originalHeight;
+            self.frame = frame;
+            [self setHidden:NO];
         }
     } else {
-        // 如果是声明，使用声明的开关
+        // 如果是防沉迷声明，使用声明的开关
         if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAntiAddictedNotice"]) {
+            CGRect frame = self.frame;
+            frame.size.height = 0;
+            self.frame = frame;
             [self setHidden:YES];
         } else {
-            [self setHidden:NO]; 
+            // 恢复原始高度
+            CGRect frame = self.frame;
+            frame.size.height = originalHeight;
+            self.frame = frame;
+            [self setHidden:NO];
         }
     }
+    
+    // 通知父视图需要更新布局
+    [self.superview setNeedsLayout];
+    [self.superview layoutIfNeeded];
 }
 %end
 
