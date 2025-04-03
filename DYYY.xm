@@ -891,7 +891,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 - (id)initWithDictionary:(id)arg1 error:(id *)arg2 {
     id orig = %orig;
 
-    BOOL hasLiveStreamURLProperty = [self instancesRespondToSelector:@selector(liveStreamURL)];
+    BOOL hasLiveStreamURLProperty = [self respondsToSelector:@selector(liveStreamURL)];
     BOOL noAds = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYNoAds"];
     BOOL skipLive = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipLive"];
     BOOL skipHotSpot = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipHotSpot"];
