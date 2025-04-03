@@ -3547,6 +3547,40 @@ static BOOL isDownloadFlied = NO;
 }
 %end
 
+//隐藏昵称右侧
+%hook UILabel 
+- (void)layoutSubviews {{
+    %orig;
+    
+    BOOL hideRightLabel = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideRightLable"];
+    if (!hideRightLabel) return;
+    
+    NSString *accessibilityLabel = self.accessibilityLabel;
+    if (!accessibilityLabel || accessibilityLabel.length == 0) return;
+    
+    NSString *trimmedLabel = [accessibilityLabel stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+    BOOL shouldHide = NO;
+    
+    if ([trimmedLabel hasSuffix:@"人共创"]) {
+        NSString *prefix = [trimmedLabel substringToIndex:trimmedLabel.length - 3];
+        NSCharacterSet *nonDigits = [[NSCharacterSet decimalDigitCharacterSet] invertedSet];
+        shouldHide = ([prefix rangeOfCharacterFromSet:nonDigits].location == NSNotFound);
+    }
+    
+    if (!shouldHide) {{
+        shouldHide = [trimmedLabel isEqualToString:@"章节要点"] || [trimmedLabel isEqualToString:@"图集"];
+    }}
+    
+    if (shouldHide) {{
+        self.hidden = YES;
+        for (NSLayoutConstraint *constraint in self.constraints) {{
+            constraint.active = NO;
+        }}
+        [self.superview layoutIfNeeded];
+    }}
+}}
+%end
+
 //去除启动视频广告
 %hook AWEAwesomeSplashFeedCellOldAccessoryView
 
