@@ -1219,16 +1219,6 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 
 %end
 
-// 隐藏大家都在搜留白
-%hook AWESearchAnchorListModel
-- (id)init {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"]) {
-        return nil;
-    }
-    return %orig;
-}
-%end
-
 //隐藏评论定位
 %hook AWEPOIEntryAnchorView
 - (void)layoutSubviews {
@@ -1306,6 +1296,26 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
         %init(CommentHeaderTemplateGroup, AWECommentPanelHeaderSwiftImpl_CommentHeaderTemplateAnchorView = commentHeaderTemplateClass);
     }
 }
+
+// 隐藏大家都在搜留白
+%hook AWESearchAnchorListModel
+- (id)init {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"]) {
+        return nil;
+    }
+    return %orig;
+}
+%end
+
+// 隐藏评论汽水音乐留白
+%hook AWEMusicModel
+- (id)init {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"]) {
+        return nil;
+    }
+    return %orig;
+}
+%end
 
 //隐藏校园提示
 %hook AWETemplateTagsCommonView
@@ -1394,53 +1404,33 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 
 %end
 
-
-//隐藏作者声明和视频合集
+//隐藏合集和声明
 %hook AWEAntiAddictedNoticeBarView
 - (void)layoutSubviews {
     %orig;
-    
-    // 查找子视图中的UILabel
-    BOOL isAntiAddictedNotice = NO;
     BOOL isTemplateVideo = NO;
-    
+    // 查找子视图中的UILabel，检查是否包含"合集"
     for (UIView *subview in self.subviews) {
         if ([subview isKindOfClass:%c(UILabel)]) {
             UILabel *label = (UILabel *)subview;
             NSString *labelText = label.text;
-            
-            // 检查文本内容
-            if (labelText) {
-
-                // 包含的关键词
-                if ([labelText containsString:@"作者声明"] || 
-                    [labelText containsString:@"就医"] || 
-                    [labelText containsString:@"生成"] ||
-                    [labelText containsString:@"风险"] ||
-                    [labelText containsString:@"存在"] ||
-                    [labelText containsString:@"野生"] ||
-                    [labelText containsString:@"理性"] ||
-                    [labelText containsString:@"仅供"]) {
-
-                    isAntiAddictedNotice = YES;
-                }
-                // 包含"合集"
-                else if ([labelText containsString:@"合集"]) {
-                    isTemplateVideo = YES;
-                }
+            if (labelText && [labelText containsString:@"合集"]) {
+                isTemplateVideo = YES;
+                break;
             }
         }
     }
     
     // 根据判断结果应用相应的开关
-    if (isAntiAddictedNotice) {
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAntiAddictedNotice"]) {
-            [self setHidden:YES];
-        }
-    }
-    else if (isTemplateVideo) {
+    if (isTemplateVideo) {
+        // 如果是合集，使用合集的开关
         if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTemplateVideo"]) {
-            [self setHidden:YES];
+            [self removeFromSuperview]; 
+        }
+    } else {
+        // 如果是声明，使用声明的开关
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAntiAddictedNotice"]) {
+            [self removeFromSuperview];
         }
     }
 }
