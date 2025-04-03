@@ -975,13 +975,14 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 
 - (id)init {
     id orig = %orig;
-    
+
+    BOOL hasLiveStreamURLProperty = [self respondsToSelector:@selector(liveStreamURL)];
     BOOL noAds = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYNoAds"];
     BOOL skipLive = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipLive"];
     BOOL skipHotSpot = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipHotSpot"];
     
     BOOL shouldFilterAds = noAds && (self.hotSpotLynxCardModel || self.isAds);
-    BOOL shouldFilterRec = skipLive && [self.liveReason isEqualToString:@"rec"];
+    BOOL shouldFilterRec = skipLive && hasLiveStreamURLProperty;
     BOOL shouldFilterHotSpot = skipHotSpot && self.hotSpotLynxCardModel;
     
     BOOL shouldFilterLowLikes = NO;
