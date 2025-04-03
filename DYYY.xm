@@ -1227,10 +1227,9 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
     %orig;
     
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"]) {
-        [self setHidden:YES];
+        [self removeFromSuperview]; 
     }
 }
-
 %end
 
 // 隐藏评论音乐
