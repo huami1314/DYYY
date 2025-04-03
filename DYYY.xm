@@ -3549,36 +3549,40 @@ static BOOL isDownloadFlied = NO;
 
 //隐藏昵称右侧
 %hook UILabel 
-- (void)layoutSubviews {{
-    %orig;
+- (void)layoutSubviews { 
+    %orig; 
     
-    BOOL hideRightLabel = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideRightLable"];
-    if (!hideRightLabel) return;
+    BOOL hideRightLabel = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideRightLable"]; 
+    if (!hideRightLabel) return; 
     
-    NSString *accessibilityLabel = self.accessibilityLabel;
-    if (!accessibilityLabel || accessibilityLabel.length == 0) return;
+    NSString *accessibilityLabel = self.accessibilityLabel; 
+    if (!accessibilityLabel || accessibilityLabel.length == 0) return; 
     
-    NSString *trimmedLabel = [accessibilityLabel stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
-    BOOL shouldHide = NO;
+    NSString *trimmedLabel = [accessibilityLabel stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]]; 
+    BOOL shouldHide = NO; 
     
-    if ([trimmedLabel hasSuffix:@"人共创"]) {
-        NSString *prefix = [trimmedLabel substringToIndex:trimmedLabel.length - 3];
-        NSCharacterSet *nonDigits = [[NSCharacterSet decimalDigitCharacterSet] invertedSet];
-        shouldHide = ([prefix rangeOfCharacterFromSet:nonDigits].location == NSNotFound);
-    }
+    if ([trimmedLabel hasSuffix:@"人共创"]) { 
+        NSString *prefix = [trimmedLabel substringToIndex:trimmedLabel.length - 3]; 
+        NSCharacterSet *nonDigits = [[NSCharacterSet decimalDigitCharacterSet] invertedSet]; 
+        shouldHide = ([prefix rangeOfCharacterFromSet:nonDigits].location == NSNotFound); 
+    } 
     
-    if (!shouldHide) {{
-        shouldHide = [trimmedLabel isEqualToString:@"章节要点"] || [trimmedLabel isEqualToString:@"图集"];
-    }}
+    if (!shouldHide) { 
+        shouldHide = [trimmedLabel isEqualToString:@"章节要点"] || [trimmedLabel isEqualToString:@"图集"]; 
+    } 
     
-    if (shouldHide) {{
-        self.hidden = YES;
-        for (NSLayoutConstraint *constraint in self.constraints) {{
-            constraint.active = NO;
-        }}
-        [self.superview layoutIfNeeded];
-    }}
-}}
+    if (shouldHide) { 
+        self.hidden = YES; 
+        
+        // 找到父视图是否为 UIStackView 
+        UIView *superview = self.superview; 
+        if ([superview isKindOfClass:[UIStackView class]]) { 
+            UIStackView *stackView = (UIStackView *)superview; 
+            // 刷新 UIStackView 的布局 
+            [stackView layoutIfNeeded]; 
+        } 
+    } 
+} 
 %end
 
 //去除启动视频广告
