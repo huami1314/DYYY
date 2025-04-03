@@ -1422,35 +1422,20 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
             }
         }
     }
-    
     // 根据判断结果应用相应的开关
     if (isTemplateVideo) {
         // 如果是合集，使用合集的开关
         if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTemplateVideo"]) {
-            self.hidden = YES;
-            // 查找并修改高度约束
-            for (NSLayoutConstraint *constraint in self.constraints) {
-                if (constraint.firstAttribute == NSLayoutAttributeHeight) {
-                    constraint.constant = 0;
-                    break;
-                }
-            }
+            [self setHidden:YES];
         } else {
-            self.hidden = NO;
+            [self setHidden:NO]; 
         }
     } else {
         // 如果是声明，使用声明的开关
         if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAntiAddictedNotice"]) {
-            self.hidden = YES;
-            // 查找并修改高度约束
-            for (NSLayoutConstraint *constraint in self.constraints) {
-                if (constraint.firstAttribute == NSLayoutAttributeHeight) {
-                    constraint.constant = 0;
-                    break;
-                }
-            }
+            [self setHidden:YES];
         } else {
-            self.hidden = NO;
+            [self setHidden:NO]; 
         }
     }
 }
