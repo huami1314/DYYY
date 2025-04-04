@@ -1270,14 +1270,40 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 
 %end
 
-//隐藏评论定位
+//隐藏评论区定位
 %hook AWEPOIEntryAnchorView
-- (void)layoutSubviews {
-    %orig;
-    
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"]) {
-        [self setHidden:YES];
-    }
+
+- (void)p_addViews {
+  // 检查用户偏好设置
+  if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"]) {
+    // 直接跳过视图添加流程
+    return;
+  }
+  // 执行原始方法
+  %orig;
+}
+
+- (void)setIconUrls:(id)arg1 defaultImage:(id)arg2 {
+  // 根据需求选择是否拦截资源加载
+  if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"]) {
+    // 可选：传入空值阻止资源加载
+    %orig(nil, nil);
+    return;
+  }
+  // 正常传递参数
+  %orig(arg1, arg2);
+}
+
+- (void)setContentSize:(CGSize)arg1 {
+  // 可选：动态调整尺寸计算逻辑
+  if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"]) {
+    // 计算不包含评论视图的尺寸
+    CGSize newSize = CGSizeMake(arg1.width, arg1.height - 44); // 示例减法
+    %orig(newSize);
+    return;
+  }
+  // 保持原有尺寸计算
+  %orig(arg1);
 }
 
 %end
