@@ -907,7 +907,8 @@ static void showUserAgreementAlert() {
                     @{@"identifier": @"DYYYHideLiveCapsuleView", @"title": @"隐藏直播胶囊", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
                     @{@"identifier": @"DYYYHideStoryProgressSlide", @"title": @"隐藏视频滑条", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
                     @{@"identifier": @"DYYYHideDotsIndicator", @"title": @"隐藏图片滑条", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
-                    @{@"identifier": @"DYYYHidePrivateMessages", @"title": @"隐藏分享私信", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"}
+                    @{@"identifier": @"DYYYHidePrivateMessages", @"title": @"隐藏分享私信", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
+                    @{@"identifier": @"DYYYHideSearchCommentBg", @"title": @"隐藏搜索评论", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
                 ];
                 
                 for (NSDictionary *dict in infoSettings) {
