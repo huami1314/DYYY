@@ -4212,7 +4212,7 @@ static BOOL isDownloadFlied = NO;
     %orig; 
     
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideChatCommentBg"]) {
-        UIView *parentView = self.view.superview;
+        UIView *parentView = self.superview;
         while (parentView) {
             if ([NSStringFromClass([parentView class]) isEqualToString:@"UIView"]) {
                 parentView.backgroundColor = [UIColor clearColor];
