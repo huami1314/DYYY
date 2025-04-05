@@ -4208,14 +4208,15 @@ static BOOL isDownloadFlied = NO;
 //聊天视频底部评论框背景透明
 %hook AWEIMFeedVideoQuickReplyInputViewController
 
-- (void)layoutSubviews {
-    %orig;
+- (UIView *)viewIfLoaded {
+    UIView *view = %orig;
     
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideChatCommentBg"]) {
-        // 通过 self.view 访问控制器的根视图
-        self.view.backgroundColor = [UIColor clearColor];
-        self.view.opaque = NO;
+        view.backgroundColor = [UIColor clearColor]; 
+        view.opaque = NO;
     }
+    
+    return view;
 }
 
 %end
