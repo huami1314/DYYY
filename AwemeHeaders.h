@@ -618,5 +618,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 //聊天视频底部快速回复视图
-@interface AWEIMFeedVideoQuickReplayInputViewController : UIViewController
+// @interface AWEIMFeedVideoQuickReplayInputViewController : UIViewController
+// @end
+@interface AWEIMFeedBottomQuickEmojiInputBar : UIView
 @end
