@@ -1374,13 +1374,34 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
     }
 }
 
-// 隐藏大家都在搜留白
+// 隐藏大家都在搜
 %hook AWESearchAnchorListModel
-- (id)init {
+
+- (void)setHideWords:(BOOL)arg1 {
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"]) {
-        return nil;
+        %orig(YES);
+    } else {
+        %orig(arg1);
     }
-    return %orig;
+}
+
+- (void)setScene:(id)arg1 {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"]) {
+        NSDictionary *customScene = @{@"hideComments": @YES};
+        %orig(customScene);
+    } else {
+        %orig(arg1);
+    }
+}
+%end
+
+//隐藏观看历史搜索
+%hook AWEDiscoverFeedEntranceView
+- (id)init {
+  if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideInteractionSearch"]) {
+    return nil;
+  }
+  return %orig;
 }
 %end
 
