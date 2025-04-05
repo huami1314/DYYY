@@ -4175,14 +4175,13 @@ static BOOL isDownloadFlied = NO;
 }
 %end
 
-//
+//隐藏搜索/他人主页底部评论框
 %hook AWECommentInputBackgroundView
 
 - (void)layoutSubviews {
-    %orig; // 先执行原始布局
+    %orig; 
     
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideSearchCommentBg"]) {
-        // 1. 获取视图关联的控制器  
         UIViewController *controller = nil;
         UIResponder *responder = self.nextResponder;
         while (responder) {
@@ -4192,18 +4191,31 @@ static BOOL isDownloadFlied = NO;
             }
             responder = responder.nextResponder;
         }
-        
-        // 2. 检查控制器类型和属性
         BOOL shouldHide = NO;
         if ([controller isKindOfClass:NSClassFromString(@"AWECommentInputViewController")]) {
             NSString *enterFrom = [controller valueForKey:@"enterFrom"];
-            shouldHide = [enterFrom isEqualToString:@"general_search"];
+            shouldHide = [enterFrom isEqualToString:@"general_search"] || [enterFrom isEqualToString:@"postwork_list"];
         }
 
-        // 3. 主线程安全更新UI
         dispatch_async(dispatch_get_main_queue(), ^{
             if (shouldHide) [self removeFromSuperview];
             });
+    }
+}
+
+%end
+
+//聊天视频底部评论框背景透明
+%hook AWEIMFeedVideoQuickReplyViewController
+
+- (void)layoutSubviews {
+    %orig;
+    
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideChatCommentBg"]) {
+        // 设置背景完全透明
+        self.backgroundColor = [UIColor clearColor];
+        self.opaque = NO;
+
     }
 }
 

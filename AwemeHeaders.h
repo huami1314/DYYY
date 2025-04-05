@@ -616,3 +616,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 //搜索视频底部评论视图
 @interface AWECommentInputBackgroundView : UIView
 @end
+
+//聊天视频底部快速回复视图
+@interface AWEIMFeedVideoQuickReplyViewController : UIView
+@end
