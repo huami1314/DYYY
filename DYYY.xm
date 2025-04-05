@@ -4206,7 +4206,7 @@ static BOOL isDownloadFlied = NO;
 %end
 
 //聊天视频底部评论框背景透明
-%hook AWEIMFeedVideoQuickReplyInputViewController
+%hook AWEIMFeedVideoQuickReplayInputViewController
 
 - (UIView *)viewIfLoaded {
     UIView *view = %orig;
