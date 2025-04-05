@@ -4212,14 +4212,14 @@ static BOOL isDownloadFlied = NO;
     %orig;
     
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideChatCommentBg"]) {
-        // 设置背景完全透明
-        self.backgroundColor = [UIColor clearColor];
-        self.opaque = NO;
-
+        // 通过 self.view 访问控制器的根视图
+        self.view.backgroundColor = [UIColor clearColor];
+        self.view.opaque = NO;
     }
 }
 
 %end
+
 
 %ctor {
     %init(DYYYSettingsGesture);
