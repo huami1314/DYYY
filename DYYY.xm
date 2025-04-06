@@ -4381,7 +4381,7 @@ static BOOL isDownloadFlied = NO;
         if ([controller isKindOfClass:NSClassFromString(@"AWECommentInputViewController")]) {
             NSString *enterFrom = [controller valueForKey:@"enterFrom"];
             
-            // postwork_list 场景下设置父视图和其 UIVisualEffectView 子视图透明
+            // 处理 postwork_list 场景下的透明效果
             if ([enterFrom isEqualToString:@"postwork_list"]) {
                 UIView *parentView = self.superview;
                 if (parentView) {
@@ -4389,17 +4389,15 @@ static BOOL isDownloadFlied = NO;
                     parentView.backgroundColor = [UIColor clearColor];
                     parentView.opaque = NO;
                     
-                    // 查找并设置 UIVisualEffectView 子视图透明
+                    // 设置父视图的所有子视图透明
                     for (UIView *subview in parentView.subviews) {
-                        if ([subview isKindOfClass:[UIVisualEffectView class]]) {
-                            subview.backgroundColor = [UIColor clearColor];
-                            subview.opaque = NO;
-                        }
+                        subview.backgroundColor = [UIColor clearColor];
+                        subview.opaque = NO; 
                     }
                 }
             }
             
-            // 不管是什么情况都移除当前视图
+            // 不管是什么情况都删除当前视图
             [self removeFromSuperview];
         }
     }
