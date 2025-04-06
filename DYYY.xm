@@ -4378,23 +4378,11 @@ static BOOL isDownloadFlied = NO;
             responder = responder.nextResponder;
         }
         
-        BOOL shouldHide = NO;
-        BOOL shouldTransparent = NO;
-        
         if ([controller isKindOfClass:NSClassFromString(@"AWECommentInputViewController")]) {
             NSString *enterFrom = [controller valueForKey:@"enterFrom"];
-            shouldHide = [enterFrom isEqualToString:@"general_search"];
-            shouldTransparent = [enterFrom isEqualToString:@"postwork_list"];
-        }
-
-        dispatch_async(dispatch_get_main_queue(), ^{
-            if (shouldHide) {
-                [self removeFromSuperview];
-            } else if (shouldTransparent) {
-                // 设置自身透明
-                self.backgroundColor = [UIColor clearColor];
-                self.opaque = NO;
-                
+            
+            // 添加额外的透明处理
+            if ([enterFrom isEqualToString:@"postwork_list"]) {
                 // 设置父视图透明
                 UIView *parentView = self.superview;
                 if (parentView) {
@@ -4402,7 +4390,10 @@ static BOOL isDownloadFlied = NO;
                     parentView.opaque = NO;
                 }
             }
-        });
+            
+            // 不管是什么情况都移除自身
+            [self removeFromSuperview];
+        }
     }
 }
 
