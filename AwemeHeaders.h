@@ -598,6 +598,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 //直播 退出清屏、投屏按钮
 @interface IESLiveButton : UIView
 @end
+
 //直播点歌
 @interface IESLiveKTVSongIndicatorView : UIView
 @end
@@ -618,7 +619,5 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 //聊天视频底部快速回复视图
-// @interface AWEIMFeedVideoQuickReplayInputViewController : UIViewController
-// @end
 @interface AWEIMFeedBottomQuickEmojiInputBar : UIView
 @end
