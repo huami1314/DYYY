@@ -4327,7 +4327,7 @@ static BOOL isDownloadFlied = NO;
 }
 %end
 
-//隐藏直播退出清屏、投屏按钮、投屏按钮
+//隐藏直播退出清屏、投屏按钮
 %hook IESLiveButton
 
 - (void)layoutSubviews {
