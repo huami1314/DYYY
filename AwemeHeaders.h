@@ -109,6 +109,8 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWELongPressPanelManager : NSObject
 + (instancetype)shareInstance;
 - (void)dismissWithAnimation:(BOOL)animated completion:(void (^)(void))completion;
+- (BOOL)shouldShowMordenLongPressPanel;
+- (BOOL)showShareFriends;
 @end
 
 @interface AWENormalModeTabBarGeneralButton : UIButton
@@ -629,10 +631,4 @@ typedef NS_ENUM(NSInteger, MediaType) {
 
 //聊天视频底部快速回复视图
 @interface AWEIMFeedBottomQuickEmojiInputBar : UIView
-@end
-
-//显示新长按面板
-@interface AWELongPressPanelManager : NSObject
-- (BOOL)shouldShowMordenLongPressPanel;
-- (BOOL)showShareFriends;
 @end
