@@ -4381,24 +4381,28 @@ static BOOL isDownloadFlied = NO;
         if ([controller isKindOfClass:NSClassFromString(@"AWECommentInputViewController")]) {
             NSString *enterFrom = [controller valueForKey:@"enterFrom"];
             
-            // 处理 postwork_list 场景下的透明效果
-            if ([enterFrom isEqualToString:@"postwork_list"]) {
-                UIView *parentView = self.superview;
-                if (parentView) {
-                    // 设置父视图透明
-                    parentView.backgroundColor = [UIColor clearColor];
-                    parentView.opaque = NO;
+            if ([enterFrom isEqualToString:@"general_search"]) {
+                // 搜索场景,直接移除视图
+                [self removeFromSuperview];
+            } 
+            //他人主页场景不知道会被什么东西恢复背景色，暂未找到
+            // else if ([enterFrom isEqualToString:@"postwork_list"]) {
+            //     // 他人主页场景,设置透明效果
+            //     UIView *parentView = self.superview;
+            //     if (parentView) {
+            //         // 设置父视图透明
+            //         parentView.backgroundColor = [UIColor clearColor];
+            //         parentView.opaque = NO;
                     
-                    // 设置父视图的所有子视图透明
-                    for (UIView *subview in parentView.subviews) {
-                        subview.backgroundColor = [UIColor clearColor];
-                        subview.opaque = NO; 
-                    }
-                }
-            }
-            
-            // 不管是什么情况都删除当前视图
-            [self removeFromSuperview];
+            //         // 设置父视图的所有子视图透明
+            //         for (UIView *subview in parentView.subviews) {
+            //             subview.backgroundColor = [UIColor clearColor];
+            //             subview.opaque = NO; 
+            //         }
+            //     }
+            //     // 移除当前视图
+            //     [self removeFromSuperview];
+            // }
         }
     }
 }
