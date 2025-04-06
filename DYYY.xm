@@ -4352,14 +4352,18 @@ static BOOL isDownloadFlied = NO;
 %hook AWEIMFeedBottomQuickEmojiInputBar
 
 - (void)layoutSubviews {
-    %orig; 
-    
+    %orig;
+
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideChatCommentBg"]) {
         UIView *parentView = self.superview;
         while (parentView) {
             if ([NSStringFromClass([parentView class]) isEqualToString:@"UIView"]) {
-                parentView.backgroundColor = [UIColor clearColor];
-                parentView.opaque = NO;
+                // 延迟修改颜色
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    parentView.backgroundColor = [UIColor clearColor];
+                    parentView.layer.backgroundColor = [UIColor clearColor].CGColor;  // 确保修改 CALayer
+                    parentView.opaque = NO;
+                });
                 break;
             }
             parentView = parentView.superview;
@@ -4368,6 +4372,7 @@ static BOOL isDownloadFlied = NO;
 }
 
 %end
+
 
 
 %ctor {
