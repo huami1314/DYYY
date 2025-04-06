@@ -4358,10 +4358,9 @@ static BOOL isDownloadFlied = NO;
         UIView *parentView = self.superview;
         while (parentView) {
             if ([NSStringFromClass([parentView class]) isEqualToString:@"UIView"]) {
-                // 延迟修改颜色
                 dispatch_async(dispatch_get_main_queue(), ^{
                     parentView.backgroundColor = [UIColor clearColor];
-                    parentView.layer.backgroundColor = [UIColor clearColor].CGColor;  // 确保修改 CALayer
+                    parentView.layer.backgroundColor = [UIColor clearColor].CGColor;
                     parentView.opaque = NO;
                 });
                 break;
@@ -4373,7 +4372,23 @@ static BOOL isDownloadFlied = NO;
 
 %end
 
-
+//启用毛玻璃长按面板
+%hook AWELongPressPanelManager
+- (BOOL)showShareFriends {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYShowModernLongPressPanel"]) {
+        return NO; 
+    } else {
+        return %orig;
+    }
+}
+- (BOOL)shouldShowModernLongPressPanel {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYShowModernLongPressPanel"]) {
+        return YES; 
+    } else {
+        return %orig;
+	}
+}
+%end
 
 %ctor {
     %init(DYYYSettingsGesture);
