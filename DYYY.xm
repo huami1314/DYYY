@@ -889,14 +889,12 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 - (id)initWithDictionary:(id)arg1 error:(id *)arg2 {
     id orig = %orig;
     
-    //BOOL hasLiveStreamURLProperty = class_getProperty([AWEAwemeModel class], "liveStreamURL") != NULL;
-    BOOL hasLiveStreamURLProperty = [self valueForKey:@"liveStreamURL"] != nil;
     BOOL noAds = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYNoAds"];
-    
+    BOOL skipLive = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipLive"];
     BOOL skipHotSpot = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipHotSpot"];
     
     BOOL shouldFilterAds = noAds && (self.hotSpotLynxCardModel || self.isAds);
- 
+    BOOL shouldFilterRec = skipLive && [self.liveReason isEqualToString:@"rec"];
     BOOL shouldFilterHotSpot = skipHotSpot && self.hotSpotLynxCardModel;
 
     BOOL shouldFilterLowLikes = NO;
@@ -971,18 +969,18 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
             }
         }
     }
-    return (shouldFilterAds || shouldFilterHotSpot || self.isLive  || shouldFilterLowLikes || shouldFilterKeywords || shouldFilterTime) ? nil : orig;
+    return (shouldFilterAds || shouldFilterRec || shouldFilterHotSpot || shouldFilterLowLikes || shouldFilterKeywords || shouldFilterTime) ? nil : orig;
 }
 
 - (id)init {
     id orig = %orig;
-
+    
     BOOL noAds = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYNoAds"];
-    
+    BOOL skipLive = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipLive"];
     BOOL skipHotSpot = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipHotSpot"];
-
-    BOOL shouldFilterAds = noAds && (self.hotSpotLynxCardModel || self.isAds);
     
+    BOOL shouldFilterAds = noAds && (self.hotSpotLynxCardModel || self.isAds);
+    BOOL shouldFilterRec = skipLive && [self.liveReason isEqualToString:@"rec"];
     BOOL shouldFilterHotSpot = skipHotSpot && self.hotSpotLynxCardModel;
     
     BOOL shouldFilterLowLikes = NO;
@@ -1058,7 +1056,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
         }
     }
     
-    return (shouldFilterAds || shouldFilterHotSpot || self.isLive || shouldFilterLowLikes || shouldFilterKeywords || shouldFilterTime) ? nil : orig;
+    return (shouldFilterAds || shouldFilterRec || shouldFilterHotSpot || shouldFilterLowLikes || shouldFilterKeywords || shouldFilterTime) ? nil : orig;
 }
 
 - (bool)preventDownload {
@@ -1077,55 +1075,6 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
     
     %orig;
 }
-
-
-- (void)setLiveStreamURL:(id)url {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipLive"]) {
-        %orig(nil); 
-    } else {
-        %orig(url); 
-    }
-}
-
-
-- (id)liveStreamURl {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipLive"]) {
-        return nil;
-    }
-    return %orig;
-}
-
-- (void)live_callInitWithDictyCategoryMethod:(id)arg1 {
-    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipLive"]) {
-        %orig;
-    }
-}
-
-+ (id)liveStreamURLJSONTransformer {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipLive"]) {
-        return nil;
-    }
-    return %orig;
-}
-+ (id)relatedLiveJSONTransformer {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipLive"]) {
-        return nil;
-    }
-    return %orig;
-}
-+ (id)rawModelFromLiveRoomModel:(id)arg1 {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipLive"]) {
-        return nil;
-    }
-    return %orig;
-}
-+ (id)aweLiveRoom_subModelPropertyKey {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipLive"]) {
-        return nil;
-    }
-    return %orig;
-}
-
 
 %end
 
@@ -1402,16 +1351,6 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
     return nil;
   }
   return %orig;
-}
-%end
-
-// 隐藏评论汽水音乐留白
-%hook AWEMusicModel
-- (id)init {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"]) {
-        return nil;
-    }
-    return %orig;
 }
 %end
 
