@@ -148,6 +148,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @property (nonatomic, strong) UIView *view;
 - (void)performCommentAction;
 - (void)performLikeAction;
+- (void)showSharePanel;
 - (void)onVideoPlayerViewDoubleClicked:(id)arg1;
 @end
 
