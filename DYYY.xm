@@ -627,7 +627,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
                                              handler:^{
                 [self performshowSharePanel]; // 执行分享操作
             }];
-            [actions addObject:likeAction];
+            [actions addObject:showSharePanel];
         }
         
         // 显示操作表
