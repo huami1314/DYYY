@@ -4331,24 +4331,22 @@ static BOOL isDownloadFlied = NO;
                         parentView.layer.backgroundColor = [UIColor clearColor].CGColor;
                         parentView.opaque = NO;
                         
-                        // 定义深度优先搜索查找 _UIVisualEffectSubview 的 block
-                        void (^findVisualEffectSubviews)(UIView *) = ^void(UIView *view) {
-                            // ✅ 同时处理 UIVisualEffectView 和其私有子视图
+                        void (^findVisualEffectSubviews)(UIView *);
+                        findVisualEffectSubviews = ^void(UIView *view) {
                             if ([view isKindOfClass:[UIVisualEffectView class]] || 
                                 [NSStringFromClass([view class]) isEqualToString:@"_UIVisualEffectSubview"]) {
                                 
-                                // 核心透明设置
                                 view.backgroundColor = [UIColor clearColor];
                                 view.layer.backgroundColor = [UIColor clearColor].CGColor;
                                 view.opaque = NO;
+                            }
                             
-                            // 递归处理其他子视图（原逻辑不变）
                             for (UIView *subview in view.subviews) {
                                 findVisualEffectSubviews(subview);
                             }
                         };
                         
-                        findVisualEffectSubviews(parentView); // 保持原有调用方式
+                        findVisualEffectSubviews(parentView);
                     });
                 }
                 [self removeFromSuperview];
