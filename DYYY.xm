@@ -4303,53 +4303,56 @@ static BOOL isDownloadFlied = NO;
 %hook AWECommentInputBackgroundView
 
 - (void)layoutSubviews {
-    %orig; 
+    %orig;
     
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideSearchCommentBg"]) {
-        UIViewController *controller = nil;
-        UIResponder *responder = self.nextResponder;
+        // 通过响应者链查找控制器
+        UIResponder *responder = self;
+        AWECommentInputViewController *targetVC = nil;
+        
         while (responder) {
-            if ([responder isKindOfClass:[UIViewController class]]) {
-                controller = (UIViewController *)responder;
+            if ([responder isKindOfClass:NSClassFromString(@"AWECommentInputViewController")]) {
+                targetVC = (AWECommentInputViewController *)responder;
                 break;
             }
-            responder = responder.nextResponder;
+            responder = [responder nextResponder];
         }
         
-        if ([controller isKindOfClass:NSClassFromString(@"AWECommentInputViewController")]) {
-            NSString *enterFrom = [controller valueForKey:@"enterFrom"];
+        if (targetVC && [targetVC respondsToSelector:@selector(enterFrom)]) {
+            NSString *enterFrom = [targetVC enterFrom];
             
             if ([enterFrom isEqualToString:@"general_search"]) {
-                [self removeFromSuperview];
-            } 
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    [self removeFromSuperview];
+                });
+            }
             else if ([enterFrom isEqualToString:@"postwork_list"]) {
-                UIView *parentView = self.superview;
-                if (parentView) {
-                    dispatch_async(dispatch_get_main_queue(), ^{
-                        // 父视图透明设置
-                        parentView.backgroundColor = [UIColor clearColor];
-                        parentView.layer.backgroundColor = [UIColor clearColor].CGColor;
-                        parentView.opaque = NO;
-                        
-                        void (^findVisualEffectSubviews)(UIView *);
-                        findVisualEffectSubviews = ^void(UIView *view) {
-                            if ([view isKindOfClass:[UIVisualEffectView class]] || 
-                                [NSStringFromClass([view class]) isEqualToString:@"_UIVisualEffectSubview"]) {
-                                
-                                view.backgroundColor = [UIColor clearColor];
-                                view.layer.backgroundColor = [UIColor clearColor].CGColor;
-                                view.opaque = NO;
+                UIView *superView = self.superview;
+                
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    // 处理父视图
+                    superView.backgroundColor = [UIColor clearColor];
+                    superView.layer.backgroundColor = [UIColor clearColor].CGColor;
+                    superView.opaque = NO;
+                    
+                    // 递归查找UIVisualEffectView及其子视图
+                    void (^processSubviews)(UIView *) = ^(UIView *view) {
+                        for (UIView *subview in view.subviews) {
+                            if ([subview isKindOfClass:[UIVisualEffectView class]] || 
+                               [NSStringFromClass([subview class]) isEqualToString:@"_UIVisualEffectSubview"]) {
+                                subview.backgroundColor = [UIColor clearColor];
+                                subview.layer.backgroundColor = [UIColor clearColor].CGColor;
+                                subview.opaque = NO;
                             }
-                            
-                            for (UIView *subview in view.subviews) {
-                                findVisualEffectSubviews(subview);
-                            }
-                        };
-                        
-                        findVisualEffectSubviews(parentView);
-                    });
-                }
-                [self removeFromSuperview];
+                            processSubviews(subview);
+                        }
+                    };
+                    
+                    processSubviews(superView);
+                    
+                    // 最后移除自身
+                    [self removeFromSuperview];
+                });
             }
         }
     }
