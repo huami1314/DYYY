@@ -4300,7 +4300,6 @@ static BOOL isDownloadFlied = NO;
 %end
 
 
-//隐藏搜索/他人主页底部评论框
 %hook AWECommentInputBackgroundView
 
 - (void)layoutSubviews {
@@ -4321,36 +4320,38 @@ static BOOL isDownloadFlied = NO;
             NSString *enterFrom = [controller valueForKey:@"enterFrom"];
             
             if ([enterFrom isEqualToString:@"general_search"]) {
-                // 搜索场景,直接移除视图
                 [self removeFromSuperview];
             } 
             else if ([enterFrom isEqualToString:@"postwork_list"]) {
-                [self removeFromSuperview];
                 UIView *parentView = self.superview;
                 if (parentView) {
                     dispatch_async(dispatch_get_main_queue(), ^{
                         // 父视图透明设置
                         parentView.backgroundColor = [UIColor clearColor];
+                        parentView.layer.backgroundColor = [UIColor clearColor].CGColor;
+                        parentView.opaque = NO;
                         
                         // 定义深度优先搜索查找 _UIVisualEffectSubview 的 block
                         void (^findVisualEffectSubviews)(UIView *) = ^void(UIView *view) {
-                            // 检查当前视图是否是目标类型
-                            if ([NSStringFromClass([view class]) isEqualToString:@"_UIVisualEffectSubview"]) {
+                            // ✅ 同时处理 UIVisualEffectView 和其私有子视图
+                            if ([view isKindOfClass:[UIVisualEffectView class]] || 
+                                [NSStringFromClass([view class]) isEqualToString:@"_UIVisualEffectSubview"]) {
+                                
+                                // 核心透明设置
                                 view.backgroundColor = [UIColor clearColor];
                                 view.layer.backgroundColor = [UIColor clearColor].CGColor;
                                 view.opaque = NO;
-                            }
                             
-                            // 递归处理子视图
+                            // 递归处理其他子视图（原逻辑不变）
                             for (UIView *subview in view.subviews) {
                                 findVisualEffectSubviews(subview);
                             }
                         };
                         
-                        // 从父视图开始深度优先搜索
-                        findVisualEffectSubviews(parentView);
+                        findVisualEffectSubviews(parentView); // 保持原有调用方式
                     });
                 }
+                [self removeFromSuperview];
             }
         }
     }
