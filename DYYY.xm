@@ -625,7 +625,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
                                              actionWithTitle:@"分享视频" 
                                              imgName:nil 
                                              handler:^{
-                [self performshowSharePanel]; // 执行分享操作
+                [self showSharePanel]; // 执行分享操作
             }];
             [actions addObject:showSharePanel];
         }
