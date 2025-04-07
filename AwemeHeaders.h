@@ -632,3 +632,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 //聊天视频底部快速回复视图
 @interface AWEIMFeedBottomQuickEmojiInputBar : UIView
 @end
+
+@interface AWECommentInputViewController : UIViewController
+@property (nonatomic, copy) NSString *enterFrom;
+@end
