@@ -4324,24 +4324,26 @@ static BOOL isDownloadFlied = NO;
                 // 搜索场景,直接移除视图
                 [self removeFromSuperview];
             } 
-            //他人主页场景不知道会被什么东西恢复背景色，暂未找到
-            // else if ([enterFrom isEqualToString:@"postwork_list"]) {
-            //     // 他人主页场景,设置透明效果
-            //     UIView *parentView = self.superview;
-            //     if (parentView) {
-            //         // 设置父视图透明
-            //         parentView.backgroundColor = [UIColor clearColor];
-            //         parentView.opaque = NO;
-                    
-            //         // 设置父视图的所有子视图透明
-            //         for (UIView *subview in parentView.subviews) {
-            //             subview.backgroundColor = [UIColor clearColor];
-            //             subview.opaque = NO; 
-            //         }
-            //     }
-            //     // 移除当前视图
-            //     [self removeFromSuperview];
-            // }
+
+            else if ([enterFrom isEqualToString:@"postwork_list"]) {
+                // 他人主页场景,设置透明效果
+                UIView *parentView = self.superview;
+                if (parentView) {
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        // 父视图透明设置
+                        parentView.backgroundColor = [UIColor clearColor];
+                        parentView.layer.backgroundColor = [UIColor clearColor].CGColor;
+                        parentView.opaque = NO; // 取消注释
+    
+                        // 递归设置所有子视图透明
+                        for (UIView *subview in parentView.subviews) {
+                            subview.backgroundColor = [UIColor clearColor];
+                            subview.layer.backgroundColor = [UIColor clearColor].CGColor; // 新增子视图 CALayer 设置
+                            subview.opaque = NO; // 取消注释
+                        }
+                    });
+                }
+            }
         }
     }
 }
