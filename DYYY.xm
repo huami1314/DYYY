@@ -617,6 +617,19 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
             [actions addObject:likeAction];
         }
         
+        // 添加分享选项
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDoubleTapshowSharePanel"] || 
+            ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleTapshowSharePanel"]) {
+            
+            AWEUserSheetAction *showSharePanel = [NSClassFromString(@"AWEUserSheetAction") 
+                                             actionWithTitle:@"分享视频" 
+                                             imgName:nil 
+                                             handler:^{
+                [self performshowSharePanel]; // 执行分享操作
+            }];
+            [actions addObject:likeAction];
+        }
+        
         // 显示操作表
         [actionSheet setActions:actions];
         [actionSheet show];
