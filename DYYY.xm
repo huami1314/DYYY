@@ -1773,14 +1773,25 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"]) {
         for (UIView *subview in self.subviews) {
             if ([subview isKindOfClass:NSClassFromString(@"AWECommentInputViewSwiftImpl.CommentInputViewMiddleContainer")]) {
+                BOOL containsDanmu = NO;
+                
                 for (UIView *innerSubview in subview.subviews) {
-                    if ([innerSubview isKindOfClass:[UIView class]]) {
-                        float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
-                        if (userTransparency <= 0 || userTransparency > 1) {
-                            userTransparency = 0.95;
-                        }
-                        DYYYAddCustomViewToParent(innerSubview, userTransparency);
+                    if ([innerSubview isKindOfClass:[UILabel class]] && [((UILabel *)innerSubview).text containsString:@"弹幕"]) {
+                        containsDanmu = YES;
                         break;
+                    }
+                }
+                
+                if (!containsDanmu) {
+                    for (UIView *innerSubview in subview.subviews) {
+                        if ([innerSubview isKindOfClass:[UIView class]]) {
+                            float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
+                            if (userTransparency <= 0 || userTransparency > 1) {
+                                userTransparency = 0.95;
+                            }
+                            DYYYAddCustomViewToParent(innerSubview, userTransparency);
+                            break;
+                        }
                     }
                 }
             }
