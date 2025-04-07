@@ -1788,8 +1788,21 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
                         break;
                     }
                 }
-                
-                if (!containsDanmu) {
+                if (containsDanmu) {
+                    UIView *parentView = subview.superview;
+                    for (UIView *innerSubview in parentView.subviews) {
+                        if ([innerSubview isKindOfClass:[UIView class]]) {
+                            // NSLog(@"[innerSubview] %@", innerSubview);
+                            [innerSubview.subviews[0] removeFromSuperview];
+                            
+                            UIView *whiteBackgroundView = [[UIView alloc] initWithFrame:innerSubview.bounds];
+                            whiteBackgroundView.backgroundColor = [UIColor whiteColor];
+                            whiteBackgroundView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+                            [innerSubview addSubview:whiteBackgroundView];
+                            break;
+                        }
+                    }
+                } else {
                     for (UIView *innerSubview in subview.subviews) {
                         if ([innerSubview isKindOfClass:[UIView class]]) {
                             float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
