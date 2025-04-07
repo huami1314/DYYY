@@ -1772,6 +1772,11 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 %hook UIView
 - (void)layoutSubviews {
     %orig;
+
+    if([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideDiscover"]&&[self.accessibilityLabel isEqualToString:@"搜索"]){
+        [self removeFromSuperview];
+    }
+
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"]) {
         for (UIView *subview in self.subviews) {
             if ([subview isKindOfClass:NSClassFromString(@"AWECommentInputViewSwiftImpl.CommentInputViewMiddleContainer")]) {
@@ -4034,18 +4039,6 @@ static BOOL isDownloadFlied = NO;
         for (UIView *subview in self.subviews) {
             subview.hidden = YES;
         }
-    }
-}
-
-%end
-
-//隐藏搜索图标
-%hook UIView 
-
-- (void)layoutSubviews { 
-    %orig; 
-    if([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideDiscover"]&&[self.accessibilityLabel isEqualToString:@"搜索"]){
-        [self removeFromSuperview];
     }
 }
 
