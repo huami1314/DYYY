@@ -617,6 +617,19 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
             [actions addObject:likeAction];
         }
         
+        // 添加分享选项
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDoubleTapshowSharePanel"] || 
+            ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleTapshowSharePanel"]) {
+            
+            AWEUserSheetAction *showSharePanel = [NSClassFromString(@"AWEUserSheetAction") 
+                                             actionWithTitle:@"分享视频" 
+                                             imgName:nil 
+                                             handler:^{
+                [self showSharePanel]; // 执行分享操作
+            }];
+            [actions addObject:showSharePanel];
+        }
+        
         // 显示操作表
         [actionSheet setActions:actions];
         [actionSheet show];
@@ -894,7 +907,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
     BOOL skipHotSpot = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipHotSpot"];
     
     BOOL shouldFilterAds = noAds && (self.hotSpotLynxCardModel || self.isAds);
-    BOOL shouldFilterRec = skipLive && [self.liveReason isEqualToString:@"rec"];
+    BOOL shouldFilterRec = skipLive && (self.liveReason != nil);
     BOOL shouldFilterHotSpot = skipHotSpot && self.hotSpotLynxCardModel;
 
     BOOL shouldFilterLowLikes = NO;
@@ -980,7 +993,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
     BOOL skipHotSpot = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipHotSpot"];
     
     BOOL shouldFilterAds = noAds && (self.hotSpotLynxCardModel || self.isAds);
-    BOOL shouldFilterRec = skipLive && [self.liveReason isEqualToString:@"rec"];
+    BOOL shouldFilterRec = skipLive && (self.liveReason != nil);
     BOOL shouldFilterHotSpot = skipHotSpot && self.hotSpotLynxCardModel;
     
     BOOL shouldFilterLowLikes = NO;
@@ -1535,10 +1548,10 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 
 %hook AWELeftSideBarEntranceView
 
-- (void)layoutSubviews {
+- (void)layoutSubviews { 
     
-    __block BOOL isInTargetController = NO;
-    UIResponder *currentResponder = self;
+    __block BOOL isInTargetController = NO; 
+    UIResponder *currentResponder = self; 
     
     while ((currentResponder = [currentResponder nextResponder])) {
         if ([currentResponder isKindOfClass:NSClassFromString(@"AWEUserHomeViewControllerV2")]) {
@@ -1547,8 +1560,10 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
         }
     }
     
-    if (!isInTargetController&&[[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenLeftSideBar"]) {
-        self.alpha = 0;
+    if (!isInTargetController && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenLeftSideBar"]) {
+        for (UIView *subview in self.subviews) {
+            subview.hidden = YES;
+        }
     }
 }
 
@@ -1757,7 +1772,11 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
                 }
                 
                 if (hasImageView) {
-                    subview.hidden = YES;
+                    if (self.yy_viewController.selectedIndex == 0) {
+                        subview.hidden = YES;
+                    } else {
+                        subview.hidden = NO;
+                    }
                     break;
                 }
             }
@@ -1770,17 +1789,46 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 %hook UIView
 - (void)layoutSubviews {
     %orig;
+
+    if([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideDiscover"]&&[self.accessibilityLabel isEqualToString:@"搜索"]){
+        [self removeFromSuperview];
+    }
+
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"]) {
         for (UIView *subview in self.subviews) {
             if ([subview isKindOfClass:NSClassFromString(@"AWECommentInputViewSwiftImpl.CommentInputViewMiddleContainer")]) {
+                BOOL containsDanmu = NO;
+                
                 for (UIView *innerSubview in subview.subviews) {
-                    if ([innerSubview isKindOfClass:[UIView class]]) {
-                        float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
-                        if (userTransparency <= 0 || userTransparency > 1) {
-                            userTransparency = 0.95;
-                        }
-                        DYYYAddCustomViewToParent(innerSubview, userTransparency);
+                    if ([innerSubview isKindOfClass:[UILabel class]] && [((UILabel *)innerSubview).text containsString:@"弹幕"]) {
+                        containsDanmu = YES;
                         break;
+                    }
+                }
+                if (containsDanmu) {
+                    UIView *parentView = subview.superview;
+                    for (UIView *innerSubview in parentView.subviews) {
+                        if ([innerSubview isKindOfClass:[UIView class]]) {
+                            // NSLog(@"[innerSubview] %@", innerSubview);
+                            [innerSubview.subviews[0] removeFromSuperview];
+                            
+                            UIView *whiteBackgroundView = [[UIView alloc] initWithFrame:innerSubview.bounds];
+                            whiteBackgroundView.backgroundColor = [UIColor whiteColor];
+                            whiteBackgroundView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+                            [innerSubview addSubview:whiteBackgroundView];
+                            break;
+                        }
+                    }
+                } else {
+                    for (UIView *innerSubview in subview.subviews) {
+                        if ([innerSubview isKindOfClass:[UIView class]]) {
+                            float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
+                            if (userTransparency <= 0 || userTransparency > 1) {
+                                userTransparency = 0.95;
+                            }
+                            DYYYAddCustomViewToParent(innerSubview, userTransparency);
+                            break;
+                        }
                     }
                 }
             }
@@ -4023,16 +4071,18 @@ static BOOL isDownloadFlied = NO;
 }
 %end
 
+//隐藏右上搜索，但可点击
 %hook AWEHPDiscoverFeedEntranceView
-- (void)configImage:(UIImageView *)imageView Label:(UILabel *)label position:(NSInteger)pos {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideDiscover"]) {
-        NSLog(@"[configImage] Hiding search elements.");
-        imageView.hidden = YES;
-        label.hidden = YES;
-        return;
-    }
+
+- (void)layoutSubviews {
     %orig;
+    if([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideDiscover"]){
+        for (UIView *subview in self.subviews) {
+            subview.hidden = YES;
+        }
+    }
 }
+
 %end
 
 //隐藏点击进入直播间
