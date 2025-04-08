@@ -150,6 +150,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @property (nonatomic, strong) UIView *view;
 - (void)performCommentAction;
 - (void)performLikeAction;
+- (void)showSharePanel;
 - (void)onVideoPlayerViewDoubleClicked:(id)arg1;
 @end
 
@@ -214,7 +215,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 @interface AWENormalModeTabBar : UIView
-
+@property (nonatomic, assign, readonly) UITabBarController *yy_viewController;
 @end
 
 @interface AWEPlayInteractionListenFeedView : UIView
