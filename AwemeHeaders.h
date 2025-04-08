@@ -109,6 +109,8 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWELongPressPanelManager : NSObject
 + (instancetype)shareInstance;
 - (void)dismissWithAnimation:(BOOL)animated completion:(void (^)(void))completion;
+- (BOOL)shouldShowMordenLongPressPanel;
+- (BOOL)showShareFriends;
 @end
 
 @interface AWENormalModeTabBarGeneralButton : UIButton
@@ -604,6 +606,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 //直播 退出清屏、投屏按钮
 @interface IESLiveButton : UIView
 @end
+
 //直播点歌
 @interface IESLiveKTVSongIndicatorView : UIView
 @end
@@ -627,3 +630,12 @@ typedef NS_ENUM(NSInteger, MediaType) {
 //直播间流量提醒弹窗
 @interface AWELiveFlowAlertView : UIView
 @end
+
+//搜索视频底部评论视图
+@interface AWECommentInputBackgroundView : UIView
+@end
+
+//聊天视频底部快速回复视图
+@interface AWEIMFeedBottomQuickEmojiInputBar : UIView
+@end
+

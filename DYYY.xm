@@ -4386,6 +4386,31 @@ static BOOL isDownloadFlied = NO;
 
 %end
 
+//聊天视频底部评论框背景透明
+%hook AWEIMFeedBottomQuickEmojiInputBar
+
+- (void)layoutSubviews {
+    %orig;
+
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideChatCommentBg"]) {
+        UIView *parentView = self.superview;
+        while (parentView) {
+            if ([NSStringFromClass([parentView class]) isEqualToString:@"UIView"]) {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    parentView.backgroundColor = [UIColor clearColor];
+                    parentView.layer.backgroundColor = [UIColor clearColor].CGColor;
+                    parentView.opaque = NO;
+                });
+                break;
+            }
+            parentView = parentView.superview;
+        }
+    }
+}
+
+%end
+
+
 %ctor {
     %init(DYYYSettingsGesture);
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {
