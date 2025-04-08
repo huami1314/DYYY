@@ -4299,66 +4299,72 @@ static BOOL isDownloadFlied = NO;
 }
 %end
 
-
-%hook AWECommentInputBackgroundView
-
+//隐藏搜索、他人主页视频底部评论区
+%hook AWEAwemeDetailTableViewController
 - (void)layoutSubviews {
     %orig;
-    
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideSearchCommentBg"]) {
-        // 通过响应者链查找控制器
-        UIResponder *responder = self;
-        AWECommentInputViewController *targetVC = nil;
-        
-        while (responder) {
-            if ([responder isKindOfClass:NSClassFromString(@"AWECommentInputViewController")]) {
-                targetVC = (AWECommentInputViewController *)responder;
-                break;
-            }
-            responder = [responder nextResponder];
-        }
-        
-        if (targetVC && [targetVC respondsToSelector:@selector(enterFrom)]) {
-            NSString *enterFrom = [targetVC enterFrom];
+    [self clearBackgroundColor];
+}
+- (void)viewDidLayoutSubviews {
+    %orig;
+    [self clearBackgroundColor];
+}
+
+- (void)viewDidAppear:(BOOL)animated {
+    %orig;
+    [self clearBackgroundColor];
+}
+
+- (void)viewWillAppear:(BOOL)animated {
+    %orig;
+    [self clearBackgroundColor];
+}
+
+%new
+-(void) clearBackgroundColor {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenCommentBg"]) {
+        // 定义递归处理子视图的 block
+        void (^makeViewsTransparent)(UIView *) = ^void(UIView *view) {
+            // 设置当前视图透明
+            view.backgroundColor = [UIColor clearColor];
+            view.layer.backgroundColor = [UIColor clearColor].CGColor;
+            view.opaque = NO;
             
-            if ([enterFrom isEqualToString:@"general_search"]) {
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    [self removeFromSuperview];
-                });
+            // 递归处理所有子视图
+            for (UIView *subview in view.subviews) {
+                makeViewsTransparent(subview);
             }
-            else if ([enterFrom isEqualToString:@"postwork_list"]) {
-                UIView *superView = self.superview;
-                
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    // 处理父视图
-                    superView.backgroundColor = [UIColor clearColor];
-                    superView.layer.backgroundColor = [UIColor clearColor].CGColor;
-                    superView.opaque = NO;
-                    
-                    // 递归查找UIVisualEffectView及其子视图
-                    void (^processSubviews)(UIView *) = ^(UIView *view) {
-                        for (UIView *subview in view.subviews) {
-                            if ([subview isKindOfClass:[UIVisualEffectView class]] || 
-                               [NSStringFromClass([subview class]) isEqualToString:@"_UIVisualEffectSubview"]) {
-                                subview.backgroundColor = [UIColor clearColor];
-                                subview.layer.backgroundColor = [UIColor clearColor].CGColor;
-                                subview.opaque = NO;
-                            }
-                            processSubviews(subview);
-                        }
-                    };
-                    
-                    processSubviews(superView);
-                    
-                    // 最后移除自身
-                    [self removeFromSuperview];
-                });
-            }
-        }
+        };
+        
+        // 从根视图开始递归处理
+        makeViewsTransparent(self.view);
     }
 }
 
 %end
+
+
+// %hook AWECommentInputViewController 
+
+// - (void)viewDidLayoutSubviews {
+//     %orig;
+    
+//     // 检查是否启用隐藏评论背景功能
+//     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenCommentBg"]) {
+        
+//         // 获取 enterFrom 属性
+//         NSString *enterFrom = [self valueForKey:@"enterFrom"];
+        
+//         // 检查属性值
+//         if ([enterFrom isEqualToString:@"general_search"] || 
+//             [enterFrom isEqualToString:@"postwork_list"]) {
+//             // 移除整个视图
+//             [self.view removeFromSuperview];
+//         }
+//     }
+// }
+
+// %end
 
 //聊天视频底部评论框背景透明
 %hook AWEIMFeedBottomQuickEmojiInputBar
