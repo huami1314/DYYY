@@ -2443,23 +2443,45 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 
 %end
 
+//隐藏短剧合集
 %hook AWETemplatePlayletView
 
 - (void)layoutSubviews {
-    %orig;
 
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTemplatePlaylet"]) {
-        // 找到父视图并隐藏
-        UIView *parentView = self.superview;
-        if (parentView) {
-            parentView.hidden = YES;
-        } else {
-            self.hidden = YES;
+        if ([self respondsToSelector:@selector(removeFromSuperview)]) {
+            [self removeFromSuperview];
         }
+        self.hidden = YES; 
+        return;
     }
+    %orig;
+}
+%end
+
+//隐藏作者作品集搜索
+%hook AWESearchEntranceView
+
+- (void)layoutSubviews {
+
+    Class targetClass = NSClassFromString(@"AWESearchEntranceView");
+    if (!targetClass) return;
+
+
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideInteractionSearch"]) {
+
+        SEL removeSel = NSSelectorFromString(@"removeFromSuperview");
+        if ([targetClass instancesRespondToSelector:removeSel]) {
+            [self performSelector:removeSel];
+        }
+        self.hidden = YES;
+        return;
+    }
+    %orig;
 }
 
 %end
+
 // 隐藏视频滑条 
 %hook AWEStoryProgressSlideView 
  
@@ -4352,6 +4374,16 @@ static BOOL isDownloadFlied = NO;
     self.hidden = YES;
     }
 }
+%end
+
+//强制启用新版抖音长按 UI（现代风）
+%hook AWELongPressPanelManager
+- (BOOL)shouldShowModernLongPressPanel {
+    // 从 NSUserDefaults 读取开关状态
+    BOOL isEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableModern"];
+    return isEnabled; // 根据开关状态返回值
+}
+
 %end
 
 %ctor {
