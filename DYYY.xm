@@ -4376,12 +4376,12 @@ static BOOL isDownloadFlied = NO;
         // 定义递归处理子视图的 block
         void (^makeViewsTransparent)(UIView *) = ^void(UIView *view) {
             // 设置当前视图透明
-            view.backgroundColor = [UIColor clearColor];
-            view.layer.backgroundColor = [UIColor clearColor].CGColor;
-            view.opaque = NO;
+            self.view.backgroundColor = [UIColor clearColor];
+            self.view.layer.backgroundColor = [UIColor clearColor].CGColor;
+            self.view.opaque = NO;
             
             // 递归处理所有子视图
-            for (UIView *subview in view.subviews) {
+            for (UIView *subview in self.view.subviews) {
                 makeViewsTransparent(subview);
             }
         };
