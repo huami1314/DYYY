@@ -630,8 +630,8 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
             [actions addObject:showSharePanel];
         }
         // 添加长按面板
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDoubleTapshowSharePanel"] || 
-            ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleTapshowSharePanel"]) {
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDoubleTapshowDislikeOnVideo"] || 
+            ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleTapshowDislikeOnVideo"]) {
             
             AWEUserSheetAction *showSharePanel = [NSClassFromString(@"AWEUserSheetAction") 
                                              actionWithTitle:@"长按面板" 
