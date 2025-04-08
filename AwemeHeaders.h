@@ -181,6 +181,10 @@ typedef NS_ENUM(NSInteger, MediaType) {
 
 @end
 
+@interface AWESearchEntranceView : UIView
+
+@end
+
 @interface AWETextViewInternal : UITextView
 
 @end
