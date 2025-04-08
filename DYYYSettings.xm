@@ -1092,6 +1092,7 @@ static void showUserAgreementAlert() {
                 // 【交互增强】分类
                 NSMutableArray<AWESettingItemModel *> *interactionItems = [NSMutableArray array];
                 NSArray *interactionSettings = @[
+                    @{@"identifier": @"DYYYisEnableModern", @"title": @"启用新版玻璃面板", @"detail": @"", @"cellType": @6, @"imageName": @"ic_gearsimplify_outlined_20"},
                     @{@"identifier": @"DYYYDisableHomeRefresh", @"title": @"禁用点击首页刷新", @"detail": @"", @"cellType": @6, @"imageName": @"ic_arrowcircle_outlined_20"},
                     @{@"identifier": @"DYYYDouble", @"title": @"禁用双击视频点赞", @"detail": @"", @"cellType": @6, @"imageName": @"ic_thumbsup_outlined_20"},
                     @{@"identifier": @"DYYYEnableDoubleOpenComment", @"title": @"启用双击打开评论", @"detail": @"", @"cellType": @6, @"imageName": @"ic_comment_outlined_20"},
@@ -1126,6 +1127,7 @@ static void showUserAgreementAlert() {
                                 @{@"identifier": @"DYYYDoubleTapCopyDesc", @"title": @"复制文案", @"detail": @"", @"cellType": @6, @"imageName": @"ic_rectangleonrectangleup_outlined_20"},
                                 @{@"identifier": @"DYYYDoubleTapComment", @"title": @"打开评论", @"detail": @"", @"cellType": @6, @"imageName": @"ic_comment_outlined_20"},
                                 @{@"identifier": @"DYYYDoubleTapLike", @"title": @"点赞视频", @"detail": @"", @"cellType": @6, @"imageName": @"ic_heart_outlined_20"},
+                                @{@"identifier": @"DYYYDoubleTapshowDislikeOnVideo", @"title": @"长按面板", @"detail": @"", @"cellType": @6, @"imageName": @"ic_xiaoxihuazhonghua_outlined_20"},                               
                                 @{@"identifier": @"DYYYDoubleTapshowSharePanel", @"title": @"分享视频", @"detail": @"", @"cellType": @6, @"imageName": @"ic_share_outlined"},
                             ];
                             

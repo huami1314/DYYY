@@ -151,6 +151,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (void)performCommentAction;
 - (void)performLikeAction;
 - (void)showSharePanel;
+- (void)showDislikeOnVideo;
 - (void)onVideoPlayerViewDoubleClicked:(id)arg1;
 @end
 
@@ -180,6 +181,10 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 @interface AWEBaseElementView : UIView
+
+@end
+
+@interface AWESearchEntranceView : UIView
 
 @end
 

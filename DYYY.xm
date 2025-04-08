@@ -629,7 +629,19 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
             }];
             [actions addObject:showSharePanel];
         }
-        
+        // 添加长按面板
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDoubleTapshowDislikeOnVideo"] || 
+            ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleTapshowDislikeOnVideo"]) {
+            
+            AWEUserSheetAction *showDislikeOnVideo = [NSClassFromString(@"AWEUserSheetAction") 
+                                             actionWithTitle:@"长按面板" 
+                                             imgName:nil 
+                                             handler:^{
+                [self showDislikeOnVideo]; // 执行长按面板操作
+            }];
+            [actions addObject:showDislikeOnVideo];
+        }
+
         // 显示操作表
         [actionSheet setActions:actions];
         [actionSheet show];
@@ -1458,29 +1470,26 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 %hook AWEAntiAddictedNoticeBarView
 - (void)layoutSubviews {
     %orig;
-    BOOL isTemplateVideo = NO;
-    // 查找子视图中的UILabel，检查是否包含"合集"
-    for (UIView *subview in self.subviews) {
-        if ([subview isKindOfClass:%c(UILabel)]) {
-            UILabel *label = (UILabel *)subview;
-            NSString *labelText = label.text;
-            if (labelText && [labelText containsString:@"合集"]) {
-                isTemplateVideo = YES;
-                break;
-            }
-        }
-    }
     
-    // 根据判断结果应用相应的开关
-    if (isTemplateVideo) {
-        // 如果是合集，使用合集的开关
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTemplateVideo"]) {
-            [self removeFromSuperview]; 
-        }
-    } else {
-        // 如果是声明，使用声明的开关
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAntiAddictedNotice"]) {
-            [self removeFromSuperview];
+    // 获取 tipsLabel 属性
+    UILabel *tipsLabel = [self valueForKey:@"tipsLabel"];
+    
+    if (tipsLabel && [tipsLabel isKindOfClass:%c(UILabel)]) {
+        NSString *labelText = tipsLabel.text;
+        
+        if (labelText) {
+            // 明确判断是合集还是作者声明
+            if ([labelText containsString:@"合集"]) {
+                // 如果是合集，只检查合集的开关
+                if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTemplateVideo"]) {
+                    [self removeFromSuperview]; 
+                }
+            } else {
+                // 如果不是合集（即作者声明），只检查声明的开关
+                if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAntiAddictedNotice"]) {
+                    [self removeFromSuperview];
+                }
+            }
         }
     }
 }
@@ -1772,11 +1781,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
                 }
                 
                 if (hasImageView) {
-                    if (self.yy_viewController.selectedIndex == 0) {
-                        subview.hidden = YES;
-                    } else {
-                        subview.hidden = NO;
-                    }
+                    subview.hidden = YES;
                     break;
                 }
             }
@@ -2438,23 +2443,45 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 
 %end
 
+//隐藏短剧合集
 %hook AWETemplatePlayletView
 
 - (void)layoutSubviews {
-    %orig;
 
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTemplatePlaylet"]) {
-        // 找到父视图并隐藏
-        UIView *parentView = self.superview;
-        if (parentView) {
-            parentView.hidden = YES;
-        } else {
-            self.hidden = YES;
+        if ([self respondsToSelector:@selector(removeFromSuperview)]) {
+            [self removeFromSuperview];
         }
+        self.hidden = YES; 
+        return;
     }
+    %orig;
+}
+%end
+
+//隐藏作者作品集搜索
+%hook AWESearchEntranceView
+
+- (void)layoutSubviews {
+
+    Class targetClass = NSClassFromString(@"AWESearchEntranceView");
+    if (!targetClass) return;
+
+
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideInteractionSearch"]) {
+
+        SEL removeSel = NSSelectorFromString(@"removeFromSuperview");
+        if ([targetClass instancesRespondToSelector:removeSel]) {
+            [self performSelector:removeSel];
+        }
+        self.hidden = YES;
+        return;
+    }
+    %orig;
 }
 
 %end
+
 // 隐藏视频滑条 
 %hook AWEStoryProgressSlideView 
  
@@ -4349,6 +4376,16 @@ static BOOL isDownloadFlied = NO;
 }
 %end
 
+//强制启用新版抖音长按 UI（现代风）
+%hook AWELongPressPanelManager
+- (BOOL)shouldShowModernLongPressPanel {
+    // 从 NSUserDefaults 读取开关状态
+    BOOL isEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableModern"];
+    return isEnabled; // 根据开关状态返回值
+}
+
+%end
+
 //聊天视频底部评论框背景透明
 %hook AWEIMFeedBottomQuickEmojiInputBar
 
@@ -4373,22 +4410,6 @@ static BOOL isDownloadFlied = NO;
 
 %end
 
-//启用毛玻璃长按面板
-%hook AWELongPressPanelManager
-- (BOOL)showShareFriends {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYShowModernLongPressPanel"]) {
-        return NO; 
-    } else {
-        return %orig;
-    }
-}
-- (BOOL)shouldShowModernLongPressPanel {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYShowModernLongPressPanel"]) {
-        return YES; 
-    } else {
-        return %orig;
-	}
-}
 %end
 
 %ctor {
