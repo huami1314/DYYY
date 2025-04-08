@@ -1473,26 +1473,23 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
     
     // 获取 tipsLabel 属性
     UILabel *tipsLabel = [self valueForKey:@"tipsLabel"];
-    BOOL isTemplateVideo = NO;
     
-    // 检查 tipsLabel 的文本是否包含"合集"
     if (tipsLabel && [tipsLabel isKindOfClass:%c(UILabel)]) {
         NSString *labelText = tipsLabel.text;
-        if (labelText && [labelText containsString:@"合集"]) {
-            isTemplateVideo = YES;
-        }
-    }
-    
-    // 根据判断结果应用相应的开关
-    if (isTemplateVideo) {
-        // 如果是合集，使用合集的开关
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTemplateVideo"]) {
-            [self removeFromSuperview]; 
-        }
-    } else {
-        // 如果是声明，使用声明的开关
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAntiAddictedNotice"]) {
-            [self removeFromSuperview];
+        
+        if (labelText) {
+            // 明确判断是合集还是作者声明
+            if ([labelText containsString:@"合集"]) {
+                // 如果是合集，只检查合集的开关
+                if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTemplateVideo"]) {
+                    [self removeFromSuperview]; 
+                }
+            } else {
+                // 如果不是合集（即作者声明），只检查声明的开关
+                if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAntiAddictedNotice"]) {
+                    [self removeFromSuperview];
+                }
+            }
         }
     }
 }
