@@ -4410,7 +4410,6 @@ static BOOL isDownloadFlied = NO;
 
 %end
 
-%end
 
 %ctor {
     %init(DYYYSettingsGesture);
