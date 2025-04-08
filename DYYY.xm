@@ -629,7 +629,19 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
             }];
             [actions addObject:showSharePanel];
         }
-        
+        // 添加长按面板
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDoubleTapshowDislikeOnVideo"] || 
+            ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleTapshowDislikeOnVideo"]) {
+            
+            AWEUserSheetAction *showDislikeOnVideo = [NSClassFromString(@"AWEUserSheetAction") 
+                                             actionWithTitle:@"长按面板" 
+                                             imgName:nil 
+                                             handler:^{
+                [self showDislikeOnVideo]; // 执行长按面板操作
+            }];
+            [actions addObject:showDislikeOnVideo];
+        }
+
         // 显示操作表
         [actionSheet setActions:actions];
         [actionSheet show];
@@ -1458,16 +1470,16 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 %hook AWEAntiAddictedNoticeBarView
 - (void)layoutSubviews {
     %orig;
+    
+    // 获取 tipsLabel 属性
+    UILabel *tipsLabel = [self valueForKey:@"tipsLabel"];
     BOOL isTemplateVideo = NO;
-    // 查找子视图中的UILabel，检查是否包含"合集"
-    for (UIView *subview in self.subviews) {
-        if ([subview isKindOfClass:%c(UILabel)]) {
-            UILabel *label = (UILabel *)subview;
-            NSString *labelText = label.text;
-            if (labelText && [labelText containsString:@"合集"]) {
-                isTemplateVideo = YES;
-                break;
-            }
+    
+    // 检查 tipsLabel 的文本是否包含"合集"
+    if (tipsLabel && [tipsLabel isKindOfClass:%c(UILabel)]) {
+        NSString *labelText = tipsLabel.text;
+        if (labelText && [labelText containsString:@"合集"]) {
+            isTemplateVideo = YES;
         }
     }
     
@@ -1772,11 +1784,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
                 }
                 
                 if (hasImageView) {
-                    if (self.yy_viewController.selectedIndex == 0) {
-                        subview.hidden = YES;
-                    } else {
-                        subview.hidden = NO;
-                    }
+                    subview.hidden = YES;
                     break;
                 }
             }

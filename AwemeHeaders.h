@@ -149,6 +149,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (void)performCommentAction;
 - (void)performLikeAction;
 - (void)showSharePanel;
+- (void)showDislikeOnVideo;
 - (void)onVideoPlayerViewDoubleClicked:(id)arg1;
 @end
 
