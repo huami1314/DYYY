@@ -1695,10 +1695,8 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 %end
 
 %hook AWENormalModeTabBar
-
 - (void)layoutSubviews {
     %orig;
-
     BOOL hideShop = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShopButton"];
     BOOL hideMsg = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMessageButton"];
     BOOL hideFri = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFriendsButton"];
@@ -1727,11 +1725,9 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
             [subview removeFromSuperview];
         }
     }
-
     [visibleButtons sortUsingComparator:^NSComparisonResult(UIView* a, UIView* b) {
         return [@(a.frame.origin.x) compare:@(b.frame.origin.x)];
     }];
-
     if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
         // iPad端布局逻辑
         UIView *targetView = nil;
@@ -1771,31 +1767,79 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
                                     button.frame.size.height);
         }
     }
-
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenBottomBg"] || [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-        for (UIView *subview in self.subviews) {
-            if ([subview class] == [UIView class]) {
-                BOOL hasImageView = NO;
-                for (UIView *childView in subview.subviews) {
-                    if ([childView isKindOfClass:[UIImageView class]]) {
-                        hasImageView = YES;
-                        break;
-                    }
+    // 处理底部导航栏背景
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenBottomBg"] || 
+        [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+        
+        // 找到并处理所有可能的背景视图
+        [self cleanupTabBarBackgrounds];
+        
+        // 添加通知监听，当评论区状态变化时刷新背景
+        static dispatch_once_t onceToken;
+        dispatch_once(&onceToken, ^{
+            [[NSNotificationCenter defaultCenter] addObserver:self 
+                                                    selector:@selector(refreshTabBarBackground) 
+                                                        name:@"DYYYCommentStateChanged" 
+                                                      object:nil];
+        });
+    }
+}
+// 新增方法：清理所有底部导航栏背景
+%new
+- (void)cleanupTabBarBackgrounds {
+    // 处理所有可能的背景视图
+    for (UIView *subview in self.subviews) {
+        // 处理直接的背景视图
+        if ([subview class] == [UIView class]) {
+            // 检查是否有图片视图，这通常是背景
+            BOOL hasImageView = NO;
+            for (UIView *childView in subview.subviews) {
+                if ([childView isKindOfClass:[UIImageView class]]) {
+                    hasImageView = YES;
+                    childView.hidden = YES;
                 }
                 
-                if (hasImageView) {
-                    if (self.yy_viewController.selectedIndex == 0) {
-                        subview.hidden = YES;
-                    } else {
-                        subview.hidden = NO;
-                    }
-                    break;
+                // 处理可能的黑色背景
+                if (childView.backgroundColor && 
+                    CGColorEqualToColor(childView.backgroundColor.CGColor, [UIColor blackColor].CGColor)) {
+                    childView.backgroundColor = [UIColor clearColor];
                 }
             }
+            
+            // 处理子视图本身的背景
+            if (subview.backgroundColor && 
+                CGColorEqualToColor(subview.backgroundColor.CGColor, [UIColor blackColor].CGColor)) {
+                subview.backgroundColor = [UIColor clearColor];
+            }
+            
+            // 如果是首页且找到了图片视图背景，隐藏整个背景容器
+            if (hasImageView && self.yy_viewController.selectedIndex == 0) {
+                subview.hidden = YES;
+            }
+        }
+        
+        // 直接处理任何黑色背景
+        if (subview.backgroundColor && 
+            CGColorEqualToColor(subview.backgroundColor.CGColor, [UIColor blackColor].CGColor)) {
+            subview.backgroundColor = [UIColor clearColor];
         }
     }
 }
-
+// 新增方法：响应评论区状态变化的通知
+%new
+- (void)refreshTabBarBackground {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+        // 延迟执行以确保UI已更新完成
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [self cleanupTabBarBackgrounds];
+        });
+    }
+}
+// 确保在对象销毁时移除观察者
+- (void)dealloc {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+    %orig;
+}
 %end
 
 %hook UIView
