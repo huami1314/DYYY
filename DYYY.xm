@@ -639,7 +639,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
                                              handler:^{
                 [self showDislikeOnVideo]; // 执行长按面板操作
             }];
-            [actions addObject:showDislikeOnVideo];
+            [actions addObject:@"showDislikeOnVideo"];
         }
 
         // 显示操作表
