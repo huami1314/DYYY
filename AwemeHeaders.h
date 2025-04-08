@@ -636,6 +636,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 
 //主页视频底部评论视图
 @interface AWEAwemeDetailTableViewController : UIViewController
+- (void)clearBackgroundColor;
 @end
 
 @interface AWECommentInputViewController : UIViewController
