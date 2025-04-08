@@ -575,7 +575,6 @@ static void showUserAgreementAlert() {
                     @{@"identifier": @"DYYYisHideStatusbar", @"title": @"隐藏系统顶栏", @"detail": @"", @"cellType": @6, @"imageName": @"ic_eyeslash_outlined_16"},
                     @{@"identifier": @"DYYYisEnablePure", @"title": @"启用首页净化", @"detail": @"", @"cellType": @6, @"imageName": @"ic_broom_outlined"},
                     @{@"identifier": @"DYYYisEnableFullScreen", @"title": @"启用首页全屏", @"detail": @"", @"cellType": @6, @"imageName": @"ic_fullscreen_outlined_16"},
-                    @{@"identifier": @"DYYYShowModernLongPressPanel", @"title": @"启用玻璃面板", @"detail": @"", @"cellType": @6, @"imageName": @"ic_ad_outlined_20"}
                 ];
                 
                 for (NSDictionary *dict in miscellaneousSettings) {
