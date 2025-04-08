@@ -4372,23 +4372,22 @@ static BOOL isDownloadFlied = NO;
 
 %new
 -(void) clearBackgroundColor {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenCommentBg"]) {
-        // 定义递归处理子视图的 block
-        void (^makeViewsTransparent)(UIView *) = ^void(UIView *view) {
-            // 设置当前视图透明
-            self.view.backgroundColor = [UIColor clearColor];
-            self.view.layer.backgroundColor = [UIColor clearColor].CGColor;
-            self.view.opaque = NO;
-            
-            // 递归处理所有子视图
-            for (UIView *subview in self.view.subviews) {
-                makeViewsTransparent(subview);
-            }
-        };
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideSearchCommentBg"]) return;
+
+    // 定义正确的递归Block
+    void (^__block makeTransparent)(UIView*) = ^void(UIView* targetView){
+        targetView.backgroundColor = [UIColor clearColor];
+        targetView.opaque = NO;
+        targetView.layer.backgroundColor = [UIColor clearColor].CGColor;
+        targetView.layer.opaque = NO;
         
-        // 从根视图开始递归处理
-        makeViewsTransparent(self.view);
-    }
+        // 递归子视图
+        for (UIView* subview in targetView.subviews) {
+            makeTransparent(subview); // 传递正确的子视图
+        }
+    };
+    
+    makeTransparent(self.view); // 从根视图开始
 }
 
 %end
@@ -4400,7 +4399,7 @@ static BOOL isDownloadFlied = NO;
 //     %orig;
     
 //     // 检查是否启用隐藏评论背景功能
-//     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenCommentBg"]) {
+//     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideSearchCommentBg"]) {
         
 //         // 获取 enterFrom 属性
 //         NSString *enterFrom = [self valueForKey:@"enterFrom"];
