@@ -633,7 +633,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
         if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDoubleTapshowDislikeOnVideo"] || 
             ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleTapshowDislikeOnVideo"]) {
             
-            AWEUserSheetAction *showSharePanel = [NSClassFromString(@"AWEUserSheetAction") 
+            AWEUserSheetAction *showDislikeOnVideo = [NSClassFromString(@"AWEUserSheetAction") 
                                              actionWithTitle:@"长按面板" 
                                              imgName:nil 
                                              handler:^{
