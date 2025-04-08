@@ -1470,16 +1470,16 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 %hook AWEAntiAddictedNoticeBarView
 - (void)layoutSubviews {
     %orig;
+    
+    // 获取 tipsLabel 属性
+    UILabel *tipsLabel = [self valueForKey:@"tipsLabel"];
     BOOL isTemplateVideo = NO;
-    // 查找子视图中的UILabel，检查是否包含"合集"
-    for (UIView *subview in self.subviews) {
-        if ([subview isKindOfClass:%c(UILabel)]) {
-            UILabel *label = (UILabel *)subview;
-            NSString *labelText = label.text;
-            if (labelText && [labelText containsString:@"合集"]) {
-                isTemplateVideo = YES;
-                break;
-            }
+    
+    // 检查 tipsLabel 的文本是否包含"合集"
+    if (tipsLabel && [tipsLabel isKindOfClass:%c(UILabel)]) {
+        NSString *labelText = tipsLabel.text;
+        if (labelText && [labelText containsString:@"合集"]) {
+            isTemplateVideo = YES;
         }
     }
     
