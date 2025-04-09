@@ -1532,20 +1532,6 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 }
 %end
 
-%hook AWEFeedGuideManager
-
-- (bool)enableAutoplay {
-
-	BOOL featureEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableAutoPlay"];
-
-	if (!featureEnabled) {
-
-		return %orig;
-	}
-	return YES;
-}
-%end
-
 %hook AWEFeedChannelManager
 
 - (void)reloadChannelWithChannelModels:(id)arg1 currentChannelIDList:(id)arg2 reloadType:(id)arg3 selectedChannelID:(id)arg4 {
