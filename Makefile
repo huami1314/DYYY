@@ -25,7 +25,6 @@ include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = DYYY
 
-# WebP库配置
 DYYY_LIBRARY_SEARCH_PATHS = $(THEOS_PROJECT_DIR)/libs
 DYYY_HEADER_SEARCH_PATHS = $(THEOS_PROJECT_DIR)/libs/include
 

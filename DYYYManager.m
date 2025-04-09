@@ -7,10 +7,10 @@
 #import <MobileCoreServices/MobileCoreServices.h>
 #import <CoreMedia/CMMetadata.h>
 #import <CoreAudioTypes/CoreAudioTypes.h>
-#import <decode.h>
-#import <demux.h>
-#import <mux.h>
- 
+#import <libwebp/decode.h>
+#import <libwebp/demux.h>
+#import <libwebp/mux.h>
+
 // 自定义进度条视图类
 @interface DYYYManager(){
     AVAssetExportSession *session;
@@ -30,7 +30,7 @@
 @property (nonatomic, strong) UILabel *progressLabel;
 @property (nonatomic, strong) UIButton *cancelButton;
 @property (nonatomic, copy) void (^cancelBlock)(void);
-@property (nonatomic, assign) BOOL isCancelled; // 添加取消标志
+@property (nonatomic, assign) BOOL isCancelled; 
 
 - (instancetype)initWithFrame:(CGRect)frame;
 - (void)setProgress:(float)progress;
@@ -870,14 +870,62 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width, in
                 CFDictionaryRef properties = CGImageSourceCopyPropertiesAtIndex(heicSource, i, NULL);
                 
                 // 获取延迟时间
-                float delayTime = 0.1f; // 默认延迟时间
+                float delayTime = 0.1f;
                 if (properties) {
-                    CFDictionaryRef heicProperties = CFDictionaryGetValue(properties, kCGImagePropertyHEICSDictionary);
-                    if (heicProperties) {
-                        CFNumberRef delayTimeRef = CFDictionaryGetValue(heicProperties, kCGImagePropertyHEICSDelayTime);
+                    // 检查多个可能包含延迟时间的字典
+                    CFDictionaryRef heicsProperties = CFDictionaryGetValue(properties, kCGImagePropertyHEICSDictionary);
+                    if (heicsProperties) {
+                        // 注意：HEICS相关常量可能不存在，使用通用的GIF延迟时间常量
+                        CFNumberRef delayTimeRef = CFDictionaryGetValue(heicsProperties, kCGImagePropertyGIFDelayTime);
                         if (delayTimeRef) {
                             CFNumberGetValue(delayTimeRef, kCFNumberFloatType, &delayTime);
+                            NSLog(@"从HEICS字典获取延迟时间: %f", delayTime);
                         }
+                        
+                        // 尝试未压缩延迟时间（某些文件可能使用这个）
+                        if (delayTime == 0.1f) {
+                            CFNumberRef unclampedDelayTimeRef = CFDictionaryGetValue(heicsProperties, kCGImagePropertyGIFUnclampedDelayTime);
+                            if (unclampedDelayTimeRef) {
+                                CFNumberGetValue(unclampedDelayTimeRef, kCFNumberFloatType, &delayTime);
+                                NSLog(@"从HEICS Unclamped字典获取延迟时间: %f", delayTime);
+                            }
+                        }
+                    }
+                    
+                    if (delayTime == 0.1f) {
+                        CFDictionaryRef heifProperties = CFDictionaryGetValue(properties, kCGImagePropertyHEIFDictionary);
+                        if (heifProperties) {
+                            // HEIF没有特定的延迟时间常量，使用GIF的常量尝试获取
+                            CFNumberRef delayTimeRef = CFDictionaryGetValue(heifProperties, kCGImagePropertyGIFDelayTime);
+                            if (delayTimeRef) {
+                                CFNumberGetValue(delayTimeRef, kCFNumberFloatType, &delayTime);
+                                NSLog(@"从HEIF字典获取延迟时间: %f", delayTime);
+                            }
+                        }
+                    }
+                    
+                    if (delayTime == 0.1f) {
+                        CFDictionaryRef gifProperties = CFDictionaryGetValue(properties, kCGImagePropertyGIFDictionary);
+                        if (gifProperties) {
+                            CFNumberRef gifDelayTimeRef = CFDictionaryGetValue(gifProperties, kCGImagePropertyGIFDelayTime);
+                            if (gifDelayTimeRef) {
+                                CFNumberGetValue(gifDelayTimeRef, kCFNumberFloatType, &delayTime);
+                                NSLog(@"从GIF字典获取延迟时间: %f", delayTime);
+                            }
+                            
+                            if (delayTime == 0.1f) {
+                                CFNumberRef unclampedDelayTimeRef = CFDictionaryGetValue(gifProperties, kCGImagePropertyGIFUnclampedDelayTime);
+                                if (unclampedDelayTimeRef) {
+                                    CFNumberGetValue(unclampedDelayTimeRef, kCFNumberFloatType, &delayTime);
+                                    NSLog(@"从GIF Unclamped字典获取延迟时间: %f", delayTime);
+                                }
+                            }
+                        }
+                    }
+                    
+                    if (delayTime <= 0.01f || delayTime > 10.0f) {
+                        NSLog(@"延迟时间异常: %f，使用默认值", delayTime);
+                        delayTime = 0.1f; // 使用默认值
                     }
                 }
                 
