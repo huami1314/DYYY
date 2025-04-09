@@ -25,8 +25,13 @@ include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = DYYY
 
+# WebP库配置
+DYYY_LIBRARY_SEARCH_PATHS = $(THEOS_PROJECT_DIR)/libs
+DYYY_HEADER_SEARCH_PATHS = $(THEOS_PROJECT_DIR)/libs/include
+
 DYYY_FILES = DYYY.xm DYYYSettings.xm DYYYSettingViewController.m DYYYBottomAlertView.m DYYYCustomInputView.m DYYYOptionsSelectionView.m DYYYIconOptionsDialogView.m DYYYAboutDialogView.m DYYYManager.m CityManager.m 
-DYYY_CFLAGS = -fobjc-arc -w
+DYYY_CFLAGS = -fobjc-arc -w -I$(DYYY_HEADER_SEARCH_PATHS)
+DYYY_LDFLAGS = -L$(DYYY_LIBRARY_SEARCH_PATHS) -lwebp
 DYYY_FRAMEWORKS = CoreAudio
 CXXFLAGS += -std=c++11
 CCFLAGS += -std=c++11
