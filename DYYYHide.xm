@@ -1195,6 +1195,18 @@
 }
 %end
 
+%hook AWEHPTopBarCTAItemView
+- (void)layoutSubviews {
+	%orig;
+	for (UIView *subview in self.subviews) {
+		if ([subview isKindOfClass:[%c(DUXBadge) class]]) {
+				if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenSidebarDot"]) {
+				subview.hidden = YES;
+			}
+		}
+	}
+}
+%end
 // 隐藏搜同款
 %hook ACCStickerContainerView
 - (void)layoutSubviews {
