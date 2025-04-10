@@ -639,3 +639,17 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWEIMFeedBottomQuickEmojiInputBar : UIView
 @end
 
+@interface DUXBadge : UIView
+@end
+
+@interface ACCEditTagStickerView : UIView
+@end
+
+@interface AWESearchFeedTagView : UIView
+@end
+
+@interface AFDRecommendToFriendTagView : UIView
+@end
+
+@interface AFDAIbumFolioView : UIView
+@end
