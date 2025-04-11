@@ -653,3 +653,6 @@ typedef NS_ENUM(NSInteger, MediaType) {
 
 @interface AFDAIbumFolioView : UIView
 @end
+
+@interface AWEHPTopBarCTAItemView : UIView
+@end
