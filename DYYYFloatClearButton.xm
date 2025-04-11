@@ -13,6 +13,15 @@
 @property (nonatomic, assign) BOOL isElementsHidden;
 @property (nonatomic, strong) NSMutableArray *hiddenViewsList;
 @property (nonatomic, assign) BOOL isPersistentMode; // 是否为全局生效模式
+- (void)hideUIElements;
+- (void)showUIElements;
+- (void)safeResetState;
+- (void)findAndHideViewsOfClass:(Class)viewClass inView:(UIView *)view;
+@end
+// 添加周期性检查分类
+@interface HideUIButton (PeriodicCheck)
+- (void)startPeriodicCheckIfNeeded;
+- (void)periodicCheckForNewElements;
 @end
 // 全局变量
 static HideUIButton *hideButton;
@@ -234,7 +243,21 @@ static NSArray* getHideClassList() {
 - (void)hideUIElements {
     // 递归查找并隐藏所有匹配的视图
     [self findAndHideViews:getHideClassList()];
+    
+    // 特别关注AWEElementStackView
+    Class stackViewClass = NSClassFromString(@"AWEElementStackView");
+    if (stackViewClass) {
+        for (UIWindow *window in [UIApplication sharedApplication].windows) {
+            [self findAndHideViewsOfClass:stackViewClass inView:window];
+        }
+    }
+    
     self.isElementsHidden = YES;
+    
+    // 如果是全局模式，启动周期性检查
+    if (self.isPersistentMode) {
+        [self startPeriodicCheckIfNeeded];
+    }
 }
 - (void)showUIElements {
     // 恢复所有被隐藏的视图
@@ -284,6 +307,60 @@ static NSArray* getHideClassList() {
     [self updateButtonAppearance];
 }
 @end
+
+// 周期性检查分类实现
+@implementation HideUIButton (PeriodicCheck)
+- (void)startPeriodicCheckIfNeeded {
+    if (self.isElementsHidden && self.isPersistentMode) {
+        // 开始周期性检查
+        [NSTimer scheduledTimerWithTimeInterval:0.5 
+                                         target:self 
+                                       selector:@selector(periodicCheckForNewElements) 
+                                       userInfo:nil 
+                                        repeats:YES];
+    }
+}
+- (void)periodicCheckForNewElements {
+    if (self.isElementsHidden && self.isPersistentMode) {
+        // 只检查AWEElementStackView类的元素
+        Class targetClass = NSClassFromString(@"AWEElementStackView");
+        if (!targetClass) return;
+        
+        for (UIWindow *window in [UIApplication sharedApplication].windows) {
+            [self findAndHideViewsOfClass:targetClass inView:window];
+        }
+    }
+}
+@end
+// 特别监控AWEElementStackView的创建和添加
+%hook AWEElementStackView
+- (void)didMoveToSuperview {
+    %orig;
+    
+    // 如果当前是隐藏状态且是全局模式，立即隐藏这个新添加的视图
+    if (hideButton && hideButton.isElementsHidden && hideButton.isPersistentMode) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (![hideButton.hiddenViewsList containsObject:self]) {
+                [hideButton.hiddenViewsList addObject:self];
+                self.alpha = 0.0;
+            }
+        });
+    }
+}
+- (void)didMoveToWindow {
+    %orig;
+    
+    // 当视图被添加到窗口时也检查
+    if (hideButton && hideButton.isElementsHidden && hideButton.isPersistentMode) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (![hideButton.hiddenViewsList containsObject:self]) {
+                [hideButton.hiddenViewsList addObject:self];
+                self.alpha = 0.0;
+            }
+        });
+    }
+}
+%end
 // 监控视图转换状态
 %hook UIViewController
 - (void)viewWillAppear:(BOOL)animated {
@@ -299,7 +376,6 @@ static NSArray* getHideClassList() {
         }
     });
 }
-
 - (void)viewWillDisappear:(BOOL)animated {
     %orig;
     isAppInTransition = YES;
@@ -349,6 +425,19 @@ static NSArray* getHideClassList() {
     }
 }
 %end
+// 在视频切换或滚动时更强力地重新应用隐藏
+%hook AWEFeedTableView
+- (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
+    %orig;
+    
+    // 视频滚动停止后，重新检查并隐藏元素
+    if (hideButton && hideButton.isElementsHidden && hideButton.isPersistentMode) {
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [hideButton hideUIElements];
+        });
+    }
+}
+%end
 // Hook 所有可能的标签视图
 %hook UILabel
 - (void)didMoveToSuperview {
@@ -370,8 +459,15 @@ static NSArray* getHideClassList() {
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     BOOL result = %orig;
     
-    // 检查是否启用了悬浮按钮
-    BOOL isEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:kEnableButtonKey];
+    // 检查是否启用了悬浮按钮，默认为YES（显示）
+    BOOL isEnabled = YES;
+    if ([[NSUserDefaults standardUserDefaults] objectForKey:kEnableButtonKey] != nil) {
+        isEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:kEnableButtonKey];
+    } else {
+        // 如果没有设置过，则设置默认值为YES
+        [[NSUserDefaults standardUserDefaults] setBool:YES forKey:kEnableButtonKey];
+        [[NSUserDefaults standardUserDefaults] synchronize];
+    }
     
     // 只有当功能被启用时才创建按钮
     if (isEnabled) {
@@ -413,4 +509,5 @@ static NSArray* getHideClassList() {
     // 注册信号处理
     signal(SIGSEGV, SIG_IGN);
     
-   
+    // 不需要在这里设置默认值，因为已经在AppDelegate中处理了
+}
