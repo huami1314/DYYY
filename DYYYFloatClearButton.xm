@@ -285,26 +285,15 @@ static NSArray* getHideClassList() {
 - (void)findAndProcessStackViewsInView:(UIView *)view {
     // 检查当前视图是否是目标类型
     if ([view isKindOfClass:NSClassFromString(@"AWEElementStackView")]) {
-        // 判断是否满足条件：accessibilityLabel 为 "left" 且有 6 个 AWEBaseElementView 子视图
-        if ([view.accessibilityLabel isEqualToString:@"left"]) {
-            // 计算 AWEBaseElementView 子视图的数量
-            NSInteger elementViewCount = 0;
-            for (UIView *subview in view.subviews) {
-                if ([subview isKindOfClass:NSClassFromString(@"AWEBaseElementView")]) {
-                    elementViewCount++;
-                }
-            }
-            
-            // 如果满足条件
-            if (elementViewCount == 6) {
-                // 隐藏所有 AWEBaseElementView 子视图及其嵌套子视图
-                for (UIView *subview in view.subviews) {
-                    if ([subview isKindOfClass:NSClassFromString(@"AWEBaseElementView")]) {
-                        // 递归隐藏该视图及其所有子视图
-                        [self hideViewAndAllSubviews:subview];
-                    }
-                }
-            }
+        // 无论是否满足特定条件，先添加到隐藏列表中
+        if (![self.hiddenViewsList containsObject:view]) {
+            [self.hiddenViewsList addObject:view];
+            view.alpha = 0.0;
+        }
+        
+        // 递归隐藏所有子视图，确保所有子元素都被隐藏
+        for (UIView *subview in view.subviews) {
+            [self hideViewAndAllSubviews:subview];
         }
     }
     
@@ -313,6 +302,7 @@ static NSArray* getHideClassList() {
         [self findAndProcessStackViewsInView:subview];
     }
 }
+
 // 递归隐藏视图及其所有子视图
 - (void)hideViewAndAllSubviews:(UIView *)view {
     // 将视图添加到隐藏列表
@@ -377,6 +367,8 @@ static NSArray* getHideClassList() {
     if (hideButton && hideButton.isElementsHidden && hideButton.isPersistentMode) {
         // 使用延迟以确保新的UI元素已经加载
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            // 先清空隐藏列表，确保所有视图都会被重新处理
+            [hideButton.hiddenViewsList removeAllObjects];
             [hideButton hideUIElements];
         });
     }
@@ -398,6 +390,40 @@ static NSArray* getHideClassList() {
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             [hideButton hideUIElements];
         });
+    }
+}
+%end
+// 监听 AWEElementStackView 的创建和布局变化
+%hook AWEElementStackView
+- (id)initWithFrame:(CGRect)frame {
+    id instance = %orig;
+    
+    // 如果当前是隐藏状态且是全局模式，则立即隐藏新创建的 AWEElementStackView
+    if (hideButton && hideButton.isElementsHidden && hideButton.isPersistentMode) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (![hideButton.hiddenViewsList containsObject:self]) {
+                [hideButton.hiddenViewsList addObject:self];
+                self.alpha = 0.0;
+                
+                // 同时隐藏所有子视图
+                for (UIView *subview in self.subviews) {
+                    [hideButton hideViewAndAllSubviews:subview];
+                }
+            }
+        });
+    }
+    
+    return instance;
+}
+// 监听布局变化，确保隐藏状态保持
+- (void)layoutSubviews {
+    %orig;
+    
+    // 如果当前是隐藏状态且是全局模式，确保视图保持隐藏
+    if (hideButton && hideButton.isElementsHidden && hideButton.isPersistentMode) {
+        if ([hideButton.hiddenViewsList containsObject:self]) {
+            self.alpha = 0.0;
+        }
     }
 }
 %end
