@@ -293,7 +293,7 @@ static UIImage* getCustomImage(NSString *imageName) {
     
     // 添加取消选项
     UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:@"取消"
-    style:UIAlertActionStyleCancel
+                                                           style:UIAlertActionStyleCancel
                                                          handler:nil];
     [alertController addAction:cancelAction];
     
@@ -308,32 +308,40 @@ static UIImage* getCustomImage(NSString *imageName) {
 }
 - (void)handleTap {
     if (isAppInTransition) {
+        NSLog(@"App is in transition, ignoring tap");
         return;
     }
     
-    if (!self.isElementsHidden) {
+    NSLog(@"Button tapped, current state: %d", self.isElementsHidden);
+    
+    // 切换状态
+    self.isElementsHidden = !self.isElementsHidden;
+    
+    if (self.isElementsHidden) {
         // 隐藏UI元素
         [self hideUIElements];
         
         // 更新全局状态
         isGlobalHidden = YES;
         [[NSUserDefaults standardUserDefaults] setBool:YES forKey:kIsGlobalHiddenKey];
-        [[NSUserDefaults standardUserDefaults] synchronize];
     } else {
         // 直接强制恢复所有UI元素
         forceResetAllUIElements();
-        self.isElementsHidden = NO;
         [self.hiddenViewsList removeAllObjects];
         
         // 更新全局状态
         isGlobalHidden = NO;
         [[NSUserDefaults standardUserDefaults] setBool:NO forKey:kIsGlobalHiddenKey];
-        [[NSUserDefaults standardUserDefaults] synchronize];
     }
     
+    [[NSUserDefaults standardUserDefaults] synchronize];
     [self updateButtonAppearance];
+    
+    NSLog(@"Button state updated to: %d", self.isElementsHidden);
 }
 - (void)hideUIElements {
+    NSLog(@"Hiding UI elements");
+    
     // 隐藏元素
     [self.hiddenViewsList removeAllObjects]; // 清空隐藏列表
     
@@ -341,8 +349,6 @@ static UIImage* getCustomImage(NSString *imageName) {
     for (UIWindow *window in [UIApplication sharedApplication].windows) {
         hideAllViewsOfType(window);
     }
-    
-    self.isElementsHidden = YES;
 }
 - (void)safeResetState {
     // 强制恢复所有UI元素
@@ -517,7 +523,8 @@ static UIImage* getCustomImage(NSString *imageName) {
     // 如果是全局模式且元素被隐藏，确保所有视图都被隐藏
     else if (isGlobalHidden) {
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            hideAllViewsOfType(self.view);
+            // 使用getKeyWindow()代替self.view
+            hideAllViewsOfType(getKeyWindow());
         });
     }
 }
