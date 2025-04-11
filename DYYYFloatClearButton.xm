@@ -34,6 +34,8 @@
 - (void)handleTouchDown;
 - (void)handleTouchUpInside;
 - (void)handleTouchUpOutside;
+- (void)saveLockState;
+- (void)loadLockState;
 @end
 // 全局变量
 static HideUIButton *hideButton;
@@ -91,7 +93,6 @@ static void findViewsOfClassHelper(UIView *view, Class viewClass, NSMutableArray
         findViewsOfClassHelper(subview, viewClass, result);
     }
 }
-
 static UIWindow* getKeyWindow(void) {
     UIWindow *keyWindow = nil;
     for (UIWindow *window in [UIApplication sharedApplication].windows) {
@@ -144,6 +145,7 @@ static void initTargetClassNames(void) {
         @"AFDAIbumFolioView"
     ];
 }
+
 @implementation HideUIButton
 - (instancetype)initWithFrame:(CGRect)frame {
     self = [super initWithFrame:frame];
@@ -155,7 +157,9 @@ static void initTargetClassNames(void) {
         self.isElementsHidden = NO;
         self.hiddenViewsList = [NSMutableArray array];
         self.originalAlpha = 1.0;
-        self.isLocked = NO;
+        
+        // 加载保存的锁定状态
+        [self loadLockState];
         
         [self loadIcons];
         [self setImage:self.showIcon forState:UIControlStateNormal];
@@ -176,7 +180,6 @@ static void initTargetClassNames(void) {
     }
     return self;
 }
-
 - (void)startPeriodicCheck {
     [self.checkTimer invalidate];
     self.checkTimer = [NSTimer scheduledTimerWithTimeInterval:0.2 
@@ -203,8 +206,14 @@ static void initTargetClassNames(void) {
         }];
     }
 }
+- (void)saveLockState {
+    [[NSUserDefaults standardUserDefaults] setBool:self.isLocked forKey:@"HideUIButtonLockState"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+}
+- (void)loadLockState {
+    self.isLocked = [[NSUserDefaults standardUserDefaults] boolForKey:@"HideUIButtonLockState"];
+}
 - (void)loadIcons {
-    // 获取应用的 Documents 目录
     NSString *documentsPath = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject;
     NSString *iconPath = [documentsPath stringByAppendingPathComponent:@"DYYY/Qingping.png"];
     
@@ -239,7 +248,7 @@ static void initTargetClassNames(void) {
     return nil;
 }
 - (void)handlePan:(UIPanGestureRecognizer *)gesture {
-    if (self.isLocked) return; // 如果已锁定，不允许拖动
+    if (self.isLocked) return;
     
     [self resetFadeTimer];
     
@@ -263,12 +272,10 @@ static void initTargetClassNames(void) {
     [self resetFadeTimer];
     
     if (!self.isElementsHidden) {
-        // 当前显示"隐藏"，点击后隐藏元素并显示"显示"
         [self hideUIElements];
         self.isElementsHidden = YES;
         self.selected = YES;
     } else {
-        // 当前显示"显示"，点击后显示元素并显示"隐藏"
         forceResetAllUIElements();
         self.isElementsHidden = NO;
         [self.hiddenViewsList removeAllObjects];
@@ -280,10 +287,12 @@ static void initTargetClassNames(void) {
         [self resetFadeTimer];
         self.isLocked = !self.isLocked;
         
-        // 显示锁定/解锁提示
+        // 保存锁定状态
+        [self saveLockState];
+        
         NSString *toastMessage = self.isLocked ? @"按钮已锁定" : @"按钮已解锁";
         showToast(toastMessage);
-        // 触觉反馈
+        
         if (@available(iOS 10.0, *)) {
             UIImpactFeedbackGenerator *generator = [[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleLight];
             [generator prepare];
@@ -307,11 +316,8 @@ static void initTargetClassNames(void) {
             
             for (UIView *view in views) {
                 if ([view isKindOfClass:[UIView class]]) {
-                    // 特殊处理 AWELeftSideBarEntranceView
                     if ([view isKindOfClass:NSClassFromString(@"AWELeftSideBarEntranceView")]) {
-                        // 获取视图所在的控制器
                         UIViewController *controller = [self findViewController:view];
-                        // 只在 AWEFeedContainerViewController 中隐藏
                         if (![controller isKindOfClass:NSClassFromString(@"AWEFeedContainerViewController")]) {
                             continue;
                         }
@@ -337,7 +343,6 @@ static void initTargetClassNames(void) {
     self.fadeTimer = nil;
 }
 @end
-
 // Hook 部分
 %hook UIView
 - (id)initWithFrame:(CGRect)frame {
@@ -345,7 +350,6 @@ static void initTargetClassNames(void) {
     if (hideButton && hideButton.isElementsHidden) {
         for (NSString *className in targetClassNames) {
             if ([view isKindOfClass:NSClassFromString(className)]) {
-                // 特殊处理 AWELeftSideBarEntranceView
                 if ([view isKindOfClass:NSClassFromString(@"AWELeftSideBarEntranceView")]) {
                     dispatch_async(dispatch_get_main_queue(), ^{
                         UIViewController *controller = [hideButton findViewController:view];
@@ -367,7 +371,6 @@ static void initTargetClassNames(void) {
     if (hideButton && hideButton.isElementsHidden) {
         for (NSString *className in targetClassNames) {
             if ([subview isKindOfClass:NSClassFromString(className)]) {
-                // 特殊处理 AWELeftSideBarEntranceView
                 if ([subview isKindOfClass:NSClassFromString(@"AWELeftSideBarEntranceView")]) {
                     UIViewController *controller = [hideButton findViewController:subview];
                     if ([controller isKindOfClass:NSClassFromString(@"AWEFeedContainerViewController")]) {
@@ -386,7 +389,6 @@ static void initTargetClassNames(void) {
     if (hideButton && hideButton.isElementsHidden) {
         for (NSString *className in targetClassNames) {
             if ([self isKindOfClass:NSClassFromString(className)]) {
-                // 特殊处理 AWELeftSideBarEntranceView
                 if ([self isKindOfClass:NSClassFromString(@"AWELeftSideBarEntranceView")]) {
                     UIViewController *controller = [hideButton findViewController:self];
                     if ([controller isKindOfClass:NSClassFromString(@"AWEFeedContainerViewController")]) {
