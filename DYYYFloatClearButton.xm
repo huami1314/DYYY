@@ -18,6 +18,42 @@ static void findViewsOfClassHelper(UIView *view, Class viewClass, NSMutableArray
         findViewsOfClassHelper(subview, viewClass, result);
     }
 }
+// 显示 Toast 的辅助函数
+static void showToast(NSString *message) {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        UIWindow *window = getKeyWindow();
+        if (!window) return;
+        
+        UILabel *toastLabel = [[UILabel alloc] init];
+        toastLabel.backgroundColor = [UIColor colorWithWhite:0 alpha:0.7];
+        toastLabel.textColor = [UIColor whiteColor];
+        toastLabel.textAlignment = NSTextAlignmentCenter;
+        toastLabel.font = [UIFont systemFontOfSize:14];
+        toastLabel.text = message;
+        toastLabel.alpha = 0;
+        toastLabel.layer.cornerRadius = 10;
+        toastLabel.clipsToBounds = YES;
+        
+        [toastLabel sizeToFit];
+        CGFloat padding = 10;
+        toastLabel.frame = CGRectMake(0, 0, toastLabel.frame.size.width + padding * 2, toastLabel.frame.size.height + padding);
+        toastLabel.center = CGPointMake(window.center.x, window.frame.size.height - 100);
+        
+        [window addSubview:toastLabel];
+        
+        [UIView animateWithDuration:0.3 animations:^{
+            toastLabel.alpha = 1;
+        } completion:^(BOOL finished) {
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                [UIView animateWithDuration:0.3 animations:^{
+                    toastLabel.alpha = 0;
+                } completion:^(BOOL finished) {
+                    [toastLabel removeFromSuperview];
+                }];
+            });
+        }];
+    });
+}
 // 全局变量
 static HideUIButton *hideButton;
 static BOOL isAppInTransition = NO;
@@ -78,7 +114,6 @@ static void reapplyHidingToAllElements(HideUIButton *button) {
     if (!button || !button.isElementsHidden) return;
     [button hideUIElements];
 }
-
 @implementation HideUIButton
 - (instancetype)initWithFrame:(CGRect)frame {
     self = [super initWithFrame:frame];
@@ -90,6 +125,7 @@ static void reapplyHidingToAllElements(HideUIButton *button) {
         self.isElementsHidden = NO;
         self.hiddenViewsList = [NSMutableArray array];
         self.originalAlpha = 1.0;
+        self.isLocked = NO;
         
         [self loadIcons];
         [self setImage:self.showIcon forState:UIControlStateNormal];
@@ -116,10 +152,7 @@ static void reapplyHidingToAllElements(HideUIButton *button) {
                                                      repeats:YES 
                                                        block:^(NSTimer *timer) {
         if (self.isElementsHidden) {
-            BOOL isGlobalEffect = [[NSUserDefaults standardUserDefaults] boolForKey:@"GlobalEffect"];
-            if (isGlobalEffect) {
-                [self hideUIElements];
-            }
+            [self hideUIElements];
         }
     }];
 }
@@ -139,7 +172,6 @@ static void reapplyHidingToAllElements(HideUIButton *button) {
         }];
     }
 }
-
 - (void)loadIcons {
     // 获取应用的 Documents 目录
     NSString *documentsPath = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject;
@@ -150,7 +182,6 @@ static void reapplyHidingToAllElements(HideUIButton *button) {
         self.showIcon = customIcon;
         self.hideIcon = customIcon;
     } else {
-        // 默认显示"隐藏"，选中后显示"显示"
         [self setTitle:@"隐藏" forState:UIControlStateNormal];
         [self setTitle:@"显示" forState:UIControlStateSelected];
         self.titleLabel.font = [UIFont systemFontOfSize:10];
@@ -175,8 +206,10 @@ static void reapplyHidingToAllElements(HideUIButton *button) {
         if (!responder) break;
     }
     return nil;
-} 
+}
 - (void)handlePan:(UIPanGestureRecognizer *)gesture {
+    if (self.isLocked) return; // 如果已锁定，不允许拖动
+    
     [self resetFadeTimer];
     
     CGPoint translation = [gesture translationInView:self.superview];
@@ -193,56 +226,32 @@ static void reapplyHidingToAllElements(HideUIButton *button) {
         [[NSUserDefaults standardUserDefaults] synchronize];
     }
 }
-
 - (void)handleTap {
     if (isAppInTransition) return;
     
     [self resetFadeTimer];
     
     if (!self.isElementsHidden) {
-        // 当前显示"隐藏"
+        // 当前显示"隐藏"，点击后隐藏元素并显示"显示"
         [self hideUIElements];
         self.isElementsHidden = YES;
         self.selected = YES;
     } else {
-        // 当前显示"显示"
+        // 当前显示"显示"，点击后显示元素并显示"隐藏"
         forceResetAllUIElements();
         self.isElementsHidden = NO;
         [self.hiddenViewsList removeAllObjects];
         self.selected = NO;
     }
 }
-- (void)safeResetState {
-    forceResetAllUIElements();
-    self.isElementsHidden = NO;
-    [self.hiddenViewsList removeAllObjects];
-    self.selected = NO;  // 重置为显示"隐藏"
-}
 - (void)handleLongPress:(UILongPressGestureRecognizer *)gesture {
     if (gesture.state == UIGestureRecognizerStateBegan) {
         [self resetFadeTimer];
+        self.isLocked = !self.isLocked;
         
-        UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"设置" message:nil preferredStyle:UIAlertControllerStyleActionSheet];
-        
-        BOOL isGlobalEffect = [[NSUserDefaults standardUserDefaults] boolForKey:@"GlobalEffect"];
-        
-        [alertController addAction:[UIAlertAction actionWithTitle:[NSString stringWithFormat:@"%@全局生效", isGlobalEffect ? @"✓ " : @""] style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-            [[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"GlobalEffect"];
-            [[NSUserDefaults standardUserDefaults] synchronize];
-        }]];
-        
-        [alertController addAction:[UIAlertAction actionWithTitle:[NSString stringWithFormat:@"%@单个视频生效", !isGlobalEffect ? @"✓ " : @""] style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-            [[NSUserDefaults standardUserDefaults] setBool:NO forKey:@"GlobalEffect"];
-            [[NSUserDefaults standardUserDefaults] synchronize];
-        }]];
-        
-        [alertController addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
-        
-        UIViewController *topViewController = [UIApplication sharedApplication].keyWindow.rootViewController;
-        while (topViewController.presentedViewController) {
-            topViewController = topViewController.presentedViewController;
-        }
-        [topViewController presentViewController:alertController animated:YES completion:nil];
+        // 显示锁定/解锁提示
+        NSString *toastMessage = self.isLocked ? @"按钮已锁定" : @"按钮已解锁";
+        showToast(toastMessage);
     }
 }
 - (void)hideUIElements {
@@ -277,6 +286,12 @@ static void reapplyHidingToAllElements(HideUIButton *button) {
             }
         }
     }
+}
+- (void)safeResetState {
+    forceResetAllUIElements();
+    self.isElementsHidden = NO;
+    [self.hiddenViewsList removeAllObjects];
+    self.selected = NO;
 }
 - (void)dealloc {
     [self.checkTimer invalidate];
@@ -393,10 +408,7 @@ static void reapplyHidingToAllElements(HideUIButton *button) {
     isAppInTransition = YES;
     
     if (hideButton && hideButton.isElementsHidden) {
-        BOOL isGlobalEffect = [[NSUserDefaults standardUserDefaults] boolForKey:@"GlobalEffect"];
-        if (!isGlobalEffect) {
-            [hideButton safeResetState];
-        }
+        [hideButton safeResetState];
     }
     
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
@@ -413,12 +425,7 @@ static void reapplyHidingToAllElements(HideUIButton *button) {
 }
 - (void)aweme:(id)arg1 currentIndexDidChange:(NSInteger)arg2 {
     if (hideButton && hideButton.isElementsHidden) {
-        BOOL isGlobalEffect = [[NSUserDefaults standardUserDefaults] boolForKey:@"GlobalEffect"];
-        if (isGlobalEffect) {
-            [hideButton hideUIElements];
-        } else {
-            [hideButton safeResetState];
-        }
+        [hideButton hideUIElements];
     }
     %orig;
 }
@@ -453,11 +460,6 @@ static void reapplyHidingToAllElements(HideUIButton *button) {
                 CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
                 CGFloat screenHeight = [UIScreen mainScreen].bounds.size.height;
                 hideButton.center = CGPointMake(screenWidth - 35, screenHeight / 2);
-            }
-            
-            if (![[NSUserDefaults standardUserDefaults] objectForKey:@"GlobalEffect"]) {
-                [[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"GlobalEffect"];
-                [[NSUserDefaults standardUserDefaults] synchronize];
             }
             
             [getKeyWindow() addSubview:hideButton];
