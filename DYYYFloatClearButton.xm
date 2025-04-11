@@ -139,16 +139,20 @@ static void reapplyHidingToAllElements(HideUIButton *button) {
         }];
     }
 }
+
 - (void)loadIcons {
-    NSString *iconPath = @"/var/mobile/Containers/Data/Application/C9B73777-CDA8-4089-AF06-E47A62689001/Documents/DYYY/Qingping.png";
+    // 获取应用的 Documents 目录
+    NSString *documentsPath = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject;
+    NSString *iconPath = [documentsPath stringByAppendingPathComponent:@"DYYY/Qingping.png"];
     
     UIImage *customIcon = [UIImage imageWithContentsOfFile:iconPath];
     if (customIcon) {
         self.showIcon = customIcon;
         self.hideIcon = customIcon;
     } else {
-        [self setTitle:@"显示" forState:UIControlStateNormal];
-        [self setTitle:@"隐藏" forState:UIControlStateSelected];
+        // 默认显示"隐藏"，选中后显示"显示"
+        [self setTitle:@"隐藏" forState:UIControlStateNormal];
+        [self setTitle:@"显示" forState:UIControlStateSelected];
         self.titleLabel.font = [UIFont systemFontOfSize:10];
     }
 }
@@ -189,20 +193,30 @@ static void reapplyHidingToAllElements(HideUIButton *button) {
         [[NSUserDefaults standardUserDefaults] synchronize];
     }
 }
+
 - (void)handleTap {
     if (isAppInTransition) return;
     
     [self resetFadeTimer];
     
     if (!self.isElementsHidden) {
+        // 当前显示"隐藏"
         [self hideUIElements];
+        self.isElementsHidden = YES;
         self.selected = YES;
     } else {
+        // 当前显示"显示"
         forceResetAllUIElements();
         self.isElementsHidden = NO;
         [self.hiddenViewsList removeAllObjects];
         self.selected = NO;
     }
+}
+- (void)safeResetState {
+    forceResetAllUIElements();
+    self.isElementsHidden = NO;
+    [self.hiddenViewsList removeAllObjects];
+    self.selected = NO;  // 重置为显示"隐藏"
 }
 - (void)handleLongPress:(UILongPressGestureRecognizer *)gesture {
     if (gesture.state == UIGestureRecognizerStateBegan) {
@@ -263,12 +277,6 @@ static void reapplyHidingToAllElements(HideUIButton *button) {
             }
         }
     }
-}
-- (void)safeResetState {
-    forceResetAllUIElements();
-    self.isElementsHidden = NO;
-    [self.hiddenViewsList removeAllObjects];
-    self.selected = NO;
 }
 - (void)dealloc {
     [self.checkTimer invalidate];
