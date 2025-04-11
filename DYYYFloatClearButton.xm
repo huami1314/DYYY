@@ -149,6 +149,7 @@ static void reapplyHidingToAllElements(HideUIButton *button) {
     } else {
         [self setTitle:@"显示" forState:UIControlStateNormal];
         [self setTitle:@"隐藏" forState:UIControlStateSelected];
+        self.titleLabel.font = [UIFont systemFontOfSize:10];
     }
 }
 - (void)handleTouchDown {
@@ -160,6 +161,17 @@ static void reapplyHidingToAllElements(HideUIButton *button) {
 - (void)handleTouchUpOutside {
     [self resetFadeTimer];
 }
+- (UIViewController *)findViewController:(UIView *)view {
+    __weak UIResponder *responder = view;
+    while (responder) {
+        if ([responder isKindOfClass:[UIViewController class]]) {
+            return (UIViewController *)responder;
+        }
+        responder = [responder nextResponder];
+        if (!responder) break;
+    }
+    return nil;
+} 
 - (void)handlePan:(UIPanGestureRecognizer *)gesture {
     [self resetFadeTimer];
     
@@ -237,8 +249,10 @@ static void reapplyHidingToAllElements(HideUIButton *button) {
                 if ([view isKindOfClass:[UIView class]]) {
                     // 特殊处理 AWELeftSideBarEntranceView
                     if ([view isKindOfClass:NSClassFromString(@"AWELeftSideBarEntranceView")]) {
-                        // 如果父视图是 UIButton，跳过这个视图
-                        if ([view.superview isKindOfClass:[UIButton class]]) {
+                        // 获取视图所在的控制器
+                        UIViewController *controller = [self findViewController:view];
+                        // 只在 AWEFeedContainerViewController 中隐藏
+                        if (![controller isKindOfClass:NSClassFromString(@"AWEFeedContainerViewController")]) {
                             continue;
                         }
                     }
@@ -273,10 +287,13 @@ static void reapplyHidingToAllElements(HideUIButton *button) {
             if ([view isKindOfClass:NSClassFromString(className)]) {
                 // 特殊处理 AWELeftSideBarEntranceView
                 if ([view isKindOfClass:NSClassFromString(@"AWELeftSideBarEntranceView")]) {
-                    // 如果父视图是 UIButton，跳过这个视图
-                    if ([view.superview isKindOfClass:[UIButton class]]) {
-                        continue;
-                    }
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        UIViewController *controller = [hideButton findViewController:view];
+                        if ([controller isKindOfClass:NSClassFromString(@"AWEFeedContainerViewController")]) {
+                            view.alpha = 0.0;
+                        }
+                    });
+                    break;
                 }
                 view.alpha = 0.0;
                 break;
@@ -292,10 +309,11 @@ static void reapplyHidingToAllElements(HideUIButton *button) {
             if ([subview isKindOfClass:NSClassFromString(className)]) {
                 // 特殊处理 AWELeftSideBarEntranceView
                 if ([subview isKindOfClass:NSClassFromString(@"AWELeftSideBarEntranceView")]) {
-                    // 如果父视图是 UIButton，跳过这个视图
-                    if ([subview.superview isKindOfClass:[UIButton class]]) {
-                        continue;
+                    UIViewController *controller = [hideButton findViewController:subview];
+                    if ([controller isKindOfClass:NSClassFromString(@"AWEFeedContainerViewController")]) {
+                        subview.alpha = 0.0;
                     }
+                    break;
                 }
                 subview.alpha = 0.0;
                 break;
@@ -310,10 +328,11 @@ static void reapplyHidingToAllElements(HideUIButton *button) {
             if ([self isKindOfClass:NSClassFromString(className)]) {
                 // 特殊处理 AWELeftSideBarEntranceView
                 if ([self isKindOfClass:NSClassFromString(@"AWELeftSideBarEntranceView")]) {
-                    // 如果父视图是 UIButton，跳过这个视图
-                    if ([self.superview isKindOfClass:[UIButton class]]) {
-                        continue;
+                    UIViewController *controller = [hideButton findViewController:self];
+                    if ([controller isKindOfClass:NSClassFromString(@"AWEFeedContainerViewController")]) {
+                        self.alpha = 0.0;
                     }
+                    break;
                 }
                 self.alpha = 0.0;
                 break;
@@ -417,7 +436,7 @@ static void reapplyHidingToAllElements(HideUIButton *button) {
                 hideButton = nil;
             }
             
-            hideButton = [[HideUIButton alloc] initWithFrame:CGRectMake(0, 0, 35, 35)];
+            hideButton = [[HideUIButton alloc] initWithFrame:CGRectMake(0, 0, 40, 40)];
             
             NSString *savedPositionString = [[NSUserDefaults standardUserDefaults] objectForKey:@"HideUIButtonPosition"];
             if (savedPositionString) {
