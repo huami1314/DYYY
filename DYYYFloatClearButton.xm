@@ -9,7 +9,7 @@
 #import <Foundation/Foundation.h>
 #import <signal.h>
 // 递归查找指定类型的视图的函数
-static void findViewsOfClassHelper(UIView *view, Class viewClass, NSMutableArray *result) {
+void findViewsOfClassHelper(UIView *view, Class viewClass, NSMutableArray *result) {
     if ([view isKindOfClass:viewClass]) {
         [result addObject:view];
     }
@@ -19,7 +19,7 @@ static void findViewsOfClassHelper(UIView *view, Class viewClass, NSMutableArray
     }
 }
 // 显示 Toast 的辅助函数
-static void showToast(NSString *message) {
+void showToast(NSString *message) {
     dispatch_async(dispatch_get_main_queue(), ^{
         UIWindow *window = getKeyWindow();
         if (!window) return;
@@ -59,7 +59,7 @@ static HideUIButton *hideButton;
 static BOOL isAppInTransition = NO;
 static NSArray *targetClassNames;
 // 初始化目标类名数组
-static void initTargetClassNames() {
+void initTargetClassNames(void) {
     targetClassNames = @[
         @"AWEHPTopBarCTAContainer",
         @"AWEHPDiscoverFeedEntranceView",
@@ -81,8 +81,9 @@ static void initTargetClassNames() {
         @"AFDAIbumFolioView"
     ];
 }
+
 // 获取keyWindow的辅助方法
-static UIWindow* getKeyWindow() {
+UIWindow* getKeyWindow(void) {
     UIWindow *keyWindow = nil;
     for (UIWindow *window in [UIApplication sharedApplication].windows) {
         if (window.isKeyWindow) {
@@ -93,7 +94,7 @@ static UIWindow* getKeyWindow() {
     return keyWindow;
 }
 // 恢复所有元素到原始状态的方法
-static void forceResetAllUIElements() {
+void forceResetAllUIElements(void) {
     UIWindow *window = getKeyWindow();
     if (!window) return;
     
@@ -110,7 +111,7 @@ static void forceResetAllUIElements() {
     }
 }
 // 重新应用隐藏效果的函数
-static void reapplyHidingToAllElements(HideUIButton *button) {
+void reapplyHidingToAllElements(HideUIButton *button) {
     if (!button || !button.isElementsHidden) return;
     [button hideUIElements];
 }
@@ -300,8 +301,7 @@ static void reapplyHidingToAllElements(HideUIButton *button) {
     self.fadeTimer = nil;
 }
 @end
-
-// Hook 部分
+// Hook 实现部分
 %hook UIView
 - (id)initWithFrame:(CGRect)frame {
     UIView *view = %orig;
@@ -364,6 +364,7 @@ static void reapplyHidingToAllElements(HideUIButton *button) {
     }
 }
 %end
+
 %hook AWEFeedTableViewCell
 - (void)prepareForReuse {
     if (hideButton && hideButton.isElementsHidden) {
