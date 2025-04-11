@@ -78,6 +78,7 @@ static void reapplyHidingToAllElements(HideUIButton *button) {
     if (!button || !button.isElementsHidden) return;
     [button hideUIElements];
 }
+
 @implementation HideUIButton
 - (instancetype)initWithFrame:(CGRect)frame {
     self = [super initWithFrame:frame];
@@ -236,12 +237,10 @@ static void reapplyHidingToAllElements(HideUIButton *button) {
                 if ([view isKindOfClass:[UIView class]]) {
                     // 特殊处理 AWELeftSideBarEntranceView
                     if ([view isKindOfClass:NSClassFromString(@"AWELeftSideBarEntranceView")]) {
-                        // 检查父视图类型
+                        // 如果父视图是 UIButton，跳过这个视图
                         if ([view.superview isKindOfClass:[UIButton class]]) {
-                            // 父视图是 UIButton，不隐藏
                             continue;
                         }
-                        // 父视图是 UIView，隐藏
                     }
                     
                     [self.hiddenViewsList addObject:view];
@@ -274,9 +273,9 @@ static void reapplyHidingToAllElements(HideUIButton *button) {
             if ([view isKindOfClass:NSClassFromString(className)]) {
                 // 特殊处理 AWELeftSideBarEntranceView
                 if ([view isKindOfClass:NSClassFromString(@"AWELeftSideBarEntranceView")]) {
-                    // 检查父视图类型
+                    // 如果父视图是 UIButton，跳过这个视图
                     if ([view.superview isKindOfClass:[UIButton class]]) {
-                        break;
+                        continue;
                     }
                 }
                 view.alpha = 0.0;
@@ -293,9 +292,9 @@ static void reapplyHidingToAllElements(HideUIButton *button) {
             if ([subview isKindOfClass:NSClassFromString(className)]) {
                 // 特殊处理 AWELeftSideBarEntranceView
                 if ([subview isKindOfClass:NSClassFromString(@"AWELeftSideBarEntranceView")]) {
-                    // 检查父视图类型
+                    // 如果父视图是 UIButton，跳过这个视图
                     if ([subview.superview isKindOfClass:[UIButton class]]) {
-                        break;
+                        continue;
                     }
                 }
                 subview.alpha = 0.0;
@@ -311,9 +310,9 @@ static void reapplyHidingToAllElements(HideUIButton *button) {
             if ([self isKindOfClass:NSClassFromString(className)]) {
                 // 特殊处理 AWELeftSideBarEntranceView
                 if ([self isKindOfClass:NSClassFromString(@"AWELeftSideBarEntranceView")]) {
-                    // 检查父视图类型
+                    // 如果父视图是 UIButton，跳过这个视图
                     if ([self.superview isKindOfClass:[UIButton class]]) {
-                        break;
+                        continue;
                     }
                 }
                 self.alpha = 0.0;
@@ -418,7 +417,7 @@ static void reapplyHidingToAllElements(HideUIButton *button) {
                 hideButton = nil;
             }
             
-            hideButton = [[HideUIButton alloc] initWithFrame:CGRectMake(0, 0, 32, 32)];
+            hideButton = [[HideUIButton alloc] initWithFrame:CGRectMake(0, 0, 35, 35)];
             
             NSString *savedPositionString = [[NSUserDefaults standardUserDefaults] objectForKey:@"HideUIButtonPosition"];
             if (savedPositionString) {
