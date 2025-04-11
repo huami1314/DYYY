@@ -41,7 +41,14 @@ static HideUIButton *hideButton;
 static BOOL isAppInTransition = NO;
 static NSArray *targetClassNames;
 void showToast(NSString *text) {
-    [%c(DUXToast) showText:text];
+    Class DUXToastClass = NSClassFromString(@"DUXToast");
+    if ([DUXToastClass respondsToSelector:@selector(show:)]) {
+        [DUXToastClass show:text];
+    } else if ([DUXToastClass respondsToSelector:@selector(showText:)]) {
+        [DUXToastClass showText:text];
+    } else if ([DUXToastClass respondsToSelector:@selector(showToast:)]) {
+        [DUXToastClass showToast:text];
+    }
 }
 static void findViewsOfClassHelper(UIView *view, Class viewClass, NSMutableArray *result) {
     if ([view isKindOfClass:viewClass]) {
