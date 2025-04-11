@@ -83,6 +83,57 @@ static void forceResetAllUIElements() {
         }
     }
 }
+// 隐藏所有UI元素的方法 - 用于全局模式下重新隐藏元素
+static void hideAllUIElements(NSMutableArray *hiddenViewsList) {
+    UIWindow *window = getKeyWindow();
+    if (!window) return;
+    
+    NSArray *viewClassStrings = @[
+        @"AWEHPTopBarCTAContainer",
+        @"AWEHPDiscoverFeedEntranceView",
+        @"AWELeftSideBarEntranceView",
+        @"DUXBadge",
+        @"AWEBaseElementView",
+        @"AWEElementStackView",
+        @"AWEPlayInteractionDescriptionLabel",
+        @"AWEUserNameLabel",
+        @"AWEStoryProgressSlideView",
+        @"AWEStoryProgressContainerView",
+        @"ACCEditTagStickerView",
+        @"AWEFeedTemplateAnchorView",
+        @"AWESearchFeedTagView",
+        @"AWEPlayInteractionSearchAnchorView",
+        @"AFDRecommendToFriendTagView",
+        @"AWELandscapeFeedEntryView",
+        @"AWEFeedAnchorContainerView",
+        @"AFDAIbumFolioView"
+    ];
+    
+    // 清空隐藏列表
+    [hiddenViewsList removeAllObjects];
+    
+    // 查找所有匹配的视图并设置Alpha为0
+    for (NSString *className in viewClassStrings) {
+        Class viewClass = NSClassFromString(className);
+        if (!viewClass) continue;
+        
+        // 使用辅助函数查找视图
+        NSMutableArray *views = [NSMutableArray array];
+        findViewsOfClassHelper(window, viewClass, views);
+        
+        for (UIView *view in views) {
+            if ([view isKindOfClass:[UIView class]]) {
+                // 添加到隐藏视图列表
+                [hiddenViewsList addObject:view];
+                
+                // 设置新的alpha值
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    view.alpha = 0.0;
+                });
+            }
+        }
+    }
+}
 // 获取抖音应用的Documents目录
 static NSString* getAppDocumentsPath() {
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
@@ -103,12 +154,8 @@ static UIImage* getCustomImage(NSString *imageName) {
 - (instancetype)initWithFrame:(CGRect)frame {
     self = [super initWithFrame:frame];
     if (self) {
-        // 基本设置
-        self.backgroundColor = [UIColor colorWithWhite:0 alpha:0.6]; // 半透明背景
-        self.layer.cornerRadius = frame.size.width / 2;
-        self.layer.masksToBounds = YES;
-        self.layer.borderWidth = 1.0;
-        self.layer.borderColor = [UIColor whiteColor].CGColor;
+        // 基本设置 - 完全透明背景，只显示图标
+        self.backgroundColor = [UIColor clearColor];
         
         // 初始化属性
         _isElementsHidden = NO;
@@ -325,6 +372,24 @@ static UIImage* getCustomImage(NSString *imageName) {
     });
 }
 %end
+// 监控视频内容变化
+%hook AWEFeedCellViewController
+- (void)viewDidAppear:(BOOL)animated {
+    %orig;
+    
+    // 延迟执行，确保UI元素已经加载
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        // 如果是全局模式且元素被隐藏，则在视频切换时重新隐藏所有元素
+        if (hideButton && hideButton.isElementsHidden && hideButton.isPersistentMode) {
+            hideAllUIElements(hideButton.hiddenViewsList);
+        }
+        // 如果是单视频模式且元素被隐藏，则在视频切换时恢复元素
+        else if (hideButton && hideButton.isElementsHidden && !hideButton.isPersistentMode) {
+            [hideButton safeResetState];
+        }
+    });
+}
+%end
 // Hook AppDelegate 来初始化按钮
 %hook AppDelegate
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
@@ -356,19 +421,6 @@ static UIImage* getCustomImage(NSString *imageName) {
     }
     
     return result;
-}
-%end
-// 监听视频滑动切换
-%hook AWEFeedContainerViewController
-- (void)viewDidAppear:(BOOL)animated {
-    %orig;
-    
-    if (hideButton && hideButton.isElementsHidden && !hideButton.isPersistentMode) {
-        // 如果不是全局模式且当前有隐藏的元素，则在视频切换时重置状态
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [hideButton safeResetState];
-        });
-    }
 }
 %end
 %ctor {
