@@ -412,4 +412,4 @@ static NSArray* getHideClassList() {
 %ctor {
     // 注册信号处理
     signal(SIGSEGV, SIG_IGN);
-    
+}
