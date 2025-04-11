@@ -15,6 +15,13 @@ static void findViewsOfClassHelper(UIView *view, Class viewClass, NSMutableArray
         if ([viewClass isEqual:NSClassFromString(@"AWEElementStackView")]) {
             if ([[(UIView *)view valueForKey:@"accessibilityLabel"] isEqual:@"#EJAT= left"]) {
                 [result addObject:view];
+                
+                // 同时添加它的所有子视图（特别是AWEBaseElementView）
+                for (UIView *subview in view.subviews) {
+                    if ([subview isKindOfClass:NSClassFromString(@"AWEBaseElementView")]) {
+                        [result addObject:subview];
+                    }
+                }
             }
         } else {
             [result addObject:view];
@@ -34,9 +41,11 @@ static void findViewsOfClassHelper(UIView *view, Class viewClass, NSMutableArray
 // 全局变量
 static HideUIButton *hideButton;
 static BOOL isAppInTransition = NO;
+static BOOL isGlobalHidden = NO; // 全局隐藏状态标志
 static NSString *const kLastPositionXKey = @"lastHideButtonPositionX";
 static NSString *const kLastPositionYKey = @"lastHideButtonPositionY";
 static NSString *const kPersistentModeKey = @"hideButtonPersistentMode";
+static NSString *const kIsGlobalHiddenKey = @"isGlobalHidden";
 // 获取keyWindow的辅助方法
 static UIWindow* getKeyWindow() {
     UIWindow *keyWindow = nil;
@@ -89,57 +98,11 @@ static void forceResetAllUIElements() {
             });
         }
     }
-}
-// 隐藏所有UI元素的方法 - 用于全局模式下重新隐藏元素
-static void hideAllUIElements(NSMutableArray *hiddenViewsList) {
-    UIWindow *window = getKeyWindow();
-    if (!window) return;
     
-    NSArray *viewClassStrings = @[
-        @"AWEHPTopBarCTAContainer",
-        @"AWEHPDiscoverFeedEntranceView",
-        @"AWELeftSideBarEntranceView",
-        @"DUXBadge",
-        @"AWEBaseElementView",
-        @"AWEElementStackView",
-        @"AWEPlayInteractionDescriptionLabel",
-        @"AWEUserNameLabel",
-        @"AWEStoryProgressSlideView",
-        @"AWEStoryProgressContainerView",
-        @"ACCEditTagStickerView",
-        @"AWEFeedTemplateAnchorView",
-        @"AWESearchFeedTagView",
-        @"AWEPlayInteractionSearchAnchorView",
-        @"AFDRecommendToFriendTagView",
-        @"AWELandscapeFeedEntryView",
-        @"AWEFeedAnchorContainerView",
-        @"AFDAIbumFolioView"
-    ];
-    
-    // 清空隐藏列表
-    [hiddenViewsList removeAllObjects];
-    
-    // 查找所有匹配的视图并设置Alpha为0
-    for (NSString *className in viewClassStrings) {
-        Class viewClass = NSClassFromString(className);
-        if (!viewClass) continue;
-        
-        // 使用辅助函数查找视图
-        NSMutableArray *views = [NSMutableArray array];
-        findViewsOfClassHelper(window, viewClass, views);
-        
-        for (UIView *view in views) {
-            if ([view isKindOfClass:[UIView class]]) {
-                // 添加到隐藏视图列表
-                [hiddenViewsList addObject:view];
-                
-                // 设置新的alpha值
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    view.alpha = 0.0;
-                });
-            }
-        }
-    }
+    // 更新全局状态
+    isGlobalHidden = NO;
+    [[NSUserDefaults standardUserDefaults] setBool:NO forKey:kIsGlobalHiddenKey];
+    [[NSUserDefaults standardUserDefaults] synchronize];
 }
 // 获取抖音应用的Documents目录
 static NSString* getAppDocumentsPath() {
@@ -165,11 +128,12 @@ static UIImage* getCustomImage(NSString *imageName) {
         self.backgroundColor = [UIColor clearColor];
         
         // 初始化属性
-        _isElementsHidden = NO;
         _hiddenViewsList = [NSMutableArray array];
         
         // 从用户默认设置中加载持久化模式设置
         _isPersistentMode = [[NSUserDefaults standardUserDefaults] boolForKey:kPersistentModeKey];
+        _isElementsHidden = [[NSUserDefaults standardUserDefaults] boolForKey:kIsGlobalHiddenKey];
+        isGlobalHidden = _isElementsHidden;
         
         // 设置初始图标或文字
         [self setupButtonAppearance];
@@ -284,11 +248,21 @@ static UIImage* getCustomImage(NSString *imageName) {
     if (!self.isElementsHidden) {
         // 隐藏UI元素
         [self hideUIElements];
+        
+        // 更新全局状态
+        isGlobalHidden = YES;
+        [[NSUserDefaults standardUserDefaults] setBool:YES forKey:kIsGlobalHiddenKey];
+        [[NSUserDefaults standardUserDefaults] synchronize];
     } else {
         // 直接强制恢复所有UI元素
         forceResetAllUIElements();
         self.isElementsHidden = NO;
         [self.hiddenViewsList removeAllObjects];
+        
+        // 更新全局状态
+        isGlobalHidden = NO;
+        [[NSUserDefaults standardUserDefaults] setBool:NO forKey:kIsGlobalHiddenKey];
+        [[NSUserDefaults standardUserDefaults] synchronize];
     }
     
     [self updateButtonAppearance];
@@ -353,6 +327,64 @@ static UIImage* getCustomImage(NSString *imageName) {
     [self updateButtonAppearance];
 }
 @end
+// 对新添加的视图进行处理 - 这是关键部分，防止闪烁
+%hook UIView
+- (void)didMoveToWindow {
+    %orig;
+    
+    // 如果全局隐藏模式开启，则立即隐藏新添加的视图
+    if (isGlobalHidden && self.window != nil) {
+        // 检查是否是我们需要隐藏的类型
+        NSArray *classNames = @[
+            @"AWEHPTopBarCTAContainer",
+            @"AWEHPDiscoverFeedEntranceView",
+            @"AWELeftSideBarEntranceView",
+            @"DUXBadge",
+            @"AWEBaseElementView",
+            @"AWEElementStackView",
+            @"AWEPlayInteractionDescriptionLabel",
+            @"AWEUserNameLabel",
+            @"AWEStoryProgressSlideView",
+            @"AWEStoryProgressContainerView",
+            @"ACCEditTagStickerView",
+            @"AWEFeedTemplateAnchorView",
+            @"AWESearchFeedTagView",
+            @"AWEPlayInteractionSearchAnchorView",
+            @"AFDRecommendToFriendTagView",
+            @"AWELandscapeFeedEntryView",
+            @"AWEFeedAnchorContainerView",
+            @"AFDAIbumFolioView"
+        ];
+        
+        for (NSString *className in classNames) {
+            Class viewClass = NSClassFromString(className);
+            if (!viewClass) continue;
+            
+            if ([self isKindOfClass:viewClass]) {
+                // 特殊处理AWEElementStackView
+                if ([viewClass isEqual:NSClassFromString(@"AWEElementStackView")]) {
+                    if ([[(UIView *)self valueForKey:@"accessibilityLabel"] isEqual:@"#EJAT= left"]) {
+                        self.alpha = 0.0;
+                        
+                        // 处理子视图
+                        for (UIView *subview in self.subviews) {
+                            if ([subview isKindOfClass:NSClassFromString(@"AWEBaseElementView")]) {
+                                subview.alpha = 0.0;
+                            }
+                        }
+                    }
+                } else {
+                    // 其他类型直接隐藏
+                    self.alpha = 0.0;
+                }
+                
+                // 如果找到了匹配的类，就不需要继续检查了
+                break;
+            }
+        }
+    }
+}
+%end
 // 监控视图转换状态
 %hook UIViewController
 - (void)viewWillAppear:(BOOL)animated {
@@ -361,11 +393,6 @@ static UIImage* getCustomImage(NSString *imageName) {
     
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         isAppInTransition = NO;
-        
-        // 如果是全局模式且状态是隐藏，则确保所有元素都被隐藏
-        if (hideButton && hideButton.isElementsHidden && hideButton.isPersistentMode) {
-            hideAllUIElements(hideButton.hiddenViewsList);
-        }
     });
 }
 - (void)viewWillDisappear:(BOOL)animated {
@@ -389,17 +416,12 @@ static UIImage* getCustomImage(NSString *imageName) {
 - (void)viewDidAppear:(BOOL)animated {
     %orig;
     
-    // 延迟执行，确保UI元素已经加载
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        // 如果是全局模式且元素被隐藏，则在视频切换时重新隐藏所有元素
-        if (hideButton && hideButton.isElementsHidden && hideButton.isPersistentMode) {
-            hideAllUIElements(hideButton.hiddenViewsList);
-        }
-        // 如果是单视频模式且元素被隐藏，则在视频切换时恢复元素
-        else if (hideButton && hideButton.isElementsHidden && !hideButton.isPersistentMode) {
+    // 如果是单视频模式且元素被隐藏，则在视频切换时恢复元素
+    if (hideButton && hideButton.isElementsHidden && !hideButton.isPersistentMode) {
+        dispatch_async(dispatch_get_main_queue(), ^{
             [hideButton safeResetState];
-        }
-    });
+        });
+    }
 }
 %end
 // Hook AppDelegate 来初始化按钮
@@ -407,41 +429,40 @@ static UIImage* getCustomImage(NSString *imageName) {
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     BOOL result = %orig;
     
-    BOOL isEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableFloatClearButton"];
+    // 尝试从NSUserDefaults加载全局隐藏状态
+    isGlobalHidden = [[NSUserDefaults standardUserDefaults] boolForKey:kIsGlobalHiddenKey];
     
-    if (isEnabled) {
-        // 立即创建按钮，不使用延迟
-        CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
-        CGFloat screenHeight = [UIScreen mainScreen].bounds.size.height;
-        
-        hideButton = [[HideUIButton alloc] initWithFrame:CGRectMake(0, 0, 50, 50)];
-        
-        // 从NSUserDefaults获取上次位置，如果没有则放在左侧中间
-        CGFloat lastX = [[NSUserDefaults standardUserDefaults] floatForKey:kLastPositionXKey];
-        CGFloat lastY = [[NSUserDefaults standardUserDefaults] floatForKey:kLastPositionYKey];
-        
-        if (lastX > 0 && lastY > 0) {
-            // 使用保存的位置
-            hideButton.center = CGPointMake(lastX, lastY);
-        } else {
-            // 默认位置：左侧中间
-            hideButton.center = CGPointMake(30, screenHeight / 2);
-        }
-        
-        // 我们需要确保有一个有效的窗口来添加按钮
-        // 使用一个小延迟确保窗口已经创建
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            UIWindow *window = getKeyWindow();
-            if (window) {
-                [window addSubview:hideButton];
-            } else {
-                // 如果还没有窗口，再尝试一次
-                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                    [getKeyWindow() addSubview:hideButton];
-                });
-            }
-        });
+    // 立即创建按钮，不使用延迟
+    CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
+    CGFloat screenHeight = [UIScreen mainScreen].bounds.size.height;
+    
+    hideButton = [[HideUIButton alloc] initWithFrame:CGRectMake(0, 0, 50, 50)];
+    
+    // 从NSUserDefaults获取上次位置，如果没有则放在左侧中间
+    CGFloat lastX = [[NSUserDefaults standardUserDefaults] floatForKey:kLastPositionXKey];
+    CGFloat lastY = [[NSUserDefaults standardUserDefaults] floatForKey:kLastPositionYKey];
+    
+    if (lastX > 0 && lastY > 0) {
+        // 使用保存的位置
+        hideButton.center = CGPointMake(lastX, lastY);
+    } else {
+        // 默认位置：左侧中间
+        hideButton.center = CGPointMake(30, screenHeight / 2);
     }
+    
+    // 我们需要确保有一个有效的窗口来添加按钮
+    // 使用一个小延迟确保窗口已经创建
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        UIWindow *window = getKeyWindow();
+        if (window) {
+            [window addSubview:hideButton];
+        } else {
+            // 如果还没有窗口，再尝试一次
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                [getKeyWindow() addSubview:hideButton];
+            });
+        }
+    });
     
     return result;
 }
