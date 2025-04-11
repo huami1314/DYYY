@@ -662,12 +662,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 //清屏按钮声明
-UIWindow* getKeyWindow(void);
-void showToast(NSString *message);
-void findViewsOfClassHelper(UIView *view, Class viewClass, NSMutableArray *result);
-void forceResetAllUIElements(void);
-void reapplyHidingToAllElements(HideUIButton *button);
-void initTargetClassNames(void);
+@class HideUIButton;
 @interface HideUIButton : UIButton
 @property (nonatomic, assign) BOOL isElementsHidden;
 @property (nonatomic, assign) BOOL isLocked;
@@ -691,3 +686,10 @@ void initTargetClassNames(void);
 - (void)handleTouchUpInside;
 - (void)handleTouchUpOutside;
 @end
+// 清屏辅助函数声明
+UIWindow* getKeyWindow(void);
+void showToast(NSString *message);
+void findViewsOfClassHelper(UIView *view, Class viewClass, NSMutableArray *result);
+void forceResetAllUIElements(void);
+void reapplyHidingToAllElements(HideUIButton *button);
+void initTargetClassNames(void);
