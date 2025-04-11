@@ -7,6 +7,7 @@
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
 #import <signal.h>
+@class DUXToast;
 // HideUIButton 接口声明
 @interface HideUIButton : UIButton
 // 状态属性
@@ -39,51 +40,8 @@
 static HideUIButton *hideButton;
 static BOOL isAppInTransition = NO;
 static NSArray *targetClassNames;
-// 辅助函数实现
-static UIWindow* getKeyWindow(void) {
-    UIWindow *keyWindow = nil;
-    for (UIWindow *window in [UIApplication sharedApplication].windows) {
-        if (window.isKeyWindow) {
-            keyWindow = window;
-            break;
-        }
-    }
-    return keyWindow;
-}
-static void showToast(NSString *message) {
-    dispatch_async(dispatch_get_main_queue(), ^{
-        UIWindow *window = getKeyWindow();
-        if (!window) return;
-        
-        UILabel *toastLabel = [[UILabel alloc] init];
-        toastLabel.backgroundColor = [UIColor colorWithWhite:0 alpha:0.7];
-        toastLabel.textColor = [UIColor whiteColor];
-        toastLabel.textAlignment = NSTextAlignmentCenter;
-        toastLabel.font = [UIFont systemFontOfSize:14];
-        toastLabel.text = message;
-        toastLabel.alpha = 0;
-        toastLabel.layer.cornerRadius = 10;
-        toastLabel.clipsToBounds = YES;
-        
-        [toastLabel sizeToFit];
-        CGFloat padding = 10;
-        toastLabel.frame = CGRectMake(0, 0, toastLabel.frame.size.width + padding * 2, toastLabel.frame.size.height + padding);
-        toastLabel.center = CGPointMake(window.center.x, window.frame.size.height - 100);
-        
-        [window addSubview:toastLabel];
-        
-        [UIView animateWithDuration:0.3 animations:^{
-            toastLabel.alpha = 1;
-        } completion:^(BOOL finished) {
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                [UIView animateWithDuration:0.3 animations:^{
-                    toastLabel.alpha = 0;
-                } completion:^(BOOL finished) {
-                    [toastLabel removeFromSuperview];
-                }];
-            });
-        }];
-    });
+void showToast(NSString *text) {
+    [%c(DUXToast) showText:text];
 }
 static void findViewsOfClassHelper(UIView *view, Class viewClass, NSMutableArray *result) {
     if ([view isKindOfClass:viewClass]) {
@@ -93,6 +51,17 @@ static void findViewsOfClassHelper(UIView *view, Class viewClass, NSMutableArray
     for (UIView *subview in view.subviews) {
         findViewsOfClassHelper(subview, viewClass, result);
     }
+}
+
+static UIWindow* getKeyWindow(void) {
+    UIWindow *keyWindow = nil;
+    for (UIWindow *window in [UIApplication sharedApplication].windows) {
+        if (window.isKeyWindow) {
+            keyWindow = window;
+            break;
+        }
+    }
+    return keyWindow;
 }
 static void forceResetAllUIElements(void) {
     UIWindow *window = getKeyWindow();
@@ -168,6 +137,7 @@ static void initTargetClassNames(void) {
     }
     return self;
 }
+
 - (void)startPeriodicCheck {
     [self.checkTimer invalidate];
     self.checkTimer = [NSTimer scheduledTimerWithTimeInterval:0.2 
@@ -274,6 +244,12 @@ static void initTargetClassNames(void) {
         // 显示锁定/解锁提示
         NSString *toastMessage = self.isLocked ? @"按钮已锁定" : @"按钮已解锁";
         showToast(toastMessage);
+        // 触觉反馈
+        if (@available(iOS 10.0, *)) {
+            UIImpactFeedbackGenerator *generator = [[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleLight];
+            [generator prepare];
+            [generator impactOccurred];
+        }
     }
 }
 - (void)hideUIElements {
@@ -322,7 +298,8 @@ static void initTargetClassNames(void) {
     self.fadeTimer = nil;
 }
 @end
-// Hook 实现部分
+
+// Hook 部分
 %hook UIView
 - (id)initWithFrame:(CGRect)frame {
     UIView *view = %orig;
@@ -427,11 +404,6 @@ static void initTargetClassNames(void) {
 - (void)viewWillDisappear:(BOOL)animated {
     %orig;
     isAppInTransition = YES;
-    
-    if (hideButton && hideButton.isElementsHidden) {
-        [hideButton safeResetState];
-    }
-    
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         isAppInTransition = NO;
     });
