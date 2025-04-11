@@ -733,7 +733,11 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 
 	UIViewController *vc = [self firstAvailableUIViewController];
 	if ([vc isKindOfClass:%c(AWEAwemePlayVideoViewController)]) {
-		if (frame.origin.x != 0 || frame.origin.y != 0) {
+
+		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"] && frame.origin.x != 0) {
+			return;
+		} else if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"] && frame.origin.x != 0 && frame.origin.y != 0) {
+			%orig;
 			return;
 		} else {
 			CGRect superviewFrame = self.superview.frame;
@@ -2628,6 +2632,13 @@ static BOOL isDownloadFlied = NO;
 // 获取资源的地址
 %hook AWEURLModel
 %new - (NSURL *)getDYYYSrcURLDownload {
+	;
+	;
+	;
+	;
+	;
+	;
+	;
 	NSURL *bestURL;
 	for (NSString *url in self.originURLList) {
 		if ([url containsString:@"video_mp4"] || [url containsString:@".jpeg"] || [url containsString:@".mp3"]) {
