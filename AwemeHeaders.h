@@ -659,4 +659,5 @@ typedef NS_ENUM(NSInteger, MediaType) {
 
 //应用内推送容器
 @interface AWEInnerNotificationContainerView : UIView
+- (void)applyBlurEffectIfNeeded;
 @end
