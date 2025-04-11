@@ -46,34 +46,34 @@ static inline void showToast(NSString *text) {
         if (!window) return;
         
         UILabel *toastLabel = [[UILabel alloc] init];
-        toastLabel.backgroundColor = [UIColor colorWithWhite:0.0 alpha:0.1];
-        toastLabel.textColor = [UIColor colorWithWhite:1.0 alpha:0.3];
+        toastLabel.backgroundColor = [UIColor colorWithRed:0.2 green:0.2 blue:0.2 alpha:0.95];
+        toastLabel.textColor = [UIColor whiteColor];
         toastLabel.textAlignment = NSTextAlignmentCenter;
-        toastLabel.font = [UIFont boldSystemFontOfSize:15];
+        toastLabel.font = [UIFont systemFontOfSize:16];
         toastLabel.text = text;
         toastLabel.alpha = 0;
-        toastLabel.layer.cornerRadius = 20;  
-        toastLabel.clipsToBounds = NO;  
-        toastLabel.layer.borderWidth = 1.5;
-        toastLabel.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.3].CGColor;
-        toastLabel.layer.shadowColor = [UIColor blackColor].CGColor;
-        toastLabel.layer.shadowOffset = CGSizeMake(0, 2);
-        toastLabel.layer.shadowOpacity = 0.5;
-        toastLabel.layer.shadowRadius = 4.0;
+        toastLabel.layer.cornerRadius = 22; 
+        toastLabel.clipsToBounds = YES;
         
         [toastLabel sizeToFit];
-        CGFloat size = 40; 
-        toastLabel.frame = CGRectMake(0, 0, size, size);
+        CGFloat horizontalPadding = 24;
+        CGFloat verticalPadding = 12;
+        CGFloat width = toastLabel.frame.size.width + horizontalPadding * 2;
+        CGFloat height = toastLabel.frame.size.height + verticalPadding * 2;
+        
+        width = MAX(width, 120);
+        
+        toastLabel.frame = CGRectMake(0, 0, width, height);
         CGRect screenBounds = [UIScreen mainScreen].bounds;
         toastLabel.center = CGPointMake(screenBounds.size.width / 2, screenBounds.size.height / 2);
         
         [window addSubview:toastLabel];
         
-        [UIView animateWithDuration:0.15 animations:^{
+        [UIView animateWithDuration:0.2 animations:^{
             toastLabel.alpha = 1;
         } completion:^(BOOL finished) {
             dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                [UIView animateWithDuration:0.15 animations:^{
+                [UIView animateWithDuration:0.2 animations:^{
                     toastLabel.alpha = 0;
                 } completion:^(BOOL finished) {
                     [toastLabel removeFromSuperview];
