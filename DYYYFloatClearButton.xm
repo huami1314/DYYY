@@ -55,6 +55,8 @@ static NSArray* getHideClassList() {
         @"AWEHPDiscoverFeedEntranceView",
         @"AWELeftSideBarEntranceView",
         @"DUXBadge",
+        @"AWEBaseElementView",
+        @"AWEElementStackView",
         @"AWEPlayInteractionDescriptionLabel",
         @"AWEUserNameLabel",
         @"AWEStoryProgressSlideView",
@@ -78,33 +80,6 @@ static NSArray* getHideClassList() {
         @"AWEFeedCellBottomView",
         @"AWEUIView"
     ];
-}
-// 判断是否为目标AWEElementStackView的函数
-static BOOL isTargetStackView(UIView *view) {
-    // 检查是否是AWEElementStackView类
-    if (![view isKindOfClass:NSClassFromString(@"AWEElementStackView")]) {
-        return NO;
-    }
-    
-    // 检查accessibilityLabel是否为"left"
-    if ([view respondsToSelector:@selector(accessibilityLabel)]) {
-        NSString *accessibilityLabel = [view performSelector:@selector(accessibilityLabel)];
-        if (![accessibilityLabel isEqualToString:@"left"]) {
-            return NO;
-        }
-    } else {
-        return NO;
-    }
-    
-    // 检查是否有6个AWEBaseElementView子视图
-    int baseElementCount = 0;
-    for (UIView *subview in view.subviews) {
-        if ([subview isKindOfClass:NSClassFromString(@"AWEBaseElementView")]) {
-            baseElementCount++;
-        }
-    }
-    
-    return baseElementCount == 6;
 }
 // HideUIButton 实现
 @implementation HideUIButton
@@ -242,107 +217,60 @@ static BOOL isTargetStackView(UIView *view) {
         return;
     }
     
-    @try {
-        if (!self.isElementsHidden) {
-            // 隐藏UI元素
-            [self hideUIElements];
-        } else {
-            // 恢复所有UI元素
-            [self showUIElements];
-        }
-        
-        // 保存状态
-        [[NSUserDefaults standardUserDefaults] setBool:self.isElementsHidden forKey:kIsElementsHiddenKey];
-        [[NSUserDefaults standardUserDefaults] synchronize];
-        
-        [self updateButtonAppearance];
-    } @catch (NSException *exception) {
-        NSLog(@"隐藏/显示元素时发生异常: %@", exception);
+    if (!self.isElementsHidden) {
+        // 隐藏UI元素
+        [self hideUIElements];
+    } else {
+        // 恢复所有UI元素
+        [self showUIElements];
     }
+    
+    // 保存状态
+    [[NSUserDefaults standardUserDefaults] setBool:self.isElementsHidden forKey:kIsElementsHiddenKey];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+    
+    [self updateButtonAppearance];
 }
 - (void)hideUIElements {
-    @try {
-        // 递归查找并隐藏所有匹配的视图
-        for (NSString *className in getHideClassList()) {
+    // 递归查找并隐藏所有匹配的视图
+    [self findAndHideViews:getHideClassList()];
+    self.isElementsHidden = YES;
+}
+- (void)showUIElements {
+    // 恢复所有被隐藏的视图
+    for (UIView *view in self.hiddenViewsList) {
+        if ([view isKindOfClass:[UIView class]]) {
+            view.alpha = 1.0;
+        }
+    }
+    
+    [self.hiddenViewsList removeAllObjects];
+    self.isElementsHidden = NO;
+}
+- (void)findAndHideViews:(NSArray *)classNames {
+    // 遍历所有窗口
+    for (UIWindow *window in [UIApplication sharedApplication].windows) {
+        for (NSString *className in classNames) {
             Class viewClass = NSClassFromString(className);
             if (!viewClass) continue;
             
             // 递归查找所有匹配的视图
-            for (UIWindow *window in [UIApplication sharedApplication].windows) {
-                [self findAndHideViewsOfClass:viewClass inView:window];
-            }
+            [self findAndHideViewsOfClass:viewClass inView:window];
         }
-        
-        // 特别处理AWEElementStackView及其所有子视图
-        for (UIWindow *window in [UIApplication sharedApplication].windows) {
-            [self findAndProcessAWEElementStackViews:window];
-        }
-        
-        self.isElementsHidden = YES;
-    } @catch (NSException *exception) {
-        NSLog(@"隐藏元素时发生异常: %@", exception);
-    }
-}
-- (void)findAndProcessAWEElementStackViews:(UIView *)parentView {
-    // 检查当前视图是否是目标AWEElementStackView
-    if (isTargetStackView(parentView)) {
-        // 找到目标AWEElementStackView，隐藏它本身
-        [self hideViewAndAddToList:parentView];
-        
-        // 递归隐藏它的所有子视图（包括AWEBaseElementView及其嵌套子视图）
-        [self hideAllSubviews:parentView];
-    }
-    
-    // 递归处理所有子视图
-    for (UIView *subview in parentView.subviews) {
-        [self findAndProcessAWEElementStackViews:subview];
-    }
-}
-
-- (void)hideAllSubviews:(UIView *)view {
-    for (UIView *subview in view.subviews) {
-        // 隐藏子视图
-        [self hideViewAndAddToList:subview];
-        
-        // 递归处理子视图的子视图
-        [self hideAllSubviews:subview];
-    }
-}
-- (void)hideViewAndAddToList:(UIView *)view {
-    if (![self.hiddenViewsList containsObject:view]) {
-        [self.hiddenViewsList addObject:view];
-        view.alpha = 0.0;
-        view.hidden = YES;
     }
 }
 - (void)findAndHideViewsOfClass:(Class)viewClass inView:(UIView *)view {
     if ([view isKindOfClass:viewClass]) {
         // 只有不是自己才隐藏
         if (view != self) {
-            [self hideViewAndAddToList:view];
+            [self.hiddenViewsList addObject:view];
+            view.alpha = 0.0;
         }
     }
     
     // 递归查找子视图
     for (UIView *subview in view.subviews) {
         [self findAndHideViewsOfClass:viewClass inView:subview];
-    }
-}
-- (void)showUIElements {
-    @try {
-        // 恢复所有被隐藏的视图
-        NSArray *tempArray = [self.hiddenViewsList copy]; // 创建副本以避免修改循环中的数组
-        for (UIView *view in tempArray) {
-            if ([view isKindOfClass:[UIView class]]) {
-                view.alpha = 1.0;
-                view.hidden = NO;
-            }
-        }
-        
-        [self.hiddenViewsList removeAllObjects];
-        self.isElementsHidden = NO;
-    } @catch (NSException *exception) {
-        NSLog(@"显示元素时发生异常: %@", exception);
     }
 }
 - (void)safeResetState {
@@ -371,6 +299,7 @@ static BOOL isTargetStackView(UIView *view) {
         }
     });
 }
+
 - (void)viewWillDisappear:(BOOL)animated {
     %orig;
     isAppInTransition = YES;
@@ -395,7 +324,7 @@ static BOOL isTargetStackView(UIView *view) {
     // 如果是全局模式且元素被隐藏，则在视频切换时重新隐藏所有元素
     if (hideButton && hideButton.isElementsHidden && hideButton.isPersistentMode) {
         // 使用延迟以确保新的UI元素已经加载
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             [hideButton hideUIElements];
         });
     }
@@ -414,53 +343,24 @@ static BOOL isTargetStackView(UIView *view) {
     
     // 如果是全局模式且元素被隐藏，确保所有元素都被隐藏
     if (hideButton && hideButton.isElementsHidden && hideButton.isPersistentMode) {
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             [hideButton hideUIElements];
         });
     }
 }
 %end
-// 在视频切换或滚动时更强力地重新应用隐藏，但减少频率以提高性能
-%hook AWEFeedTableView
-- (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
-    %orig;
-    
-    // 视频滚动停止后，重新检查并隐藏元素
-    if (hideButton && hideButton.isElementsHidden && hideButton.isPersistentMode) {
-        static NSTimeInterval lastUpdateTime = 0;
-        NSTimeInterval currentTime = [[NSDate date] timeIntervalSince1970];
-        
-        // 确保至少间隔1秒才执行一次隐藏操作，避免频繁执行导致卡顿
-        if (currentTime - lastUpdateTime > 1.0) {
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                [hideButton hideUIElements];
-            });
-            lastUpdateTime = currentTime;
-        }
-    }
-}
-%end
-// 特别监控AWEElementStackView的创建和添加
-%hook AWEElementStackView
+// Hook 所有可能的标签视图
+%hook UILabel
 - (void)didMoveToSuperview {
     %orig;
     
-    // 如果当前是隐藏状态且是目标AWEElementStackView，立即隐藏它及其子视图
-    if (hideButton && hideButton.isElementsHidden && isTargetStackView(self)) {
+    // 如果当前是隐藏状态且是全局模式，则隐藏新添加的标签
+    if (hideButton && hideButton.isElementsHidden && hideButton.isPersistentMode) {
         dispatch_async(dispatch_get_main_queue(), ^{
-            [hideButton hideViewAndAddToList:self];
-            [hideButton hideAllSubviews:self];
-        });
-    }
-}
-- (void)didMoveToWindow {
-    %orig;
-    
-    // 当视图被添加到窗口时也检查
-    if (hideButton && hideButton.isElementsHidden && isTargetStackView(self)) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [hideButton hideViewAndAddToList:self];
-            [hideButton hideAllSubviews:self];
+            if (![hideButton.hiddenViewsList containsObject:self]) {
+                [hideButton.hiddenViewsList addObject:self];
+                self.alpha = 0.0;
+            }
         });
     }
 }
@@ -470,15 +370,8 @@ static BOOL isTargetStackView(UIView *view) {
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     BOOL result = %orig;
     
-    // 检查是否启用了悬浮按钮，默认为YES（显示）
-    BOOL isEnabled = YES;
-    if ([[NSUserDefaults standardUserDefaults] objectForKey:kEnableButtonKey] != nil) {
-        isEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:kEnableButtonKey];
-    } else {
-        // 如果没有设置过，则设置默认值为YES
-        [[NSUserDefaults standardUserDefaults] setBool:YES forKey:kEnableButtonKey];
-        [[NSUserDefaults standardUserDefaults] synchronize];
-    }
+    // 检查是否启用了悬浮按钮
+    BOOL isEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:kEnableButtonKey];
     
     // 只有当功能被启用时才创建按钮
     if (isEnabled) {
@@ -519,4 +412,5 @@ static BOOL isTargetStackView(UIView *view) {
 %ctor {
     // 注册信号处理
     signal(SIGSEGV, SIG_IGN);
-}
+    
+   
