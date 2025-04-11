@@ -656,6 +656,3 @@ typedef NS_ENUM(NSInteger, MediaType) {
 
 @interface AWEHPTopBarCTAItemView : UIView
 @end
-
-@interface AWEFeedCellViewController : UIViewController
-@end
