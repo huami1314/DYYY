@@ -7,12 +7,6 @@
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
 #import <signal.h>
-@class DUXToast;
-@interface DUXToast : NSObject
-+ (void)show:(NSString *)text;
-+ (void)showText:(NSString *)text;
-+ (void)showToast:(NSString *)text;
-@end
 // HideUIButton 接口声明
 @interface HideUIButton : UIButton
 // 状态属性
@@ -45,14 +39,41 @@
 static HideUIButton *hideButton;
 static BOOL isAppInTransition = NO;
 static NSArray *targetClassNames;
-void showToast(NSString *text) {
-    if ([%c(DUXToast) respondsToSelector:@selector(show:)]) {
-        [%c(DUXToast) show:text];
-    } else if ([%c(DUXToast) respondsToSelector:@selector(showText:)]) {
-        [%c(DUXToast) showText:text];
-    } else if ([%c(DUXToast) respondsToSelector:@selector(showToast:)]) {
-        [%c(DUXToast) showToast:text];
-    }
+// 使用与倍速相同的 Toast 样式
+static inline void showToast(NSString *text) {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        UIWindow *window = [UIApplication sharedApplication].keyWindow;
+        if (!window) return;
+        
+        UILabel *toastLabel = [[UILabel alloc] init];
+        toastLabel.backgroundColor = [UIColor colorWithWhite:0.0 alpha:0.7];
+        toastLabel.textColor = [UIColor whiteColor];
+        toastLabel.textAlignment = NSTextAlignmentCenter;
+        toastLabel.font = [UIFont systemFontOfSize:14];
+        toastLabel.text = text;
+        toastLabel.alpha = 0;
+        toastLabel.layer.cornerRadius = 10;
+        toastLabel.clipsToBounds = YES;
+        
+        [toastLabel sizeToFit];
+        CGFloat padding = 10;
+        toastLabel.frame = CGRectMake(0, 0, toastLabel.frame.size.width + padding * 2, toastLabel.frame.size.height + padding);
+        toastLabel.center = CGPointMake(window.center.x, window.frame.size.height - 100);
+        
+        [window addSubview:toastLabel];
+        
+        [UIView animateWithDuration:0.15 animations:^{
+            toastLabel.alpha = 1;
+        } completion:^(BOOL finished) {
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                [UIView animateWithDuration:0.15 animations:^{
+                    toastLabel.alpha = 0;
+                } completion:^(BOOL finished) {
+                    [toastLabel removeFromSuperview];
+                }];
+            });
+        }];
+    });
 }
 static void findViewsOfClassHelper(UIView *view, Class viewClass, NSMutableArray *result) {
     if ([view isKindOfClass:viewClass]) {
