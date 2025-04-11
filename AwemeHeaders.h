@@ -663,19 +663,31 @@ typedef NS_ENUM(NSInteger, MediaType) {
 
 //清屏按钮声明
 UIWindow* getKeyWindow(void);
+void showToast(NSString *message);
+void findViewsOfClassHelper(UIView *view, Class viewClass, NSMutableArray *result);
+void forceResetAllUIElements(void);
+void reapplyHidingToAllElements(HideUIButton *button);
+void initTargetClassNames(void);
 @interface HideUIButton : UIButton
 @property (nonatomic, assign) BOOL isElementsHidden;
+@property (nonatomic, assign) BOOL isLocked;
 @property (nonatomic, strong) NSMutableArray *hiddenViewsList;
 @property (nonatomic, strong) UIImage *showIcon;
 @property (nonatomic, strong) UIImage *hideIcon;
+@property (nonatomic, assign) CGFloat originalAlpha;
 @property (nonatomic, strong) NSTimer *checkTimer;
 @property (nonatomic, strong) NSTimer *fadeTimer;
-@property (nonatomic, assign) CGFloat originalAlpha;
-@property (nonatomic, assign) BOOL isLocked;
 - (void)resetFadeTimer;
 - (void)hideUIElements;
 - (void)findAndHideViews:(NSArray *)classNames;
 - (void)safeResetState;
 - (void)startPeriodicCheck;
 - (UIViewController *)findViewController:(UIView *)view;
+- (void)loadIcons;
+- (void)handlePan:(UIPanGestureRecognizer *)gesture;
+- (void)handleTap;
+- (void)handleLongPress:(UILongPressGestureRecognizer *)gesture;
+- (void)handleTouchDown;
+- (void)handleTouchUpInside;
+- (void)handleTouchUpOutside;
 @end
