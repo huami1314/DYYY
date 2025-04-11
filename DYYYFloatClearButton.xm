@@ -231,11 +231,20 @@ static NSArray* getHideClassList() {
     [self updateButtonAppearance];
 }
 - (void)hideUIElements {
+    // 先清空之前的隐藏列表，避免重复添加和内存泄漏
+    [self.hiddenViewsList removeAllObjects];
+    
     // 递归查找并隐藏所有匹配的视图
     [self findAndHideViews:getHideClassList()];
     
     // 查找并处理特定的 AWEElementStackView
     [self findAndHideSpecificStackViews];
+    
+    // 限制隐藏列表大小，防止过度增长
+    if (self.hiddenViewsList.count > 1000) {
+        NSRange rangeToRemove = NSMakeRange(0, self.hiddenViewsList.count - 500);
+        [self.hiddenViewsList removeObjectsInRange:rangeToRemove];
+    }
     
     self.isElementsHidden = YES;
 }
@@ -264,8 +273,8 @@ static NSArray* getHideClassList() {
 }
 - (void)findAndHideViewsOfClass:(Class)viewClass inView:(UIView *)view {
     if ([view isKindOfClass:viewClass]) {
-        // 只有不是自己才隐藏
-        if (view != self) {
+        // 只有不是自己且尚未隐藏的视图才添加到列表并隐藏
+        if (view != self && view.alpha != 0.0 && ![self.hiddenViewsList containsObject:view]) {
             [self.hiddenViewsList addObject:view];
             view.alpha = 0.0;
         }
@@ -316,7 +325,7 @@ static NSArray* getHideClassList() {
 // 递归隐藏视图及其所有子视图
 - (void)hideViewAndAllSubviews:(UIView *)view {
     // 将视图添加到隐藏列表
-    if (![self.hiddenViewsList containsObject:view]) {
+    if (![self.hiddenViewsList containsObject:view] && view.alpha != 0.0) {
         [self.hiddenViewsList addObject:view];
         view.alpha = 0.0;
     }
@@ -370,38 +379,61 @@ static NSArray* getHideClassList() {
 %end
 // 监控视频内容变化 - 这里使用更精确的hook
 %hook AWEFeedCellViewController
+- (void)viewWillAppear:(BOOL)animated {
+    %orig;
+    
+    // 在视图即将显示时就预先隐藏元素，防止闪烁
+    if (hideButton && hideButton.isElementsHidden && hideButton.isPersistentMode) {
+        [hideButton hideUIElements];
+    }
+}
 - (void)viewDidAppear:(BOOL)animated {
     %orig;
     
-    // 如果是全局模式且元素被隐藏，则在视频切换时重新隐藏所有元素
+    // 如果是全局模式且元素被隐藏，则在视频切换时立即隐藏所有元素
     if (hideButton && hideButton.isElementsHidden && hideButton.isPersistentMode) {
-        // 使用延迟以确保新的UI元素已经加载
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            [hideButton hideUIElements];
-        });
+        // 直接在主线程执行，不要延迟
+        [hideButton hideUIElements];
     }
     // 如果是单视频模式且元素被隐藏，则在视频切换时恢复元素
     else if (hideButton && hideButton.isElementsHidden && !hideButton.isPersistentMode) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [hideButton safeResetState];
-        });
+        [hideButton safeResetState];
     }
 }
 %end
 // 适配更多可能的视频容器
 %hook AWEAwemeViewController
+- (void)viewWillAppear:(BOOL)animated {
+    %orig;
+    
+    // 在视图即将显示时就隐藏元素，防止闪烁
+    if (hideButton && hideButton.isElementsHidden && hideButton.isPersistentMode) {
+        [hideButton hideUIElements];
+    }
+}
 - (void)viewDidAppear:(BOOL)animated {
     %orig;
     
-    // 如果是全局模式且元素被隐藏，确保所有元素都被隐藏
+    // 确保所有元素都被隐藏
     if (hideButton && hideButton.isElementsHidden && hideButton.isPersistentMode) {
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            [hideButton hideUIElements];
-        });
+        [hideButton hideUIElements];
     }
 }
 %end
-
+// Hook 所有可能的标签视图
+%hook UILabel
+- (void)didMoveToSuperview {
+    %orig;
+    
+    // 如果当前是隐藏状态且是全局模式，则隐藏新添加的标签
+    if (hideButton && hideButton.isElementsHidden && hideButton.isPersistentMode) {
+        if (![hideButton.hiddenViewsList containsObject:self] && self.alpha != 0.0) {
+            [hideButton.hiddenViewsList addObject:self];
+            self.alpha = 0.0;
+        }
+    }
+}
+%end
 // Hook AppDelegate 来初始化按钮
 %hook AppDelegate
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
