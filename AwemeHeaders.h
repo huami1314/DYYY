@@ -661,6 +661,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWEHPTopBarCTAItemView : UIView
 @end
 
+//清屏按钮声明
 @interface HideUIButton : UIButton
 @property (nonatomic, assign) BOOL isElementsHidden;
 @property (nonatomic, strong) NSMutableArray *hiddenViewsList;
