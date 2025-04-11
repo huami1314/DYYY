@@ -8,6 +8,7 @@
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
 #import <signal.h>
+#import <objc/runtime.h>
 // 定义悬浮按钮类
 @interface HideUIButton : UIButton
 @property (nonatomic, assign) BOOL isElementsHidden;
@@ -26,6 +27,10 @@ static NSString *const kLastPositionYKey = @"lastHideButtonPositionY";
 static NSString *const kPersistentModeKey = @"hideButtonPersistentMode";
 static NSString *const kIsElementsHiddenKey = @"isElementsHidden";
 static NSString *const kEnableButtonKey = @"DYYYEnableFloatClearButton";
+// 用于方法交换的全局变量
+static IMP originalSetAlpha = NULL;
+static IMP originalSetHidden = NULL;
+static NSMutableSet *classesToSwizzle;
 // 获取keyWindow的辅助方法
 static UIWindow* getKeyWindow() {
     UIWindow *keyWindow = nil;
@@ -91,6 +96,106 @@ static BOOL isTargetStackView(id view) {
         return [accessibilityLabel isEqualToString:@"left"];
     }
     return NO;
+}
+// 判断视图是否应该被隐藏
+static BOOL shouldHideView(UIView *view) {
+    if (!hideButton || !hideButton.isElementsHidden) {
+        return NO;
+    }
+    
+    // 检查视图类型
+    for (NSString *className in getHideClassList()) {
+        Class viewClass = NSClassFromString(className);
+        if (viewClass && [view isKindOfClass:viewClass]) {
+            return YES;
+        }
+    }
+    
+    // 特别检查AWEElementStackView
+    Class stackViewClass = NSClassFromString(@"AWEElementStackView");
+    if (stackViewClass && [view isKindOfClass:stackViewClass]) {
+        return isTargetStackView(view);
+    }
+    
+    // 检查AWEBaseElementView是否是目标AWEElementStackView的子视图
+    Class baseElementClass = NSClassFromString(@"AWEBaseElementView");
+    if (baseElementClass && [view isKindOfClass:baseElementClass]) {
+        UIView *superview = view.superview;
+        if ([superview isKindOfClass:NSClassFromString(@"AWEElementStackView")]) {
+            return isTargetStackView(superview);
+        }
+    }
+    
+    return NO;
+}
+// 替换的setAlpha方法
+static void newSetAlpha(id self, SEL _cmd, CGFloat alpha) {
+    // 如果当前视图应该被隐藏，则强制设置alpha为0
+    if (shouldHideView((UIView *)self)) {
+        ((void (*)(id, SEL, CGFloat))originalSetAlpha)(self, _cmd, 0.0);
+        
+        // 如果不在hiddenViewsList中，添加它
+        if (hideButton && ![hideButton.hiddenViewsList containsObject:self]) {
+            [hideButton.hiddenViewsList addObject:self];
+        }
+    } else {
+        ((void (*)(id, SEL, CGFloat))originalSetAlpha)(self, _cmd, alpha);
+    }
+}
+// 替换的setHidden方法
+static void newSetHidden(id self, SEL _cmd, BOOL hidden) {
+    // 如果当前视图应该被隐藏，则强制设置hidden为YES
+    if (shouldHideView((UIView *)self)) {
+        ((void (*)(id, SEL, BOOL))originalSetHidden)(self, _cmd, YES);
+        
+        // 如果不在hiddenViewsList中，添加它
+        if (hideButton && ![hideButton.hiddenViewsList containsObject:self]) {
+            [hideButton.hiddenViewsList addObject:self];
+        }
+    } else {
+        ((void (*)(id, SEL, BOOL))originalSetHidden)(self, _cmd, hidden);
+    }
+}
+// 交换UIView的setAlpha和setHidden方法
+static void swizzleUIViewMethods() {
+    // 初始化需要交换方法的类集合
+    classesToSwizzle = [NSMutableSet set];
+    
+    // 添加所有需要隐藏的类
+    for (NSString *className in getHideClassList()) {
+        Class viewClass = NSClassFromString(className);
+        if (viewClass) {
+            [classesToSwizzle addObject:viewClass];
+        }
+    }
+    
+    // 添加AWEElementStackView和AWEBaseElementView
+    Class stackViewClass = NSClassFromString(@"AWEElementStackView");
+    if (stackViewClass) {
+        [classesToSwizzle addObject:stackViewClass];
+    }
+    
+    Class baseElementClass = NSClassFromString(@"AWEBaseElementView");
+    if (baseElementClass) {
+        [classesToSwizzle addObject:baseElementClass];
+    }
+    
+    // 对每个类交换方法
+    for (Class viewClass in classesToSwizzle) {
+        // 交换setAlpha:方法
+        Method originalAlphaMethod = class_getInstanceMethod(viewClass, @selector(setAlpha:));
+        if (originalAlphaMethod) {
+            originalSetAlpha = method_getImplementation(originalAlphaMethod);
+            method_setImplementation(originalAlphaMethod, (IMP)newSetAlpha);
+        }
+        
+        // 交换setHidden:方法
+        Method originalHiddenMethod = class_getInstanceMethod(viewClass, @selector(setHidden:));
+        if (originalHiddenMethod) {
+            originalSetHidden = method_getImplementation(originalHiddenMethod);
+            method_setImplementation(originalHiddenMethod, (IMP)newSetHidden);
+        }
+    }
 }
 // HideUIButton 实现
 @implementation HideUIButton
@@ -271,6 +376,7 @@ static BOOL isTargetStackView(id view) {
     for (UIView *view in self.hiddenViewsList) {
         if ([view isKindOfClass:[UIView class]]) {
             view.alpha = 1.0;
+            view.hidden = NO;
         }
     }
     
@@ -284,6 +390,7 @@ static BOOL isTargetStackView(id view) {
             if (![self.hiddenViewsList containsObject:view]) {
                 [self.hiddenViewsList addObject:view];
                 view.alpha = 0.0;
+                view.hidden = YES;
             }
         }
     }
@@ -304,38 +411,32 @@ static BOOL isTargetStackView(id view) {
     [self updateButtonAppearance];
 }
 @end
-// 特别监控AWEElementStackView的创建和添加
-%hook AWEElementStackView
+// 预先隐藏视图的方法
+%hook UIView
 - (void)didMoveToSuperview {
     %orig;
     
-    // 只处理特定的AWEElementStackView
-    if (isTargetStackView(self) && hideButton && hideButton.isElementsHidden) {
+    // 如果当前是隐藏状态且该视图应该被隐藏，则立即隐藏它
+    if (hideButton && hideButton.isElementsHidden && shouldHideView(self)) {
         dispatch_async(dispatch_get_main_queue(), ^{
             if (![hideButton.hiddenViewsList containsObject:self]) {
                 [hideButton.hiddenViewsList addObject:self];
                 self.alpha = 0.0;
+                self.hidden = YES;
             }
         });
     }
 }
-%end
-// 监控AWEBaseElementView，这是AWEElementStackView的子视图
-%hook AWEBaseElementView
-- (void)didMoveToSuperview {
+- (void)didMoveToWindow {
     %orig;
     
-    // 检查父视图是否是目标AWEElementStackView
-    UIView *superview = self.superview;
-    if ([superview isKindOfClass:NSClassFromString(@"AWEElementStackView")] && 
-        isTargetStackView(superview) && 
-        hideButton && 
-        hideButton.isElementsHidden) {
-        
+    // 当视图被添加到窗口时也检查
+    if (hideButton && hideButton.isElementsHidden && shouldHideView(self)) {
         dispatch_async(dispatch_get_main_queue(), ^{
             if (![hideButton.hiddenViewsList containsObject:self]) {
                 [hideButton.hiddenViewsList addObject:self];
                 self.alpha = 0.0;
+                self.hidden = YES;
             }
         });
     }
@@ -425,6 +526,27 @@ static BOOL isTargetStackView(id view) {
     }
 }
 %end
+// 预先隐藏视频Cell内的元素
+%hook AWEFeedTableViewCell
+- (void)setContentView:(UIView *)contentView {
+    %orig;
+    
+    // 如果是全局模式且元素被隐藏，预先处理内部元素
+    if (hideButton && hideButton.isElementsHidden && hideButton.isPersistentMode) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            for (UIView *subview in contentView.subviews) {
+                if (shouldHideView(subview)) {
+                    if (![hideButton.hiddenViewsList containsObject:subview]) {
+                        [hideButton.hiddenViewsList addObject:subview];
+                        subview.alpha = 0.0;
+                        subview.hidden = YES;
+                    }
+                }
+            }
+        });
+    }
+}
+%end
 // Hook AppDelegate 来初始化按钮
 %hook AppDelegate
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
@@ -479,4 +601,9 @@ static BOOL isTargetStackView(id view) {
 %ctor {
     // 注册信号处理
     signal(SIGSEGV, SIG_IGN);
+    
+    // 交换方法以实现预先隐藏
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        swizzleUIViewMethods();
+    });
 }
