@@ -8,18 +8,22 @@
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
 #import <signal.h>
-// 递归查找指定类型的视图的函数
-void findViewsOfClassHelper(UIView *view, Class viewClass, NSMutableArray *result) {
-    if ([view isKindOfClass:viewClass]) {
-        [result addObject:view];
+// 全局变量
+static HideUIButton *hideButton;
+static BOOL isAppInTransition = NO;
+static NSArray *targetClassNames;
+// 函数实现
+static UIWindow* getKeyWindow(void) {
+    UIWindow *keyWindow = nil;
+    for (UIWindow *window in [UIApplication sharedApplication].windows) {
+        if (window.isKeyWindow) {
+            keyWindow = window;
+            break;
+        }
     }
-    
-    for (UIView *subview in view.subviews) {
-        findViewsOfClassHelper(subview, viewClass, result);
-    }
+    return keyWindow;
 }
-// 显示 Toast 的辅助函数
-void showToast(NSString *message) {
+static void showToast(NSString *message) {
     dispatch_async(dispatch_get_main_queue(), ^{
         UIWindow *window = getKeyWindow();
         if (!window) return;
@@ -54,12 +58,37 @@ void showToast(NSString *message) {
         }];
     });
 }
-// 全局变量
-static HideUIButton *hideButton;
-static BOOL isAppInTransition = NO;
-static NSArray *targetClassNames;
-// 初始化目标类名数组
-void initTargetClassNames(void) {
+static void findViewsOfClassHelper(UIView *view, Class viewClass, NSMutableArray *result) {
+    if ([view isKindOfClass:viewClass]) {
+        [result addObject:view];
+    }
+    
+    for (UIView *subview in view.subviews) {
+        findViewsOfClassHelper(subview, viewClass, result);
+    }
+}
+
+static void forceResetAllUIElements(void) {
+    UIWindow *window = getKeyWindow();
+    if (!window) return;
+    
+    for (NSString *className in targetClassNames) {
+        Class viewClass = NSClassFromString(className);
+        if (!viewClass) continue;
+        
+        NSMutableArray *views = [NSMutableArray array];
+        findViewsOfClassHelper(window, viewClass, views);
+        
+        for (UIView *view in views) {
+            view.alpha = 1.0;
+        }
+    }
+}
+static void reapplyHidingToAllElements(HideUIButton *button) {
+    if (!button || !button.isElementsHidden) return;
+    [button hideUIElements];
+}
+static void initTargetClassNames(void) {
     targetClassNames = @[
         @"AWEHPTopBarCTAContainer",
         @"AWEHPDiscoverFeedEntranceView",
@@ -80,40 +109,6 @@ void initTargetClassNames(void) {
         @"AWEFeedAnchorContainerView",
         @"AFDAIbumFolioView"
     ];
-}
-
-// 获取keyWindow的辅助方法
-UIWindow* getKeyWindow(void) {
-    UIWindow *keyWindow = nil;
-    for (UIWindow *window in [UIApplication sharedApplication].windows) {
-        if (window.isKeyWindow) {
-            keyWindow = window;
-            break;
-        }
-    }
-    return keyWindow;
-}
-// 恢复所有元素到原始状态的方法
-void forceResetAllUIElements(void) {
-    UIWindow *window = getKeyWindow();
-    if (!window) return;
-    
-    for (NSString *className in targetClassNames) {
-        Class viewClass = NSClassFromString(className);
-        if (!viewClass) continue;
-        
-        NSMutableArray *views = [NSMutableArray array];
-        findViewsOfClassHelper(window, viewClass, views);
-        
-        for (UIView *view in views) {
-            view.alpha = 1.0;
-        }
-    }
-}
-// 重新应用隐藏效果的函数
-void reapplyHidingToAllElements(HideUIButton *button) {
-    if (!button || !button.isElementsHidden) return;
-    [button hideUIElements];
 }
 @implementation HideUIButton
 - (instancetype)initWithFrame:(CGRect)frame {
@@ -301,7 +296,8 @@ void reapplyHidingToAllElements(HideUIButton *button) {
     self.fadeTimer = nil;
 }
 @end
-// Hook 实现部分
+
+// Hook 部分
 %hook UIView
 - (id)initWithFrame:(CGRect)frame {
     UIView *view = %orig;
@@ -364,7 +360,6 @@ void reapplyHidingToAllElements(HideUIButton *button) {
     }
 }
 %end
-
 %hook AWEFeedTableViewCell
 - (void)prepareForReuse {
     if (hideButton && hideButton.isElementsHidden) {
