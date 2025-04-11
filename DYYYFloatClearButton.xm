@@ -16,12 +16,7 @@
 - (void)hideUIElements;
 - (void)showUIElements;
 - (void)safeResetState;
-- (void)findAndHideViewsOfClass:(Class)viewClass inView:(UIView *)view;
-@end
-// 添加周期性检查分类
-@interface HideUIButton (PeriodicCheck)
-- (void)startPeriodicCheckIfNeeded;
-- (void)periodicCheckForNewElements;
+- (void)findAndHideViewsOfClass:(Class)viewClass inView:(UIView *)view withPredicate:(BOOL (^)(id view))predicate;
 @end
 // 全局变量
 static HideUIButton *hideButton;
@@ -65,7 +60,6 @@ static NSArray* getHideClassList() {
         @"AWELeftSideBarEntranceView",
         @"DUXBadge",
         @"AWEBaseElementView",
-        @"AWEElementStackView",
         @"AWEPlayInteractionDescriptionLabel",
         @"AWEUserNameLabel",
         @"AWEStoryProgressSlideView",
@@ -89,6 +83,14 @@ static NSArray* getHideClassList() {
         @"AWEFeedCellBottomView",
         @"AWEUIView"
     ];
+}
+// 判断是否为目标AWEElementStackView的函数
+static BOOL isTargetStackView(id view) {
+    if ([view respondsToSelector:@selector(accessibilityLabel)]) {
+        NSString *accessibilityLabel = [view accessibilityLabel];
+        return [accessibilityLabel isEqualToString:@"left"];
+    }
+    return NO;
 }
 // HideUIButton 实现
 @implementation HideUIButton
@@ -242,22 +244,27 @@ static NSArray* getHideClassList() {
 }
 - (void)hideUIElements {
     // 递归查找并隐藏所有匹配的视图
-    [self findAndHideViews:getHideClassList()];
+    for (NSString *className in getHideClassList()) {
+        Class viewClass = NSClassFromString(className);
+        if (!viewClass) continue;
+        
+        // 递归查找所有匹配的视图
+        for (UIWindow *window in [UIApplication sharedApplication].windows) {
+            [self findAndHideViewsOfClass:viewClass inView:window withPredicate:nil];
+        }
+    }
     
-    // 特别关注AWEElementStackView
+    // 特别处理AWEElementStackView
     Class stackViewClass = NSClassFromString(@"AWEElementStackView");
     if (stackViewClass) {
         for (UIWindow *window in [UIApplication sharedApplication].windows) {
-            [self findAndHideViewsOfClass:stackViewClass inView:window];
+            [self findAndHideViewsOfClass:stackViewClass inView:window withPredicate:^BOOL(id view) {
+                return isTargetStackView(view);
+            }];
         }
     }
     
     self.isElementsHidden = YES;
-    
-    // 如果是全局模式，启动周期性检查
-    if (self.isPersistentMode) {
-        [self startPeriodicCheckIfNeeded];
-    }
 }
 - (void)showUIElements {
     // 恢复所有被隐藏的视图
@@ -270,30 +277,20 @@ static NSArray* getHideClassList() {
     [self.hiddenViewsList removeAllObjects];
     self.isElementsHidden = NO;
 }
-- (void)findAndHideViews:(NSArray *)classNames {
-    // 遍历所有窗口
-    for (UIWindow *window in [UIApplication sharedApplication].windows) {
-        for (NSString *className in classNames) {
-            Class viewClass = NSClassFromString(className);
-            if (!viewClass) continue;
-            
-            // 递归查找所有匹配的视图
-            [self findAndHideViewsOfClass:viewClass inView:window];
-        }
-    }
-}
-- (void)findAndHideViewsOfClass:(Class)viewClass inView:(UIView *)view {
+- (void)findAndHideViewsOfClass:(Class)viewClass inView:(UIView *)view withPredicate:(BOOL (^)(id view))predicate {
     if ([view isKindOfClass:viewClass]) {
-        // 只有不是自己才隐藏
-        if (view != self) {
-            [self.hiddenViewsList addObject:view];
-            view.alpha = 0.0;
+        // 只有不是自己，并且满足谓词条件（如果有）才隐藏
+        if (view != self && (!predicate || predicate(view))) {
+            if (![self.hiddenViewsList containsObject:view]) {
+                [self.hiddenViewsList addObject:view];
+                view.alpha = 0.0;
+            }
         }
     }
     
     // 递归查找子视图
     for (UIView *subview in view.subviews) {
-        [self findAndHideViewsOfClass:viewClass inView:subview];
+        [self findAndHideViewsOfClass:viewClass inView:subview withPredicate:predicate];
     }
 }
 - (void)safeResetState {
@@ -307,38 +304,13 @@ static NSArray* getHideClassList() {
     [self updateButtonAppearance];
 }
 @end
-
-// 周期性检查分类实现
-@implementation HideUIButton (PeriodicCheck)
-- (void)startPeriodicCheckIfNeeded {
-    if (self.isElementsHidden && self.isPersistentMode) {
-        // 开始周期性检查
-        [NSTimer scheduledTimerWithTimeInterval:0.5 
-                                         target:self 
-                                       selector:@selector(periodicCheckForNewElements) 
-                                       userInfo:nil 
-                                        repeats:YES];
-    }
-}
-- (void)periodicCheckForNewElements {
-    if (self.isElementsHidden && self.isPersistentMode) {
-        // 只检查AWEElementStackView类的元素
-        Class targetClass = NSClassFromString(@"AWEElementStackView");
-        if (!targetClass) return;
-        
-        for (UIWindow *window in [UIApplication sharedApplication].windows) {
-            [self findAndHideViewsOfClass:targetClass inView:window];
-        }
-    }
-}
-@end
 // 特别监控AWEElementStackView的创建和添加
 %hook AWEElementStackView
 - (void)didMoveToSuperview {
     %orig;
     
-    // 如果当前是隐藏状态且是全局模式，立即隐藏这个新添加的视图
-    if (hideButton && hideButton.isElementsHidden && hideButton.isPersistentMode) {
+    // 只处理特定的AWEElementStackView
+    if (isTargetStackView(self) && hideButton && hideButton.isElementsHidden) {
         dispatch_async(dispatch_get_main_queue(), ^{
             if (![hideButton.hiddenViewsList containsObject:self]) {
                 [hideButton.hiddenViewsList addObject:self];
@@ -347,11 +319,19 @@ static NSArray* getHideClassList() {
         });
     }
 }
-- (void)didMoveToWindow {
+%end
+// 监控AWEBaseElementView，这是AWEElementStackView的子视图
+%hook AWEBaseElementView
+- (void)didMoveToSuperview {
     %orig;
     
-    // 当视图被添加到窗口时也检查
-    if (hideButton && hideButton.isElementsHidden && hideButton.isPersistentMode) {
+    // 检查父视图是否是目标AWEElementStackView
+    UIView *superview = self.superview;
+    if ([superview isKindOfClass:NSClassFromString(@"AWEElementStackView")] && 
+        isTargetStackView(superview) && 
+        hideButton && 
+        hideButton.isElementsHidden) {
+        
         dispatch_async(dispatch_get_main_queue(), ^{
             if (![hideButton.hiddenViewsList containsObject:self]) {
                 [hideButton.hiddenViewsList addObject:self];
@@ -400,7 +380,7 @@ static NSArray* getHideClassList() {
     // 如果是全局模式且元素被隐藏，则在视频切换时重新隐藏所有元素
     if (hideButton && hideButton.isElementsHidden && hideButton.isPersistentMode) {
         // 使用延迟以确保新的UI元素已经加载
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             [hideButton hideUIElements];
         });
     }
@@ -419,38 +399,29 @@ static NSArray* getHideClassList() {
     
     // 如果是全局模式且元素被隐藏，确保所有元素都被隐藏
     if (hideButton && hideButton.isElementsHidden && hideButton.isPersistentMode) {
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            [hideButton hideUIElements];
-        });
-    }
-}
-%end
-// 在视频切换或滚动时更强力地重新应用隐藏
-%hook AWEFeedTableView
-- (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
-    %orig;
-    
-    // 视频滚动停止后，重新检查并隐藏元素
-    if (hideButton && hideButton.isElementsHidden && hideButton.isPersistentMode) {
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             [hideButton hideUIElements];
         });
     }
 }
 %end
-// Hook 所有可能的标签视图
-%hook UILabel
-- (void)didMoveToSuperview {
+// 在视频切换或滚动时更强力地重新应用隐藏，但减少频率以提高性能
+%hook AWEFeedTableView
+- (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
     %orig;
     
-    // 如果当前是隐藏状态且是全局模式，则隐藏新添加的标签
+    // 视频滚动停止后，重新检查并隐藏元素
     if (hideButton && hideButton.isElementsHidden && hideButton.isPersistentMode) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            if (![hideButton.hiddenViewsList containsObject:self]) {
-                [hideButton.hiddenViewsList addObject:self];
-                self.alpha = 0.0;
-            }
-        });
+        static NSTimeInterval lastUpdateTime = 0;
+        NSTimeInterval currentTime = [[NSDate date] timeIntervalSince1970];
+        
+        // 确保至少间隔1秒才执行一次隐藏操作，避免频繁执行导致卡顿
+        if (currentTime - lastUpdateTime > 1.0) {
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                [hideButton hideUIElements];
+            });
+            lastUpdateTime = currentTime;
+        }
     }
 }
 %end
@@ -508,6 +479,4 @@ static NSArray* getHideClassList() {
 %ctor {
     // 注册信号处理
     signal(SIGSEGV, SIG_IGN);
-    
-    // 不需要在这里设置默认值，因为已经在AppDelegate中处理了
 }
