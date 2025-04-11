@@ -153,6 +153,10 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (void)showSharePanel;
 - (void)showDislikeOnVideo;
 - (void)onVideoPlayerViewDoubleClicked:(id)arg1;
+- (UIViewController *)firstAvailableUIViewController;
+- (void)speedButtonTapped:(id)sender;
+- (void)buttonTouchDown:(id)sender;
+- (void)buttonTouchUp:(id)sender;
 @end
 
 @interface UIView (Transparency)
