@@ -2942,6 +2942,74 @@ static BOOL isDownloadFlied = NO;
 
 %end
 
+//应用内推送毛玻璃效果
+%hook AWEInnerNotificationContainerView
+
+- (void)layoutSubviews {
+    %orig;
+    [self applyBlurEffectIfNeeded];
+}
+
+%new
+- (void)applyBlurEffectIfNeeded {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableNotificationTransparency"]) {
+
+        self.backgroundColor = [UIColor clearColor];
+
+        for (UIView *subview in self.subviews) {
+            if (![subview isKindOfClass:[UIVisualEffectView class]]) {
+                subview.backgroundColor = [UIColor clearColor];
+            }
+        }
+
+        UIVisualEffectView *existingBlurView = nil;
+        for (UIView *subview in self.subviews) {
+            if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == 999) {
+                existingBlurView = (UIVisualEffectView *)subview;
+                break;
+            }
+        }
+
+        BOOL isDarkMode = [DYYYManager isDarkMode];
+        UIBlurEffectStyle blurStyle = isDarkMode ? UIBlurEffectStyleDark : UIBlurEffectStyleLight;
+
+        float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
+        if (userTransparency <= 0 || userTransparency > 1) {
+            userTransparency = 0.5;
+        }
+
+        if (!existingBlurView) {
+            UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurStyle];
+            UIVisualEffectView *blurView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
+            blurView.frame = self.bounds;
+            blurView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+            blurView.alpha = userTransparency;
+            blurView.tag = 999;
+
+            UIView *overlayView = [[UIView alloc] initWithFrame:self.bounds];
+            CGFloat alpha = isDarkMode ? 0.2 : 0.1;
+            overlayView.backgroundColor = [UIColor colorWithWhite:(isDarkMode ? 0 : 1) alpha:alpha];
+            overlayView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+            [blurView.contentView addSubview:overlayView];
+
+            [self insertSubview:blurView atIndex:0];
+        } else {
+            [existingBlurView setEffect:[UIBlurEffect effectWithStyle:blurStyle]];
+            existingBlurView.alpha = userTransparency;
+
+            for (UIView *subview in existingBlurView.contentView.subviews) {
+                if (subview.tag != 999) {
+                    CGFloat alpha = isDarkMode ? 0.2 : 0.1;
+                    subview.backgroundColor = [UIColor colorWithWhite:(isDarkMode ? 0 : 1) alpha:alpha];
+                }
+            }
+
+            [self insertSubview:existingBlurView atIndex:0];
+        }
+    }
+}
+
+%end
 
 
 %ctor {

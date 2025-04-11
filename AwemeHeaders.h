@@ -656,3 +656,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 
 @interface AWEHPTopBarCTAItemView : UIView
 @end
+
+//应用内推送容器
+@interface AWEInnerNotificationContainerView : UIView
+@end
