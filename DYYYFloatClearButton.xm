@@ -4,15 +4,42 @@
  * Dev: @c00kiec00k 曲奇的坏品味🍻
  * iOS Version: 16.5
  */
-#import "AwemeHeaders.h"
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
 #import <signal.h>
+// HideUIButton 接口声明
+@interface HideUIButton : UIButton
+// 状态属性
+@property (nonatomic, assign) BOOL isElementsHidden;
+@property (nonatomic, assign) BOOL isLocked;
+// UI 相关属性
+@property (nonatomic, strong) NSMutableArray *hiddenViewsList;
+@property (nonatomic, strong) UIImage *showIcon;
+@property (nonatomic, strong) UIImage *hideIcon;
+@property (nonatomic, assign) CGFloat originalAlpha;
+// 计时器属性
+@property (nonatomic, strong) NSTimer *checkTimer;
+@property (nonatomic, strong) NSTimer *fadeTimer;
+// 方法声明
+- (void)resetFadeTimer;
+- (void)hideUIElements;
+- (void)findAndHideViews:(NSArray *)classNames;
+- (void)safeResetState;
+- (void)startPeriodicCheck;
+- (UIViewController *)findViewController:(UIView *)view;
+- (void)loadIcons;
+- (void)handlePan:(UIPanGestureRecognizer *)gesture;
+- (void)handleTap;
+- (void)handleLongPress:(UILongPressGestureRecognizer *)gesture;
+- (void)handleTouchDown;
+- (void)handleTouchUpInside;
+- (void)handleTouchUpOutside;
+@end
 // 全局变量
 static HideUIButton *hideButton;
 static BOOL isAppInTransition = NO;
 static NSArray *targetClassNames;
-// 函数实现
+// 辅助函数实现
 static UIWindow* getKeyWindow(void) {
     UIWindow *keyWindow = nil;
     for (UIWindow *window in [UIApplication sharedApplication].windows) {
@@ -67,7 +94,6 @@ static void findViewsOfClassHelper(UIView *view, Class viewClass, NSMutableArray
         findViewsOfClassHelper(subview, viewClass, result);
     }
 }
-
 static void forceResetAllUIElements(void) {
     UIWindow *window = getKeyWindow();
     if (!window) return;
@@ -296,8 +322,7 @@ static void initTargetClassNames(void) {
     self.fadeTimer = nil;
 }
 @end
-
-// Hook 部分
+// Hook 实现部分
 %hook UIView
 - (id)initWithFrame:(CGRect)frame {
     UIView *view = %orig;
