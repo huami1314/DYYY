@@ -662,6 +662,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 //清屏按钮声明
+UIWindow* getKeyWindow(void);
 @interface HideUIButton : UIButton
 @property (nonatomic, assign) BOOL isElementsHidden;
 @property (nonatomic, strong) NSMutableArray *hiddenViewsList;
