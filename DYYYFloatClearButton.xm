@@ -52,15 +52,20 @@ static inline void showToast(NSString *text) {
         toastLabel.font = [UIFont boldSystemFontOfSize:15];
         toastLabel.text = text;
         toastLabel.alpha = 0;
-        toastLabel.layer.cornerRadius = 10;
-        toastLabel.clipsToBounds = YES;
+        toastLabel.layer.cornerRadius = 20;  
+        toastLabel.clipsToBounds = NO;  
         toastLabel.layer.borderWidth = 1.5;
         toastLabel.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.3].CGColor;
+        toastLabel.layer.shadowColor = [UIColor blackColor].CGColor;
+        toastLabel.layer.shadowOffset = CGSizeMake(0, 2);
+        toastLabel.layer.shadowOpacity = 0.5;
+        toastLabel.layer.shadowRadius = 4.0;
         
         [toastLabel sizeToFit];
-        CGFloat padding = 10;
-        toastLabel.frame = CGRectMake(0, 0, toastLabel.frame.size.width + padding * 2, toastLabel.frame.size.height + padding);
-        toastLabel.center = CGPointMake(window.center.x, window.frame.size.height - 100);
+        CGFloat size = 40; 
+        toastLabel.frame = CGRectMake(0, 0, size, size);
+        CGRect screenBounds = [UIScreen mainScreen].bounds;
+        toastLabel.center = CGPointMake(screenBounds.size.width / 2, screenBounds.size.height / 2);
         
         [window addSubview:toastLabel];
         
