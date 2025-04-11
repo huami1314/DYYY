@@ -427,22 +427,7 @@ static NSArray* getHideClassList() {
     }
 }
 %end
-// Hook 所有可能的标签视图
-%hook UILabel
-- (void)didMoveToSuperview {
-    %orig;
-    
-    // 如果当前是隐藏状态且是全局模式，则隐藏新添加的标签
-    if (hideButton && hideButton.isElementsHidden && hideButton.isPersistentMode) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            if (![hideButton.hiddenViewsList containsObject:self]) {
-                [hideButton.hiddenViewsList addObject:self];
-                self.alpha = 0.0;
-            }
-        });
-    }
-}
-%end
+
 // Hook AppDelegate 来初始化按钮
 %hook AppDelegate
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
