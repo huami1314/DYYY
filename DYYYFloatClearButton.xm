@@ -46,14 +46,16 @@ static inline void showToast(NSString *text) {
         if (!window) return;
         
         UILabel *toastLabel = [[UILabel alloc] init];
-        toastLabel.backgroundColor = [UIColor colorWithWhite:0.0 alpha:0.7];
-        toastLabel.textColor = [UIColor whiteColor];
+        toastLabel.backgroundColor = [UIColor colorWithWhite:0.0 alpha:0.1];
+        toastLabel.textColor = [UIColor colorWithWhite:1.0 alpha:0.3];
         toastLabel.textAlignment = NSTextAlignmentCenter;
-        toastLabel.font = [UIFont systemFontOfSize:14];
+        toastLabel.font = [UIFont boldSystemFontOfSize:15];
         toastLabel.text = text;
         toastLabel.alpha = 0;
         toastLabel.layer.cornerRadius = 10;
         toastLabel.clipsToBounds = YES;
+        toastLabel.layer.borderWidth = 1.5;
+        toastLabel.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.3].CGColor;
         
         [toastLabel sizeToFit];
         CGFloat padding = 10;
