@@ -8,6 +8,11 @@
 #import <Foundation/Foundation.h>
 #import <signal.h>
 @class DUXToast;
+@interface DUXToast : NSObject
++ (void)show:(NSString *)text;
++ (void)showText:(NSString *)text;
++ (void)showToast:(NSString *)text;
+@end
 // HideUIButton 接口声明
 @interface HideUIButton : UIButton
 // 状态属性
@@ -41,13 +46,12 @@ static HideUIButton *hideButton;
 static BOOL isAppInTransition = NO;
 static NSArray *targetClassNames;
 void showToast(NSString *text) {
-    Class DUXToastClass = NSClassFromString(@"DUXToast");
-    if ([DUXToastClass respondsToSelector:@selector(show:)]) {
-        [DUXToastClass show:text];
-    } else if ([DUXToastClass respondsToSelector:@selector(showText:)]) {
-        [DUXToastClass showText:text];
-    } else if ([DUXToastClass respondsToSelector:@selector(showToast:)]) {
-        [DUXToastClass showToast:text];
+    if ([%c(DUXToast) respondsToSelector:@selector(show:)]) {
+        [%c(DUXToast) show:text];
+    } else if ([%c(DUXToast) respondsToSelector:@selector(showText:)]) {
+        [%c(DUXToast) showText:text];
+    } else if ([%c(DUXToast) respondsToSelector:@selector(showToast:)]) {
+        [%c(DUXToast) showToast:text];
     }
 }
 static void findViewsOfClassHelper(UIView *view, Class viewClass, NSMutableArray *result) {
