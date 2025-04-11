@@ -660,36 +660,3 @@ typedef NS_ENUM(NSInteger, MediaType) {
 
 @interface AWEHPTopBarCTAItemView : UIView
 @end
-
-//清屏按钮声明
-@class HideUIButton;
-@interface HideUIButton : UIButton
-@property (nonatomic, assign) BOOL isElementsHidden;
-@property (nonatomic, assign) BOOL isLocked;
-@property (nonatomic, strong) NSMutableArray *hiddenViewsList;
-@property (nonatomic, strong) UIImage *showIcon;
-@property (nonatomic, strong) UIImage *hideIcon;
-@property (nonatomic, assign) CGFloat originalAlpha;
-@property (nonatomic, strong) NSTimer *checkTimer;
-@property (nonatomic, strong) NSTimer *fadeTimer;
-- (void)resetFadeTimer;
-- (void)hideUIElements;
-- (void)findAndHideViews:(NSArray *)classNames;
-- (void)safeResetState;
-- (void)startPeriodicCheck;
-- (UIViewController *)findViewController:(UIView *)view;
-- (void)loadIcons;
-- (void)handlePan:(UIPanGestureRecognizer *)gesture;
-- (void)handleTap;
-- (void)handleLongPress:(UILongPressGestureRecognizer *)gesture;
-- (void)handleTouchDown;
-- (void)handleTouchUpInside;
-- (void)handleTouchUpOutside;
-@end
-// 清屏全局函数声明
-extern UIWindow* getKeyWindow(void);
-extern void showToast(NSString *message);
-extern void findViewsOfClassHelper(UIView *view, Class viewClass, NSMutableArray *result);
-extern void forceResetAllUIElements(void);
-extern void reapplyHidingToAllElements(HideUIButton *button);
-extern void initTargetClassNames(void);
