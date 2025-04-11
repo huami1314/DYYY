@@ -1317,12 +1317,6 @@
 }
 %end
 
-%ctor {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {
-		%init;
-	}
-}
-
 // 屏蔽青少年模式弹窗
 %hook AWEUIAlertView
 - (void)show {
@@ -1384,3 +1378,10 @@
 }
 
 %end
+
+%ctor {
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {
+		%init;
+	}
+}
+
