@@ -329,6 +329,7 @@ static BOOL isCommentViewVisible = NO;
 static BOOL showSpeedX = NO;
 // 添加按钮大小变量
 static CGFloat speedButtonSize = 36.0;
+static BOOL isFloatSpeedButtonEnabled = NO;
 
 // 添加对评论控制器的 hook
 %hook AWECommentContainerViewController
@@ -504,6 +505,7 @@ void updateSpeedButtonUI() {
 - (void)viewDidLayoutSubviews {
     %orig;
 
+	if (!isFloatSpeedButtonEnabled) return;
     // 添加悬浮速度控制按钮
     if (speedButton == nil) {
         // 使用保存的按钮大小或默认值
@@ -687,6 +689,8 @@ void updateSpeedButtonUI() {
 
 %new
 - (void)settingsDidUpdateWithSpeedConfig:(NSString *)speedConfig showX:(BOOL)showX buttonSize:(CGFloat)buttonSize autoRestoreSpeed:(BOOL)autoRestoreSpeed {
+
+	if (!isFloatSpeedButtonEnabled) return;
     // 保存设置
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     [defaults setObject:speedConfig forKey:@"SpeedSwitch"];
@@ -725,8 +729,12 @@ void updateSpeedButtonUI() {
 %end
 
 %hook UIWindow
+
 - (void)makeKeyAndVisible {
     %orig;
+    
+    // 检查全局开关
+    if (!isFloatSpeedButtonEnabled) return;
     
     // 当窗口变为key window时，根据评论状态决定按钮显示
     if (speedButton && ![speedButton isDescendantOfView:self]) {
@@ -741,5 +749,12 @@ void updateSpeedButtonUI() {
 %end
 
 %ctor {
-    %init;
+    // 加载全局开关状态
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    isFloatSpeedButtonEnabled = [defaults boolForKey:@"DYYYEnableFloatSpeedButton"];
+    
+    // 只有当全局开关打开时才初始化hooks
+    if (isFloatSpeedButtonEnabled) {
+        %init;
+    }
 }
