@@ -674,5 +674,6 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface __AWEInnerNotiRootViewController : UIViewController
 - (void)setupNotificationBlur;
 - (void)updateBlurEffectForView:(UIView *)view withRadius:(float)radius;
-- (void)setLabelsColorWhiteInView:(UIView *)view
+- (void)setLabelsColorWhiteInView:(UIView *)view;
+- (void)setLabelsColorWhiteInView:(UIView *)view;
 @end
