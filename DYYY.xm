@@ -2952,61 +2952,93 @@ static BOOL isDownloadFlied = NO;
 
 %new
 - (void)applyBlurEffectIfNeeded {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableNotificationTransparency"]) {
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableNotificationTransparency"]) {
 
-        self.backgroundColor = [UIColor clearColor];
+		self.backgroundColor = [UIColor clearColor];
+		self.layer.cornerRadius = 12;
+		self.layer.masksToBounds = YES;
 
-        for (UIView *subview in self.subviews) {
-            if (![subview isKindOfClass:[UIVisualEffectView class]]) {
-                subview.backgroundColor = [UIColor clearColor];
-            }
-        }
+		for (UIView *subview in self.subviews) {
+			if (![subview isKindOfClass:[UIVisualEffectView class]]) {
+				subview.backgroundColor = [UIColor clearColor];
+			}
+		}
 
-        UIVisualEffectView *existingBlurView = nil;
-        for (UIView *subview in self.subviews) {
-            if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == 999) {
-                existingBlurView = (UIVisualEffectView *)subview;
-                break;
-            }
-        }
+		UIVisualEffectView *existingBlurView = nil;
+		for (UIView *subview in self.subviews) {
+			if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == 999) {
+				existingBlurView = (UIVisualEffectView *)subview;
+				break;
+			}
+		}
 
-        BOOL isDarkMode = [DYYYManager isDarkMode];
-        UIBlurEffectStyle blurStyle = isDarkMode ? UIBlurEffectStyleDark : UIBlurEffectStyleLight;
+		BOOL isDarkMode = [DYYYManager isDarkMode];
+		UIBlurEffectStyle blurStyle = isDarkMode ? UIBlurEffectStyleDark : UIBlurEffectStyleLight;
 
-        float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
-        if (userTransparency <= 0 || userTransparency > 1) {
-            userTransparency = 0.5;
-        }
+		float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
+		if (userTransparency <= 0 || userTransparency > 1) {
+			userTransparency = 0.5;
+		}
 
-        if (!existingBlurView) {
-            UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurStyle];
-            UIVisualEffectView *blurView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
-            blurView.frame = self.bounds;
-            blurView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-            blurView.alpha = userTransparency;
-            blurView.tag = 999;
+		if (!existingBlurView) {
+			UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurStyle];
+			UIVisualEffectView *blurView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
+			blurView.frame = self.bounds;
+			blurView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+			blurView.alpha = userTransparency;
+			blurView.tag = 999;
+			blurView.layer.cornerRadius = 12;
+			blurView.layer.masksToBounds = YES;
 
-            UIView *overlayView = [[UIView alloc] initWithFrame:self.bounds];
-            CGFloat alpha = isDarkMode ? 0.2 : 0.1;
-            overlayView.backgroundColor = [UIColor colorWithWhite:(isDarkMode ? 0 : 1) alpha:alpha];
-            overlayView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-            [blurView.contentView addSubview:overlayView];
+			UIView *overlayView = [[UIView alloc] initWithFrame:self.bounds];
+			CGFloat alpha = isDarkMode ? 0.2 : 0.1; 
+			overlayView.backgroundColor = [UIColor colorWithWhite:(isDarkMode ? 0 : 1) alpha:alpha];
+			overlayView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+			overlayView.layer.cornerRadius = 12;
+			overlayView.layer.masksToBounds = YES;
+			[blurView.contentView addSubview:overlayView];
 
-            [self insertSubview:blurView atIndex:0];
-        } else {
-            [existingBlurView setEffect:[UIBlurEffect effectWithStyle:blurStyle]];
-            existingBlurView.alpha = userTransparency;
+			[self insertSubview:blurView atIndex:0];
+			
+			if (isDarkMode) {
+				// 递归查找UILabel并设置颜色为白色
+				[self setLabelsColorWhiteInView:self];
+			}
+			
+		} else {
+			[existingBlurView setEffect:[UIBlurEffect effectWithStyle:blurStyle]];
+			existingBlurView.alpha = userTransparency;
+			existingBlurView.layer.cornerRadius = 12;
+			existingBlurView.layer.masksToBounds = YES;
 
-            for (UIView *subview in existingBlurView.contentView.subviews) {
-                if (subview.tag != 999) {
-                    CGFloat alpha = isDarkMode ? 0.2 : 0.1;
-                    subview.backgroundColor = [UIColor colorWithWhite:(isDarkMode ? 0 : 1) alpha:alpha];
-                }
-            }
+			for (UIView *subview in existingBlurView.contentView.subviews) {
+				if (subview.tag != 999) {
+					CGFloat alpha = isDarkMode ? 0.2 : 0.1;
+					subview.backgroundColor = [UIColor colorWithWhite:(isDarkMode ? 0 : 1) alpha:alpha];
+					subview.layer.cornerRadius = 12;
+					subview.layer.masksToBounds = YES;
+				}
+			}
 
-            [self insertSubview:existingBlurView atIndex:0];
-        }
-    }
+			[self insertSubview:existingBlurView atIndex:0];
+			
+			if (isDarkMode) {
+				// 递归查找UILabel并设置颜色为白色
+				[self setLabelsColorWhiteInView:self];
+			}
+		}
+	}
+}
+
+%new
+- (void)setLabelsColorWhiteInView:(UIView *)view {
+	for (UIView *subview in view.subviews) {
+		if ([subview isKindOfClass:[UILabel class]]) {
+			UILabel *label = (UILabel *)subview;
+			label.textColor = [UIColor whiteColor];
+		}
+		[self setLabelsColorWhiteInView:subview]; // 递归处理子视图
+	}
 }
 
 %end
