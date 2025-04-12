@@ -3118,7 +3118,7 @@ static BOOL isDownloadFlied = NO;
 - (void) layoutSubviews {
 	%orig;
 	[self setupNotificationBlur];
-})
+}
 
 %new
 - (void)setupNotificationBlur {
