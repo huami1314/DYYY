@@ -1013,7 +1013,6 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width, in
     }
 }
 
-// 拆分方法，提高代码可读性和维护性
 + (void)startDownloadLivePhotoProcess:(NSURL *)imageURL videoURL:(NSURL *)videoURL uniqueKey:(NSString *)uniqueKey completion:(void (^)(void))completion {
     // 创建临时目录（如果不存在）
     NSString *livePhotoPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject 
@@ -1188,7 +1187,13 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width, in
             
             if (imageExists && videoExists) {
                 @try {
-                    [[DYYYManager shared] saveLivePhoto:imagePath videoUrl:videoPath];
+                    // 添加iOS版本检查
+                    if (@available(iOS 15.0, *)) {
+                        [[DYYYManager shared] saveLivePhoto:imagePath videoUrl:videoPath];
+                    } else {
+                        // iOS 14兼容处理
+                        [[DYYYManager shared] saveLivePhotoComponentsForIOS14:imagePath videoPath:videoPath];
+                    }
                 } @catch (NSException *exception) {
                     // 删除失败的文件
                     [[NSFileManager defaultManager] removeItemAtPath:imagePath error:nil];
@@ -1713,36 +1718,88 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width, in
 
 //MARK: 以下都是创建保存实况的调用方法
 - (void)saveLivePhoto:(NSString *)imageSourcePath videoUrl:(NSString *)videoSourcePath {
-    NSURL *photoURL = [NSURL fileURLWithPath:imageSourcePath];
-    NSURL *videoURL = [NSURL fileURLWithPath:videoSourcePath];
-    BOOL available = [PHAssetCreationRequest supportsAssetResourceTypes:@[@(PHAssetResourceTypePhoto), @(PHAssetResourceTypePairedVideo)]];
-    if (!available) {
-        return;
+    // 首先检查iOS版本
+    if (@available(iOS 15.0, *)) {
+        // iOS 15及更高版本使用原有的实现
+        NSURL *photoURL = [NSURL fileURLWithPath:imageSourcePath];
+        NSURL *videoURL = [NSURL fileURLWithPath:videoSourcePath];
+        BOOL available = [PHAssetCreationRequest supportsAssetResourceTypes:@[@(PHAssetResourceTypePhoto), @(PHAssetResourceTypePairedVideo)]];
+        if (!available) {
+            return;
+        }
+        [PHPhotoLibrary requestAuthorization:^(PHAuthorizationStatus status) {
+            if (status != PHAuthorizationStatusAuthorized) {
+                return;
+            }
+            NSString *identifier = [NSUUID UUID].UUIDString;
+            [self useAssetWriter:photoURL video:videoURL identifier:identifier complete:^(BOOL success, NSString *photoFile, NSString *videoFile, NSError *error) {
+                NSURL *photo = [NSURL fileURLWithPath:photoFile];
+                NSURL *video = [NSURL fileURLWithPath:videoFile];
+                [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
+                    PHAssetCreationRequest *request = [PHAssetCreationRequest creationRequestForAsset];
+                    [request addResourceWithType:PHAssetResourceTypePhoto fileURL:photo options:nil];
+                    [request addResourceWithType:PHAssetResourceTypePairedVideo fileURL:video options:nil];
+                } completionHandler:^(BOOL success, NSError * _Nullable error) {
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        if (success) {
+                            // 删除临时文件
+                            [[NSFileManager defaultManager] removeItemAtPath:imageSourcePath error:nil];
+                            [[NSFileManager defaultManager] removeItemAtPath:videoSourcePath error:nil];
+                            [[NSFileManager defaultManager] removeItemAtPath:photoFile error:nil];
+                            [[NSFileManager defaultManager] removeItemAtPath:videoFile error:nil];
+                        } 
+                    });
+                }];
+            }];
+        }];
+    } else {
+        // iOS 14 兼容处理 - 分别保存图片和视频
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [DYYYManager showToast:@"当前iOS版本不支持实况照片，将分别保存图片和视频"];
+            
+            // 分别保存图片和视频
+            [self saveLivePhotoComponentsForIOS14:imageSourcePath videoPath:videoSourcePath];
+        });
     }
+}
+
+// 为iOS 14添加的兼容方法，分别保存图片和视频
+- (void)saveLivePhotoComponentsForIOS14:(NSString *)imagePath videoPath:(NSString *)videoPath {
+    // 保存图片
     [PHPhotoLibrary requestAuthorization:^(PHAuthorizationStatus status) {
         if (status != PHAuthorizationStatusAuthorized) {
             return;
         }
-        NSString *identifier = [NSUUID UUID].UUIDString;
-        [self useAssetWriter:photoURL video:videoURL identifier:identifier complete:^(BOOL success, NSString *photoFile, NSString *videoFile, NSError *error) {
-            NSURL *photo = [NSURL fileURLWithPath:photoFile];
-            NSURL *video = [NSURL fileURLWithPath:videoFile];
+        
+        // 先保存图片
+        UIImage *image = [UIImage imageWithContentsOfFile:imagePath];
+        if (image) {
             [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
-                PHAssetCreationRequest *request = [PHAssetCreationRequest creationRequestForAsset];
-                [request addResourceWithType:PHAssetResourceTypePhoto fileURL:photo options:nil];
-                [request addResourceWithType:PHAssetResourceTypePairedVideo fileURL:video options:nil];
+                [PHAssetChangeRequest creationRequestForAssetFromImage:image];
             } completionHandler:^(BOOL success, NSError * _Nullable error) {
-                dispatch_async(dispatch_get_main_queue(), ^{
+                if (success) {
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        [DYYYManager showToast:@"图片已保存到相册"];
+                    });
+                }
+                
+                // 再保存视频
+                NSURL *videoURL = [NSURL fileURLWithPath:videoPath];
+                [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
+                    [PHAssetChangeRequest creationRequestForAssetFromVideoAtFileURL:videoURL];
+                } completionHandler:^(BOOL success, NSError * _Nullable error) {
                     if (success) {
-                        // 删除临时文件
-                        [[NSFileManager defaultManager] removeItemAtPath:imageSourcePath error:nil];
-                        [[NSFileManager defaultManager] removeItemAtPath:videoSourcePath error:nil];
-                        [[NSFileManager defaultManager] removeItemAtPath:photoFile error:nil];
-                        [[NSFileManager defaultManager] removeItemAtPath:videoFile error:nil];
-                    } 
-                });
+                        dispatch_async(dispatch_get_main_queue(), ^{
+                            [DYYYManager showToast:@"视频已保存到相册"];
+                        });
+                    }
+                    
+                    // 删除临时文件
+                    [[NSFileManager defaultManager] removeItemAtPath:imagePath error:nil];
+                    [[NSFileManager defaultManager] removeItemAtPath:videoPath error:nil];
+                }];
             }];
-        }];
+        }
     }];
 }
 - (void)useAssetWriter:(NSURL *)photoURL video:(NSURL *)videoURL identifier:(NSString *)identifier complete:(void (^)(BOOL success, NSString *photoFile, NSString *videoFile, NSError *error))complete {
@@ -1920,6 +1977,18 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width, in
             completion(0, 0);
         }
         return;
+    }
+    
+    // 检查iOS版本
+    BOOL supportsLivePhoto = NO;
+    if (@available(iOS 15.0, *)) {
+        supportsLivePhoto = YES;
+    }
+    
+    if (!supportsLivePhoto) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [DYYYManager showToast:@"当前iOS版本不完全支持实况照片，将分别保存图片和视频"];
+        });
     }
     
     // 创建自定义批量下载进度条界面

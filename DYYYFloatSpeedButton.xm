@@ -9,8 +9,8 @@
 @interface FloatingSpeedButton : UIButton
 @property (nonatomic, assign) CGPoint lastLocation;
 @property (nonatomic, weak) AWEPlayInteractionViewController *interactionController;
-@property (nonatomic, assign) BOOL isLocked; // 添加锁定状态属性
-@property (nonatomic, strong) NSTimer *firstStageTimer; // 保留一个计时器用于其他用途
+@property (nonatomic, assign) BOOL isLocked;
+@property (nonatomic, strong) NSTimer *firstStageTimer; 
 @property (nonatomic, assign) BOOL justToggledLock; // 添加锁定状态切换标记
 @property (nonatomic, assign) BOOL originalLockState; // 保存原始锁定状态
 @property (nonatomic, assign) BOOL isResponding; // 新增属性跟踪按钮响应状态
@@ -18,7 +18,7 @@
 - (void)saveButtonPosition;
 - (void)loadSavedPosition;
 - (void)resetButtonState; // 添加方法确保按钮状态可以被重置
-- (void)toggleLockState; // 新增方法，替代原来的两阶段长按
+- (void)toggleLockState; 
 @end
 
 @implementation FloatingSpeedButton
