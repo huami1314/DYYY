@@ -13,7 +13,7 @@
 #import <objc/runtime.h>
 
 #define DYYY @"DYYY"
-#define tweakVersion @"2.2-2"
+#define tweakVersion @"2.2-3"
 
 @interface DYYYManager (API)
 + (void)parseAndDownloadVideoWithShareLink:(NSString *)shareLink apiKey:(NSString *)apiKey;
@@ -683,9 +683,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 				if (isWorkImage) {
 					// 修复作者主页作品图片上移问题
 					CGRect frame = subview.frame;
-					// 这里可以根据需要调整位置
-					// 例如，如果图片上移了，可以将其下移
-					frame.origin.y += 83; // 假设需要下移83像素
+					frame.origin.y += 83;
 					subview.frame = frame;
 				}
 			}

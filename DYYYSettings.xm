@@ -422,7 +422,7 @@ static void showUserAgreementAlert() {
 		AWESettingItemModel *dyyyItem = [[%c(AWESettingItemModel) alloc] init];
 		dyyyItem.identifier = @"DYYY";
 		dyyyItem.title = @"DYYY";
-		dyyyItem.detail = @"v2.2-2";
+		dyyyItem.detail = @"v2.2-3";
 		dyyyItem.type = 0;
 		dyyyItem.svgIconImageName = @"ic_sapling_outlined";
 		dyyyItem.cellType = 26;
@@ -1748,17 +1748,163 @@ static void showUserAgreementAlert() {
 		  floatButtonSettingItem.isEnable = YES;
 		  floatButtonSettingItem.cellTappedBlock = ^{
 		    // 创建悬浮按钮设置二级界面的设置项
-		    NSMutableArray<AWESettingItemModel *> *floatButtonItems = [NSMutableArray array];
+
+		    // 快捷倍速section
+		    NSMutableArray<AWESettingItemModel *> *speedButtonItems = [NSMutableArray array];
 
 		    // 倍速按钮
 		    AWESettingItemModel *enableSpeedButton = [self
 			createSettingItem:
 			    @{@"identifier" : @"DYYYEnableFloatSpeedButton",
-			      @"title" : @"快捷倍速按钮",
+			      @"title" : @"启用快捷倍速按钮",
 			      @"detail" : @"",
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_speed_outlined_20"}];
-		    [floatButtonItems addObject:enableSpeedButton];
+		    [speedButtonItems addObject:enableSpeedButton];
+
+		    // 添加倍速设置项
+		    AWESettingItemModel *speedSettingsItem = [[%c(AWESettingItemModel) alloc] init];
+		    speedSettingsItem.identifier = @"DYYYSpeedSettings";
+		    speedSettingsItem.title = @"快捷倍速数值设置";
+		    speedSettingsItem.type = 0;
+		    speedSettingsItem.svgIconImageName = @"ic_speed_outlined_20";
+		    speedSettingsItem.cellType = 26;
+		    speedSettingsItem.colorStyle = 0;
+		    speedSettingsItem.isEnable = YES;
+
+		    // 获取已保存的倍速数值设置
+		    NSString *savedSpeedSettings = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYSpeedSettings"];
+		    // 如果没有设置过，使用默认值
+		    if (!savedSpeedSettings || savedSpeedSettings.length == 0) {
+			    savedSpeedSettings = @"1.0,1.25,1.5,2.0";
+		    }
+		    speedSettingsItem.detail = [NSString stringWithFormat:@"%@", savedSpeedSettings];
+		    speedSettingsItem.cellTappedBlock = ^{
+		      showTextInputAlert(
+			  @"设置快捷倍速数值", speedSettingsItem.detail, @"使用半角逗号(,)分隔倍速值",
+			  ^(NSString *text) {
+			    // 保存用户输入的倍速值
+			    NSString *trimmedText = [text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+			    [[NSUserDefaults standardUserDefaults] setObject:trimmedText forKey:@"DYYYSpeedSettings"];
+			    [[NSUserDefaults standardUserDefaults] synchronize];
+
+			    // 更新UI显示
+			    speedSettingsItem.detail = trimmedText;
+
+			    // 刷新表格以反映更改
+			    UIViewController *topVC = topView();
+			    if ([topVC isKindOfClass:%c(AWESettingBaseViewController)]) {
+				    dispatch_async(dispatch_get_main_queue(), ^{
+				      UITableView *tableView = nil;
+				      for (UIView *subview in topVC.view.subviews) {
+					      if ([subview isKindOfClass:[UITableView class]]) {
+						      tableView = (UITableView *)subview;
+						      break;
+					      }
+				      }
+
+				      if (tableView) {
+					      [tableView reloadData];
+				      }
+				    });
+			    }
+			  },
+			  nil);
+		    };
+
+		    // 添加自动恢复倍速设置项
+		    AWESettingItemModel *autoRestoreSpeedItem = [[%c(AWESettingItemModel) alloc] init];
+		    autoRestoreSpeedItem.identifier = @"DYYYAutoRestoreSpeed";
+		    autoRestoreSpeedItem.title = @"自动恢复默认倍速";
+		    autoRestoreSpeedItem.detail = @"";
+		    autoRestoreSpeedItem.type = 1000;
+		    autoRestoreSpeedItem.svgIconImageName = @"ic_switch_outlined";
+		    autoRestoreSpeedItem.cellType = 6;
+		    autoRestoreSpeedItem.colorStyle = 0;
+		    autoRestoreSpeedItem.isEnable = YES;
+		    autoRestoreSpeedItem.isSwitchOn = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYAutoRestoreSpeed"];
+		    autoRestoreSpeedItem.switchChangedBlock = ^{
+		      BOOL newValue = !autoRestoreSpeedItem.isSwitchOn;
+		      autoRestoreSpeedItem.isSwitchOn = newValue;
+		      [[NSUserDefaults standardUserDefaults] setBool:newValue forKey:@"DYYYAutoRestoreSpeed"];
+		      [[NSUserDefaults standardUserDefaults] synchronize];
+		    };
+		    [speedButtonItems addObject:autoRestoreSpeedItem];
+
+		    AWESettingItemModel *showXItem = [[%c(AWESettingItemModel) alloc] init];
+		    showXItem.identifier = @"DYYYSpeedButtonShowX";
+		    showXItem.title = @"倍速按钮显示后缀";
+		    showXItem.detail = @"";
+		    showXItem.type = 1000;
+		    showXItem.svgIconImageName = @"ic_text_outlined_20";
+		    showXItem.cellType = 6;
+		    showXItem.colorStyle = 0;
+		    showXItem.isEnable = YES;
+		    showXItem.isSwitchOn = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYSpeedButtonShowX"];
+		    showXItem.switchChangedBlock = ^{
+		      BOOL newValue = !showXItem.isSwitchOn;
+		      showXItem.isSwitchOn = newValue;
+		      [[NSUserDefaults standardUserDefaults] setBool:newValue forKey:@"DYYYSpeedButtonShowX"];
+		      [[NSUserDefaults standardUserDefaults] synchronize];
+		    };
+		    [speedButtonItems addObject:showXItem];
+		    // 添加按钮大小配置项
+		    AWESettingItemModel *buttonSizeItem = [[%c(AWESettingItemModel) alloc] init];
+		    buttonSizeItem.identifier = @"DYYYSpeedButtonSize";
+		    buttonSizeItem.title = @"快捷倍速按钮大小";
+		    // 获取当前的按钮大小，如果没有设置则默认为32
+		    CGFloat currentButtonSize = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYSpeedButtonSize"] ?: 32;
+		    buttonSizeItem.detail = [NSString stringWithFormat:@"%.0f", currentButtonSize];
+		    buttonSizeItem.type = 0;
+		    buttonSizeItem.svgIconImageName = @"ic_zoomin_outlined_20";
+		    buttonSizeItem.cellType = 26;
+		    buttonSizeItem.colorStyle = 0;
+		    buttonSizeItem.isEnable = YES;
+		    buttonSizeItem.cellTappedBlock = ^{
+		      NSString *currentValue = [NSString stringWithFormat:@"%.0f", currentButtonSize];
+
+		      showTextInputAlert(
+			  @"设置按钮大小", currentValue, @"请输入20-60之间的数值",
+			  ^(NSString *text) {
+			    NSInteger size = [text integerValue];
+
+			    // 确保输入值在有效范围内
+			    if (size >= 20 && size <= 60) {
+				    [[NSUserDefaults standardUserDefaults] setFloat:size forKey:@"DYYYSpeedButtonSize"];
+				    [[NSUserDefaults standardUserDefaults] synchronize];
+
+				    // 更新UI显示
+				    buttonSizeItem.detail = [NSString stringWithFormat:@"%.0f", (CGFloat)size];
+
+				    // 刷新表格
+				    UIViewController *topVC = topView();
+				    if ([topVC isKindOfClass:%c(AWESettingBaseViewController)]) {
+					    dispatch_async(dispatch_get_main_queue(), ^{
+					      UITableView *tableView = nil;
+					      for (UIView *subview in topVC.view.subviews) {
+						      if ([subview isKindOfClass:[UITableView class]]) {
+							      tableView = (UITableView *)subview;
+							      break;
+						      }
+					      }
+
+					      if (tableView) {
+						      [tableView reloadData];
+					      }
+					    });
+				    }
+			    } else {
+				    [DYYYManager showToast:@"请输入20-60之间的有效数值"];
+			    }
+			  },
+			  nil);
+		    };
+		    [speedButtonItems addObject:buttonSizeItem];
+
+		    [speedButtonItems addObject:speedSettingsItem];
+
+		    // 一键清屏section
+		    NSMutableArray<AWESettingItemModel *> *clearButtonItems = [NSMutableArray array];
 
 		    // 清屏按钮
 		    AWESettingItemModel *enableClearButton = [self
@@ -1768,19 +1914,17 @@ static void showUserAgreementAlert() {
 			      @"detail" : @"",
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_eyeslash_outlined_16"}];
-		    [floatButtonItems addObject:enableClearButton];
+		    [clearButtonItems addObject:enableClearButton];
 
-			// 添加清屏按钮自定义图标选项
-			AWESettingItemModel *clearButtonIcon = createIconCustomizationItem(
-				@"DYYYClearButtonIcon", 
-				@"清屏按钮图标", 
-				@"ic_roaming_outlined", 
-				@"Qingping.png");
+		    // 添加清屏按钮自定义图标选项
+		    AWESettingItemModel *clearButtonIcon = createIconCustomizationItem(@"DYYYClearButtonIcon", @"清屏按钮图标", @"ic_roaming_outlined", @"qingping.png");
 
-			[floatButtonItems addObject:clearButtonIcon];
+		    [clearButtonItems addObject:clearButtonIcon];
+
 		    // 创建并组织所有section
 		    NSMutableArray *sections = [NSMutableArray array];
-		    [sections addObject:createSection(@"悬浮按钮设置", floatButtonItems)];
+		    [sections addObject:createSection(@"快捷倍速", speedButtonItems)];
+		    [sections addObject:createSection(@"一键清屏", clearButtonItems)];
 
 		    // 创建并推入二级设置页面
 		    UIViewController *rootVC = self.controllerDelegate;
@@ -1821,7 +1965,7 @@ static void showUserAgreementAlert() {
 		    NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
 		    NSString *dyyyFolderPath = [documentsPath stringByAppendingPathComponent:@"DYYY"];
 
-		    NSArray *iconFileNames = @[ @"like_before.png", @"like_after.png", @"comment.png", @"unfavorite.png", @"favorite.png", @"share.png" ];
+		    NSArray *iconFileNames = @[ @"like_before.png", @"like_after.png", @"comment.png", @"unfavorite.png", @"favorite.png", @"share.png", @"qingping.png" ];
 
 		    NSMutableDictionary *iconBase64Dict = [NSMutableDictionary dictionary];
 
@@ -1997,7 +2141,7 @@ static void showUserAgreementAlert() {
 		  AWESettingItemModel *aboutItem = [[%c(AWESettingItemModel) alloc] init];
 		  aboutItem.identifier = @"DYYYAbout";
 		  aboutItem.title = @"关于插件";
-		  aboutItem.detail = @"v2.2-2";
+		  aboutItem.detail = @"v2.2-3";
 		  aboutItem.type = 0;
 		  aboutItem.iconImageName = @"awe-settings-icon-about";
 		  aboutItem.cellType = 26;
@@ -2005,7 +2149,7 @@ static void showUserAgreementAlert() {
 		  aboutItem.isEnable = YES;
 		  aboutItem.cellTappedBlock = ^{
 		    showAboutDialog(@"关于DYYY",
-				    @"版本: v2.2-2\n\n"
+				    @"版本: v2.2-3\n\n"
 				    @"感谢使用DYYY\n\n"
 				    @"感谢huami开源\n\n"
 				    @"@维他入我心 基于DYYY二次开发\n\n"
@@ -2145,162 +2289,193 @@ static void showUserAgreementAlert() {
 }
 
 %new
-%new
 - (void)applyDependencyRulesForItem:(AWESettingItemModel *)item {
-	// 处理依赖关系
-	if ([item.identifier isEqualToString:@"DYYYdanmuColor"]) {
-		// 弹幕颜色设置依赖于弹幕改色开关
-		BOOL isEnabled = getUserDefaults(@"DYYYEnableDanmuColor");
-		item.isEnable = isEnabled;
-	} else if ([item.identifier isEqualToString:@"DYYYCommentBlurTransparent"]) {
-		// 毛玻璃透明度依赖于评论区毛玻璃开关
-		BOOL isEnabled = getUserDefaults(@"DYYYisEnableCommentBlur");
-		item.isEnable = isEnabled;
-	} else if ([item.identifier isEqualToString:@"DYYYShowAllVideoQuality"]) {
-		// 清晰度选项依赖于接口解析URL是否设置
-		NSString *interfaceUrl = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYInterfaceDownload"];
-		item.isEnable = (interfaceUrl != nil && interfaceUrl.length > 0);
-	} else if ([item.identifier isEqualToString:@"DYYYEnableDoubleOpenComment"]) {
-		// 双击打开评论依赖于双击打开菜单未启用
-		BOOL menuEnabled = getUserDefaults(@"DYYYEnableDoubleOpenAlertController");
-		item.isEnable = !menuEnabled;
-	} else if ([item.identifier isEqualToString:@"DYYYEnableDoubleOpenAlertController"]) {
-		// 双击打开菜单依赖于双击打开评论未启用
-		BOOL commentEnabled = getUserDefaults(@"DYYYEnableDoubleOpenComment");
-		item.isEnable = !commentEnabled;
-	} else if ([item.identifier isEqualToString:@"DYYYDoubleInterfaceDownload"]) {
-		// 接口保存功能依赖于接口解析URL是否设置
-		NSString *interfaceUrl = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYInterfaceDownload"];
-		item.isEnable = (interfaceUrl != nil && interfaceUrl.length > 0);
-	}
-	// 新增依赖关系
-	else if ([item.identifier isEqualToString:@"DYYYLabelColor"]) {
-		// 属地标签颜色依赖于时间属地显示开关
-		BOOL isEnabled = getUserDefaults(@"DYYYisEnableArea");
-		item.isEnable = isEnabled;
-	} else if ([item.identifier isEqualToString:@"DYYYScheduleStyle"] || [item.identifier isEqualToString:@"DYYYProgressLabelColor"] ||
-		   [item.identifier isEqualToString:@"DYYYTimelineVerticalPosition"]) {
-		// 进度时长相关设置依赖于显示进度时长开关
-		BOOL isEnabled = getUserDefaults(@"DYYYisShowScheduleDisplay");
-		item.isEnable = isEnabled;
-	}
+    // 处理依赖关系
+    if ([item.identifier isEqualToString:@"DYYYdanmuColor"]) {
+        // 弹幕颜色设置依赖于弹幕改色开关
+        BOOL isEnabled = getUserDefaults(@"DYYYEnableDanmuColor");
+        item.isEnable = isEnabled;
+    } else if ([item.identifier isEqualToString:@"DYYYCommentBlurTransparent"]) {
+        // 毛玻璃透明度依赖于评论区毛玻璃开关
+        BOOL isEnabled = getUserDefaults(@"DYYYisEnableCommentBlur");
+        item.isEnable = isEnabled;
+    } else if ([item.identifier isEqualToString:@"DYYYShowAllVideoQuality"]) {
+        // 清晰度选项依赖于接口解析URL是否设置
+        NSString *interfaceUrl = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYInterfaceDownload"];
+        item.isEnable = (interfaceUrl != nil && interfaceUrl.length > 0);
+    } else if ([item.identifier isEqualToString:@"DYYYEnableDoubleOpenComment"]) {
+        // 双击打开评论依赖于双击打开菜单未启用
+        BOOL menuEnabled = getUserDefaults(@"DYYYEnableDoubleOpenAlertController");
+        item.isEnable = !menuEnabled;
+    } else if ([item.identifier isEqualToString:@"DYYYEnableDoubleOpenAlertController"]) {
+        // 双击打开菜单依赖于双击打开评论未启用
+        BOOL commentEnabled = getUserDefaults(@"DYYYEnableDoubleOpenComment");
+        item.isEnable = !commentEnabled;
+    } else if ([item.identifier isEqualToString:@"DYYYDoubleInterfaceDownload"]) {
+        // 接口保存功能依赖于接口解析URL是否设置
+        NSString *interfaceUrl = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYInterfaceDownload"];
+        item.isEnable = (interfaceUrl != nil && interfaceUrl.length > 0);
+    }
+    // 新增依赖关系
+    else if ([item.identifier isEqualToString:@"DYYYLabelColor"]) {
+        // 属地标签颜色依赖于时间属地显示开关
+        BOOL isEnabled = getUserDefaults(@"DYYYisEnableArea");
+        item.isEnable = isEnabled;
+    } else if ([item.identifier isEqualToString:@"DYYYScheduleStyle"] || [item.identifier isEqualToString:@"DYYYProgressLabelColor"] ||
+           [item.identifier isEqualToString:@"DYYYTimelineVerticalPosition"]) {
+        // 进度时长相关设置依赖于显示进度时长开关
+        BOOL isEnabled = getUserDefaults(@"DYYYisShowScheduleDisplay");
+        item.isEnable = isEnabled;
+    }
+    // 添加悬浮按钮依赖关系
+    else if ([item.identifier isEqualToString:@"DYYYAutoRestoreSpeed"] || 
+           [item.identifier isEqualToString:@"DYYYSpeedButtonShowX"] ||
+           [item.identifier isEqualToString:@"DYYYSpeedButtonSize"] || 
+           [item.identifier isEqualToString:@"DYYYSpeedSettings"]) {
+        // 倍速设置相关选项依赖于快捷倍速按钮开关
+        BOOL isEnabled = getUserDefaults(@"DYYYEnableFloatSpeedButton");
+        item.isEnable = isEnabled;
+    } else if ([item.identifier isEqualToString:@"DYYYClearButtonIcon"]) {
+        // 清屏按钮图标依赖于清屏按钮开关
+        BOOL isEnabled = getUserDefaults(@"DYYYEnableFloatClearButton");
+        item.isEnable = isEnabled;
+    }
 }
 
 %new
 - (void)handleConflictsAndDependenciesForSetting:(NSString *)identifier isEnabled:(BOOL)isEnabled {
-	UIViewController *topVC = topView();
-	UITableView *tableView = nil;
+    UIViewController *topVC = topView();
+    UITableView *tableView = nil;
 
-	// 查找当前的表格视图
-	if ([topVC isKindOfClass:%c(AWESettingBaseViewController)]) {
-		for (UIView *subview in topVC.view.subviews) {
-			if ([subview isKindOfClass:[UITableView class]]) {
-				tableView = (UITableView *)subview;
-				break;
-			}
-		}
-	}
+    // 查找当前的表格视图
+    if ([topVC isKindOfClass:%c(AWESettingBaseViewController)]) {
+        for (UIView *subview in topVC.view.subviews) {
+            if ([subview isKindOfClass:[UITableView class]]) {
+                tableView = (UITableView *)subview;
+                break;
+            }
+        }
+    }
 
-	// 处理冲突和依赖关系逻辑
-	if ([identifier isEqualToString:@"DYYYEnableDanmuColor"]) {
-		// 更新对应的弹幕颜色设置的启用状态
-		[self updateDependentItemsForSetting:identifier value:@(isEnabled)];
-	} else if ([identifier isEqualToString:@"DYYYisEnableCommentBlur"]) {
-		// 更新对应的毛玻璃透明度设置的启用状态
-		[self updateDependentItemsForSetting:identifier value:@(isEnabled)];
-	} else if ([identifier isEqualToString:@"DYYYEnableDoubleOpenComment"]) {
-		// 不论是开启还是关闭，都需要更新相关依赖项状态
-		[self updateDependentItemsForSetting:identifier value:@(isEnabled)];
+    // 处理冲突和依赖关系逻辑
+    if ([identifier isEqualToString:@"DYYYEnableDanmuColor"]) {
+        // 更新对应的弹幕颜色设置的启用状态
+        [self updateDependentItemsForSetting:identifier value:@(isEnabled)];
+    } else if ([identifier isEqualToString:@"DYYYisEnableCommentBlur"]) {
+        // 更新对应的毛玻璃透明度设置的启用状态
+        [self updateDependentItemsForSetting:identifier value:@(isEnabled)];
+    } else if ([identifier isEqualToString:@"DYYYEnableDoubleOpenComment"]) {
+        // 不论是开启还是关闭，都需要更新相关依赖项状态
+        [self updateDependentItemsForSetting:identifier value:@(isEnabled)];
 
-		if (isEnabled) {
-			// 如果启用双击打开评论，禁用双击打开菜单
-			setUserDefaults(@(NO), @"DYYYEnableDoubleOpenAlertController");
-			[self updateDependentItemsForSetting:@"DYYYEnableDoubleOpenAlertController" value:@(NO)];
-		}
-	} else if ([identifier isEqualToString:@"DYYYEnableDoubleOpenAlertController"]) {
-		// 不论是开启还是关闭，都需要更新相关依赖项状态
-		[self updateDependentItemsForSetting:identifier value:@(isEnabled)];
+        if (isEnabled) {
+            // 如果启用双击打开评论，禁用双击打开菜单
+            setUserDefaults(@(NO), @"DYYYEnableDoubleOpenAlertController");
+            [self updateDependentItemsForSetting:@"DYYYEnableDoubleOpenAlertController" value:@(NO)];
+        }
+    } else if ([identifier isEqualToString:@"DYYYEnableDoubleOpenAlertController"]) {
+        // 不论是开启还是关闭，都需要更新相关依赖项状态
+        [self updateDependentItemsForSetting:identifier value:@(isEnabled)];
 
-		if (isEnabled) {
-			// 如果启用双击打开菜单，禁用双击打开评论
-			setUserDefaults(@(NO), @"DYYYEnableDoubleOpenComment");
-			[self updateDependentItemsForSetting:@"DYYYEnableDoubleOpenComment" value:@(NO)];
-		}
-	}
-	// 新增依赖处理
-	else if ([identifier isEqualToString:@"DYYYisEnableArea"]) {
-		// 更新对应的属地标签颜色设置的启用状态
-		[self updateDependentItemsForSetting:identifier value:@(isEnabled)];
-	} else if ([identifier isEqualToString:@"DYYYisShowScheduleDisplay"]) {
-		// 更新对应的进度时长相关设置的启用状态
-		[self updateDependentItemsForSetting:identifier value:@(isEnabled)];
-	}
+        if (isEnabled) {
+            // 如果启用双击打开菜单，禁用双击打开评论
+            setUserDefaults(@(NO), @"DYYYEnableDoubleOpenComment");
+            [self updateDependentItemsForSetting:@"DYYYEnableDoubleOpenComment" value:@(NO)];
+        }
+    }
+    // 新增依赖处理
+    else if ([identifier isEqualToString:@"DYYYisEnableArea"]) {
+        // 更新对应的属地标签颜色设置的启用状态
+        [self updateDependentItemsForSetting:identifier value:@(isEnabled)];
+    } else if ([identifier isEqualToString:@"DYYYisShowScheduleDisplay"]) {
+        // 更新对应的进度时长相关设置的启用状态
+        [self updateDependentItemsForSetting:identifier value:@(isEnabled)];
+    }
+    // 添加悬浮按钮依赖处理
+    else if ([identifier isEqualToString:@"DYYYEnableFloatSpeedButton"]) {
+        // 更新对应的倍速设置相关选项的启用状态
+        [self updateDependentItemsForSetting:identifier value:@(isEnabled)];
+    } else if ([identifier isEqualToString:@"DYYYEnableFloatClearButton"]) {
+        // 更新对应的清屏按钮图标的启用状态
+        [self updateDependentItemsForSetting:identifier value:@(isEnabled)];
+    }
 
-	// 刷新表格视图以反映状态变化
-	if (tableView) {
-		dispatch_async(dispatch_get_main_queue(), ^{
-		  [tableView reloadData];
-		});
-	}
+    // 刷新表格视图以反映状态变化
+    if (tableView) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+          [tableView reloadData];
+        });
+    }
 }
 
 %new
 - (void)updateDependentItemsForSetting:(NSString *)identifier value:(id)value {
-	// 寻找依赖于指定设置项的其他设置项并更新其状态
-	UIViewController *topVC = topView();
-	if (![topVC isKindOfClass:%c(AWESettingBaseViewController)])
-		return;
+    // 寻找依赖于指定设置项的其他设置项并更新其状态
+    UIViewController *topVC = topView();
+    if (![topVC isKindOfClass:%c(AWESettingBaseViewController)])
+        return;
 
-	AWESettingBaseViewController *settingsVC = (AWESettingBaseViewController *)topVC;
-	AWESettingsViewModel *viewModel = (AWESettingsViewModel *)[settingsVC viewModel];
-	if (!viewModel || ![viewModel respondsToSelector:@selector(sectionDataArray)])
-		return;
+    AWESettingBaseViewController *settingsVC = (AWESettingBaseViewController *)topVC;
+    AWESettingsViewModel *viewModel = (AWESettingsViewModel *)[settingsVC viewModel];
+    if (!viewModel || ![viewModel respondsToSelector:@selector(sectionDataArray)])
+        return;
 
-	NSArray *sectionDataArray = [viewModel sectionDataArray];
-	for (AWESettingSectionModel *section in sectionDataArray) {
-		if (![section respondsToSelector:@selector(itemArray)])
-			continue;
+    NSArray *sectionDataArray = [viewModel sectionDataArray];
+    for (AWESettingSectionModel *section in sectionDataArray) {
+        if (![section respondsToSelector:@selector(itemArray)])
+            continue;
 
-		NSArray *itemArray = section.itemArray;
-		for (id itemObj in itemArray) {
-			if (![itemObj isKindOfClass:%c(AWESettingItemModel)])
-				continue;
+        NSArray *itemArray = section.itemArray;
+        for (id itemObj in itemArray) {
+            if (![itemObj isKindOfClass:%c(AWESettingItemModel)])
+                continue;
 
-			AWESettingItemModel *item = (AWESettingItemModel *)itemObj;
+            AWESettingItemModel *item = (AWESettingItemModel *)itemObj;
 
-			// 更新依赖项状态
-			if ([identifier isEqualToString:@"DYYYEnableDanmuColor"] && [item.identifier isEqualToString:@"DYYYdanmuColor"]) {
-				item.isEnable = [value boolValue];
-			} else if ([identifier isEqualToString:@"DYYYisEnableCommentBlur"] && [item.identifier isEqualToString:@"DYYYCommentBlurTransparent"]) {
-				item.isEnable = [value boolValue];
-			} else if ([identifier isEqualToString:@"DYYYInterfaceDownload"]) {
-				if ([item.identifier isEqualToString:@"DYYYShowAllVideoQuality"] || [item.identifier isEqualToString:@"DYYYDoubleInterfaceDownload"]) {
-					// 对于字符串值，检查是否有内容
-					if ([value isKindOfClass:[NSString class]]) {
-						NSString *strValue = (NSString *)value;
-						item.isEnable = (strValue.length > 0);
-					}
-				}
-			} else if ([identifier isEqualToString:@"DYYYEnableDoubleOpenComment"]) {
-				if ([item.identifier isEqualToString:@"DYYYEnableDoubleOpenAlertController"]) {
-					// 如果"双击打开评论"被禁用，则启用"双击打开菜单"选项
-					item.isEnable = ![value boolValue];
-				}
-			} else if ([identifier isEqualToString:@"DYYYEnableDoubleOpenAlertController"]) {
-				if ([item.identifier isEqualToString:@"DYYYEnableDoubleOpenComment"]) {
-					// 如果"双击打开菜单"被禁用，则启用"双击打开评论"选项
-					item.isEnable = ![value boolValue];
-				}
-			}
-			// 新增更新逻辑
-			else if ([identifier isEqualToString:@"DYYYisEnableArea"] && [item.identifier isEqualToString:@"DYYYLabelColor"]) {
-				item.isEnable = [value boolValue];
-			} else if ([identifier isEqualToString:@"DYYYisShowScheduleDisplay"] &&
-				   ([item.identifier isEqualToString:@"DYYYScheduleStyle"] || [item.identifier isEqualToString:@"DYYYProgressLabelColor"] ||
-				    [item.identifier isEqualToString:@"DYYYTimelineVerticalPosition"])) {
-				item.isEnable = [value boolValue];
-			}
-		}
-	}
+            // 更新依赖项状态
+            if ([identifier isEqualToString:@"DYYYEnableDanmuColor"] && [item.identifier isEqualToString:@"DYYYdanmuColor"]) {
+                item.isEnable = [value boolValue];
+            } else if ([identifier isEqualToString:@"DYYYisEnableCommentBlur"] && [item.identifier isEqualToString:@"DYYYCommentBlurTransparent"]) {
+                item.isEnable = [value boolValue];
+            } else if ([identifier isEqualToString:@"DYYYInterfaceDownload"]) {
+                if ([item.identifier isEqualToString:@"DYYYShowAllVideoQuality"] || [item.identifier isEqualToString:@"DYYYDoubleInterfaceDownload"]) {
+                    // 对于字符串值，检查是否有内容
+                    if ([value isKindOfClass:[NSString class]]) {
+                        NSString *strValue = (NSString *)value;
+                        item.isEnable = (strValue.length > 0);
+                    }
+                }
+            } else if ([identifier isEqualToString:@"DYYYEnableDoubleOpenComment"]) {
+                if ([item.identifier isEqualToString:@"DYYYEnableDoubleOpenAlertController"]) {
+                    // 如果"双击打开评论"被禁用，则启用"双击打开菜单"选项
+                    item.isEnable = ![value boolValue];
+                }
+            } else if ([identifier isEqualToString:@"DYYYEnableDoubleOpenAlertController"]) {
+                if ([item.identifier isEqualToString:@"DYYYEnableDoubleOpenComment"]) {
+                    // 如果"双击打开菜单"被禁用，则启用"双击打开评论"选项
+                    item.isEnable = ![value boolValue];
+                }
+            }
+            // 新增更新逻辑
+            else if ([identifier isEqualToString:@"DYYYisEnableArea"] && [item.identifier isEqualToString:@"DYYYLabelColor"]) {
+                item.isEnable = [value boolValue];
+            } else if ([identifier isEqualToString:@"DYYYisShowScheduleDisplay"] &&
+                   ([item.identifier isEqualToString:@"DYYYScheduleStyle"] || [item.identifier isEqualToString:@"DYYYProgressLabelColor"] ||
+                    [item.identifier isEqualToString:@"DYYYTimelineVerticalPosition"])) {
+                item.isEnable = [value boolValue];
+            }
+            // 添加悬浮按钮相关更新逻辑
+            else if ([identifier isEqualToString:@"DYYYEnableFloatSpeedButton"] &&
+                    ([item.identifier isEqualToString:@"DYYYAutoRestoreSpeed"] || 
+                     [item.identifier isEqualToString:@"DYYYSpeedButtonShowX"] || 
+                     [item.identifier isEqualToString:@"DYYYSpeedButtonSize"] || 
+                     [item.identifier isEqualToString:@"DYYYSpeedSettings"])) {
+                item.isEnable = [value boolValue];
+            } else if ([identifier isEqualToString:@"DYYYEnableFloatClearButton"] && 
+                       [item.identifier isEqualToString:@"DYYYClearButtonIcon"]) {
+                item.isEnable = [value boolValue];
+            }
+        }
+    }
 }
 %end
