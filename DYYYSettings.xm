@@ -868,12 +868,12 @@ static void showUserAgreementAlert() {
 			      @"title" : @"毛玻璃透明度",
 			      @"detail" : @"0-1小数",
 			      @"cellType" : @26,
-			      @"imageName" : @"ic_eye_outlined_20"}
+			      @"imageName" : @"ic_eye_outlined_20"},
 				@{@"identifier" : @"DYYYNotificationCornerRadius",
 			      @"title" : @"通知圆角半径",
 			      @"detail" : @"默认12",
 			      @"cellType" : @26,
-			      @"imageName" : @"ic_comment_outlined_20"}
+			      @"imageName" : @"ic_comment_outlined_20"},
 		    ];
 
 		    for (NSDictionary *dict in transparencySettings) {

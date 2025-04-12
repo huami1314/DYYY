@@ -2980,6 +2980,9 @@ static BOOL isDownloadFlied = NO;
 
 		self.backgroundColor = [UIColor clearColor];
 		float userRadius = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNotificationCornerRadius"] floatValue];
+		if(userRadius <= 0 || userRadius > 25) {
+			userRadius = 12;
+		}
 		self.layer.cornerRadius = userRadius;
 		self.layer.masksToBounds = YES;
 
