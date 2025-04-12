@@ -860,7 +860,7 @@ static void showUserAgreementAlert() {
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_comment_outlined_20"},
 				@{@"identifier" : @"DYYYEnableNotificationTransparency",
-			      @"title" : @"通知毛玻璃",
+			      @"title" : @"通知玻璃效果",
 			      @"detail" : @"",
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_comment_outlined_20"},
@@ -869,6 +869,11 @@ static void showUserAgreementAlert() {
 			      @"detail" : @"0-1小数",
 			      @"cellType" : @26,
 			      @"imageName" : @"ic_eye_outlined_20"}
+				@{@"identifier" : @"DYYYNotificationCornerRadius",
+			      @"title" : @"通知圆角半径",
+			      @"detail" : @"默认12",
+			      @"cellType" : @26,
+			      @"imageName" : @"ic_comment_outlined_20"}
 		    ];
 
 		    for (NSDictionary *dict in transparencySettings) {
@@ -2187,6 +2192,10 @@ static void showUserAgreementAlert() {
 		   [item.identifier isEqualToString:@"DYYYTimelineVerticalPosition"]) {
 		// 进度时长相关设置依赖于显示进度时长开关
 		BOOL isEnabled = getUserDefaults(@"DYYYisShowScheduleDisplay");
+		item.isEnable = isEnabled;
+	}else if ([item.identifier isEqualToString:@"DYYYNotificationCornerRadius"]) {
+		// 通知角度依赖于通知开关
+		BOOL isEnabled = getUserDefaults(@"DYYYEnableNotificationTransparency");
 		item.isEnable = isEnabled;
 	}
 }

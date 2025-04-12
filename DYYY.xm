@@ -2979,7 +2979,8 @@ static BOOL isDownloadFlied = NO;
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableNotificationTransparency"]) {
 
 		self.backgroundColor = [UIColor clearColor];
-		self.layer.cornerRadius = 12;
+		float userRadius = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNotificationCornerRadius"] floatValue];
+		self.layer.cornerRadius = userRadius;
 		self.layer.masksToBounds = YES;
 
 		for (UIView *subview in self.subviews) {
@@ -3011,35 +3012,34 @@ static BOOL isDownloadFlied = NO;
 			blurView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 			blurView.alpha = userTransparency;
 			blurView.tag = 999;
-			blurView.layer.cornerRadius = 12;
+			blurView.layer.cornerRadius = userRadius;
 			blurView.layer.masksToBounds = YES;
 
 			UIView *overlayView = [[UIView alloc] initWithFrame:self.bounds];
 			CGFloat alpha = isDarkMode ? 0.2 : 0.1; 
 			overlayView.backgroundColor = [UIColor colorWithWhite:(isDarkMode ? 0 : 1) alpha:alpha];
 			overlayView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-			overlayView.layer.cornerRadius = 12;
+			overlayView.layer.cornerRadius = userRadius;
 			overlayView.layer.masksToBounds = YES;
 			[blurView.contentView addSubview:overlayView];
 
 			[self insertSubview:blurView atIndex:0];
 			
 			if (isDarkMode) {
-				// 递归查找UILabel并设置颜色为白色
 				[self setLabelsColorWhiteInView:self];
 			}
 			
 		} else {
 			[existingBlurView setEffect:[UIBlurEffect effectWithStyle:blurStyle]];
 			existingBlurView.alpha = userTransparency;
-			existingBlurView.layer.cornerRadius = 12;
+			existingBlurView.layer.cornerRadius = userRadius;
 			existingBlurView.layer.masksToBounds = YES;
 
 			for (UIView *subview in existingBlurView.contentView.subviews) {
 				if (subview.tag != 999) {
 					CGFloat alpha = isDarkMode ? 0.2 : 0.1;
 					subview.backgroundColor = [UIColor colorWithWhite:(isDarkMode ? 0 : 1) alpha:alpha];
-					subview.layer.cornerRadius = 12;
+					subview.layer.cornerRadius = userRadius;
 					subview.layer.masksToBounds = YES;
 				}
 			}
@@ -3059,7 +3059,9 @@ static BOOL isDownloadFlied = NO;
 	for (UIView *subview in view.subviews) {
 		if ([subview isKindOfClass:[UILabel class]]) {
 			UILabel *label = (UILabel *)subview;
-			label.textColor = [UIColor whiteColor];
+			if (![label.text isEqualToString:@"回复"]) {
+				label.textColor = [UIColor whiteColor];
+			}
 		}
 		[self setLabelsColorWhiteInView:subview]; // 递归处理子视图
 	}
