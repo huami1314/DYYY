@@ -3101,73 +3101,82 @@ static BOOL isDownloadFlied = NO;
 
 %hook __AWEInnerNotiRootViewController
 
-- (void)viewDidLoad {
-	%orig;
-	[self setupNotificationBlur];
-}
-
-- (void)viewWillLayoutSubviews {
-	%orig; 
-	[self setupNotificationBlur];
-}
-
-%new
 - (void)setupNotificationBlur {
-	if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableNotificationTransparency"]) {
-		return;
-	}
-	
-	[DYYYManager showToast:@"开始应用通知栏毛玻璃效果"];
-	
-	// 设置根视图背景透明
-	self.view.backgroundColor = [UIColor clearColor];
-	
-	// 遍历查找通知容器视图
-	for (UIView *subview in self.view.subviews) {
-		if ([NSStringFromClass([subview class]) containsString:@"NotificationContainerView"]) {
-			// 设置毛玻璃效果
-			float userRadius = [[[NSUserDefaults standardUserDefaults] 
-				objectForKey:@"DYYYNotificationCornerRadius"] floatValue] ?: 12;
-			
-			subview.backgroundColor = [UIColor clearColor];
-			subview.layer.cornerRadius = userRadius;
-			subview.layer.masksToBounds = YES;
-			
-			// 处理毛玻璃效果
-			[self updateBlurEffectForView:subview withRadius:userRadius];
-			[DYYYManager showToast:@"通知栏毛玻璃效果配置完成"];
-			break;
-		}
-	}
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableNotificationTransparency"]) {
+        [DYYYManager showToast:@"通知栏毛玻璃效果未启用"];
+        return;
+    }
+    
+    [DYYYManager showToast:@"开始应用通知栏毛玻璃效果"];
+    
+    // 设置根视图背景透明
+    self.view.backgroundColor = [UIColor clearColor];
+    [DYYYManager showToast:@"已设置根视图背景透明"];
+    
+    BOOL foundContainer = NO;
+    // 遍历查找通知容器视图
+    for (UIView *subview in self.view.subviews) {
+        NSString *className = NSStringFromClass([subview class]);
+        [DYYYManager showToast:[NSString stringWithFormat:@"检查子视图: %@", className]];
+        
+        if ([className containsString:@"NotificationContainerView"]) {
+            foundContainer = YES;
+            [DYYYManager showToast:@"找到通知容器视图"];
+            
+            // 设置毛玻璃效果
+            float userRadius = [[[NSUserDefaults standardUserDefaults] 
+                objectForKey:@"DYYYNotificationCornerRadius"] floatValue] ?: 12;
+            
+            subview.backgroundColor = [UIColor clearColor];
+            subview.layer.cornerRadius = userRadius;
+            subview.layer.masksToBounds = YES;
+            
+            // 处理毛玻璃效果
+            [self updateBlurEffectForView:subview withRadius:userRadius];
+            break;
+        }
+    }
+    
+    if (!foundContainer) {
+        [DYYYManager showToast:@"未找到通知容器视图"];
+    }
 }
 
 %new 
 - (void)updateBlurEffectForView:(UIView *)view withRadius:(float)radius {
-	// 移除现有的毛玻璃效果
-	[[view viewWithTag:999] removeFromSuperview];
-	
-	[DYYYManager showToast:@"开始更新毛玻璃效果样式"];
-	
-	// 添加新的毛玻璃效果
-	UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:[DYYYManager isDarkMode] ? 
-		UIBlurEffectStyleDark : UIBlurEffectStyleLight];
-	UIVisualEffectView *blurView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
-	blurView.frame = view.bounds;
-	blurView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-	blurView.tag = 999;
-	
-	float userTransparency = [[[NSUserDefaults standardUserDefaults] 
-		objectForKey:@"DYYYCommentBlurTransparent"] floatValue] ?: 0.5;
-	blurView.alpha = userTransparency;
-	
-	[view insertSubview:blurView atIndex:0];
-	
-	if ([DYYYManager isDarkMode]) {
-		[self setLabelsColorWhiteInView:view];
-		[DYYYManager showToast:@"深色模式下已更新文本颜色"];
-	}
-	
-	[DYYYManager showToast:@"毛玻璃效果样式更新完成"]; 
+    if (!view) {
+        [DYYYManager showToast:@"错误：视图为空"];
+        return;
+    }
+    
+    // 移除现有的毛玻璃效果
+    UIView *existingBlurView = [view viewWithTag:999];
+    if (existingBlurView) {
+        [DYYYManager showToast:@"移除现有毛玻璃效果"];
+        [existingBlurView removeFromSuperview];
+    }
+    
+    [DYYYManager showToast:@"创建新的毛玻璃效果视图"];
+    
+    // 添加新的毛玻璃效果
+    UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:[DYYYManager isDarkMode] ? 
+        UIBlurEffectStyleDark : UIBlurEffectStyleLight];
+    UIVisualEffectView *blurView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
+    blurView.frame = view.bounds;
+    blurView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    blurView.tag = 999;
+    
+    float userTransparency = [[[NSUserDefaults standardUserDefaults] 
+        objectForKey:@"DYYYCommentBlurTransparent"] floatValue] ?: 0.5;
+    blurView.alpha = userTransparency;
+    
+    [view insertSubview:blurView atIndex:0];
+    [DYYYManager showToast:@"已添加毛玻璃效果视图"];
+    
+    if ([DYYYManager isDarkMode]) {
+        [DYYYManager showToast:@"当前为深色模式，开始设置文本颜色"];
+        [self setLabelsColorWhiteInView:view];
+    }
 }
 
 %new
