@@ -2958,6 +2958,11 @@ static BOOL isDownloadFlied = NO;
 - (void)layoutSubviews {
     %orig;
     [self applyBlurEffectIfNeeded];
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableNotificationTransparency"] && 
+        [DYYYManager isDarkMode]) {
+        [self setLabelsColorWhiteInView:self];
+    }
+}
 }
 
 - (void)viewDidAppear:(BOOL)animated {
@@ -2971,6 +2976,16 @@ static BOOL isDownloadFlied = NO;
         [self applyBlurEffectIfNeeded];
     }
     return self;
+}
+
+- (void)didMoveToWindow {
+    %orig;
+    [self addObserver:self forKeyPath:@"subviews" options:NSKeyValueObservingOptionNew context:nil];
+}
+
+- (void)removeFromSuperview {
+    [self removeObserver:self forKeyPath:@"subviews"];
+    %orig;
 }
 
 %new
@@ -3063,7 +3078,6 @@ static BOOL isDownloadFlied = NO;
 			UILabel *label = (UILabel *)subview;
 			if (![label.text isEqualToString:@"回复"]) {
 				label.textColor = [UIColor whiteColor];
-				[DYYYManager showToast:@"设置文案颜色为白色成功"];
 			}
 		}
 		[self setLabelsColorWhiteInView:subview]; // 递归处理子视图
@@ -3072,30 +3086,17 @@ static BOOL isDownloadFlied = NO;
 
 %end
 
-%hook UILabel 
-
-- (void)setTextColor:(UIColor *)color {
-	%orig;
-	
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableNotificationTransparency"] && 
-		[DYYYManager isDarkMode]) {
-		
-		// 检查文本颜色是否为黑色
-		CGFloat red, green, blue, alpha;
-		if ([color getRed:&red green:&green blue:&blue alpha:&alpha]) {
-			if (red == 0 && green == 0 && blue == 0) { 
-				// 向上遍历父视图查找AWEInnerPushTitleItemView
-				UIView *superview = self.superview;
-				while (superview != nil) {
-					if ([NSStringFromClass([superview class]) isEqualToString:@"AWEInnerPushTitleItemView"]) {
-						%orig([UIColor whiteColor]);
-						break;
-					}
-					superview = superview.superview;
-				}
-			}
-		}
-	}
+%new
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
+    if ([keyPath isEqualToString:@"subviews"]) {
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableNotificationTransparency"] && 
+            [DYYYManager isDarkMode]) {
+            // 延迟一下确保新内容已加载
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self setLabelsColorWhiteInView:self];
+            });
+        }
+    }
 }
 
 %end
