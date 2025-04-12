@@ -667,4 +667,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (void)setLabelsColorWhiteInView:(UIView *)view;
 - (void)viewDidAppear:(BOOL)animated;
 - (id)initWithFrame:(CGRect)frame;
+- (void)didMoveToWindow;
+- (void)removeFromSuperview;
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context;
 @end
