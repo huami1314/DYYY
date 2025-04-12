@@ -875,13 +875,13 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width, in
                     // 检查多个可能包含延迟时间的字典
                     CFDictionaryRef heicsProperties = CFDictionaryGetValue(properties, kCGImagePropertyHEICSDictionary);
                     if (heicsProperties) {
-                        // 注意：HEICS相关常量可能不存在，使用通用的GIF延迟时间常量
+                        // 注意：使用通用的GIF延迟时间常量
                         CFNumberRef delayTimeRef = CFDictionaryGetValue(heicsProperties, kCGImagePropertyGIFDelayTime);
                         if (delayTimeRef) {
                             CFNumberGetValue(delayTimeRef, kCFNumberFloatType, &delayTime);
                         }
                         
-                        // 尝试未压缩延迟时间（某些文件可能使用这个）
+                        // 尝试未压缩延迟时间
                         if (delayTime == 0.1f) {
                             CFNumberRef unclampedDelayTimeRef = CFDictionaryGetValue(heicsProperties, kCGImagePropertyGIFUnclampedDelayTime);
                             if (unclampedDelayTimeRef) {
@@ -919,8 +919,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width, in
                     }
                     
                     if (delayTime <= 0.01f || delayTime > 10.0f) {
-                        NSLog(@"延迟时间异常: %f，使用默认值", delayTime);
-                        delayTime = 0.1f; // 使用默认值
+                        delayTime = 0.1f;
                     }
                 }
                 
@@ -974,10 +973,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width, in
     });
 }
 
-//保存实况的方法，下载图片和下载视频都用这个
 + (void)downloadLivePhoto:(NSURL *)imageURL videoURL:(NSURL *)videoURL completion:(void (^)(void))completion {
-    NSLog(@"开始下载实况照片: 图片URL=%@, 视频URL=%@", imageURL, videoURL);
-    
     // 获取共享实例，确保FileLinks字典存在
     DYYYManager *manager = [DYYYManager shared];
     if (!manager.fileLinks) {
@@ -988,166 +984,219 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width, in
     NSString *uniqueKey = [NSString stringWithFormat:@"%@_%@", imageURL.absoluteString, videoURL.absoluteString];
     
     // 检查是否已经存在此下载任务
-    NSDictionary *existingPaths = [manager.fileLinks objectForKey:uniqueKey];
+    NSDictionary *existingPaths = manager.fileLinks[uniqueKey];
     if (existingPaths) {
         NSString *imagePath = existingPaths[@"image"];
         NSString *videoPath = existingPaths[@"video"];
         
-        BOOL imageExists = [[NSFileManager defaultManager] fileExistsAtPath:imagePath];
-        BOOL videoExists = [[NSFileManager defaultManager] fileExistsAtPath:videoPath];
-        
-        if (imageExists && videoExists) {
-            NSLog(@"使用现有文件: 图片=%@, 视频=%@", imagePath, videoPath);
-            [[DYYYManager shared] saveLivePhoto:imagePath videoUrl:videoPath];
-            if (completion) {
-                completion();
-            }
-            return;
-        }
+        // 使用异步检查以避免主线程阻塞
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            BOOL imageExists = [[NSFileManager defaultManager] fileExistsAtPath:imagePath];
+            BOOL videoExists = [[NSFileManager defaultManager] fileExistsAtPath:videoPath];
+            
+            dispatch_async(dispatch_get_main_queue(), ^{
+                if (imageExists && videoExists) {
+                    [[DYYYManager shared] saveLivePhoto:imagePath videoUrl:videoPath];
+                    if (completion) {
+                        completion();
+                    }
+                    return;
+                } else {
+                    // 文件不完整，需要重新下载
+                    [self startDownloadLivePhotoProcess:imageURL videoURL:videoURL uniqueKey:uniqueKey completion:completion];
+                }
+            });
+        });
+    } else {
+        // 没有缓存，直接开始下载
+        [self startDownloadLivePhotoProcess:imageURL videoURL:videoURL uniqueKey:uniqueKey completion:completion];
     }
+}
+
+// 拆分方法，提高代码可读性和维护性
++ (void)startDownloadLivePhotoProcess:(NSURL *)imageURL videoURL:(NSURL *)videoURL uniqueKey:(NSString *)uniqueKey completion:(void (^)(void))completion {
+    // 创建临时目录（如果不存在）
+    NSString *livePhotoPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject 
+                              stringByAppendingPathComponent:@"LivePhoto"];
     
-    // 创建临时目录
-    NSString *livePhotoPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject stringByAppendingPathComponent:@"LivePhoto"];
-    [[NSFileManager defaultManager] createDirectoryAtPath:livePhotoPath withIntermediateDirectories:YES attributes:nil error:nil];
-    NSLog(@"创建临时目录: %@", livePhotoPath);
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    if (![fileManager fileExistsAtPath:livePhotoPath]) {
+        [fileManager createDirectoryAtPath:livePhotoPath withIntermediateDirectories:YES attributes:nil error:nil];
+    }
     
     // 生成唯一标识符，防止多次调用时文件冲突
     NSString *uniqueID = [NSUUID UUID].UUIDString;
-    NSString *imageName = [NSString stringWithFormat:@"%@.heic", uniqueID];
-    NSString *videoName = [NSString stringWithFormat:@"%@.mp4", uniqueID];
-    
-    NSString *imagePath = [livePhotoPath stringByAppendingPathComponent:imageName];
-    NSString *videoPath = [livePhotoPath stringByAppendingPathComponent:videoName];
-    NSLog(@"生成唯一标识符: %@, 图片路径: %@, 视频路径: %@", uniqueID, imagePath, videoPath);
+    NSString *imagePath = [livePhotoPath stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.heic", uniqueID]];
+    NSString *videoPath = [livePhotoPath stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.mp4", uniqueID]];
     
     // 存储文件路径，以便下次下载相同的URL时可以复用
+    DYYYManager *manager = [DYYYManager shared];
     [manager.fileLinks setObject:@{@"image": imagePath, @"video": videoPath} forKey:uniqueKey];
     
-    // 创建进度视图
     dispatch_async(dispatch_get_main_queue(), ^{
+        // 创建进度视图
         CGRect screenBounds = [UIScreen mainScreen].bounds;
         DYYYDownloadProgressView *progressView = [[DYYYDownloadProgressView alloc] initWithFrame:screenBounds];
         progressView.progressLabel.text = @"准备下载实况照片...";
         [progressView show];
         
-        // 创建下载会话
+        // 优化会话配置
         NSURLSessionConfiguration *configuration = [NSURLSessionConfiguration defaultSessionConfiguration];
-        NSURLSession *session = [NSURLSession sessionWithConfiguration:configuration delegate:[DYYYManager shared] delegateQueue:[NSOperationQueue mainQueue]];
+        configuration.timeoutIntervalForRequest = 60.0;  // 增加超时时间
+        configuration.timeoutIntervalForResource = 60.0;
+        configuration.HTTPMaximumConnectionsPerHost = 10; // 增加并发连接数
+        configuration.requestCachePolicy = NSURLRequestReloadIgnoringLocalCacheData; // 强制从网络重新下载
         
-        // 创建一个调度组，确保两个下载都完成后再执行后续操作
+        // 使用共享委托的session以节省资源
+        NSURLSession *session = [NSURLSession sessionWithConfiguration:configuration 
+                                                             delegate:[DYYYManager shared] 
+                                                        delegateQueue:[NSOperationQueue mainQueue]];
+        
         dispatch_group_t group = dispatch_group_create();
-        
         __block BOOL imageDownloaded = NO;
         __block BOOL videoDownloaded = NO;
+        __block float imageProgress = 0.0;
+        __block float videoProgress = 0.0;
+        
+        // 设置单独的下载观察者ID用于进度跟踪
+        NSString *imageDownloadID = [NSString stringWithFormat:@"image_%@", uniqueID];
+        NSString *videoDownloadID = [NSString stringWithFormat:@"video_%@", uniqueID];
+        
+        // 更新合并进度的定时器
+        __block NSTimer *progressTimer = [NSTimer scheduledTimerWithTimeInterval:0.1 repeats:YES block:^(NSTimer * _Nonnull timer) {
+            float totalProgress = (imageProgress + videoProgress) / 2.0;
+            [progressView setProgress:totalProgress];
+            
+            // 更新进度文字
+            NSString *statusText = @"正在下载实况照片...";
+            if (imageDownloaded && !videoDownloaded) {
+                statusText = @"图片下载完成，等待视频...";
+            } else if (!imageDownloaded && videoDownloaded) {
+                statusText = @"视频下载完成，等待图片...";
+            } else if (imageDownloaded && videoDownloaded) {
+                statusText = @"下载完成，准备保存...";
+                [timer invalidate]; // 全部完成时停止定时器
+            }
+            progressView.progressLabel.text = statusText;
+        }];
         
         // 下载图片
-        NSLog(@"开始下载图片: %@", imageURL);
         dispatch_group_enter(group);
-        NSURLSessionDownloadTask *imageTask = [session downloadTaskWithURL:imageURL completionHandler:^(NSURL *location, NSURLResponse *response, NSError *error) {
-            if (!error && location) {
-                NSLog(@"图片下载成功，临时位置: %@", location);
-                NSError *moveError = nil;
-                [[NSFileManager defaultManager] moveItemAtURL:location toURL:[NSURL fileURLWithPath:imagePath] error:&moveError];
-                if (moveError) {
-                    NSLog(@"移动图片文件失败: %@", moveError);
-                } else {
-                    NSLog(@"图片文件已移动到: %@", imagePath);
+        NSURLRequest *imageRequest = [NSURLRequest requestWithURL:imageURL];
+        NSURLSessionDataTask *imageTask = [session dataTaskWithRequest:imageRequest completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+            if (!error && data) {
+                // 直接写入文件，避免临时文件移动操作
+                if ([data writeToFile:imagePath atomically:YES]) {
                     imageDownloaded = YES;
+                    imageProgress = 1.0;
                 }
-            } else {
-                NSLog(@"图片下载失败: %@", error);
             }
             dispatch_group_leave(group);
-            
-            // 更新进度条
-            dispatch_async(dispatch_get_main_queue(), ^{
-                if (imageDownloaded) {
-                    progressView.progressLabel.text = @"图片下载完成，等待视频...";
-                    [progressView setProgress:0.5];
-                } else {
-                    progressView.progressLabel.text = @"图片下载失败!";
-                    [progressView setProgress:0.5];
-                }
-            });
         }];
-        [imageTask resume];
+        
+        // 设置图片下载进度观察
+        if ([imageTask respondsToSelector:@selector(taskIdentifier)]) {
+            [[manager taskProgressMap] setObject:@(0.0) forKey:imageDownloadID];
+            
+            // 使用系统API观察进度 (iOS 11+)
+            if (@available(iOS 11.0, *)) {
+                [imageTask.progress addObserver:manager 
+                                     forKeyPath:@"fractionCompleted" 
+                                        options:NSKeyValueObservingOptionNew 
+                                        context:(__bridge void *)(imageDownloadID)];
+            }
+        }
         
         // 下载视频
-        NSLog(@"开始下载视频: %@", videoURL);
         dispatch_group_enter(group);
-        NSURLSessionDownloadTask *videoTask = [session downloadTaskWithURL:videoURL completionHandler:^(NSURL *location, NSURLResponse *response, NSError *error) {
-            if (!error && location) {
-                NSLog(@"视频下载成功，临时位置: %@", location);
-                NSError *moveError = nil;
-                [[NSFileManager defaultManager] moveItemAtURL:location toURL:[NSURL fileURLWithPath:videoPath] error:&moveError];
-                if (moveError) {
-                    NSLog(@"移动视频文件失败: %@", moveError);
-                } else {
-                    NSLog(@"视频文件已移动到: %@", videoPath);
+        NSURLRequest *videoRequest = [NSURLRequest requestWithURL:videoURL];
+        NSURLSessionDataTask *videoTask = [session dataTaskWithRequest:videoRequest completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+            if (!error && data) {
+                // 直接写入文件，避免临时文件移动操作
+                if ([data writeToFile:videoPath atomically:YES]) {
                     videoDownloaded = YES;
+                    videoProgress = 1.0;
                 }
-            } else {
-                NSLog(@"视频下载失败: %@", error);
             }
             dispatch_group_leave(group);
-            
-            // 更新进度条
-            dispatch_async(dispatch_get_main_queue(), ^{
-                if (videoDownloaded) {
-                    if (imageDownloaded) {
-                        progressView.progressLabel.text = @"下载完成，准备保存...";
-                        [progressView setProgress:1.0];
-                    } else {
-                        progressView.progressLabel.text = @"视频下载完成，图片下载失败";
-                        [progressView setProgress:0.75];
-                    }
-                } else {
-                    progressView.progressLabel.text = @"视频下载失败!";
-                    [progressView setProgress:0.75];
-                }
-            });
         }];
-        [videoTask resume];
+        
+        // 设置视频下载进度观察
+        if ([videoTask respondsToSelector:@selector(taskIdentifier)]) {
+            [[manager taskProgressMap] setObject:@(0.0) forKey:videoDownloadID];
+            
+            // 使用系统API观察进度 (iOS 11+)
+            if (@available(iOS 11.0, *)) {
+                [videoTask.progress addObserver:manager 
+                                     forKeyPath:@"fractionCompleted" 
+                                        options:NSKeyValueObservingOptionNew 
+                                        context:(__bridge void *)(videoDownloadID)];
+            }
+        }
         
         // 设置取消按钮事件
         progressView.cancelBlock = ^{
+            [progressTimer invalidate];
             [imageTask cancel];
             [videoTask cancel];
+            
             // 移除文件，释放资源
             [[NSFileManager defaultManager] removeItemAtPath:imagePath error:nil];
             [[NSFileManager defaultManager] removeItemAtPath:videoPath error:nil];
             [manager.fileLinks removeObjectForKey:uniqueKey];
+            
+            // 移除进度观察
+            if (@available(iOS 11.0, *)) {
+                if ([imageTask respondsToSelector:@selector(progress)]) {
+                    [imageTask.progress removeObserver:manager forKeyPath:@"fractionCompleted"];
+                }
+                if ([videoTask respondsToSelector:@selector(progress)]) {
+                    [videoTask.progress removeObserver:manager forKeyPath:@"fractionCompleted"];
+                }
+            }
+            
             if (completion) {
                 completion();
             }
         };
         
+        // 启动下载任务
+        [imageTask resume];
+        [videoTask resume];
+        
         // 当两个下载都完成后，保存实况照片
-        NSLog(@"等待图片和视频下载完成");
         dispatch_group_notify(group, dispatch_get_main_queue(), ^{
-            NSLog(@"图片和视频下载任务已完成");
+            // 停止进度定时器
+            [progressTimer invalidate];
+            
+            // 移除进度观察
+            if (@available(iOS 11.0, *)) {
+                if ([imageTask respondsToSelector:@selector(progress)]) {
+                    [imageTask.progress removeObserver:manager forKeyPath:@"fractionCompleted"];
+                }
+                if ([videoTask respondsToSelector:@selector(progress)]) {
+                    [videoTask.progress removeObserver:manager forKeyPath:@"fractionCompleted"];
+                }
+            }
+            
+            // 检查文件是否真的存在
             BOOL imageExists = [[NSFileManager defaultManager] fileExistsAtPath:imagePath];
             BOOL videoExists = [[NSFileManager defaultManager] fileExistsAtPath:videoPath];
-            NSLog(@"检查文件: 图片存在=%@, 视频存在=%@", imageExists ? @"是" : @"否", videoExists ? @"是" : @"否");
             
             // 隐藏进度视图
             [progressView dismiss];
             
             if (imageExists && videoExists) {
-                NSLog(@"准备保存实况照片");
                 @try {
                     [[DYYYManager shared] saveLivePhoto:imagePath videoUrl:videoPath];
-                    NSLog(@"实况照片保存成功");
-                    // 这里不删除文件，因为文件路径已经存储在字典中以供复用
                 } @catch (NSException *exception) {
-                    NSLog(@"保存实况照片时发生异常: %@", exception);
                     // 删除失败的文件
                     [[NSFileManager defaultManager] removeItemAtPath:imagePath error:nil];
                     [[NSFileManager defaultManager] removeItemAtPath:videoPath error:nil];
                     [manager.fileLinks removeObjectForKey:uniqueKey];
+                    [DYYYManager showToast:@"保存实况照片失败"];
                 }
             } else {
-                NSLog(@"下载实况照片失败，文件不完整");
                 // 清理不完整的文件
                 if (imageExists) [[NSFileManager defaultManager] removeItemAtPath:imagePath error:nil];
                 if (videoExists) [[NSFileManager defaultManager] removeItemAtPath:videoPath error:nil];
@@ -1156,11 +1205,24 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width, in
             }
             
             if (completion) {
-                NSLog(@"调用完成回调");
                 completion();
             }
         });
     });
+}
+
+// 需要添加KVO回调方法来处理下载进度
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context {
+    if ([keyPath isEqualToString:@"fractionCompleted"] && [object isKindOfClass:[NSProgress class]]) {
+        NSString *downloadID = (__bridge NSString *)context;
+        if (downloadID) {
+            NSProgress *progress = (NSProgress *)object;
+            float fractionCompleted = progress.fractionCompleted;
+            [self.taskProgressMap setObject:@(fractionCompleted) forKey:downloadID];
+        }
+    } else {
+        [super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
+    }
 }
 
 + (void)downloadMedia:(NSURL *)url mediaType:(MediaType)mediaType completion:(void (^)(void))completion {
@@ -1672,7 +1734,6 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width, in
             } completionHandler:^(BOOL success, NSError * _Nullable error) {
                 dispatch_async(dispatch_get_main_queue(), ^{
                     if (success) {
-                        [DYYYManager showToast:@"保存实况成功"];
                         // 删除临时文件
                         [[NSFileManager defaultManager] removeItemAtPath:imageSourcePath error:nil];
                         [[NSFileManager defaultManager] removeItemAtPath:videoSourcePath error:nil];
