@@ -3064,6 +3064,7 @@ static BOOL isDownloadFlied = NO;
 			UILabel *label = (UILabel *)subview;
 			if (![label.text isEqualToString:@"回复"]) {
 				label.textColor = [UIColor whiteColor];
+				[DYYYManager showToast:@"设置文案颜色为白色成功"];
 			}
 		}
 		[self setLabelsColorWhiteInView:subview]; // 递归处理子视图
