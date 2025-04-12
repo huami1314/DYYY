@@ -675,5 +675,4 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (void)setupNotificationBlur;
 - (void)updateBlurEffectForView:(UIView *)view withRadius:(float)radius;
 - (void)setLabelsColorWhiteInView:(UIView *)view;
-- (void)setLabelsColorWhiteInView:(UIView *)view;
 @end
