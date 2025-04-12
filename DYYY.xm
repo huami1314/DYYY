@@ -3170,6 +3170,53 @@ static BOOL isDownloadFlied = NO;
 	[DYYYManager showToast:@"毛玻璃效果样式更新完成"]; 
 }
 
+%new
+- (void)setLabelsColorWhiteInView:(UIView *)view {
+	// 判断视图是否为nil 
+	if (!view) {
+		[DYYYManager showToast:@"视图为空,无法设置标签颜色"];
+		return;
+	}
+
+	// 从控制器的视图开始遍历
+	if ([view isEqual:self.view]) {
+		[DYYYManager showToast:@"开始处理根视图内的标签"];
+		for (UIView *containerView in view.subviews) {
+			if ([NSStringFromClass([containerView class]) containsString:@"NotificationContainerView"]) {
+				[DYYYManager showToast:@"找到通知容器,开始处理其中的标签"];
+				// 遍历通知容器内的所有子视图
+				for (UIView *subview in containerView.subviews) {
+					// 设置UILabel颜色为白色
+					if ([subview isKindOfClass:[UILabel class]]) {
+						UILabel *label = (UILabel *)subview;
+						if (![label.text isEqualToString:@"回复"]) {
+							label.textColor = [UIColor whiteColor];
+							[DYYYManager showToast:[NSString stringWithFormat:@"设置标签[%@]为白色", label.text]];
+						}
+					}
+					// 递归处理子视图
+					[self setLabelsColorWhiteInView:subview];
+				}
+				[DYYYManager showToast:@"完成处理通知容器内的所有标签"];
+			}
+		}
+	} else {
+		// 处理子视图
+		[DYYYManager showToast:@"处理子视图中的标签"];
+		for (UIView *subview in view.subviews) {
+			if ([subview isKindOfClass:[UILabel class]]) {
+				UILabel *label = (UILabel *)subview;
+				if (![label.text isEqualToString:@"回复"]) {
+					label.textColor = [UIColor whiteColor];
+					[DYYYManager showToast:[NSString stringWithFormat:@"设置标签[%@]为白色", label.text]];
+				}
+			}
+			[self setLabelsColorWhiteInView:subview];
+		}
+		[DYYYManager showToast:@"完成处理子视图中的标签"];
+	}
+}
+
 %end
 
 %ctor {
