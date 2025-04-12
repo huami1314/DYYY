@@ -2963,7 +2963,7 @@ static BOOL isDownloadFlied = NO;
         [self setLabelsColorWhiteInView:self];
     }
 }
-}
+
 
 - (void)viewDidAppear:(BOOL)animated {
     %orig;
