@@ -3170,7 +3170,7 @@ static BOOL isDownloadFlied = NO;
 	[DYYYManager showToast:@"毛玻璃效果样式更新完成"]; 
 }
 
-
+%end
 
 %ctor {
 	%init(DYYYSettingsGesture);
