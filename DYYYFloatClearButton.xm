@@ -1,445 +1,508 @@
-/*
+/* 
  * Tweak Name: 1KeyHideDYUI
  * Target App: com.ss.iphone.ugc.Aweme
  * Dev: @c00kiec00k 曲奇的坏品味🍻
  * iOS Version: 16.5
  */
-#import "AwemeHeaders.h"
-#import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
+#import <Foundation/Foundation.h>
 #import <signal.h>
-
-// 定义悬浮按钮类
+// HideUIButton 接口声明
 @interface HideUIButton : UIButton
-@property(nonatomic, assign) BOOL isElementsHidden;
-@property(nonatomic, strong) NSMutableArray *hiddenViewsList;
-@property(nonatomic, assign) BOOL isPersistentMode;
-@property(nonatomic, strong) UIImageView *gifImageView; 
+// 状态属性
+@property (nonatomic, assign) BOOL isElementsHidden;
+@property (nonatomic, assign) BOOL isLocked;
+// UI 相关属性
+@property (nonatomic, strong) NSMutableArray *hiddenViewsList;
+@property (nonatomic, strong) UIImage *showIcon;
+@property (nonatomic, strong) UIImage *hideIcon;
+@property (nonatomic, assign) CGFloat originalAlpha;
+// 计时器属性
+@property (nonatomic, strong) NSTimer *checkTimer;
+@property (nonatomic, strong) NSTimer *fadeTimer;
+// 方法声明
+- (void)resetFadeTimer;
+- (void)hideUIElements;
+- (void)findAndHideViews:(NSArray *)classNames;
+- (void)safeResetState;
+- (void)startPeriodicCheck;
+- (UIViewController *)findViewController:(UIView *)view;
+- (void)loadIcons;
+- (void)handlePan:(UIPanGestureRecognizer *)gesture;
+- (void)handleTap;
+- (void)handleLongPress:(UILongPressGestureRecognizer *)gesture;
+- (void)handleTouchDown;
+- (void)handleTouchUpInside;
+- (void)handleTouchUpOutside;
+- (void)saveLockState;
+- (void)loadLockState;
 @end
-
 // 全局变量
 static HideUIButton *hideButton;
 static BOOL isAppInTransition = NO;
-static NSString *const kLastPositionXKey = @"DYYYlastHideButtonPositionX";
-static NSString *const kLastPositionYKey = @"DYYYlastHideButtonPositionY";
-static NSString *const kPersistentModeKey = @"DYYYhideButtonPersistentMode";
-static NSString *const kIsElementsHiddenKey = @"DYYYisElementsHidden";
-static NSString *const kEnableButtonKey = @"DYYYEnableFloatClearButton";
-
-// 获取keyWindow的辅助方法
-static UIWindow *getKeyWindow() {
-	UIWindow *keyWindow = nil;
-	for (UIWindow *window in [UIApplication sharedApplication].windows) {
-		if (window.isKeyWindow) {
-			keyWindow = window;
-			break;
-		}
-	}
-	return keyWindow;
+static NSArray *targetClassNames;
+// 使用与倍速相同的 Toast 样式
+static inline void showToast(NSString *text) {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        UIWindow *window = [UIApplication sharedApplication].keyWindow;
+        if (!window) return;
+        
+        UILabel *toastLabel = [[UILabel alloc] init];
+        toastLabel.backgroundColor = [UIColor colorWithRed:0.2 green:0.2 blue:0.2 alpha:0.95];
+        toastLabel.textColor = [UIColor whiteColor];
+        toastLabel.textAlignment = NSTextAlignmentCenter;
+        toastLabel.font = [UIFont systemFontOfSize:16];
+        toastLabel.text = text;
+        toastLabel.alpha = 0;
+        toastLabel.layer.cornerRadius = 22; 
+        toastLabel.clipsToBounds = YES;
+        
+        [toastLabel sizeToFit];
+        CGFloat horizontalPadding = 24;
+        CGFloat verticalPadding = 12;
+        CGFloat width = toastLabel.frame.size.width + horizontalPadding * 2;
+        CGFloat height = toastLabel.frame.size.height + verticalPadding * 2;
+        
+        width = MAX(width, 120);
+        
+        toastLabel.frame = CGRectMake(0, 0, width, height);
+        CGRect screenBounds = [UIScreen mainScreen].bounds;
+        toastLabel.center = CGPointMake(screenBounds.size.width / 2, screenBounds.size.height / 2);
+        
+        [window addSubview:toastLabel];
+        
+        [UIView animateWithDuration:0.2 animations:^{
+            toastLabel.alpha = 1;
+        } completion:^(BOOL finished) {
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                [UIView animateWithDuration:0.2 animations:^{
+                    toastLabel.alpha = 0;
+                } completion:^(BOOL finished) {
+                    [toastLabel removeFromSuperview];
+                }];
+            });
+        }];
+    });
+}
+static void findViewsOfClassHelper(UIView *view, Class viewClass, NSMutableArray *result) {
+    if ([view isKindOfClass:viewClass]) {
+        [result addObject:view];
+    }
+    
+    for (UIView *subview in view.subviews) {
+        findViewsOfClassHelper(subview, viewClass, result);
+    }
+}
+static UIWindow* getKeyWindow(void) {
+    UIWindow *keyWindow = nil;
+    for (UIWindow *window in [UIApplication sharedApplication].windows) {
+        if (window.isKeyWindow) {
+            keyWindow = window;
+            break;
+        }
+    }
+    return keyWindow;
+}
+static void forceResetAllUIElements(void) {
+    UIWindow *window = getKeyWindow();
+    if (!window) return;
+    
+    for (NSString *className in targetClassNames) {
+        Class viewClass = NSClassFromString(className);
+        if (!viewClass) continue;
+        
+        NSMutableArray *views = [NSMutableArray array];
+        findViewsOfClassHelper(window, viewClass, views);
+        
+        for (UIView *view in views) {
+            view.alpha = 1.0;
+        }
+    }
+}
+static void reapplyHidingToAllElements(HideUIButton *button) {
+    if (!button || !button.isElementsHidden) return;
+    [button hideUIElements];
+}
+static void initTargetClassNames(void) {
+    targetClassNames = @[
+        @"AWEHPTopBarCTAContainer",
+        @"AWEHPDiscoverFeedEntranceView",
+        @"AWELeftSideBarEntranceView",
+        @"DUXBadge",
+        @"AWEBaseElementView",
+        @"AWEElementStackView",
+        @"AWEPlayInteractionDescriptionLabel",
+        @"AWEUserNameLabel",
+        @"AWEStoryProgressSlideView",
+        @"AWEStoryProgressContainerView",
+        @"ACCEditTagStickerView",
+        @"AWEFeedTemplateAnchorView",
+        @"AWESearchFeedTagView",
+        @"AWEPlayInteractionSearchAnchorView",
+        @"AFDRecommendToFriendTagView",
+        @"AWELandscapeFeedEntryView",
+        @"AWEFeedAnchorContainerView",
+        @"AFDAIbumFolioView"
+    ];
 }
 
-// 获取抖音应用的Documents目录
-static NSString *getAppDocumentsPath() {
-    NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
-    NSString *dyyyFolderPath = [documentsPath stringByAppendingPathComponent:@"DYYY"];
-    return dyyyFolderPath;
-}
-
-// 检查自定义图标是否存在
-static UIImage *getCustomImage(NSString *imageName) {
-	NSString *documentsPath = getAppDocumentsPath();
-	NSString *imagePath = [documentsPath stringByAppendingPathComponent:imageName];
-
-	if ([[NSFileManager defaultManager] fileExistsAtPath:imagePath]) {
-		return [UIImage imageWithContentsOfFile:imagePath];
-	}
-	return nil;
-}
-
-// 扩展的类列表 - 包含需要隐藏的UI元素
-static NSArray *getHideClassList() {
-	return @[
-		@"AWEHPTopBarCTAContainer",
-		@"AWEHPDiscoverFeedEntranceView",
-		@"AWELeftSideBarEntranceView",
-		@"DUXBadge",
-		@"AWEBaseElementView",
-		@"AWEElementStackView",
-		@"AWEPlayInteractionDescriptionLabel",
-		@"AWEUserNameLabel",
-		@"AWEStoryProgressSlideView",
-		@"AWEStoryProgressContainerView",
-		@"ACCEditTagStickerView",
-		@"AWEFeedTemplateAnchorView",
-		@"AWESearchFeedTagView",
-		@"AWEPlayInteractionSearchAnchorView",
-		@"AFDRecommendToFriendTagView",
-		@"AWELandscapeFeedEntryView",
-		@"AWEFeedAnchorContainerView",
-		@"AFDAIbumFolioView",
-		@"AWEPlayInteractionView",
-		@"AWEUILabel",
-		@"AWEPlayInteractionCommentGuideView",
-		@"AWECommentCountLabel",
-		@"AWEPlayInteractionLikeView",
-		@"AWEPlayInteractionCommentView",
-		@"AWEPlayInteractionShareView",
-		@"AWEFeedCellBottomView",
-		@"AWEUIView"
-	];
-}
-
-// HideUIButton 实现
 @implementation HideUIButton
 - (instancetype)initWithFrame:(CGRect)frame {
-	self = [super initWithFrame:frame];
-	if (self) {
-		// 基本设置 - 完全透明背景，只显示图标
-		self.backgroundColor = [UIColor clearColor];
-
-		// 初始化属性
-		_hiddenViewsList = [NSMutableArray array];
-
-		// 从用户默认设置中加载持久化模式设置
-		_isPersistentMode = [[NSUserDefaults standardUserDefaults] boolForKey:kPersistentModeKey];
-		_isElementsHidden = [[NSUserDefaults standardUserDefaults] boolForKey:kIsElementsHiddenKey];
-
-		// 设置初始图标或文字
-		[self setupButtonAppearance];
-
-		// 添加拖动手势
-		UIPanGestureRecognizer *panGesture = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePan:)];
-		[self addGestureRecognizer:panGesture];
-
-		// 使用单击事件（原生按钮点击）
-		[self addTarget:self action:@selector(handleTap) forControlEvents:UIControlEventTouchUpInside];
-
-		// 添加长按手势
-		UILongPressGestureRecognizer *longPressGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handleLongPress:)];
-		longPressGesture.minimumPressDuration = 0.5; // 0.5秒长按
-		[self addGestureRecognizer:longPressGesture];
-
-		// 如果之前是隐藏状态，则恢复隐藏
-		if (_isElementsHidden) {
-			dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-			  [self hideUIElements];
-			});
-		}
-	}
-	return self;
+    self = [super initWithFrame:frame];
+    if (self) {
+        self.backgroundColor = [UIColor clearColor];
+        self.layer.cornerRadius = frame.size.width / 2;
+        self.layer.masksToBounds = YES;
+        
+        self.isElementsHidden = NO;
+        self.hiddenViewsList = [NSMutableArray array];
+        self.originalAlpha = 1.0;
+        
+        // 加载保存的锁定状态
+        [self loadLockState];
+        
+        [self loadIcons];
+        [self setImage:self.showIcon forState:UIControlStateNormal];
+        
+        UIPanGestureRecognizer *panGesture = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePan:)];
+        [self addGestureRecognizer:panGesture];
+        
+        [self addTarget:self action:@selector(handleTap) forControlEvents:UIControlEventTouchUpInside];
+        [self addTarget:self action:@selector(handleTouchDown) forControlEvents:UIControlEventTouchDown];
+        [self addTarget:self action:@selector(handleTouchUpInside) forControlEvents:UIControlEventTouchUpInside];
+        [self addTarget:self action:@selector(handleTouchUpOutside) forControlEvents:UIControlEventTouchUpOutside];
+        
+        UILongPressGestureRecognizer *longPressGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handleLongPress:)];
+        [self addGestureRecognizer:longPressGesture];
+        
+        [self startPeriodicCheck];
+        [self resetFadeTimer];
+    }
+    return self;
 }
-
-- (void)setupButtonAppearance {
-	// 尝试加载自定义图标
-	UIImage *customShowIcon = getCustomImage(@"Qingping.png");
-
-	if (customShowIcon) {
-		[self setImage:customShowIcon forState:UIControlStateNormal];
-	} else {
-		// 如果没有自定义图标，则使用文字
-		[self setTitle:self.isElementsHidden ? @"显示" : @"隐藏" forState:UIControlStateNormal];
-		self.titleLabel.font = [UIFont boldSystemFontOfSize:12];
-		self.titleLabel.textColor = [UIColor whiteColor];
-		self.backgroundColor = [UIColor colorWithWhite:0 alpha:0.5]; // 半透明背景，便于看到文字
-		self.layer.cornerRadius = self.frame.size.width / 2;
-		self.layer.masksToBounds = YES;
-	}
+- (void)startPeriodicCheck {
+    [self.checkTimer invalidate];
+    self.checkTimer = [NSTimer scheduledTimerWithTimeInterval:0.2 
+                                                     repeats:YES 
+                                                       block:^(NSTimer *timer) {
+        if (self.isElementsHidden) {
+            [self hideUIElements];
+        }
+    }];
 }
-
-- (void)updateButtonAppearance {
-	// 更新按钮外观，根据当前状态
-	UIImage *customShowIcon = getCustomImage(@"Qingping.png");
-
-	if (customShowIcon) {
-		[self setImage:customShowIcon forState:UIControlStateNormal];
-	} else {
-		[self setTitle:self.isElementsHidden ? @"显示" : @"隐藏" forState:UIControlStateNormal];
-	}
+- (void)resetFadeTimer {
+    [self.fadeTimer invalidate];
+    self.fadeTimer = [NSTimer scheduledTimerWithTimeInterval:3.0 
+                                                    repeats:NO 
+                                                      block:^(NSTimer *timer) {
+        [UIView animateWithDuration:0.3 animations:^{
+            self.alpha = 0.5;
+        }];
+    }];
+    
+    if (self.alpha != self.originalAlpha) {
+        [UIView animateWithDuration:0.2 animations:^{
+            self.alpha = self.originalAlpha;
+        }];
+    }
 }
-
+- (void)saveLockState {
+    [[NSUserDefaults standardUserDefaults] setBool:self.isLocked forKey:@"HideUIButtonLockState"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+}
+- (void)loadLockState {
+    self.isLocked = [[NSUserDefaults standardUserDefaults] boolForKey:@"HideUIButtonLockState"];
+}
+- (void)loadIcons {
+    NSString *documentsPath = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject;
+    NSString *iconPath = [documentsPath stringByAppendingPathComponent:@"DYYY/Qingping.png"];
+    
+    UIImage *customIcon = [UIImage imageWithContentsOfFile:iconPath];
+    if (customIcon) {
+        self.showIcon = customIcon;
+        self.hideIcon = customIcon;
+    } else {
+        [self setTitle:@"隐藏" forState:UIControlStateNormal];
+        [self setTitle:@"显示" forState:UIControlStateSelected];
+        self.titleLabel.font = [UIFont systemFontOfSize:10];
+    }
+}
+- (void)handleTouchDown {
+    [self resetFadeTimer];
+}
+- (void)handleTouchUpInside {
+    [self resetFadeTimer];
+}
+- (void)handleTouchUpOutside {
+    [self resetFadeTimer];
+}
+- (UIViewController *)findViewController:(UIView *)view {
+    __weak UIResponder *responder = view;
+    while (responder) {
+        if ([responder isKindOfClass:[UIViewController class]]) {
+            return (UIViewController *)responder;
+        }
+        responder = [responder nextResponder];
+        if (!responder) break;
+    }
+    return nil;
+}
 - (void)handlePan:(UIPanGestureRecognizer *)gesture {
-	CGPoint translation = [gesture translationInView:self.superview];
-	CGPoint newCenter = CGPointMake(self.center.x + translation.x, self.center.y + translation.y);
-
-	// 确保按钮不会超出屏幕边界
-	newCenter.x = MAX(self.frame.size.width / 2, MIN(newCenter.x, self.superview.frame.size.width - self.frame.size.width / 2));
-	newCenter.y = MAX(self.frame.size.height / 2, MIN(newCenter.y, self.superview.frame.size.height - self.frame.size.height / 2));
-
-	self.center = newCenter;
-	[gesture setTranslation:CGPointZero inView:self.superview];
-
-	// 保存位置到NSUserDefaults
-	if (gesture.state == UIGestureRecognizerStateEnded) {
-		[[NSUserDefaults standardUserDefaults] setFloat:self.center.x forKey:kLastPositionXKey];
-		[[NSUserDefaults standardUserDefaults] setFloat:self.center.y forKey:kLastPositionYKey];
-		[[NSUserDefaults standardUserDefaults] synchronize];
-	}
+    if (self.isLocked) return;
+    
+    [self resetFadeTimer];
+    
+    CGPoint translation = [gesture translationInView:self.superview];
+    CGPoint newCenter = CGPointMake(self.center.x + translation.x, self.center.y + translation.y);
+    
+    newCenter.x = MAX(self.frame.size.width / 2, MIN(newCenter.x, self.superview.frame.size.width - self.frame.size.width / 2));
+    newCenter.y = MAX(self.frame.size.height / 2, MIN(newCenter.y, self.superview.frame.size.height - self.frame.size.height / 2));
+    
+    self.center = newCenter;
+    [gesture setTranslation:CGPointZero inView:self.superview];
+    
+    if (gesture.state == UIGestureRecognizerStateEnded) {
+        [[NSUserDefaults standardUserDefaults] setObject:NSStringFromCGPoint(self.center) forKey:@"HideUIButtonPosition"];
+        [[NSUserDefaults standardUserDefaults] synchronize];
+    }
 }
-
-- (void)handleLongPress:(UILongPressGestureRecognizer *)gesture {
-	if (gesture.state == UIGestureRecognizerStateBegan) {
-		[self showOptionsMenu];
-	}
-}
-
-- (void)showOptionsMenu {
-	// 创建一个UIAlertController作为菜单
-	UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"设置" message:nil preferredStyle:UIAlertControllerStyleActionSheet];
-
-	// 添加"全局生效"选项
-	NSString *persistentTitle = self.isPersistentMode ? @"✓ 全局生效" : @"全局生效";
-	UIAlertAction *persistentAction = [UIAlertAction actionWithTitle:persistentTitle
-								   style:UIAlertActionStyleDefault
-								 handler:^(UIAlertAction *_Nonnull action) {
-								   self.isPersistentMode = !self.isPersistentMode;
-								   [[NSUserDefaults standardUserDefaults] setBool:self.isPersistentMode forKey:kPersistentModeKey];
-								   [[NSUserDefaults standardUserDefaults] synchronize];
-								 }];
-	[alertController addAction:persistentAction];
-
-	// 添加"单个视频生效"选项
-	NSString *singleVideoTitle = !self.isPersistentMode ? @"✓ 单个视频生效" : @"单个视频生效";
-	UIAlertAction *singleVideoAction = [UIAlertAction actionWithTitle:singleVideoTitle
-								    style:UIAlertActionStyleDefault
-								  handler:^(UIAlertAction *_Nonnull action) {
-								    self.isPersistentMode = !self.isPersistentMode;
-								    [[NSUserDefaults standardUserDefaults] setBool:self.isPersistentMode forKey:kPersistentModeKey];
-								    [[NSUserDefaults standardUserDefaults] synchronize];
-								  }];
-	[alertController addAction:singleVideoAction];
-
-	// 添加取消选项
-	UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil];
-	[alertController addAction:cancelAction];
-
-	// 在iPad上，我们需要设置弹出位置
-	if (UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPad) {
-		alertController.popoverPresentationController.sourceView = self;
-		alertController.popoverPresentationController.sourceRect = self.bounds;
-	}
-
-	// 显示菜单
-	[[UIApplication sharedApplication].keyWindow.rootViewController presentViewController:alertController animated:YES completion:nil];
-}
-
 - (void)handleTap {
-	if (isAppInTransition) {
-		return;
-	}
-
-	if (!self.isElementsHidden) {
-		// 隐藏UI元素
-		[self hideUIElements];
-	} else {
-		// 恢复所有UI元素
-		[self showUIElements];
-	}
-
-	// 保存状态
-	[[NSUserDefaults standardUserDefaults] setBool:self.isElementsHidden forKey:kIsElementsHiddenKey];
-	[[NSUserDefaults standardUserDefaults] synchronize];
-
-	[self updateButtonAppearance];
+    if (isAppInTransition) return;
+    
+    [self resetFadeTimer];
+    
+    if (!self.isElementsHidden) {
+        [self hideUIElements];
+        self.isElementsHidden = YES;
+        self.selected = YES;
+    } else {
+        forceResetAllUIElements();
+        self.isElementsHidden = NO;
+        [self.hiddenViewsList removeAllObjects];
+        self.selected = NO;
+    }
 }
-
+- (void)handleLongPress:(UILongPressGestureRecognizer *)gesture {
+    if (gesture.state == UIGestureRecognizerStateBegan) {
+        [self resetFadeTimer];
+        self.isLocked = !self.isLocked;
+        
+        // 保存锁定状态
+        [self saveLockState];
+        
+        NSString *toastMessage = self.isLocked ? @"按钮已锁定" : @"按钮已解锁";
+        showToast(toastMessage);
+        
+        if (@available(iOS 10.0, *)) {
+            UIImpactFeedbackGenerator *generator = [[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleLight];
+            [generator prepare];
+            [generator impactOccurred];
+        }
+    }
+}
 - (void)hideUIElements {
-	// 清空之前的隐藏列表，确保不会有残留
-	[self.hiddenViewsList removeAllObjects];
-
-	// 递归查找并隐藏所有匹配的视图
-	[self findAndHideViews:getHideClassList()];
-
-	self.isElementsHidden = YES;
+    [self.hiddenViewsList removeAllObjects];
+    [self findAndHideViews:targetClassNames];
+    self.isElementsHidden = YES;
 }
-
-- (void)showUIElements {
-	// 恢复所有被隐藏的视图
-	for (UIView *view in self.hiddenViewsList) {
-		if ([view isKindOfClass:[UIView class]]) {
-			view.alpha = 1.0;
-		}
-	}
-
-	[self.hiddenViewsList removeAllObjects];
-	self.isElementsHidden = NO;
-}
-
 - (void)findAndHideViews:(NSArray *)classNames {
-	// 遍历所有窗口
-	for (UIWindow *window in [UIApplication sharedApplication].windows) {
-		for (NSString *className in classNames) {
-			Class viewClass = NSClassFromString(className);
-			if (!viewClass)
-				continue;
-
-			// 递归查找所有匹配的视图
-			[self findAndHideViewsOfClass:viewClass inView:window];
-		}
-	}
+    for (UIWindow *window in [UIApplication sharedApplication].windows) {
+        for (NSString *className in classNames) {
+            Class viewClass = NSClassFromString(className);
+            if (!viewClass) continue;
+            
+            NSMutableArray *views = [NSMutableArray array];
+            findViewsOfClassHelper(window, viewClass, views);
+            
+            for (UIView *view in views) {
+                if ([view isKindOfClass:[UIView class]]) {
+                    if ([view isKindOfClass:NSClassFromString(@"AWELeftSideBarEntranceView")]) {
+                        UIViewController *controller = [self findViewController:view];
+                        if (![controller isKindOfClass:NSClassFromString(@"AWEFeedContainerViewController")]) {
+                            continue;
+                        }
+                    }
+                    
+                    [self.hiddenViewsList addObject:view];
+                    view.alpha = 0.0;
+                }
+            }
+        }
+    }
 }
-
-- (void)findAndHideViewsOfClass:(Class)viewClass inView:(UIView *)view {
-	if ([view isKindOfClass:viewClass]) {
-		// 只有不是自己才隐藏
-		if (view != self) {
-			[self.hiddenViewsList addObject:view];
-			view.alpha = 0.0;
-
-			// 如果是 AWEElementStackView，确保所有子视图也被隐藏
-			if ([view isKindOfClass:NSClassFromString(@"AWEElementStackView")]) {
-				for (UIView *subview in view.subviews) {
-					[self hideViewAndAllSubviews:subview];
-				}
-			}
-		}
-	}
-
-	// 递归查找子视图
-	for (UIView *subview in view.subviews) {
-		[self findAndHideViewsOfClass:viewClass inView:subview];
-	}
-}
-
-// 递归隐藏视图及其所有子视图
-- (void)hideViewAndAllSubviews:(UIView *)view {
-	// 将视图添加到隐藏列表
-	if (![self.hiddenViewsList containsObject:view]) {
-		[self.hiddenViewsList addObject:view];
-		view.alpha = 0.0;
-	}
-
-	// 递归隐藏所有子视图
-	for (UIView *subview in view.subviews) {
-		[self hideViewAndAllSubviews:subview];
-	}
-}
-
 - (void)safeResetState {
-	// 恢复所有UI元素
-	[self showUIElements];
-
-	// 保存状态
-	[[NSUserDefaults standardUserDefaults] setBool:NO forKey:kIsElementsHiddenKey];
-	[[NSUserDefaults standardUserDefaults] synchronize];
-
-	[self updateButtonAppearance];
+    forceResetAllUIElements();
+    self.isElementsHidden = NO;
+    [self.hiddenViewsList removeAllObjects];
+    self.selected = NO;
+}
+- (void)dealloc {
+    [self.checkTimer invalidate];
+    [self.fadeTimer invalidate];
+    self.checkTimer = nil;
+    self.fadeTimer = nil;
 }
 @end
-
-// 监控视图转换状态
+// Hook 部分
+%hook UIView
+- (id)initWithFrame:(CGRect)frame {
+    UIView *view = %orig;
+    if (hideButton && hideButton.isElementsHidden) {
+        for (NSString *className in targetClassNames) {
+            if ([view isKindOfClass:NSClassFromString(className)]) {
+                if ([view isKindOfClass:NSClassFromString(@"AWELeftSideBarEntranceView")]) {
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        UIViewController *controller = [hideButton findViewController:view];
+                        if ([controller isKindOfClass:NSClassFromString(@"AWEFeedContainerViewController")]) {
+                            view.alpha = 0.0;
+                        }
+                    });
+                    break;
+                }
+                view.alpha = 0.0;
+                break;
+            }
+        }
+    }
+    return view;
+}
+- (void)didAddSubview:(UIView *)subview {
+    %orig;
+    if (hideButton && hideButton.isElementsHidden) {
+        for (NSString *className in targetClassNames) {
+            if ([subview isKindOfClass:NSClassFromString(className)]) {
+                if ([subview isKindOfClass:NSClassFromString(@"AWELeftSideBarEntranceView")]) {
+                    UIViewController *controller = [hideButton findViewController:subview];
+                    if ([controller isKindOfClass:NSClassFromString(@"AWEFeedContainerViewController")]) {
+                        subview.alpha = 0.0;
+                    }
+                    break;
+                }
+                subview.alpha = 0.0;
+                break;
+            }
+        }
+    }
+}
+- (void)willMoveToSuperview:(UIView *)newSuperview {
+    %orig;
+    if (hideButton && hideButton.isElementsHidden) {
+        for (NSString *className in targetClassNames) {
+            if ([self isKindOfClass:NSClassFromString(className)]) {
+                if ([self isKindOfClass:NSClassFromString(@"AWELeftSideBarEntranceView")]) {
+                    UIViewController *controller = [hideButton findViewController:self];
+                    if ([controller isKindOfClass:NSClassFromString(@"AWEFeedContainerViewController")]) {
+                        self.alpha = 0.0;
+                    }
+                    break;
+                }
+                self.alpha = 0.0;
+                break;
+            }
+        }
+    }
+}
+%end
+%hook AWEFeedTableViewCell
+- (void)prepareForReuse {
+    if (hideButton && hideButton.isElementsHidden) {
+        [hideButton hideUIElements];
+    }
+    %orig;
+}
+- (void)layoutSubviews {
+    %orig;
+    if (hideButton && hideButton.isElementsHidden) {
+        [hideButton hideUIElements];
+    }
+}
+%end
+%hook AWEFeedViewCell
+- (void)layoutSubviews {
+    if (hideButton && hideButton.isElementsHidden) {
+        [hideButton hideUIElements];
+    }
+    %orig;
+}
+- (void)setModel:(id)model {
+    if (hideButton && hideButton.isElementsHidden) {
+        [hideButton hideUIElements];
+    }
+    %orig;
+}
+%end
 %hook UIViewController
 - (void)viewWillAppear:(BOOL)animated {
-	%orig;
-	isAppInTransition = YES;
-
-	dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-	  isAppInTransition = NO;
-
-	  // 如果是全局模式且状态是隐藏，则确保所有元素都被隐藏
-	  if (hideButton && hideButton.isElementsHidden && hideButton.isPersistentMode) {
-		  [hideButton hideUIElements];
-	  }
-	});
+    %orig;
+    isAppInTransition = YES;
+    if (hideButton && hideButton.isElementsHidden) {
+        [hideButton hideUIElements];
+    }
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        isAppInTransition = NO;
+    });
 }
-
 - (void)viewWillDisappear:(BOOL)animated {
-	%orig;
-	isAppInTransition = YES;
-
-	if (hideButton && hideButton.isElementsHidden && !hideButton.isPersistentMode) {
-		// 如果视图即将消失且不是全局模式，直接重置状态
-		dispatch_async(dispatch_get_main_queue(), ^{
-		  [hideButton safeResetState];
-		});
-	}
-
-	dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-	  isAppInTransition = NO;
-	});
+    %orig;
+    isAppInTransition = YES;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        isAppInTransition = NO;
+    });
 }
 %end
-
-// 监控视频内容变化 - 这里使用更精确的hook
-%hook AWEFeedCellViewController
-- (void)viewDidAppear:(BOOL)animated {
-	%orig;
-
-	// 如果是全局模式且元素被隐藏，则在视频切换时重新隐藏所有元素
-	if (hideButton && hideButton.isElementsHidden && hideButton.isPersistentMode) {
-		// 使用延迟以确保新的UI元素已经加载
-		dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-		  [hideButton hideUIElements];
-		});
-	}
-	// 如果是单视频模式且元素被隐藏，则在视频切换时恢复元素
-	else if (hideButton && hideButton.isElementsHidden && !hideButton.isPersistentMode) {
-		dispatch_async(dispatch_get_main_queue(), ^{
-		  [hideButton safeResetState];
-		});
-	}
+%hook AWEFeedContainerViewController
+- (void)aweme:(id)arg1 currentIndexWillChange:(NSInteger)arg2 {
+    if (hideButton && hideButton.isElementsHidden) {
+        [hideButton hideUIElements];
+    }
+    %orig;
+}
+- (void)aweme:(id)arg1 currentIndexDidChange:(NSInteger)arg2 {
+    if (hideButton && hideButton.isElementsHidden) {
+        [hideButton hideUIElements];
+    }
+    %orig;
+}
+- (void)viewWillLayoutSubviews {
+    %orig;
+    if (hideButton && hideButton.isElementsHidden) {
+        [hideButton hideUIElements];
+    }
 }
 %end
-
-// 适配更多可能的视频容器
-%hook AWEAwemeViewController
-- (void)viewDidAppear:(BOOL)animated {
-	%orig;
-
-	// 如果是全局模式且元素被隐藏，确保所有元素都被隐藏
-	if (hideButton && hideButton.isElementsHidden && hideButton.isPersistentMode) {
-		dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-		  [hideButton hideUIElements];
-		});
-	}
-}
-%end
-
-// Hook AppDelegate 来初始化按钮
 %hook AppDelegate
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-	BOOL result = %orig;
-
-	// 检查是否启用了悬浮按钮
-	BOOL isEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:kEnableButtonKey];
-
-	// 只有当功能被启用时才创建按钮
-	if (isEnabled) {
-		// 创建按钮 - 不延迟，立即创建
-		dispatch_async(dispatch_get_main_queue(), ^{
-		  CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
-		  CGFloat screenHeight = [UIScreen mainScreen].bounds.size.height;
-
-		  hideButton = [[HideUIButton alloc] initWithFrame:CGRectMake(0, 0, 32, 32)];
-
-		  // 从NSUserDefaults获取上次位置，如果没有则放在左侧中间
-		  CGFloat lastX = [[NSUserDefaults standardUserDefaults] floatForKey:kLastPositionXKey];
-		  CGFloat lastY = [[NSUserDefaults standardUserDefaults] floatForKey:kLastPositionYKey];
-
-		  if (lastX > 0 && lastY > 0) {
-			  // 使用保存的位置
-			  hideButton.center = CGPointMake(lastX, lastY);
-		  } else {
-			  // 默认位置：左侧中间
-			  hideButton.center = CGPointMake(30, screenHeight / 2);
-		  }
-
-		  UIWindow *window = getKeyWindow();
-		  if (window) {
-			  [window addSubview:hideButton];
-		  } else {
-			  // 如果当前没有keyWindow，则等待一下再添加
-			  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-			    [getKeyWindow() addSubview:hideButton];
-			  });
-		  }
-		});
-	}
-
-	return result;
+    BOOL result = %orig;
+    
+    initTargetClassNames();
+    
+    BOOL isEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableFloatClearButton"];
+    
+    if (isEnabled) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (hideButton) {
+                [hideButton removeFromSuperview];
+                hideButton = nil;
+            }
+            
+            hideButton = [[HideUIButton alloc] initWithFrame:CGRectMake(0, 0, 40, 40)];
+            
+            NSString *savedPositionString = [[NSUserDefaults standardUserDefaults] objectForKey:@"HideUIButtonPosition"];
+            if (savedPositionString) {
+                hideButton.center = CGPointFromString(savedPositionString);
+            } else {
+                CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
+                CGFloat screenHeight = [UIScreen mainScreen].bounds.size.height;
+                hideButton.center = CGPointMake(screenWidth - 35, screenHeight / 2);
+            }
+            
+            [getKeyWindow() addSubview:hideButton];
+        });
+    }
+    
+    return result;
 }
 %end
-
 %ctor {
-	// 注册信号处理
-	signal(SIGSEGV, SIG_IGN);
+    signal(SIGSEGV, SIG_IGN);
 }
