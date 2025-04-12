@@ -3159,43 +3159,79 @@ static BOOL isDownloadFlied = NO;
 
 %new
 - (void)applyBlurEffectToView:(UIView *)containerView {
-	containerView.backgroundColor = [UIColor clearColor];
-	
-	float userRadius = [[[NSUserDefaults standardUserDefaults] 
-		objectForKey:@"DYYYNotificationCornerRadius"] floatValue] ?: 12;
-	[DYYYManager showToast:[NSString stringWithFormat:@"[Debug] Using corner radius: %.1f", userRadius]];
-	
-	containerView.layer.cornerRadius = userRadius;
-	containerView.layer.masksToBounds = YES;
-	
-	UIView *existingBlurView = [containerView viewWithTag:999];
-	if (existingBlurView) {
-		[DYYYManager showToast:@"[Debug] Removing existing blur view"];
-		[existingBlurView removeFromSuperview];
-	}
-	
-	BOOL isDarkMode = [DYYYManager isDarkMode];
-	[DYYYManager showToast:[NSString stringWithFormat:@"[Debug] Dark mode: %@", isDarkMode ? @"YES" : @"NO"]];
-	
-	UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:isDarkMode ? 
-		UIBlurEffectStyleDark : UIBlurEffectStyleLight];
-	UIVisualEffectView *blurView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
-	blurView.frame = containerView.bounds;
-	blurView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-	blurView.tag = 999;
-	
-	float userTransparency = [[[NSUserDefaults standardUserDefaults] 
-		objectForKey:@"DYYYCommentBlurTransparent"] floatValue] ?: 0.5;
-	[DYYYManager showToast:[NSString stringWithFormat:@"[Debug] Using transparency: %.2f", userTransparency]];
-	
-	blurView.alpha = userTransparency;
-	
-	[containerView insertSubview:blurView atIndex:0];
-	
-	if (isDarkMode) {
-		[DYYYManager showToast:@"[Debug] Updating text colors for dark mode"];
-		[self setLabelsColorWhiteInView:containerView];
-	}
+    [DYYYManager showToast:@"[Debug] 开始应用毛玻璃效果"];
+    
+    // 检查容器视图
+    if (!containerView) {
+        [DYYYManager showToast:@"[Debug] 错误：容器视图为空"];
+        return;
+    }
+    
+    // 设置容器视图背景透明
+    containerView.backgroundColor = [UIColor clearColor];
+    [DYYYManager showToast:@"[Debug] 已设置容器视图背景透明"];
+    
+    // 设置圆角
+    float userRadius = [[[NSUserDefaults standardUserDefaults] 
+        objectForKey:@"DYYYNotificationCornerRadius"] floatValue] ?: 12;
+    containerView.layer.cornerRadius = userRadius;
+    containerView.layer.masksToBounds = YES;
+    [DYYYManager showToast:[NSString stringWithFormat:@"[Debug] 已设置圆角: %.1f", userRadius]];
+    
+    // 移除现有的毛玻璃视图
+    for (UIView *subview in containerView.subviews) {
+        if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == 999) {
+            [subview removeFromSuperview];
+            [DYYYManager showToast:@"[Debug] 已移除现有毛玻璃视图"];
+        }
+    }
+    
+    // 创建新的毛玻璃视图
+    BOOL isDarkMode = [DYYYManager isDarkMode];
+    UIBlurEffectStyle blurStyle = isDarkMode ? UIBlurEffectStyleDark : UIBlurEffectStyleLight;
+    UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurStyle];
+    UIVisualEffectView *blurView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
+    
+    // 设置毛玻璃视图的框架和属性
+    blurView.frame = containerView.bounds;
+    [DYYYManager showToast:[NSString stringWithFormat:@"[Debug] 毛玻璃视图框架: %@", NSStringFromCGRect(blurView.frame)]];
+    
+    blurView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    blurView.tag = 999;
+    blurView.layer.cornerRadius = userRadius;
+    blurView.layer.masksToBounds = YES;
+    
+    // 设置透明度
+    float userTransparency = [[[NSUserDefaults standardUserDefaults] 
+        objectForKey:@"DYYYCommentBlurTransparent"] floatValue] ?: 0.5;
+    blurView.alpha = userTransparency;
+    
+    // 插入毛玻璃视图
+    [containerView insertSubview:blurView atIndex:0];
+    [DYYYManager showToast:@"[Debug] 已添加毛玻璃视图"];
+    
+    // 检查是否成功添加
+    UIView *addedBlurView = [containerView viewWithTag:999];
+    if (addedBlurView) {
+        [DYYYManager showToast:@"[Debug] 确认毛玻璃视图已添加到视图层级"];
+    } else {
+        [DYYYManager showToast:@"[Debug] 错误：未能找到添加的毛玻璃视图"];
+    }
+    
+    // 设置子视图背景透明
+    for (UIView *subview in containerView.subviews) {
+        if (![subview isKindOfClass:[UIVisualEffectView class]]) {
+            subview.backgroundColor = [UIColor clearColor];
+        }
+    }
+    [DYYYManager showToast:@"[Debug] 已设置所有子视图背景透明"];
+    
+    // 更新文字颜色
+    if (isDarkMode) {
+        [self setLabelsColorWhiteInView:containerView];
+    }
+    
+    [DYYYManager showToast:@"[Debug] 毛玻璃效果应用完成"];
 }
 
 %new
