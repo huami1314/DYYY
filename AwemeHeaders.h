@@ -671,11 +671,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 // - (void)removeFromSuperview;
 // - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context;
 // @end
-@interface AWEInnerNotificationWindow : UIWindow
-- (void)layoutSubviews;
-- (void)didMoveToWindow;
-- (void)removeFromSuperview;
-- (void)applyBlurEffectIfNeeded;
-- (void)setLabelsColorWhiteInView:(UIView *)view;
-- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context;
+@interface __AWEInnerNotiRootViewController : UIViewController
+- (void)setupNotificationBlur;
+- (void)updateBlurEffectForView:(UIView *)view withRadius:(float)radius;
 @end

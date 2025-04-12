@@ -3099,142 +3099,78 @@ static BOOL isDownloadFlied = NO;
 
 // %end
 
-%hook AWEInnerNotificationWindow
+%hook __AWEInnerNotiRootViewController
 
-- (void)layoutSubviews {
-    %orig;
-    [self applyBlurEffectIfNeeded];
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableNotificationTransparency"] && 
-        [DYYYManager isDarkMode]) {
-        [self setLabelsColorWhiteInView:self];
-    }
+- (void)viewDidLoad {
+	%orig;
+	[self setupNotificationBlur];
 }
 
-- (void)didMoveToWindow {
-    %orig;
-    [self addObserver:self forKeyPath:@"subviews" options:NSKeyValueObservingOptionNew context:nil];
-}
-
-- (void)removeFromSuperview {
-    [self removeObserver:self forKeyPath:@"subviews"];
-    %orig;
+- (void)viewWillLayoutSubviews {
+	%orig; 
+	[self setupNotificationBlur];
 }
 
 %new
-- (void)applyBlurEffectIfNeeded {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableNotificationTransparency"]) {
-        self.backgroundColor = [UIColor clearColor];
-        
-        // 获取用户设置的圆角值
-        float userRadius = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNotificationCornerRadius"] floatValue];
-        if(userRadius <= 0 || userRadius > 25) {
-            userRadius = 12;
-        }
-        self.layer.cornerRadius = userRadius;
-        self.layer.masksToBounds = YES;
-
-        // 设置子视图背景透明
-        for (UIView *subview in self.subviews) {
-            if (![subview isKindOfClass:[UIVisualEffectView class]]) {
-                subview.backgroundColor = [UIColor clearColor];
-            }
-        }
-
-        // 查找或创建毛玻璃效果视图
-        UIVisualEffectView *existingBlurView = nil;
-        for (UIView *subview in self.subviews) {
-            if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == 999) {
-                existingBlurView = (UIVisualEffectView *)subview;
-                break;
-            }
-        }
-
-        BOOL isDarkMode = [DYYYManager isDarkMode];
-        UIBlurEffectStyle blurStyle = isDarkMode ? UIBlurEffectStyleDark : UIBlurEffectStyleLight;
-
-        // 获取用户设置的透明度
-        float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
-        if (userTransparency <= 0 || userTransparency > 1) {
-            userTransparency = 0.5;
-        }
-
-        if (!existingBlurView) {
-            // 创建新的毛玻璃效果视图
-            UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurStyle];
-            UIVisualEffectView *blurView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
-            blurView.frame = self.bounds;
-            blurView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-            blurView.alpha = userTransparency;
-            blurView.tag = 999;
-            blurView.layer.cornerRadius = userRadius;
-            blurView.layer.masksToBounds = YES;
-
-            // 创建遮罩视图
-            UIView *overlayView = [[UIView alloc] initWithFrame:self.bounds];
-            CGFloat alpha = isDarkMode ? 0.2 : 0.1;
-            overlayView.backgroundColor = [UIColor colorWithWhite:(isDarkMode ? 0 : 1) alpha:alpha];
-            overlayView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-            overlayView.layer.cornerRadius = userRadius;
-            overlayView.layer.masksToBounds = YES;
-            [blurView.contentView addSubview:overlayView];
-
-            [self insertSubview:blurView atIndex:0];
-            
-            if (isDarkMode) {
-                [self setLabelsColorWhiteInView:self];
-            }
-        } else {
-            // 更新现有毛玻璃效果视图
-            [existingBlurView setEffect:[UIBlurEffect effectWithStyle:blurStyle]];
-            existingBlurView.alpha = userTransparency;
-            existingBlurView.layer.cornerRadius = userRadius;
-            existingBlurView.layer.masksToBounds = YES;
-
-            // 更新遮罩视图
-            for (UIView *subview in existingBlurView.contentView.subviews) {
-                if (subview.tag != 999) {
-                    CGFloat alpha = isDarkMode ? 0.2 : 0.1;
-                    subview.backgroundColor = [UIColor colorWithWhite:(isDarkMode ? 0 : 1) alpha:alpha];
-                    subview.layer.cornerRadius = userRadius;
-                    subview.layer.masksToBounds = YES;
-                }
-            }
-
-            [self insertSubview:existingBlurView atIndex:0];
-            
-            if (isDarkMode) {
-                [self setLabelsColorWhiteInView:self];
-            }
-        }
-    }
+- (void)setupNotificationBlur {
+	if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableNotificationTransparency"]) {
+		return;
+	}
+	
+	[DYYYManager showToast:@"开始应用通知栏毛玻璃效果"];
+	
+	// 设置根视图背景透明
+	self.view.backgroundColor = [UIColor clearColor];
+	
+	// 遍历查找通知容器视图
+	for (UIView *subview in self.view.subviews) {
+		if ([NSStringFromClass([subview class]) containsString:@"NotificationContainerView"]) {
+			// 设置毛玻璃效果
+			float userRadius = [[[NSUserDefaults standardUserDefaults] 
+				objectForKey:@"DYYYNotificationCornerRadius"] floatValue] ?: 12;
+			
+			subview.backgroundColor = [UIColor clearColor];
+			subview.layer.cornerRadius = userRadius;
+			subview.layer.masksToBounds = YES;
+			
+			// 处理毛玻璃效果
+			[self updateBlurEffectForView:subview withRadius:userRadius];
+			[DYYYManager showToast:@"通知栏毛玻璃效果配置完成"];
+			break;
+		}
+	}
 }
 
-%new
-- (void)setLabelsColorWhiteInView:(UIView *)view {
-    for (UIView *subview in view.subviews) {
-        if ([subview isKindOfClass:[UILabel class]]) {
-            UILabel *label = (UILabel *)subview;
-            if (![label.text isEqualToString:@"回复"]) {
-                label.textColor = [UIColor whiteColor];
-            }
-        }
-        [self setLabelsColorWhiteInView:subview];
-    }
+%new 
+- (void)updateBlurEffectForView:(UIView *)view withRadius:(float)radius {
+	// 移除现有的毛玻璃效果
+	[[view viewWithTag:999] removeFromSuperview];
+	
+	[DYYYManager showToast:@"开始更新毛玻璃效果样式"];
+	
+	// 添加新的毛玻璃效果
+	UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:[DYYYManager isDarkMode] ? 
+		UIBlurEffectStyleDark : UIBlurEffectStyleLight];
+	UIVisualEffectView *blurView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
+	blurView.frame = view.bounds;
+	blurView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+	blurView.tag = 999;
+	
+	float userTransparency = [[[NSUserDefaults standardUserDefaults] 
+		objectForKey:@"DYYYCommentBlurTransparent"] floatValue] ?: 0.5;
+	blurView.alpha = userTransparency;
+	
+	[view insertSubview:blurView atIndex:0];
+	
+	if ([DYYYManager isDarkMode]) {
+		[self setLabelsColorWhiteInView:view];
+		[DYYYManager showToast:@"深色模式下已更新文本颜色"];
+	}
+	
+	[DYYYManager showToast:@"毛玻璃效果样式更新完成"]; 
 }
 
-%new
-- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
-    if ([keyPath isEqualToString:@"subviews"]) {
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableNotificationTransparency"] && 
-            [DYYYManager isDarkMode]) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                [self setLabelsColorWhiteInView:self];
-            });
-        }
-    }
-}
 
-%end
 
 %ctor {
 	%init(DYYYSettingsGesture);
