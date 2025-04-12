@@ -1775,6 +1775,14 @@ static void showUserAgreementAlert() {
 			      @"imageName" : @"ic_eyeslash_outlined_16"}];
 		    [floatButtonItems addObject:enableClearButton];
 
+			// 添加清屏按钮自定义图标选项
+			AWESettingItemModel *clearButtonIcon = createIconCustomizationItem(
+				@"DYYYClearButtonIcon", 
+				@"清屏按钮图标", 
+				@"ic_roaming_outlined", 
+				@"Qingping.png");
+
+			[floatButtonItems addObject:clearButtonIcon];
 		    // 创建并组织所有section
 		    NSMutableArray *sections = [NSMutableArray array];
 		    [sections addObject:createSection(@"悬浮按钮设置", floatButtonItems)];
