@@ -3099,150 +3099,120 @@ static BOOL isDownloadFlied = NO;
 
 // %end
 
-%hook __AWEInnerNotiRootViewController
-- (void)viewDidLoad {
-    %orig;
-    [self setupNotificationBlur];
+%hook AWEInnerNotificationWindow
+
+- (id)initWithFrame:(CGRect)frame {
+	id orig = %orig;
+	[DYYYManager showToast:@"[Debug] NotificationWindow initialized"];
+	[self setupBlurEffectForNotificationView];
+	return orig;
 }
 
-- (void)viewWillLayoutSubviews {
-    %orig; 
-    [self setupNotificationBlur];
-}
-
-- (void)viewDidAppear:(BOOL)animated {
+- (void)layoutSubviews {
 	%orig;
-	[self setupNotificationBlur];
+	[DYYYManager showToast:@"[Debug] NotificationWindow layoutSubviews called"];
+	[self setupBlurEffectForNotificationView]; 
 }
 
-- (void) layoutSubviews {
+- (void)didMoveToWindow {
 	%orig;
-	[self setupNotificationBlur];
+	[DYYYManager showToast:@"[Debug] NotificationWindow didMoveToWindow called"];
+	[self setupBlurEffectForNotificationView];
+}
+
+- (void)didAddSubview:(UIView *)subview {
+	%orig;
+	if ([NSStringFromClass([subview class]) containsString:@"AWEInnerNotificationContainerView"]) {
+		[DYYYManager showToast:@"[Debug] NotificationContainer added"];
+		[self setupBlurEffectForNotificationView];
+	}
+}
+
+- (void)willRemoveSubview:(UIView *)subview {
+	%orig;
+	if ([NSStringFromClass([subview class]) containsString:@"AWEInnerNotificationContainerView"]) {
+		[DYYYManager showToast:@"[Debug] NotificationContainer will be removed"];
+	}
 }
 
 %new
-- (void)setupNotificationBlur {
-    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableNotificationTransparency"]) {
-        [DYYYManager showToast:@"通知栏毛玻璃效果未启用"];
-        return;
-    }
-    
-    [DYYYManager showToast:@"开始应用通知栏毛玻璃效果"];
-    
-    // 设置根视图背景透明
-    self.view.backgroundColor = [UIColor clearColor];
-    [DYYYManager showToast:@"已设置根视图背景透明"];
-    
-    BOOL foundContainer = NO;
-    // 遍历查找通知容器视图
-    for (UIView *subview in self.view.subviews) {
-        NSString *className = NSStringFromClass([subview class]);
-        [DYYYManager showToast:[NSString stringWithFormat:@"检查子视图: %@", className]];
-        
-        if ([className containsString:@"NotificationContainerView"]) {
-            foundContainer = YES;
-            [DYYYManager showToast:@"找到通知容器视图"];
-            
-            // 设置毛玻璃效果
-            float userRadius = [[[NSUserDefaults standardUserDefaults] 
-                objectForKey:@"DYYYNotificationCornerRadius"] floatValue] ?: 12;
-            
-            subview.backgroundColor = [UIColor clearColor];
-            subview.layer.cornerRadius = userRadius;
-            subview.layer.masksToBounds = YES;
-            
-            // 处理毛玻璃效果
-            [self updateBlurEffectForView:subview withRadius:userRadius];
-            break;
-        }
-    }
-    
-    if (!foundContainer) {
-        [DYYYManager showToast:@"未找到通知容器视图"];
-    }
+- (void)setupBlurEffectForNotificationView {
+	if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableNotificationTransparency"]) {
+		[DYYYManager showToast:@"[Debug] Notification transparency disabled"];
+		return;
+	}
+	
+	BOOL foundContainer = NO;
+	for (UIView *subview in self.subviews) {
+		if ([NSStringFromClass([subview class]) containsString:@"AWEInnerNotificationContainerView"]) {
+			foundContainer = YES;
+			[DYYYManager showToast:@"[Debug] Found notification container, applying blur"];
+			[self applyBlurEffectToView:subview];
+			break;
+		}
+	}
+	
+	if (!foundContainer) {
+		[DYYYManager showToast:@"[Debug] Notification container not found"];
+	}
 }
 
-%new 
-- (void)updateBlurEffectForView:(UIView *)view withRadius:(float)radius {
-    if (!view) {
-        [DYYYManager showToast:@"错误：视图为空"];
-        return;
-    }
-    
-    // 移除现有的毛玻璃效果
-    UIView *existingBlurView = [view viewWithTag:999];
-    if (existingBlurView) {
-        [DYYYManager showToast:@"移除现有毛玻璃效果"];
-        [existingBlurView removeFromSuperview];
-    }
-    
-    [DYYYManager showToast:@"创建新的毛玻璃效果视图"];
-    
-    // 添加新的毛玻璃效果
-    UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:[DYYYManager isDarkMode] ? 
-        UIBlurEffectStyleDark : UIBlurEffectStyleLight];
-    UIVisualEffectView *blurView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
-    blurView.frame = view.bounds;
-    blurView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    blurView.tag = 999;
-    
-    float userTransparency = [[[NSUserDefaults standardUserDefaults] 
-        objectForKey:@"DYYYCommentBlurTransparent"] floatValue] ?: 0.5;
-    blurView.alpha = userTransparency;
-    
-    [view insertSubview:blurView atIndex:0];
-    [DYYYManager showToast:@"已添加毛玻璃效果视图"];
-    
-    if ([DYYYManager isDarkMode]) {
-        [DYYYManager showToast:@"当前为深色模式，开始设置文本颜色"];
-        [self setLabelsColorWhiteInView:view];
-    }
+%new
+- (void)applyBlurEffectToView:(UIView *)containerView {
+	containerView.backgroundColor = [UIColor clearColor];
+	
+	float userRadius = [[[NSUserDefaults standardUserDefaults] 
+		objectForKey:@"DYYYNotificationCornerRadius"] floatValue] ?: 12;
+	[DYYYManager showToast:[NSString stringWithFormat:@"[Debug] Using corner radius: %.1f", userRadius]];
+	
+	containerView.layer.cornerRadius = userRadius;
+	containerView.layer.masksToBounds = YES;
+	
+	UIView *existingBlurView = [containerView viewWithTag:999];
+	if (existingBlurView) {
+		[DYYYManager showToast:@"[Debug] Removing existing blur view"];
+		[existingBlurView removeFromSuperview];
+	}
+	
+	BOOL isDarkMode = [DYYYManager isDarkMode];
+	[DYYYManager showToast:[NSString stringWithFormat:@"[Debug] Dark mode: %@", isDarkMode ? @"YES" : @"NO"]];
+	
+	UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:isDarkMode ? 
+		UIBlurEffectStyleDark : UIBlurEffectStyleLight];
+	UIVisualEffectView *blurView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
+	blurView.frame = containerView.bounds;
+	blurView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+	blurView.tag = 999;
+	
+	float userTransparency = [[[NSUserDefaults standardUserDefaults] 
+		objectForKey:@"DYYYCommentBlurTransparent"] floatValue] ?: 0.5;
+	[DYYYManager showToast:[NSString stringWithFormat:@"[Debug] Using transparency: %.2f", userTransparency]];
+	
+	blurView.alpha = userTransparency;
+	
+	[containerView insertSubview:blurView atIndex:0];
+	
+	if (isDarkMode) {
+		[DYYYManager showToast:@"[Debug] Updating text colors for dark mode"];
+		[self setLabelsColorWhiteInView:containerView];
+	}
 }
 
 %new
 - (void)setLabelsColorWhiteInView:(UIView *)view {
-	// 判断视图是否为nil 
-	if (!view) {
-		[DYYYManager showToast:@"视图为空,无法设置标签颜色"];
-		return;
+	int labelCount = 0;
+	for (UIView *subview in view.subviews) {
+		if ([subview isKindOfClass:[UILabel class]]) {
+			labelCount++;
+			UILabel *label = (UILabel *)subview;
+			if (![label.text isEqualToString:@"回复"]) {
+				label.textColor = [UIColor whiteColor];
+			}
+		}
+		[self setLabelsColorWhiteInView:subview];
 	}
-
-	// 从控制器的视图开始遍历
-	if ([view isEqual:self.view]) {
-		[DYYYManager showToast:@"开始处理根视图内的标签"];
-		for (UIView *containerView in view.subviews) {
-			if ([NSStringFromClass([containerView class]) containsString:@"NotificationContainerView"]) {
-				[DYYYManager showToast:@"找到通知容器,开始处理其中的标签"];
-				// 遍历通知容器内的所有子视图
-				for (UIView *subview in containerView.subviews) {
-					// 设置UILabel颜色为白色
-					if ([subview isKindOfClass:[UILabel class]]) {
-						UILabel *label = (UILabel *)subview;
-						if (![label.text isEqualToString:@"回复"]) {
-							label.textColor = [UIColor whiteColor];
-							[DYYYManager showToast:[NSString stringWithFormat:@"设置标签[%@]为白色", label.text]];
-						}
-					}
-					// 递归处理子视图
-					[self setLabelsColorWhiteInView:subview];
-				}
-				[DYYYManager showToast:@"完成处理通知容器内的所有标签"];
-			}
-		}
-	} else {
-		// 处理子视图
-		[DYYYManager showToast:@"处理子视图中的标签"];
-		for (UIView *subview in view.subviews) {
-			if ([subview isKindOfClass:[UILabel class]]) {
-				UILabel *label = (UILabel *)subview;
-				if (![label.text isEqualToString:@"回复"]) {
-					label.textColor = [UIColor whiteColor];
-					[DYYYManager showToast:[NSString stringWithFormat:@"设置标签[%@]为白色", label.text]];
-				}
-			}
-			[self setLabelsColorWhiteInView:subview];
-		}
-		[DYYYManager showToast:@"完成处理子视图中的标签"];
+	if (labelCount > 0) {
+		[DYYYManager showToast:[NSString stringWithFormat:@"[Debug] Updated %d label colors", labelCount]];
 	}
 }
 
