@@ -2953,29 +2953,31 @@ static BOOL isDownloadFlied = NO;
 
 %end
 
-//应用内推送毛玻璃效果
-%hook __AWEInnerNotiRootViewController
+%hook AWEInnerNotificationContainerView
 
-- (void)viewDidLayoutSubviews {
-	%orig;
-	[self applyBlurEffectIfNeeded];
+- (void)layoutSubviews {
+    %orig;
+    [self applyBlurEffectIfNeeded];
 }
 
 - (void)viewDidAppear:(BOOL)animated {
-	%orig;
-	[self applyBlurEffectIfNeeded];
+    %orig;
+    [self applyBlurEffectIfNeeded];
 }
 
-- (void)viewWillAppear:(BOOL)animated {
-	%orig;
-	[self applyBlurEffectIfNeeded];
+- (id)initWithFrame:(CGRect)frame {
+    self = %orig;
+    if (self) {
+        [self applyBlurEffectIfNeeded];
+    }
+    return self;
 }
 
 %new
 - (void)applyBlurEffectIfNeeded {
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableNotificationTransparency"]) {
 
-		self.view.backgroundColor = [UIColor clearColor];
+		self.backgroundColor = [UIColor clearColor];
 		float userRadius = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNotificationCornerRadius"] floatValue];
 		if(userRadius <= 0 || userRadius > 25) {
 			userRadius = 12;
@@ -2983,14 +2985,14 @@ static BOOL isDownloadFlied = NO;
 		self.layer.cornerRadius = userRadius;
 		self.layer.masksToBounds = YES;
 
-		for (UIView *subview in self.view.subviews) {
+		for (UIView *subview in self.subviews) {
 			if (![subview isKindOfClass:[UIVisualEffectView class]]) {
 				subview.backgroundColor = [UIColor clearColor];
 			}
 		}
 
 		UIVisualEffectView *existingBlurView = nil;
-		for (UIView *subview in self.view.subviews) {
+		for (UIView *subview in self.subviews) {
 			if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == 999) {
 				existingBlurView = (UIVisualEffectView *)subview;
 				break;
@@ -3008,14 +3010,14 @@ static BOOL isDownloadFlied = NO;
 		if (!existingBlurView) {
 			UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurStyle];
 			UIVisualEffectView *blurView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
-			blurView.frame = self.view.bounds;
+			blurView.frame = self.bounds;
 			blurView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 			blurView.alpha = userTransparency;
 			blurView.tag = 999;
 			blurView.layer.cornerRadius = userRadius;
 			blurView.layer.masksToBounds = YES;
 
-			UIView *overlayView = [[UIView alloc] initWithFrame:self.view.bounds];
+			UIView *overlayView = [[UIView alloc] initWithFrame:self.bounds];
 			CGFloat alpha = isDarkMode ? 0.2 : 0.1; 
 			overlayView.backgroundColor = [UIColor colorWithWhite:(isDarkMode ? 0 : 1) alpha:alpha];
 			overlayView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
@@ -3056,7 +3058,7 @@ static BOOL isDownloadFlied = NO;
 
 %new
 - (void)setLabelsColorWhiteInView:(UIView *)view {
-	for (UIView *subview in self.view.subviews) {
+	for (UIView *subview in view.subviews) {
 		if ([subview isKindOfClass:[UILabel class]]) {
 			UILabel *label = (UILabel *)subview;
 			if (![label.text isEqualToString:@"回复"]) {
