@@ -665,4 +665,6 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWEInnerNotificationContainerView : UIView
 - (void)applyBlurEffectIfNeeded;
 - (void)setLabelsColorWhiteInView:(UIView *)view;
+- (void)viewDidAppear:(BOOL)animated;
+- (id)initWithFrame:(CGRect)frame;
 @end

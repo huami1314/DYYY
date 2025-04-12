@@ -2961,6 +2961,19 @@ static BOOL isDownloadFlied = NO;
     [self applyBlurEffectIfNeeded];
 }
 
+- (void)viewDidAppear:(BOOL)animated {
+    %orig;
+    [self applyBlurEffectIfNeeded];
+}
+
+- (id)initWithFrame:(CGRect)frame {
+    self = %orig;
+    if (self) {
+        [self applyBlurEffectIfNeeded];
+    }
+    return self;
+}
+
 %new
 - (void)applyBlurEffectIfNeeded {
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableNotificationTransparency"]) {
