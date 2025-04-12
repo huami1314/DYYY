@@ -3100,7 +3100,27 @@ static BOOL isDownloadFlied = NO;
 // %end
 
 %hook __AWEInnerNotiRootViewController
+- (void)viewDidLoad {
+    %orig;
+    [self setupNotificationBlur];
+}
 
+- (void)viewWillLayoutSubviews {
+    %orig; 
+    [self setupNotificationBlur];
+}
+
+- (void)viewDidAppear:(BOOL)animated {
+	%orig;
+	[self setupNotificationBlur];
+}
+
+- (void) layoutSubviews {
+	%orig;
+	[self setupNotificationBlur];
+})
+
+%new
 - (void)setupNotificationBlur {
     if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableNotificationTransparency"]) {
         [DYYYManager showToast:@"通知栏毛玻璃效果未启用"];
