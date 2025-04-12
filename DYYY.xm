@@ -3073,6 +3073,33 @@ static BOOL isDownloadFlied = NO;
 
 %end
 
+%hook UILabel 
+
+- (void)setTextColor:(UIColor *)color {
+	%orig;
+	
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableNotificationTransparency"] && 
+		[DYYYManager isDarkMode]) {
+		
+		// 检查文本颜色是否为黑色
+		CGFloat red, green, blue, alpha;
+		if ([color getRed:&red green:&green blue:&blue alpha:&alpha]) {
+			if (red == 0 && green == 0 && blue == 0) { 
+				// 向上遍历父视图查找AWEInnerPushTitleItemView
+				UIView *superview = self.superview;
+				while (superview != nil) {
+					if ([NSStringFromClass([superview class]) isEqualToString:@"AWEInnerPushTitleItemView"]) {
+						%orig([UIColor whiteColor]);
+						break;
+					}
+					superview = superview.superview;
+				}
+			}
+		}
+	}
+}
+
+%end
 
 %ctor {
 	%init(DYYYSettingsGesture);
