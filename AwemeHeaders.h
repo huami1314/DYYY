@@ -662,12 +662,20 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 //应用内推送容器
-@interface AWEInnerNotificationContainerView : UIView
-- (void)applyBlurEffectIfNeeded;
-- (void)setLabelsColorWhiteInView:(UIView *)view;
-- (void)viewDidAppear:(BOOL)animated;
-- (id)initWithFrame:(CGRect)frame;
+// @interface AWEInnerNotificationContainerView : UIView
+// - (void)applyBlurEffectIfNeeded;
+// - (void)setLabelsColorWhiteInView:(UIView *)view;
+// - (void)viewDidAppear:(BOOL)animated;
+// - (id)initWithFrame:(CGRect)frame;
+// - (void)didMoveToWindow;
+// - (void)removeFromSuperview;
+// - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context;
+// @end
+@interface AWEInnerNotificationWindow : UIWindow
+- (void)layoutSubviews;
 - (void)didMoveToWindow;
 - (void)removeFromSuperview;
+- (void)applyBlurEffectIfNeeded;
+- (void)setLabelsColorWhiteInView:(UIView *)view;
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context;
 @end
