@@ -2406,9 +2406,10 @@ static void showUserAgreementAlert() {
         // 清屏按钮开关状态
         BOOL isEnabled = getUserDefaults(@"DYYYEnableFloatClearButton");
         // 清屏按钮图标依赖于清屏按钮开关
-        item.isEnable = isEnabled;
+        AWESettingItemModel *clearButtonToggleItem = [clearButtonItems firstObject];
+        clearButtonToggleItem.isEnable = isEnabled;
         // 清屏按钮大小设置依赖于清屏按钮开关
-        AWESettingItemModel *clearButtonSizeItem = [clearButtonItems objectAtIndex:1]; 
+        AWESettingItemModel *clearButtonSizeItem = [clearButtonItems lastObject];
         clearButtonSizeItem.isEnable = isEnabled;
     }
 }
