@@ -444,8 +444,7 @@ static void initTargetClassNames(void) {
                 hideButton = nil;
             }
             // 获取用户设置的按钮大小，如果没有设置则使用默认值40
-            NSString *buttonSizeString = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYEnableFloatClearButtonSize"];
-            CGFloat buttonSize = buttonSizeString ? [buttonSizeString floatValue] : 40.0;
+            CGFloat buttonSize = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYEnableFloatClearButtonSize"] ?: 40.0;
             hideButton = [[HideUIButton alloc] initWithFrame:CGRectMake(0, 0, buttonSize, buttonSize)];
             NSString *savedPositionString = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYHideUIButtonPosition"];
             if (savedPositionString) {
