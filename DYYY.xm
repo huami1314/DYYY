@@ -3193,20 +3193,12 @@ static BOOL isDownloadFlied = NO;
 	for (UIView *subview in view.subviews) {
 		if ([subview isKindOfClass:[UILabel class]]) {
 			UILabel *label = (UILabel *)subview;
-			NSString *text = label.text ?: @"";
+			NSString *text = label.text;
 			
-			// 不设置为白色的关键词列表 
-			NSArray *excludedKeywords = @[@"回复", @"查看", @"火花"];
-			
-			BOOL shouldSkip = NO;
-			for (NSString *keyword in excludedKeywords) {
-				if ([text containsString:keyword]) {
-					shouldSkip = YES;
-					break;
-				}
-			}
-			
-			if (!shouldSkip) {
+			// 检查文本是否有关键字
+			if (![text isEqualToString:@"回复"] && 
+				![text isEqualToString:@"查看"] && 
+				![text isEqualToString:@"续火花"]) {
 				label.textColor = [UIColor whiteColor];
 			}
 		}
