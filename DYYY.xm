@@ -3041,13 +3041,7 @@ static BOOL isDownloadFlied = NO;
 	
 	[containerView insertSubview:blurView atIndex:0];
 	
-	for (UIView *subview in containerView.subviews) {
-		if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == 999) {
-			continue;
-		}
-		subview.backgroundColor = [UIColor clearColor];
-		subview.opaque = NO;
-	}
+	[self clearBackgroundRecursivelyInView:containerView];
 
 	if (isDarkMode) {
 		[self setLabelsColorWhiteInView:containerView];
@@ -3069,6 +3063,18 @@ static BOOL isDownloadFlied = NO;
 		}
 		[self setLabelsColorWhiteInView:subview];
 	}
+}
+
+%new 
+- (void)clearBackgroundRecursivelyInView:(UIView *)view {
+    for (UIView *subview in view.subviews) {
+        if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == 999) {
+            continue;
+        }
+        subview.backgroundColor = [UIColor clearColor];
+        subview.opaque = NO;
+        [self clearBackgroundRecursivelyInView:subview];
+    }
 }
 
 %end
