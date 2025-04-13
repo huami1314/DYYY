@@ -1616,7 +1616,7 @@ static void showUserAgreementAlert() {
 			      @"detail" : @"",
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_gearsimplify_outlined_20"},
-				@{@"identifier" : @"DYYYEnableSaveAvatar",
+			      @{@"identifier" : @"DYYYEnableSaveAvatar",
 			      @"title" : @"启用保存他人头像",
 			      @"detail" : @"",
 			      @"cellType" : @6,
