@@ -1984,6 +1984,12 @@ static void showUserAgreementAlert() {
 
 		    [clearButtonItems addObject:clearButtonIcon];
 
+        // 获取清屏按钮的当前开关状态
+        BOOL isEnabled = getUserDefaults(@"DYYYEnableFloatClearButton");
+        // 更新清屏按钮大小和图标设置项的启用状态
+        clearButtonSizeItem.isEnable = isEnabled;
+        clearButtonIcon.isEnable = isEnabled;
+
 		    // 创建并组织所有section
 		    NSMutableArray *sections = [NSMutableArray array];
 		    [sections addObject:createSection(@"快捷倍速", speedButtonItems)];
@@ -2402,15 +2408,11 @@ static void showUserAgreementAlert() {
         // 倍速设置相关选项依赖于快捷倍速按钮开关
         BOOL isEnabled = getUserDefaults(@"DYYYEnableFloatSpeedButton");
         item.isEnable = isEnabled;
-    } else if ([item.identifier isEqualToString:@"DYYYClearButtonIcon"]) {
-        // 清屏按钮开关状态
+    } else if ([item.identifier isEqualToString:@"DYYYClearButtonIcon"] || 
+               [item.identifier isEqualToString:@"DYYYEnableFloatClearButtonSize"]) {
+        // 清屏按钮图标和大小设置依赖于清屏按钮开关
         BOOL isEnabled = getUserDefaults(@"DYYYEnableFloatClearButton");
-        // 清屏按钮图标依赖于清屏按钮开关
-        AWESettingItemModel *clearButtonToggleItem = [clearButtonItems firstObject];
-        clearButtonToggleItem.isEnable = isEnabled;
-        // 清屏按钮大小设置依赖于清屏按钮开关
-        AWESettingItemModel *clearButtonSizeItem = [clearButtonItems lastObject];
-        clearButtonSizeItem.isEnable = isEnabled;
+        item.isEnable = isEnabled;
     }
 }
 
