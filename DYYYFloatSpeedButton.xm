@@ -1,19 +1,16 @@
 #import <UIKit/UIKit.h>
 #import <objc/runtime.h>
 #import "AwemeHeaders.h"
+#import "DYYYManager.h"
 
 @class AWEFeedCellViewController;
 @class AWEAwemePlayVideoViewController; 
-@class DUXToast;
-
-void showToast(NSString *text);
-
 // 声明悬浮按钮类
 @interface FloatingSpeedButton : UIButton
 @property (nonatomic, assign) CGPoint lastLocation;
 @property (nonatomic, weak) AWEPlayInteractionViewController *interactionController;
-@property (nonatomic, assign) BOOL isLocked; // 添加锁定状态属性
-@property (nonatomic, strong) NSTimer *firstStageTimer; // 保留一个计时器用于其他用途
+@property (nonatomic, assign) BOOL isLocked;
+@property (nonatomic, strong) NSTimer *firstStageTimer; 
 @property (nonatomic, assign) BOOL justToggledLock; // 添加锁定状态切换标记
 @property (nonatomic, assign) BOOL originalLockState; // 保存原始锁定状态
 @property (nonatomic, assign) BOOL isResponding; // 新增属性跟踪按钮响应状态
@@ -21,7 +18,7 @@ void showToast(NSString *text);
 - (void)saveButtonPosition;
 - (void)loadSavedPosition;
 - (void)resetButtonState; // 添加方法确保按钮状态可以被重置
-- (void)toggleLockState; // 新增方法，替代原来的两阶段长按
+- (void)toggleLockState; 
 @end
 
 @implementation FloatingSpeedButton
@@ -49,8 +46,7 @@ void showToast(NSString *text);
         // 初始化响应状态为YES
         self.isResponding = YES;
         
-        // 设置状态监测定时器，每5秒检查一次按钮状态
-        self.statusCheckTimer = [NSTimer scheduledTimerWithTimeInterval:5.0
+        self.statusCheckTimer = [NSTimer scheduledTimerWithTimeInterval:60.0
                                                                  target:self
                                                                selector:@selector(checkAndRecoverButtonStatus)
                                                                userInfo:nil
@@ -68,15 +64,13 @@ void showToast(NSString *text);
     }
     return self;
 }
-
-// 新增方法：集中设置所有手势识别器
 - (void)setupGestureRecognizers {
     // 移除所有现有手势识别器，避免重复添加
     for (UIGestureRecognizer *recognizer in [self.gestureRecognizers copy]) {
         [self removeGestureRecognizer:recognizer];
     }
     
-    // 重新添加拖拽手势
+    // 重新添加拖拽手势 - 不再设置优先级依赖
     UIPanGestureRecognizer *panGesture = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePan:)];
     [self addGestureRecognizer:panGesture];
     
@@ -85,70 +79,65 @@ void showToast(NSString *text);
     longPressGesture.minimumPressDuration = 0.5;
     [self addGestureRecognizer:longPressGesture];
     
-    // 重新添加单击手势
-    UITapGestureRecognizer *singleTapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleSingleTap:)];
-    singleTapGesture.numberOfTapsRequired = 1;
-    [self addGestureRecognizer:singleTapGesture];
-    
-    // 明确设置优先级关系
-    [singleTapGesture requireGestureRecognizerToFail:longPressGesture];
-    [panGesture requireGestureRecognizerToFail:singleTapGesture];
+    // 使用触摸事件而不是单击手势来处理点击
+    [self addTarget:self action:@selector(handleTouchUpInside:) forControlEvents:UIControlEventTouchUpInside];
+    [self addTarget:self action:@selector(handleTouchDown:) forControlEvents:UIControlEventTouchDown];
+    [self addTarget:self action:@selector(handleTouchUpOutside:) forControlEvents:UIControlEventTouchUpOutside];
     
     // 设置代理
     panGesture.delegate = (id<UIGestureRecognizerDelegate>)self;
     longPressGesture.delegate = (id<UIGestureRecognizerDelegate>)self;
-    singleTapGesture.delegate = (id<UIGestureRecognizerDelegate>)self;
 }
 
-// 改进手势识别器代理方法，优化手势处理
+// 修改手势代理方法
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
-    // 完全分离手势，不允许同时识别
-    return NO;
-}
-
-// 确保点击手势的优先级高于其他手势
-- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldBeRequiredToFailByGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
-    if ([gestureRecognizer isKindOfClass:[UITapGestureRecognizer class]] && 
-        ([otherGestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]] || 
-         [otherGestureRecognizer isKindOfClass:[UILongPressGestureRecognizer class]])) {
+    // 允许拖拽手势和其他手势同时工作
+    if ([gestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]]) {
         return YES;
     }
     return NO;
 }
 
-- (void)handleSingleTap:(UITapGestureRecognizer *)gesture {
-    if (gesture.state == UIGestureRecognizerStateEnded) {
-        // 标记按钮响应状态
-        self.isResponding = YES;
-        
-        // 如果刚刚切换了锁定状态，不触发点击事件
-        if (self.justToggledLock) {
-            self.justToggledLock = NO; // 重要：立即重置标志
-            return;
-        }
-        
-        // 提供视觉反馈
+// 添加触摸事件处理方法
+- (void)handleTouchDown:(UIButton *)sender {
+    // 标记按钮响应状态
+    self.isResponding = YES;
+}
+
+- (void)handleTouchUpInside:(UIButton *)sender {
+    // 如果刚刚切换了锁定状态，不触发点击事件
+    if (self.justToggledLock) {
+        self.justToggledLock = NO; // 立即重置标志
+        return;
+    }
+    
+    // 提供视觉反馈
+    [UIView animateWithDuration:0.1 animations:^{
+        self.transform = CGAffineTransformMakeScale(1.2, 1.2);
+    } completion:^(BOOL finished) {
         [UIView animateWithDuration:0.1 animations:^{
-            self.transform = CGAffineTransformMakeScale(1.2, 1.2);
-        } completion:^(BOOL finished) {
-            [UIView animateWithDuration:0.1 animations:^{
-                self.transform = CGAffineTransformIdentity;
-            }];
+            self.transform = CGAffineTransformIdentity;
         }];
-        
-        // 确保控制器存在再调用方法，记录调用是否成功
-        if (self.interactionController) {
-            @try {
-                [self.interactionController speedButtonTapped:self];
-            }
-            @catch (NSException *exception) {
-                self.isResponding = NO; // 标记按钮状态异常
-            }
-        } else {
+    }];
+    
+    // 确保控制器存在再调用方法
+    if (self.interactionController) {
+        @try {
+            [self.interactionController speedButtonTapped:self];
+        }
+        @catch (NSException *exception) {
             self.isResponding = NO; // 标记按钮状态异常
         }
+    } else {
+        self.isResponding = NO; // 标记按钮状态异常
     }
 }
+
+- (void)handleTouchUpOutside:(UIButton *)sender {
+    // 重置可能的状态
+    self.justToggledLock = NO;
+}
+
 - (void)handleLongPress:(UILongPressGestureRecognizer *)gesture {
     // 标记按钮响应状态
     self.isResponding = YES;
@@ -176,7 +165,7 @@ void showToast(NSString *text);
     
     // 显示锁定/解锁提示
     NSString *toastMessage = self.isLocked ? @"按钮已锁定" : @"按钮已解锁";
-    showToast(toastMessage);
+    [DYYYManager showToast:toastMessage];
     
     // 如果锁定了，保存当前位置
     if (self.isLocked) {
@@ -214,6 +203,7 @@ void showToast(NSString *text);
     [self setupGestureRecognizers];
 }
 
+// 优化拖拽手势处理函数
 - (void)handlePan:(UIPanGestureRecognizer *)pan {
     // 如果按钮被锁定，不执行拖动
     if (self.isLocked) return;
@@ -221,26 +211,30 @@ void showToast(NSString *text);
     // 拖动时确保 justToggledLock 为 NO，避免影响后续点击
     self.justToggledLock = NO;
     
+    // 使用触摸点位置而不是中心点，提高响应灵敏度
+    CGPoint touchPoint = [pan locationInView:self.superview];
+    
     if (pan.state == UIGestureRecognizerStateBegan) {
         self.lastLocation = self.center;
-    }
-    
-    CGPoint translation = [pan translationInView:self.superview];
-    CGPoint newCenter = CGPointMake(self.lastLocation.x + translation.x, 
-                                    self.lastLocation.y + translation.y);
-    
-    // 确保按钮不会超出屏幕边界，并且不会移动到底部导航栏区域
-    CGFloat halfWidth = self.frame.size.width / 2;
-    CGFloat halfHeight = self.frame.size.height / 2;
-    CGRect superBounds = self.superview.bounds;
-    CGFloat bottomSafeArea = 20.0; // 设置底部安全区域
-    
-    newCenter.x = MAX(halfWidth, MIN(newCenter.x, superBounds.size.width - halfWidth));
-    newCenter.y = MAX(halfHeight, MIN(newCenter.y, superBounds.size.height - halfHeight - bottomSafeArea));
-    
-    self.center = newCenter;
-    
-    if (pan.state == UIGestureRecognizerStateEnded) {
+    } 
+    else if (pan.state == UIGestureRecognizerStateChanged) {
+        CGPoint translation = [pan translationInView:self.superview];
+        CGPoint newCenter = CGPointMake(self.center.x + translation.x, self.center.y + translation.y);
+        
+        // 边界检查
+        newCenter.x = MAX(self.frame.size.width / 2, MIN(newCenter.x, self.superview.frame.size.width - self.frame.size.width / 2));
+        newCenter.y = MAX(self.frame.size.height / 2, MIN(newCenter.y, self.superview.frame.size.height - self.frame.size.height / 2));
+        
+        self.center = newCenter;
+        [pan setTranslation:CGPointZero inView:self.superview];
+        
+        // 增加透明度变化提供视觉反馈
+        self.alpha = 0.8;
+    } 
+    else if (pan.state == UIGestureRecognizerStateEnded || 
+             pan.state == UIGestureRecognizerStateCancelled) {
+        // 恢复透明度
+        self.alpha = 1.0;
         [self saveButtonPosition];
     }
 }
@@ -248,21 +242,21 @@ void showToast(NSString *text);
 - (void)saveButtonPosition {
     if (self.superview) {
         NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-        [defaults setFloat:self.center.x / self.superview.bounds.size.width forKey:@"SpeedButtonCenterXPercent"];
-        [defaults setFloat:self.center.y / self.superview.bounds.size.height forKey:@"SpeedButtonCenterYPercent"];
+        [defaults setFloat:self.center.x / self.superview.bounds.size.width forKey:@"DYYYSpeedButtonCenterXPercent"];
+        [defaults setFloat:self.center.y / self.superview.bounds.size.height forKey:@"DYYYSpeedButtonCenterYPercent"];
         // 保存锁定状态
-        [defaults setBool:self.isLocked forKey:@"SpeedButtonLocked"];
+        [defaults setBool:self.isLocked forKey:@"DYYYSpeedButtonLocked"];
         [defaults synchronize];
     }
 }
 
 - (void)loadSavedPosition {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    float centerXPercent = [defaults floatForKey:@"SpeedButtonCenterXPercent"];
-    float centerYPercent = [defaults floatForKey:@"SpeedButtonCenterYPercent"];
+    float centerXPercent = [defaults floatForKey:@"DYYYSpeedButtonCenterXPercent"];
+    float centerYPercent = [defaults floatForKey:@"DYYYSpeedButtonCenterYPercent"];
     
     // 加载锁定状态
-    self.isLocked = [defaults boolForKey:@"SpeedButtonLocked"];
+    self.isLocked = [defaults boolForKey:@"DYYYSpeedButtonLocked"];
     
     if (centerXPercent > 0 && centerYPercent > 0 && self.superview) {
         self.center = CGPointMake(centerXPercent * self.superview.bounds.size.width,
@@ -270,7 +264,7 @@ void showToast(NSString *text);
     }
 }
 
-// 新增状态检查和恢复方法
+// 状态检查和恢复方法
 - (void)checkAndRecoverButtonStatus {
     if (!self.isResponding) {
         // 如果已经检测到按钮无响应，尝试恢复
@@ -291,7 +285,6 @@ void showToast(NSString *text);
         for (UIViewController *vc in [self findViewControllersInHierarchy:topVC]) {
             if ([vc isKindOfClass:%c(AWEPlayInteractionViewController)]) {
                 self.interactionController = (AWEPlayInteractionViewController *)vc;
-                NSLog(@"[SpeedX] 交互控制器引用已恢复");
                 break;
             }
         }
@@ -328,7 +321,7 @@ static BOOL isCommentViewVisible = NO;
 // 添加变量用于控制是否在速度后面显示"x"
 static BOOL showSpeedX = NO;
 // 添加按钮大小变量
-static CGFloat speedButtonSize = 36.0;
+static CGFloat speedButtonSize = 32.0;
 static BOOL isFloatSpeedButtonEnabled = NO;
 
 // 添加对评论控制器的 hook
@@ -390,24 +383,20 @@ static BOOL isFloatSpeedButtonEnabled = NO;
 
 %end
 
-void showToast(NSString *text) {
-    [%c(DUXToast) showText:text];
-}
-
 // 获取倍速配置
 NSArray* getSpeedOptions() {
-    NSString *speedConfig = [[NSUserDefaults standardUserDefaults] stringForKey:@"SpeedSwitch"] ?: @"1.0,1.25,1.5,2.0";
+    NSString *speedConfig = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYSpeedSettings"] ?: @"1.0,1.25,1.5,2.0";
     return [speedConfig componentsSeparatedByString:@","];
 }
 
 // 获取当前倍速索引
 NSInteger getCurrentSpeedIndex() {
-    NSInteger index = [[NSUserDefaults standardUserDefaults] integerForKey:@"CurrentSpeedIndex"];
+    NSInteger index = [[NSUserDefaults standardUserDefaults] integerForKey:@"DYYYCurrentSpeedIndex"];
     NSArray *speeds = getSpeedOptions();
     
     if (index >= speeds.count || index < 0) {
         index = 0;
-        [[NSUserDefaults standardUserDefaults] setInteger:index forKey:@"CurrentSpeedIndex"];
+        [[NSUserDefaults standardUserDefaults] setInteger:index forKey:@"DYYYCurrentSpeedIndex"];
         [[NSUserDefaults standardUserDefaults] synchronize];
     }
     
@@ -431,7 +420,7 @@ void setCurrentSpeedIndex(NSInteger index) {
     if (speeds.count == 0) return;
     index = index % speeds.count;
     
-    [[NSUserDefaults standardUserDefaults] setInteger:index forKey:@"CurrentSpeedIndex"];
+    [[NSUserDefaults standardUserDefaults] setInteger:index forKey:@"DYYYCurrentSpeedIndex"];
     [[NSUserDefaults standardUserDefaults] synchronize];
     
 }
@@ -471,7 +460,7 @@ void updateSpeedButtonUI() {
 
 - (void)setIsAutoPlay:(BOOL)arg0 {
     // 检查是否启用了自动恢复第一个倍速的功能
-    BOOL autoRestoreSpeed = [[NSUserDefaults standardUserDefaults] boolForKey:@"AutoRestoreSpeed"];
+    BOOL autoRestoreSpeed = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYAutoRestoreSpeed"];
     
     // 如果启用了自动恢复功能，则将当前索引设置为0（第一个速度）
     if (autoRestoreSpeed) {
@@ -509,7 +498,7 @@ void updateSpeedButtonUI() {
     // 添加悬浮速度控制按钮
     if (speedButton == nil) {
         // 使用保存的按钮大小或默认值
-        speedButtonSize = [[NSUserDefaults standardUserDefaults] floatForKey:@"SpeedButtonSize"] ?: 36.0;
+        speedButtonSize = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYSpeedButtonSize"] ?: 32.0;
         
         CGRect screenBounds = [UIScreen mainScreen].bounds;
         // 修改初始位置为屏幕中间
@@ -523,7 +512,7 @@ void updateSpeedButtonUI() {
         speedButton.interactionController = self;
         
         // 加载"显示x"的设置
-        showSpeedX = [[NSUserDefaults standardUserDefaults] boolForKey:@"SpeedShowX"];
+        showSpeedX = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYSpeedButtonShowX"];
         
         updateSpeedButtonUI();
     } else {
@@ -685,45 +674,6 @@ void updateSpeedButtonUI() {
         sender.alpha = 1.0;
         sender.transform = CGAffineTransformIdentity;
     }];
-}
-
-%new
-- (void)settingsDidUpdateWithSpeedConfig:(NSString *)speedConfig showX:(BOOL)showX buttonSize:(CGFloat)buttonSize autoRestoreSpeed:(BOOL)autoRestoreSpeed {
-
-	if (!isFloatSpeedButtonEnabled) return;
-    // 保存设置
-    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    [defaults setObject:speedConfig forKey:@"SpeedSwitch"];
-    [defaults setBool:showX forKey:@"SpeedShowX"];
-    [defaults setFloat:buttonSize forKey:@"SpeedButtonSize"];
-    [defaults setBool:autoRestoreSpeed forKey:@"AutoRestoreSpeed"];
-    [defaults setInteger:0 forKey:@"CurrentSpeedIndex"]; 
-    [defaults synchronize];
-    
-    // 更新全局变量
-    showSpeedX = showX;
-    speedButtonSize = buttonSize;
-    
-    // 更新按钮UI
-    if (speedButton) {
-        // 更新按钮大小
-        CGPoint center = speedButton.center;
-        CGRect newFrame = CGRectMake(0, 0, buttonSize, buttonSize);
-        speedButton.frame = newFrame;
-        speedButton.center = center;
-        speedButton.layer.cornerRadius = buttonSize / 2;
-        
-        // 更新按钮文本
-        updateSpeedButtonUI();
-    }
-    
-    // 应用新的播放速度
-    if (currentVideoController) {
-        [currentVideoController adjustPlaybackSpeed:getCurrentSpeed()];
-    }
-    
-    // 显示确认消息
-    showToast(@"保存成功");
 }
 
 %end

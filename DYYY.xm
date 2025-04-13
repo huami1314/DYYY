@@ -13,7 +13,7 @@
 #import <objc/runtime.h>
 
 #define DYYY @"DYYY"
-#define tweakVersion @"2.2-2"
+#define tweakVersion @"2.2-3"
 
 @interface DYYYManager (API)
 + (void)parseAndDownloadVideoWithShareLink:(NSString *)shareLink apiKey:(NSString *)apiKey;
@@ -70,6 +70,8 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 	}
 }
 
+%group needDelays
+
 %hook AWEAwemePlayVideoViewController
 
 - (void)setIsAutoPlay:(BOOL)arg0 {
@@ -81,6 +83,27 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 
 	%orig(arg0);
 }
+
+%end
+
+%hook AWEPlayInteractionUserAvatarElement
+- (void)onFollowViewClicked:(UITapGestureRecognizer *)gesture {
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYfollowTips"]) {
+
+		dispatch_async(dispatch_get_main_queue(), ^{
+		  [DYYYBottomAlertView showAlertWithTitle:@"关注确认"
+						  message:@"是否确认关注？"
+					     cancelAction:nil
+					    confirmAction:^{
+					      %orig(gesture);
+					    }];
+		});
+	} else {
+		%orig;
+	}
+}
+
+%end
 
 %end
 
@@ -683,9 +706,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 				if (isWorkImage) {
 					// 修复作者主页作品图片上移问题
 					CGRect frame = subview.frame;
-					// 这里可以根据需要调整位置
-					// 例如，如果图片上移了，可以将其下移
-					frame.origin.y += 83; // 假设需要下移83像素
+					frame.origin.y += 83;
 					subview.frame = frame;
 				}
 			}
@@ -1175,25 +1196,6 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 }
 %end
 
-%hook AWEPlayInteractionUserAvatarElement
-- (void)onFollowViewClicked:(UITapGestureRecognizer *)gesture {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYfollowTips"]) {
-
-		dispatch_async(dispatch_get_main_queue(), ^{
-		  [DYYYBottomAlertView showAlertWithTitle:@"关注确认"
-						  message:@"是否确认关注？"
-					     cancelAction:nil
-					    confirmAction:^{
-					      %orig(gesture);
-					    }];
-		});
-	} else {
-		%orig;
-	}
-}
-
-%end
-
 %hook AWEFeedVideoButton
 - (id)touchUpInsideBlock {
 	id r = %orig;
@@ -1615,7 +1617,11 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 							    ([cityCode hasPrefix:@"11"] || [cityCode hasPrefix:@"12"] || [cityCode hasPrefix:@"31"] || [cityCode hasPrefix:@"50"]);
 
 					BOOL containsProvince = [text containsString:provinceName];
-
+					if (containsProvince && !isDirectCity) {
+						label.text = [NSString stringWithFormat:@"%@ %@", text, cityName];
+					} else if (containsProvince && isDirectCity) {
+						label.text = [NSString stringWithFormat:@"%@  IP属地：%@", text, cityName];
+					} else
 					if (isDirectCity && containsProvince) {
 						label.text = text;
 					} else if (containsProvince) {
@@ -2632,13 +2638,6 @@ static BOOL isDownloadFlied = NO;
 // 获取资源的地址
 %hook AWEURLModel
 %new - (NSURL *)getDYYYSrcURLDownload {
-	;
-	;
-	;
-	;
-	;
-	;
-	;
 	NSURL *bestURL;
 	for (NSString *url in self.originURLList) {
 		if ([url containsString:@"video_mp4"] || [url containsString:@".jpeg"] || [url containsString:@".mp3"]) {
@@ -2953,6 +2952,17 @@ static BOOL isDownloadFlied = NO;
 
 %end
 
+// 强制启用保存他人头像
+%hook AFDProfileAvatarFunctionManager
+- (BOOL)shouldShowSaveAvatarItem {
+    BOOL shouldEnable = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableSaveAvatar"];
+    if (shouldEnable) {
+        return YES;
+    }
+    return %orig;
+}
+%end
+
 //应用内推送毛玻璃效果
 %hook AWEInnerNotificationWindow
 
@@ -3083,5 +3093,8 @@ static BOOL isDownloadFlied = NO;
 	%init(DYYYSettingsGesture);
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {
 		%init;
+		dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+			%init(needDelays);
+		});
 	}
 }
