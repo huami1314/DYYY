@@ -2546,9 +2546,10 @@ static void showUserAgreementAlert() {
                      [item.identifier isEqualToString:@"DYYYSpeedSettings"])) {
                 item.isEnable = [value boolValue];
             } else if ([identifier isEqualToString:@"DYYYEnableFloatClearButton"] && 
-                       [item.identifier isEqualToString:@"DYYYClearButtonIcon"]) {
-                item.isEnable = [value boolValue];
-            }
+                       ([item.identifier isEqualToString:@"DYYYClearButtonIcon"] || 
+                        [item.identifier isEqualToString:@"DYYYEnableFloatClearButtonSize"])) {
+                  item.isEnable = [value boolValue];
+              }
         }
     }
 }
