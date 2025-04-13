@@ -3005,7 +3005,11 @@ static BOOL isDownloadFlied = NO;
 	containerView.backgroundColor = [UIColor clearColor];
 	
 	float userRadius = [[[NSUserDefaults standardUserDefaults] 
-		objectForKey:@"DYYYNotificationCornerRadius"] floatValue] ?: 12;
+		objectForKey:@"DYYYNotificationCornerRadius"] floatValue];
+	if (userRadius < 0 || userRadius > 50) {
+		userRadius = 12; 
+	}
+	
 	containerView.layer.cornerRadius = userRadius;
 	containerView.layer.masksToBounds = YES;
 	
@@ -3026,16 +3030,23 @@ static BOOL isDownloadFlied = NO;
 	blurView.layer.cornerRadius = userRadius;
 	blurView.layer.masksToBounds = YES;
 	
+
 	float userTransparency = [[[NSUserDefaults standardUserDefaults] 
-		objectForKey:@"DYYYCommentBlurTransparent"] floatValue] ?: 0.5;
+		objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
+	if (userTransparency <= 0 || userTransparency > 1) {
+		userTransparency = 0.5; 
+	}
+	
 	blurView.alpha = userTransparency;
 	
 	[containerView insertSubview:blurView atIndex:0];
 	
 	for (UIView *subview in containerView.subviews) {
-		if (![subview isKindOfClass:[UIVisualEffectView class]]) {
-			subview.backgroundColor = [UIColor clearColor];
+		if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == 999) {
+			continue;
 		}
+		subview.backgroundColor = [UIColor clearColor];
+		subview.opaque = NO;
 	}
 
 	if (isDarkMode) {
@@ -3049,8 +3060,7 @@ static BOOL isDownloadFlied = NO;
 		if ([subview isKindOfClass:[UILabel class]]) {
 			UILabel *label = (UILabel *)subview;
 			NSString *text = label.text;
-			
-			// 检查文本是否有关键字
+
 			if (![text isEqualToString:@"回复"] && 
 				![text isEqualToString:@"查看"] && 
 				![text isEqualToString:@"续火花"]) {
