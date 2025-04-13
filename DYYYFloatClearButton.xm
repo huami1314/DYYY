@@ -434,35 +434,31 @@ static void initTargetClassNames(void) {
 
 %hook AppDelegate
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-	BOOL result = %orig;
-
-	initTargetClassNames();
-
-	BOOL isEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableFloatClearButton"];
-
-	if (isEnabled) {
-		dispatch_async(dispatch_get_main_queue(), ^{
-		  if (hideButton) {
-			  [hideButton removeFromSuperview];
-			  hideButton = nil;
-		  }
-
-		  hideButton = [[HideUIButton alloc] initWithFrame:CGRectMake(0, 0, 40, 40)];
-
-		  NSString *savedPositionString = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYHideUIButtonPosition"];
-		  if (savedPositionString) {
-			  hideButton.center = CGPointFromString(savedPositionString);
-		  } else {
-			  CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
-			  CGFloat screenHeight = [UIScreen mainScreen].bounds.size.height;
-			  hideButton.center = CGPointMake(screenWidth - 35, screenHeight / 2);
-		  }
-
-		  [getKeyWindow() addSubview:hideButton];
-		});
-	}
-
-	return result;
+    BOOL result = %orig;
+    initTargetClassNames();
+    BOOL isEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableFloatClearButton"];
+    if (isEnabled) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (hideButton) {
+                [hideButton removeFromSuperview];
+                hideButton = nil;
+            }
+            // 获取用户设置的按钮大小，如果没有设置则使用默认值40
+            NSString *buttonSizeString = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYEnableFloatClearButtonSize"];
+            CGFloat buttonSize = buttonSizeString ? [buttonSizeString floatValue] : 40.0;
+            hideButton = [[HideUIButton alloc] initWithFrame:CGRectMake(0, 0, buttonSize, buttonSize)];
+            NSString *savedPositionString = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYHideUIButtonPosition"];
+            if (savedPositionString) {
+                hideButton.center = CGPointFromString(savedPositionString);
+            } else {
+                CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
+                CGFloat screenHeight = [UIScreen mainScreen].bounds.size.height;
+                hideButton.center = CGPointMake(screenWidth - buttonSize/2 - 5, screenHeight / 2);
+            }
+            [getKeyWindow() addSubview:hideButton];
+        });
+    }
+    return result;
 }
 %end
 
