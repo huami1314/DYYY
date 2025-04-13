@@ -3068,7 +3068,7 @@ static BOOL isDownloadFlied = NO;
 %new 
 - (void)clearBackgroundRecursivelyInView:(UIView *)view {
     for (UIView *subview in view.subviews) {
-        if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == 999) {
+        if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == 999 && [subview isKindOfClass:[UIButton class]]) {
             continue;
         }
         subview.backgroundColor = [UIColor clearColor];
