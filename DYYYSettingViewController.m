@@ -261,6 +261,7 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
         ],
         @[
             [DYYYSettingItem itemWithTitle:@"启用新版玻璃面板" key:@"DYYYisEnableModern" type:DYYYSettingItemTypeSwitch],
+            [DYYYSettingItem itemWithTitle:@"启用保存他人头像" key:@"DYYYEnableSaveAvatar" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"长按面板复制功能" key:@"DYYYCopyText" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"长按面板保存媒体" key:@"DYYYLongPressDownload" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"接口解析保存媒体" key:@"DYYYInterfaceDownload" type:DYYYSettingItemTypeTextField placeholder:@"不填关闭"],
