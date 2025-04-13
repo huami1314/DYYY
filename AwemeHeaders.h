@@ -137,6 +137,8 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 @interface AWELeftSideBarEntranceView : UIView
+- (void)setNumericalRedDot:(id)numericalRedDot;
+- (void)setRedDot:(id)redDot;
 @end
 
 @interface AWEDanmakuContentLabel : UILabel
@@ -659,4 +661,12 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 @interface AWEHPTopBarCTAItemView : UIView
+@end
+
+//应用内推送容器
+@interface AWEInnerNotificationWindow : UIWindow
+- (void)setupBlurEffectForNotificationView;
+- (void)applyBlurEffectToView:(UIView *)containerView;
+- (void)setLabelsColorWhiteInView:(UIView *)view;
+- (void)clearBackgroundRecursivelyInView:(UIView *)view;
 @end

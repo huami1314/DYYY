@@ -2952,44 +2952,6 @@ static BOOL isDownloadFlied = NO;
 
 %end
 
-// 屏蔽青少年模式弹窗
-%hook AWEUIAlertView
-- (void)show {
-	if (![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYHideteenmode"])
-		%orig;
-}
-%end
-
-// 屏蔽青少年模式弹窗
-%hook AWETeenModeAlertView
-- (BOOL)show {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideteenmode"]) {
-		return NO;
-	}
-	return %orig;
-}
-%end
-
-// 屏蔽青少年模式弹窗
-%hook AWETeenModeSimpleAlertView
-- (BOOL)show {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideteenmode"]) {
-		return NO;
-	}
-	return %orig;
-}
-%end
-
-// 强制启用新版抖音长按 UI（现代风）
-%hook AWELongPressPanelManager
-- (BOOL)shouldShowModernLongPressPanel {
-	// 从 NSUserDefaults 读取开关状态
-	BOOL isEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableModern"];
-	return isEnabled; // 根据开关状态返回值
-}
-
-%end
-
 // 强制启用保存他人头像
 %hook AFDProfileAvatarFunctionManager
 - (BOOL)shouldShowSaveAvatarItem {
@@ -3001,26 +2963,128 @@ static BOOL isDownloadFlied = NO;
 }
 %end
 
-// 聊天视频底部评论框背景透明
-%hook AWEIMFeedBottomQuickEmojiInputBar
+//应用内推送毛玻璃效果
+%hook AWEInnerNotificationWindow
+
+- (id)initWithFrame:(CGRect)frame {
+	id orig = %orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableNotificationTransparency"]) {
+		[self setupBlurEffectForNotificationView];
+	}
+	return orig;
+}
 
 - (void)layoutSubviews {
 	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableNotificationTransparency"]) {
+		[self setupBlurEffectForNotificationView];
+	}
+}
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideChatCommentBg"]) {
-		UIView *parentView = self.superview;
-		while (parentView) {
-			if ([NSStringFromClass([parentView class]) isEqualToString:@"UIView"]) {
-				dispatch_async(dispatch_get_main_queue(), ^{
-				  parentView.backgroundColor = [UIColor clearColor];
-				  parentView.layer.backgroundColor = [UIColor clearColor].CGColor;
-				  parentView.opaque = NO;
-				});
-				break;
-			}
-			parentView = parentView.superview;
+- (void)didMoveToWindow {
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableNotificationTransparency"]) {
+		[self setupBlurEffectForNotificationView];
+	}
+}
+
+- (void)didAddSubview:(UIView *)subview {
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableNotificationTransparency"] &&
+		[NSStringFromClass([subview class]) containsString:@"AWEInnerNotificationContainerView"]) {
+		[self setupBlurEffectForNotificationView];
+	}
+}
+
+%new
+- (void)setupBlurEffectForNotificationView {
+	for (UIView *subview in self.subviews) {
+		if ([NSStringFromClass([subview class]) containsString:@"AWEInnerNotificationContainerView"]) {
+			[self applyBlurEffectToView:subview];
+			break;
 		}
 	}
+}
+
+%new
+- (void)applyBlurEffectToView:(UIView *)containerView {
+	if (!containerView) {
+		return;
+	}
+	
+	containerView.backgroundColor = [UIColor clearColor];
+	
+	float userRadius = [[[NSUserDefaults standardUserDefaults] 
+		objectForKey:@"DYYYNotificationCornerRadius"] floatValue];
+	if (userRadius < 0 || userRadius > 50) {
+		userRadius = 12; 
+	}
+	
+	containerView.layer.cornerRadius = userRadius;
+	containerView.layer.masksToBounds = YES;
+	
+	for (UIView *subview in containerView.subviews) {
+		if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == 999) {
+			[subview removeFromSuperview];
+		}
+	}
+	
+	BOOL isDarkMode = [DYYYManager isDarkMode];
+	UIBlurEffectStyle blurStyle = isDarkMode ? UIBlurEffectStyleDark : UIBlurEffectStyleLight;
+	UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurStyle];
+	UIVisualEffectView *blurView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
+	
+	blurView.frame = containerView.bounds;
+	blurView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+	blurView.tag = 999;
+	blurView.layer.cornerRadius = userRadius;
+	blurView.layer.masksToBounds = YES;
+	
+
+	float userTransparency = [[[NSUserDefaults standardUserDefaults] 
+		objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
+	if (userTransparency <= 0 || userTransparency > 1) {
+		userTransparency = 0.5; 
+	}
+	
+	blurView.alpha = userTransparency;
+	
+	[containerView insertSubview:blurView atIndex:0];
+	
+	[self clearBackgroundRecursivelyInView:containerView];
+
+	if (isDarkMode) {
+		[self setLabelsColorWhiteInView:containerView];
+	}
+}
+
+%new
+- (void)setLabelsColorWhiteInView:(UIView *)view {
+	for (UIView *subview in view.subviews) {
+		if ([subview isKindOfClass:[UILabel class]]) {
+			UILabel *label = (UILabel *)subview;
+			NSString *text = label.text;
+
+			if (![text isEqualToString:@"回复"] && 
+				![text isEqualToString:@"查看"] && 
+				![text isEqualToString:@"续火花"]) {
+				label.textColor = [UIColor whiteColor];
+			}
+		}
+		[self setLabelsColorWhiteInView:subview];
+	}
+}
+
+%new 
+- (void)clearBackgroundRecursivelyInView:(UIView *)view {
+    for (UIView *subview in view.subviews) {
+        if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == 999 && [subview isKindOfClass:[UIButton class]]) {
+            continue;
+        }
+        subview.backgroundColor = [UIColor clearColor];
+        subview.opaque = NO;
+        [self clearBackgroundRecursivelyInView:subview];
+    }
 }
 
 %end
