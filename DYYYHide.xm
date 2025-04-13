@@ -1193,9 +1193,7 @@
 	if (![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYisHiddenSidebarDot"])
 		%orig;
 }
-%end
 
-%hook AWEHPTopBarCTAItemView
 - (void)layoutSubviews {
 	%orig;
 	for (UIView *subview in self.subviews) {
@@ -1207,6 +1205,19 @@
 	}
 }
 %end
+
+%hook AWELeftSideBarEntranceView
+
+- (void)setRedDot:(id)redDot {
+    %orig(nil); 
+}
+
+- (void)setNumericalRedDot:(id)numericalRedDot {
+    %orig(nil); 
+}
+
+%end
+
 // 隐藏搜同款
 %hook ACCStickerContainerView
 - (void)layoutSubviews {

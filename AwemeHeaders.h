@@ -137,6 +137,8 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 @interface AWELeftSideBarEntranceView : UIView
+- (void)setNumericalRedDot:(id)numericalRedDot;
+- (void)setRedDot:(id)redDot;
 @end
 
 @interface AWEDanmakuContentLabel : UILabel
