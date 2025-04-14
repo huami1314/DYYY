@@ -8,7 +8,8 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 #import <signal.h>
-
+// 添加变量跟踪是否在目标视图控制器中
+static BOOL isInPlayInteractionVC = NO;
 // HideUIButton 接口声明
 @interface HideUIButton : UIButton
 // 状态属性
@@ -43,17 +44,14 @@
 static HideUIButton *hideButton;
 static BOOL isAppInTransition = NO;
 static NSArray *targetClassNames;
-
 static void findViewsOfClassHelper(UIView *view, Class viewClass, NSMutableArray *result) {
 	if ([view isKindOfClass:viewClass]) {
 		[result addObject:view];
 	}
-
 	for (UIView *subview in view.subviews) {
 		findViewsOfClassHelper(subview, viewClass, result);
 	}
 }
-
 static UIWindow *getKeyWindow(void) {
 	UIWindow *keyWindow = nil;
 	for (UIWindow *window in [UIApplication sharedApplication].windows) {
@@ -64,20 +62,16 @@ static UIWindow *getKeyWindow(void) {
 	}
 	return keyWindow;
 }
-
 static void forceResetAllUIElements(void) {
 	UIWindow *window = getKeyWindow();
 	if (!window)
 		return;
-
 	for (NSString *className in targetClassNames) {
 		Class viewClass = NSClassFromString(className);
 		if (!viewClass)
 			continue;
-
 		NSMutableArray *views = [NSMutableArray array];
 		findViewsOfClassHelper(window, viewClass, views);
-
 		for (UIView *view in views) {
 			view.alpha = 1.0;
 		}
@@ -95,7 +89,6 @@ static void initTargetClassNames(void) {
 		@"AWESearchFeedTagView", @"AWEPlayInteractionSearchAnchorView", @"AFDRecommendToFriendTagView", @"AWELandscapeFeedEntryView", @"AWEFeedAnchorContainerView", @"AFDAIbumFolioView"
 	];
 }
-
 @implementation HideUIButton
 - (instancetype)initWithFrame:(CGRect)frame {
 	self = [super initWithFrame:frame];
@@ -103,30 +96,29 @@ static void initTargetClassNames(void) {
 		self.backgroundColor = [UIColor clearColor];
 		self.layer.cornerRadius = frame.size.width / 2;
 		self.layer.masksToBounds = YES;
-
 		self.isElementsHidden = NO;
 		self.hiddenViewsList = [NSMutableArray array];
-		self.originalAlpha = 1.0;
-
+        
+        // 设置默认状态为半透明
+        self.originalAlpha = 1.0;  // 交互时为完全不透明
+        self.alpha = 0.5;  // 初始为半透明
 		// 加载保存的锁定状态
 		[self loadLockState];
-
 		[self loadIcons];
 		[self setImage:self.showIcon forState:UIControlStateNormal];
-
 		UIPanGestureRecognizer *panGesture = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePan:)];
 		[self addGestureRecognizer:panGesture];
-
 		[self addTarget:self action:@selector(handleTap) forControlEvents:UIControlEventTouchUpInside];
 		[self addTarget:self action:@selector(handleTouchDown) forControlEvents:UIControlEventTouchDown];
 		[self addTarget:self action:@selector(handleTouchUpInside) forControlEvents:UIControlEventTouchUpInside];
 		[self addTarget:self action:@selector(handleTouchUpOutside) forControlEvents:UIControlEventTouchUpOutside];
-
 		UILongPressGestureRecognizer *longPressGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handleLongPress:)];
 		[self addGestureRecognizer:longPressGesture];
-
 		[self startPeriodicCheck];
 		[self resetFadeTimer];
+        
+        // 初始状态下隐藏按钮，直到进入正确的控制器
+        self.hidden = YES;
 	}
 	return self;
 }
@@ -147,16 +139,16 @@ static void initTargetClassNames(void) {
 							   block:^(NSTimer *timer) {
 							     [UIView animateWithDuration:0.3
 									      animations:^{
-										self.alpha = 0.5;
+										self.alpha = 0.5;  // 变为半透明
 									      }];
 							   }];
-
-	if (self.alpha != self.originalAlpha) {
-		[UIView animateWithDuration:0.2
-				 animations:^{
-				   self.alpha = self.originalAlpha;
-				 }];
-	}
+	// 交互时变为完全不透明
+    if (self.alpha != self.originalAlpha) {
+        [UIView animateWithDuration:0.2
+                         animations:^{
+                             self.alpha = self.originalAlpha;  // 变为完全不透明
+                         }];
+    }
 }
 - (void)saveLockState {
 	[[NSUserDefaults standardUserDefaults] setBool:self.isLocked forKey:@"DYYYHideUIButtonLockState"];
@@ -168,7 +160,6 @@ static void initTargetClassNames(void) {
 - (void)loadIcons {
 	NSString *documentsPath = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject;
 	NSString *iconPath = [documentsPath stringByAppendingPathComponent:@"DYYY/qingping.png"];
-
 	UIImage *customIcon = [UIImage imageWithContentsOfFile:iconPath];
 	if (customIcon) {
 		self.showIcon = customIcon;
@@ -180,13 +171,13 @@ static void initTargetClassNames(void) {
 	}
 }
 - (void)handleTouchDown {
-	[self resetFadeTimer];
+	[self resetFadeTimer];  // 这会使按钮变为完全不透明
 }
 - (void)handleTouchUpInside {
-	[self resetFadeTimer];
+	[self resetFadeTimer];  // 这会使按钮变为完全不透明
 }
 - (void)handleTouchUpOutside {
-	[self resetFadeTimer];
+	[self resetFadeTimer];  // 这会使按钮变为完全不透明
 }
 - (UIViewController *)findViewController:(UIView *)view {
 	__weak UIResponder *responder = view;
@@ -203,18 +194,13 @@ static void initTargetClassNames(void) {
 - (void)handlePan:(UIPanGestureRecognizer *)gesture {
 	if (self.isLocked)
 		return;
-
-	[self resetFadeTimer];
-
+	[self resetFadeTimer];  // 这会使按钮变为完全不透明
 	CGPoint translation = [gesture translationInView:self.superview];
 	CGPoint newCenter = CGPointMake(self.center.x + translation.x, self.center.y + translation.y);
-
 	newCenter.x = MAX(self.frame.size.width / 2, MIN(newCenter.x, self.superview.frame.size.width - self.frame.size.width / 2));
 	newCenter.y = MAX(self.frame.size.height / 2, MIN(newCenter.y, self.superview.frame.size.height - self.frame.size.height / 2));
-
 	self.center = newCenter;
 	[gesture setTranslation:CGPointZero inView:self.superview];
-
 	if (gesture.state == UIGestureRecognizerStateEnded) {
 		[[NSUserDefaults standardUserDefaults] setObject:NSStringFromCGPoint(self.center) forKey:@"DYYYHideUIButtonPosition"];
 		[[NSUserDefaults standardUserDefaults] synchronize];
@@ -223,9 +209,7 @@ static void initTargetClassNames(void) {
 - (void)handleTap {
 	if (isAppInTransition)
 		return;
-
-	[self resetFadeTimer];
-
+	[self resetFadeTimer];  // 这会使按钮变为完全不透明
 	if (!self.isElementsHidden) {
 		[self hideUIElements];
 		self.isElementsHidden = YES;
@@ -239,15 +223,12 @@ static void initTargetClassNames(void) {
 }
 - (void)handleLongPress:(UILongPressGestureRecognizer *)gesture {
 	if (gesture.state == UIGestureRecognizerStateBegan) {
-		[self resetFadeTimer];
+		[self resetFadeTimer];  // 这会使按钮变为完全不透明
 		self.isLocked = !self.isLocked;
-
 		// 保存锁定状态
 		[self saveLockState];
-
 		NSString *toastMessage = self.isLocked ? @"按钮已锁定" : @"按钮已解锁";
 		[DYYYManager showToast:toastMessage];
-
 		if (@available(iOS 10.0, *)) {
 			UIImpactFeedbackGenerator *generator = [[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleLight];
 			[generator prepare];
@@ -266,10 +247,8 @@ static void initTargetClassNames(void) {
 			Class viewClass = NSClassFromString(className);
 			if (!viewClass)
 				continue;
-
 			NSMutableArray *views = [NSMutableArray array];
 			findViewsOfClassHelper(window, viewClass, views);
-
 			for (UIView *view in views) {
 				if ([view isKindOfClass:[UIView class]]) {
 					if ([view isKindOfClass:NSClassFromString(@"AWELeftSideBarEntranceView")]) {
@@ -278,7 +257,6 @@ static void initTargetClassNames(void) {
 							continue;
 						}
 					}
-
 					[self.hiddenViewsList addObject:view];
 					view.alpha = 0.0;
 				}
@@ -299,7 +277,6 @@ static void initTargetClassNames(void) {
 	self.fadeTimer = nil;
 }
 @end
-
 // Hook 部分
 %hook UIView
 - (id)initWithFrame:(CGRect)frame {
@@ -360,7 +337,6 @@ static void initTargetClassNames(void) {
 	}
 }
 %end
-
 %hook AWEFeedTableViewCell
 - (void)prepareForReuse {
 	if (hideButton && hideButton.isElementsHidden) {
@@ -375,7 +351,6 @@ static void initTargetClassNames(void) {
 	}
 }
 %end
-
 %hook AWEFeedViewCell
 - (void)layoutSubviews {
 	if (hideButton && hideButton.isElementsHidden) {
@@ -390,7 +365,6 @@ static void initTargetClassNames(void) {
 	%orig;
 }
 %end
-
 %hook UIViewController
 - (void)viewWillAppear:(BOOL)animated {
 	%orig;
@@ -410,7 +384,41 @@ static void initTargetClassNames(void) {
 	});
 }
 %end
-
+// 修改: 使用 viewWillAppear 和 loadView 来更早地显示按钮
+%hook AWEPlayInteractionViewController
+- (void)loadView {
+    %orig;
+    // 提前准备按钮显示
+    if (hideButton) {
+        hideButton.hidden = NO;
+        hideButton.alpha = 0.5;
+    }
+}
+- (void)viewWillAppear:(BOOL)animated {
+    %orig;
+    isInPlayInteractionVC = YES;
+    // 立即显示按钮
+    if (hideButton) {
+        hideButton.hidden = NO;
+        hideButton.alpha = 0.5;
+    }
+}
+- (void)viewDidAppear:(BOOL)animated {
+    %orig;
+    // 再次确保按钮可见
+    if (hideButton) {
+        hideButton.hidden = NO;
+    }
+}
+- (void)viewWillDisappear:(BOOL)animated {
+    %orig;
+    isInPlayInteractionVC = NO;
+    // 立即隐藏按钮
+    if (hideButton) {
+        hideButton.hidden = YES;
+    }
+}
+%end
 %hook AWEFeedContainerViewController
 - (void)aweme:(id)arg1 currentIndexWillChange:(NSInteger)arg2 {
 	if (hideButton && hideButton.isElementsHidden) {
@@ -431,41 +439,50 @@ static void initTargetClassNames(void) {
 	}
 }
 %end
-
 %hook AppDelegate
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-	BOOL result = %orig;
-
-	initTargetClassNames();
-
-	BOOL isEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableFloatClearButton"];
-
-	if (isEnabled) {
-		dispatch_async(dispatch_get_main_queue(), ^{
-		  if (hideButton) {
-			  [hideButton removeFromSuperview];
-			  hideButton = nil;
-		  }
-
-		  hideButton = [[HideUIButton alloc] initWithFrame:CGRectMake(0, 0, 40, 40)];
-
-		  NSString *savedPositionString = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYHideUIButtonPosition"];
-		  if (savedPositionString) {
-			  hideButton.center = CGPointFromString(savedPositionString);
-		  } else {
-			  CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
-			  CGFloat screenHeight = [UIScreen mainScreen].bounds.size.height;
-			  hideButton.center = CGPointMake(screenWidth - 35, screenHeight / 2);
-		  }
-
-		  [getKeyWindow() addSubview:hideButton];
-		});
-	}
-
-	return result;
+    BOOL result = %orig;
+    initTargetClassNames();
+    
+    // 立即创建按钮，不使用异步操作
+    BOOL isEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableFloatClearButton"];
+    if (isEnabled) {
+        if (hideButton) {
+            [hideButton removeFromSuperview];
+            hideButton = nil;
+        }
+        
+        CGFloat buttonSize = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYEnableFloatClearButtonSize"] ?: 40.0;
+        hideButton = [[HideUIButton alloc] initWithFrame:CGRectMake(0, 0, buttonSize, buttonSize)];
+        hideButton.alpha = 0.5;
+        
+        NSString *savedPositionString = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYHideUIButtonPosition"];
+        if (savedPositionString) {
+            hideButton.center = CGPointFromString(savedPositionString);
+        } else {
+            CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
+            CGFloat screenHeight = [UIScreen mainScreen].bounds.size.height;
+            hideButton.center = CGPointMake(screenWidth - buttonSize/2 - 5, screenHeight / 2);
+        }
+        
+        // 初始状态下隐藏按钮
+        hideButton.hidden = YES;
+        [getKeyWindow() addSubview:hideButton];
+        
+        // 添加观察者以确保窗口变化时按钮仍然可见
+        [[NSNotificationCenter defaultCenter] addObserverForName:UIWindowDidBecomeKeyNotification
+                                                         object:nil
+                                                          queue:[NSOperationQueue mainQueue]
+                                                     usingBlock:^(NSNotification * _Nonnull notification) {
+            if (isInPlayInteractionVC && hideButton && hideButton.hidden) {
+                hideButton.hidden = NO;
+            }
+        }];
+    }
+    
+    return result;
 }
 %end
-
 %ctor {
 	signal(SIGSEGV, SIG_IGN);
 }

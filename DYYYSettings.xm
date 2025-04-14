@@ -1931,10 +1931,64 @@ static void showUserAgreementAlert() {
 			      @"imageName" : @"ic_eyeslash_outlined_16"}];
 		    [clearButtonItems addObject:enableClearButton];
 
+        // 添加清屏按钮大小配置项
+        AWESettingItemModel *clearButtonSizeItem = [[%c(AWESettingItemModel) alloc] init];
+        clearButtonSizeItem.identifier = @"DYYYEnableFloatClearButtonSize";
+        clearButtonSizeItem.title = @"快捷清屏按钮大小";
+        // 获取当前的按钮大小，如果没有设置则默认为40
+        CGFloat currentClearButtonSize = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYEnableFloatClearButtonSize"] ?: 40;
+        clearButtonSizeItem.detail = [NSString stringWithFormat:@"%.0f", currentClearButtonSize];
+        clearButtonSizeItem.type = 0;
+        clearButtonSizeItem.svgIconImageName = @"ic_zoomin_outlined_20";
+        clearButtonSizeItem.cellType = 26;
+        clearButtonSizeItem.colorStyle = 0;
+        clearButtonSizeItem.isEnable = YES;
+        clearButtonSizeItem.cellTappedBlock = ^{
+          NSString *currentValue = [NSString stringWithFormat:@"%.0f", currentClearButtonSize];
+          showTextInputAlert(
+              @"设置清屏按钮大小", currentValue, @"请输入20-60之间的数值",
+              ^(NSString *text) {
+                NSInteger size = [text integerValue];
+                // 确保输入值在有效范围内
+                if (size >= 20 && size <= 60) {
+                    [[NSUserDefaults standardUserDefaults] setFloat:size forKey:@"DYYYEnableFloatClearButtonSize"];
+                    [[NSUserDefaults standardUserDefaults] synchronize];
+                    // 更新UI显示
+                    clearButtonSizeItem.detail = [NSString stringWithFormat:@"%.0f", (CGFloat)size];
+                    // 刷新表格
+                    UIViewController *topVC = topView();
+                    if ([topVC isKindOfClass:%c(AWESettingBaseViewController)]) {
+                        dispatch_async(dispatch_get_main_queue(), ^{
+                          UITableView *tableView = nil;
+                          for (UIView *subview in topVC.view.subviews) {
+                              if ([subview isKindOfClass:[UITableView class]]) {
+                                  tableView = (UITableView *)subview;
+                                  break;
+                              }
+                          }
+                          if (tableView) {
+                              [tableView reloadData];
+                          }
+                        });
+                    }
+                } else {
+                    [DYYYManager showToast:@"请输入20-60之间的有效数值"];
+                }
+              },
+              nil);
+        };
+        [clearButtonItems addObject:clearButtonSizeItem];
+
 		    // 添加清屏按钮自定义图标选项
 		    AWESettingItemModel *clearButtonIcon = createIconCustomizationItem(@"DYYYClearButtonIcon", @"清屏按钮图标", @"ic_roaming_outlined", @"qingping.png");
 
 		    [clearButtonItems addObject:clearButtonIcon];
+
+        // 获取清屏按钮的当前开关状态
+        BOOL isEnabled = getUserDefaults(@"DYYYEnableFloatClearButton");
+        // 更新清屏按钮大小和图标设置项的启用状态
+        clearButtonSizeItem.isEnable = isEnabled;
+        clearButtonIcon.isEnable = isEnabled;
 
 		    // 创建并组织所有section
 		    NSMutableArray *sections = [NSMutableArray array];
@@ -2354,8 +2408,9 @@ static void showUserAgreementAlert() {
         // 倍速设置相关选项依赖于快捷倍速按钮开关
         BOOL isEnabled = getUserDefaults(@"DYYYEnableFloatSpeedButton");
         item.isEnable = isEnabled;
-    } else if ([item.identifier isEqualToString:@"DYYYClearButtonIcon"]) {
-        // 清屏按钮图标依赖于清屏按钮开关
+    } else if ([item.identifier isEqualToString:@"DYYYClearButtonIcon"] || 
+               [item.identifier isEqualToString:@"DYYYEnableFloatClearButtonSize"]) {
+        // 清屏按钮图标和大小设置依赖于清屏按钮开关
         BOOL isEnabled = getUserDefaults(@"DYYYEnableFloatClearButton");
         item.isEnable = isEnabled;
     }
@@ -2491,9 +2546,10 @@ static void showUserAgreementAlert() {
                      [item.identifier isEqualToString:@"DYYYSpeedSettings"])) {
                 item.isEnable = [value boolValue];
             } else if ([identifier isEqualToString:@"DYYYEnableFloatClearButton"] && 
-                       [item.identifier isEqualToString:@"DYYYClearButtonIcon"]) {
-                item.isEnable = [value boolValue];
-            }
+                       ([item.identifier isEqualToString:@"DYYYClearButtonIcon"] || 
+                        [item.identifier isEqualToString:@"DYYYEnableFloatClearButtonSize"])) {
+                  item.isEnable = [value boolValue];
+              }
         }
     }
 }
