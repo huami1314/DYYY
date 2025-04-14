@@ -351,6 +351,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 @interface AWEFeedProgressSlider : UIView
+@property(nonatomic, assign) float maximumValue;
 @property (nonatomic, strong) UIView *leftLabelUI;
 @property (nonatomic, strong) UIView *rightLabelUI;
 @property (nonatomic) AWEPlayInteractionProgressController * progressSliderDelegate;
@@ -669,4 +670,8 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (void)applyBlurEffectToView:(UIView *)containerView;
 - (void)setLabelsColorWhiteInView:(UIView *)view;
 - (void)clearBackgroundRecursivelyInView:(UIView *)view;
+@end
+
+@interface AWEFakeProgressSliderView : UIView
+- (void)applyCustomProgressStyle;
 @end

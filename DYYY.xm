@@ -13,7 +13,7 @@
 #import <objc/runtime.h>
 
 #define DYYY @"DYYY"
-#define tweakVersion @"2.2-3"
+#define tweakVersion @"2.2-4"
 
 @interface DYYYManager (API)
 + (void)parseAndDownloadVideoWithShareLink:(NSString *)shareLink apiKey:(NSString *)apiKey;
@@ -1221,7 +1221,6 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 }
 %end
 
-// 然后是现有的 hook 实现
 %hook AWEFeedProgressSlider
 
 // 在初始化时设置进度条样式
@@ -1267,14 +1266,6 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 
 		self.frame = frame;
 
-		// 调整进度条子视图的位置和大小
-		for (UIView *subview in self.subviews) {
-			if ([subview isKindOfClass:[UIProgressView class]] || [subview isKindOfClass:[UISlider class]]) {
-				CGRect subFrame = subview.frame;
-				subFrame.size.width = newWidth;
-				subview.frame = subFrame;
-			}
-		}
 	}
 }
 
@@ -1471,6 +1462,55 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 
 %end
 
+%hook AWEFakeProgressSliderView
+- (void)layoutSubviews {
+    %orig;
+    [self applyCustomProgressStyle];
+}
+
+%new
+- (void)applyCustomProgressStyle {
+    NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
+
+    if ([scheduleStyle isEqualToString:@"进度条两侧左右"]) {
+        // 获取父视图宽度，以便计算新的宽度
+        CGFloat parentWidth = self.superview.bounds.size.width;
+        CGRect frame = self.frame;
+
+        // 计算宽度百分比和边距
+        CGFloat widthPercent = 0.80;
+        NSString *widthPercentValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYProgressBarWidthPercent"];
+        if (widthPercentValue.length > 0) {
+            CGFloat customPercent = [widthPercentValue floatValue];
+            if (customPercent > 0 && customPercent <= 1.0) {
+                widthPercent = customPercent;
+            }
+        }
+
+        // 调整进度条宽度和位置
+        CGFloat newWidth = parentWidth * widthPercent;
+        CGFloat centerX = frame.origin.x + frame.size.width / 2;
+
+        frame.size.width = newWidth;
+        frame.origin.x = centerX - newWidth / 2;
+
+        self.frame = frame;
+
+        // 调整进度条子视图的位置和大小，隐藏UIView类型的子视图
+        for (UIView *subview in self.subviews) {
+            if ([subview class] == [UIView class]) {
+                subview.hidden = YES;
+            } else {
+                // 对其他类型的子视图调整宽度
+                CGRect subFrame = subview.frame;
+                subFrame.size.width = newWidth;
+                subview.frame = subFrame;
+            }
+        }
+    }
+}
+%end
+
 %hook AWENormalModeTabBarTextView
 
 - (void)layoutSubviews {
@@ -1621,8 +1661,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 						label.text = [NSString stringWithFormat:@"%@ %@", text, cityName];
 					} else if (containsProvince && isDirectCity) {
 						label.text = [NSString stringWithFormat:@"%@  IP属地：%@", text, cityName];
-					} else
-					if (isDirectCity && containsProvince) {
+					} else if (isDirectCity && containsProvince) {
 						label.text = text;
 					} else if (containsProvince) {
 						label.text = [NSString stringWithFormat:@"%@ %@", text, cityName];
@@ -2638,6 +2677,9 @@ static BOOL isDownloadFlied = NO;
 // 获取资源的地址
 %hook AWEURLModel
 %new - (NSURL *)getDYYYSrcURLDownload {
+	;
+	;
+	;
 	NSURL *bestURL;
 	for (NSString *url in self.originURLList) {
 		if ([url containsString:@"video_mp4"] || [url containsString:@".jpeg"] || [url containsString:@".mp3"]) {
@@ -2955,15 +2997,15 @@ static BOOL isDownloadFlied = NO;
 // 强制启用保存他人头像
 %hook AFDProfileAvatarFunctionManager
 - (BOOL)shouldShowSaveAvatarItem {
-    BOOL shouldEnable = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableSaveAvatar"];
-    if (shouldEnable) {
-        return YES;
-    }
-    return %orig;
+	BOOL shouldEnable = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableSaveAvatar"];
+	if (shouldEnable) {
+		return YES;
+	}
+	return %orig;
 }
 %end
 
-//应用内推送毛玻璃效果
+// 应用内推送毛玻璃效果
 %hook AWEInnerNotificationWindow
 
 - (id)initWithFrame:(CGRect)frame {
@@ -2990,8 +3032,7 @@ static BOOL isDownloadFlied = NO;
 
 - (void)didAddSubview:(UIView *)subview {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableNotificationTransparency"] &&
-		[NSStringFromClass([subview class]) containsString:@"AWEInnerNotificationContainerView"]) {
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableNotificationTransparency"] && [NSStringFromClass([subview class]) containsString:@"AWEInnerNotificationContainerView"]) {
 		[self setupBlurEffectForNotificationView];
 	}
 }
@@ -3011,46 +3052,43 @@ static BOOL isDownloadFlied = NO;
 	if (!containerView) {
 		return;
 	}
-	
+
 	containerView.backgroundColor = [UIColor clearColor];
-	
-	float userRadius = [[[NSUserDefaults standardUserDefaults] 
-		objectForKey:@"DYYYNotificationCornerRadius"] floatValue];
+
+	float userRadius = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNotificationCornerRadius"] floatValue];
 	if (userRadius < 0 || userRadius > 50) {
-		userRadius = 12; 
+		userRadius = 12;
 	}
-	
+
 	containerView.layer.cornerRadius = userRadius;
 	containerView.layer.masksToBounds = YES;
-	
+
 	for (UIView *subview in containerView.subviews) {
 		if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == 999) {
 			[subview removeFromSuperview];
 		}
 	}
-	
+
 	BOOL isDarkMode = [DYYYManager isDarkMode];
 	UIBlurEffectStyle blurStyle = isDarkMode ? UIBlurEffectStyleDark : UIBlurEffectStyleLight;
 	UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurStyle];
 	UIVisualEffectView *blurView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
-	
+
 	blurView.frame = containerView.bounds;
 	blurView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 	blurView.tag = 999;
 	blurView.layer.cornerRadius = userRadius;
 	blurView.layer.masksToBounds = YES;
-	
 
-	float userTransparency = [[[NSUserDefaults standardUserDefaults] 
-		objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
+	float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
 	if (userTransparency <= 0 || userTransparency > 1) {
-		userTransparency = 0.5; 
+		userTransparency = 0.5;
 	}
-	
+
 	blurView.alpha = userTransparency;
-	
+
 	[containerView insertSubview:blurView atIndex:0];
-	
+
 	[self clearBackgroundRecursivelyInView:containerView];
 
 	if (isDarkMode) {
@@ -3065,9 +3103,7 @@ static BOOL isDownloadFlied = NO;
 			UILabel *label = (UILabel *)subview;
 			NSString *text = label.text;
 
-			if (![text isEqualToString:@"回复"] && 
-				![text isEqualToString:@"查看"] && 
-				![text isEqualToString:@"续火花"]) {
+			if (![text isEqualToString:@"回复"] && ![text isEqualToString:@"查看"] && ![text isEqualToString:@"续火花"]) {
 				label.textColor = [UIColor whiteColor];
 			}
 		}
@@ -3075,16 +3111,16 @@ static BOOL isDownloadFlied = NO;
 	}
 }
 
-%new 
+%new
 - (void)clearBackgroundRecursivelyInView:(UIView *)view {
-    for (UIView *subview in view.subviews) {
-        if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == 999 && [subview isKindOfClass:[UIButton class]]) {
-            continue;
-        }
-        subview.backgroundColor = [UIColor clearColor];
-        subview.opaque = NO;
-        [self clearBackgroundRecursivelyInView:subview];
-    }
+	for (UIView *subview in view.subviews) {
+		if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == 999 && [subview isKindOfClass:[UIButton class]]) {
+			continue;
+		}
+		subview.backgroundColor = [UIColor clearColor];
+		subview.opaque = NO;
+		[self clearBackgroundRecursivelyInView:subview];
+	}
 }
 
 %end
@@ -3094,7 +3130,7 @@ static BOOL isDownloadFlied = NO;
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {
 		%init;
 		dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-			%init(needDelays);
+		  %init(needDelays);
 		});
 	}
 }
