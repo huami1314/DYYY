@@ -10,6 +10,7 @@
 #import "DYYYAboutDialogView.h"
 #import "DYYYCustomInputView.h"
 #import "DYYYIconOptionsDialogView.h"
+#import "DYYYKeywordListView.h"
 #import "DYYYOptionsSelectionView.h"
 
 @class DYYYIconOptionsDialogView;
@@ -665,6 +666,11 @@ static void showUserAgreementAlert() {
 			      @"detail" : @"",
 			      @"cellType" : @26,
 			      @"imageName" : @"ic_tag_outlined_20"},
+			    @{@"identifier" : @"DYYYfilterUsers",
+			      @"title" : @"推荐过滤用户",
+			      @"detail" : @"",
+			      @"cellType" : @26,
+			      @"imageName" : @"ic_userban_outlined_20"},
 			    @{@"identifier" : @"DYYYfiltertimelimit",
 			      @"title" : @"推荐视频时限",
 			      @"detail" : @"",
@@ -735,29 +741,87 @@ static void showUserAgreementAlert() {
 				    NSString *savedValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterKeywords"];
 				    item.detail = savedValue ?: @"";
 				    item.cellTappedBlock = ^{
-				      showTextInputAlert(
-					  @"设置过滤关键词", item.detail, @"用半角逗号(,)分隔关键词",
-					  ^(NSString *text) {
-					    NSString *trimmedText = [text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-					    setUserDefaults(trimmedText, @"DYYYfilterKeywords");
-					    item.detail = trimmedText ?: @"";
-					    UIViewController *topVC = topView();
-					    if ([topVC isKindOfClass:%c(AWESettingBaseViewController)]) {
-						    dispatch_async(dispatch_get_main_queue(), ^{
-						      UITableView *tableView = nil;
-						      for (UIView *subview in topVC.view.subviews) {
-							      if ([subview isKindOfClass:[UITableView class]]) {
-								      tableView = (UITableView *)subview;
-								      break;
-							      }
-						      }
-						      if (tableView) {
-							      [tableView reloadData];
-						      }
-						    });
-					    }
-					  },
-					  nil);
+				      // 将保存的逗号分隔字符串转换为数组
+				      NSString *savedKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterKeywords"] ?: @"";
+				      NSArray *keywordArray = [savedKeywords length] > 0 ? [savedKeywords componentsSeparatedByString:@","] : @[];
+
+				      // 创建并显示关键词列表视图
+				      DYYYKeywordListView *keywordListView = [[DYYYKeywordListView alloc] initWithTitle:@"设置过滤关键词" keywords:keywordArray];
+
+				      // 设置确认回调
+				      keywordListView.onConfirm = ^(NSArray *keywords) {
+					// 将关键词数组转换为逗号分隔的字符串
+					NSString *keywordString = [keywords componentsJoinedByString:@","];
+
+					// 保存到用户默认设置
+					setUserDefaults(keywordString, @"DYYYfilterKeywords");
+
+					// 更新UI显示
+					item.detail = keywordString;
+
+					// 刷新表格视图
+					UIViewController *topVC = topView();
+					if ([topVC isKindOfClass:%c(AWESettingBaseViewController)]) {
+						dispatch_async(dispatch_get_main_queue(), ^{
+						  UITableView *tableView = nil;
+						  for (UIView *subview in topVC.view.subviews) {
+							  if ([subview isKindOfClass:[UITableView class]]) {
+								  tableView = (UITableView *)subview;
+								  break;
+							  }
+						  }
+						  if (tableView) {
+							  [tableView reloadData];
+						  }
+						});
+					}
+				      };
+
+				      // 显示关键词列表视图
+				      [keywordListView show];
+				    };
+			    } else if ([item.identifier isEqualToString:@"DYYYfilterUsers"]) {
+				    NSString *savedValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterUsers"];
+				    item.detail = savedValue ?: @"";
+				    item.cellTappedBlock = ^{
+				      // 将保存的逗号分隔字符串转换为数组
+				      NSString *savedKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterUsers"] ?: @"";
+				      NSArray *keywordArray = [savedKeywords length] > 0 ? [savedKeywords componentsSeparatedByString:@","] : @[];
+
+				      // 创建并显示关键词列表视图
+				      DYYYKeywordListView *keywordListView = [[DYYYKeywordListView alloc] initWithTitle:@"过滤用户列表" keywords:keywordArray];
+
+				      // 设置确认回调
+				      keywordListView.onConfirm = ^(NSArray *keywords) {
+					// 将关键词数组转换为逗号分隔的字符串
+					NSString *keywordString = [keywords componentsJoinedByString:@","];
+
+					// 保存到用户默认设置
+					setUserDefaults(keywordString, @"DYYYfilterUsers");
+
+					// 更新UI显示
+					item.detail = keywordString;
+
+					// 刷新表格视图
+					UIViewController *topVC = topView();
+					if ([topVC isKindOfClass:%c(AWESettingBaseViewController)]) {
+						dispatch_async(dispatch_get_main_queue(), ^{
+						  UITableView *tableView = nil;
+						  for (UIView *subview in topVC.view.subviews) {
+							  if ([subview isKindOfClass:[UITableView class]]) {
+								  tableView = (UITableView *)subview;
+								  break;
+							  }
+						  }
+						  if (tableView) {
+							  [tableView reloadData];
+						  }
+						});
+					}
+				      };
+
+				      // 显示关键词列表视图
+				      [keywordListView show];
 				    };
 			    } else if ([item.identifier isEqualToString:@"DYYYfiltertimelimit"]) {
 				    NSString *savedValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfiltertimelimit"];
@@ -1539,6 +1603,26 @@ static void showUserAgreementAlert() {
 			    [copyItems addObject:item];
 		    }
 
+		    // 【过滤功能】分类
+		    NSMutableArray<AWESettingItemModel *> *filterItems = [NSMutableArray array];
+		    NSArray *filterSettings = @[
+			    @{@"identifier" : @"DYYYLongPressFilterTitle",
+			      @"title" : @"长按面板调整过滤",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_funnel_outlined_20"},
+			    @{@"identifier" : @"DYYYLongPressFilterUser",
+			      @"title" : @"长按面板不看某人",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_userban_outlined_20"}
+		    ];
+
+		    for (NSDictionary *dict in filterSettings) {
+			    AWESettingItemModel *item = [self createSettingItem:dict];
+			    [filterItems addObject:item];
+		    }
+
 		    // 【媒体保存】分类
 		    NSMutableArray<AWESettingItemModel *> *downloadItems = [NSMutableArray array];
 		    NSArray *downloadSettings = @[
@@ -1982,6 +2066,7 @@ static void showUserAgreementAlert() {
 		    // 创建并组织所有section
 		    NSMutableArray *sections = [NSMutableArray array];
 		    [sections addObject:createSection(@"复制功能", copyItems)];
+		    [sections addObject:createSection(@"过滤功能", filterItems)];
 		    [sections addObject:createSection(@"媒体保存", downloadItems)];
 		    [sections addObject:createSection(@"交互增强", interactionItems)];
 		    [sections addObject:createSection(@"热更新", hotUpdateItems)];

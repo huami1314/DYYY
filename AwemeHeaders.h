@@ -60,6 +60,12 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @property (nonatomic, copy) NSString *secUid;
 @end
 
+@interface AWEUserModel : NSObject
+@property(copy, nonatomic) NSString *nickname;
+@property(copy, nonatomic) NSString *shortID;
+@end
+
+
 @interface AWEAwemeModel : NSObject
 @property (nonatomic, strong, readwrite) NSNumber *createTime;
 @property (nonatomic, assign,readwrite) CGFloat videoDuration;
@@ -82,6 +88,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @property (nonatomic, copy) NSString *itemTitle;
 @property (nonatomic, copy) NSString *descriptionSimpleString;
 @property (nonatomic, strong) NSString *itemID;
+@property (nonatomic, strong) AWEUserModel *author;
 
 @property (nonatomic, strong) AWEAwemeStatisticsModel *statistics;
 - (BOOL)isLive;
