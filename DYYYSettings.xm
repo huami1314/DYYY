@@ -661,16 +661,16 @@ static void showUserAgreementAlert() {
 			      @"detail" : @"0",
 			      @"cellType" : @26,
 			      @"imageName" : @"ic_thumbsdown_outlined_20"},
-			    @{@"identifier" : @"DYYYfilterKeywords",
-			      @"title" : @"推荐过滤文案",
-			      @"detail" : @"",
-			      @"cellType" : @26,
-			      @"imageName" : @"ic_tag_outlined_20"},
 			    @{@"identifier" : @"DYYYfilterUsers",
 			      @"title" : @"推荐过滤用户",
 			      @"detail" : @"",
 			      @"cellType" : @26,
 			      @"imageName" : @"ic_userban_outlined_20"},
+			    @{@"identifier" : @"DYYYfilterKeywords",
+			      @"title" : @"推荐过滤文案",
+			      @"detail" : @"",
+			      @"cellType" : @26,
+			      @"imageName" : @"ic_tag_outlined_20"},
 			    @{@"identifier" : @"DYYYfiltertimelimit",
 			      @"title" : @"推荐视频时限",
 			      @"detail" : @"",
@@ -737,16 +737,16 @@ static void showUserAgreementAlert() {
 					  },
 					  nil);
 				    };
-			    } else if ([item.identifier isEqualToString:@"DYYYfilterKeywords"]) {
-				    NSString *savedValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterKeywords"];
+			    } else if ([item.identifier isEqualToString:@"DYYYfilterUsers"]) {
+				    NSString *savedValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterUsers"];
 				    item.detail = savedValue ?: @"";
 				    item.cellTappedBlock = ^{
 				      // 将保存的逗号分隔字符串转换为数组
-				      NSString *savedKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterKeywords"] ?: @"";
+				      NSString *savedKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterUsers"] ?: @"";
 				      NSArray *keywordArray = [savedKeywords length] > 0 ? [savedKeywords componentsSeparatedByString:@","] : @[];
 
 				      // 创建并显示关键词列表视图
-				      DYYYKeywordListView *keywordListView = [[DYYYKeywordListView alloc] initWithTitle:@"设置过滤关键词" keywords:keywordArray];
+				      DYYYKeywordListView *keywordListView = [[DYYYKeywordListView alloc] initWithTitle:@"过滤用户列表" keywords:keywordArray];
 
 				      // 设置确认回调
 				      keywordListView.onConfirm = ^(NSArray *keywords) {
@@ -754,7 +754,7 @@ static void showUserAgreementAlert() {
 					NSString *keywordString = [keywords componentsJoinedByString:@","];
 
 					// 保存到用户默认设置
-					setUserDefaults(keywordString, @"DYYYfilterKeywords");
+					setUserDefaults(keywordString, @"DYYYfilterUsers");
 
 					// 更新UI显示
 					item.detail = keywordString;
@@ -780,16 +780,16 @@ static void showUserAgreementAlert() {
 				      // 显示关键词列表视图
 				      [keywordListView show];
 				    };
-			    } else if ([item.identifier isEqualToString:@"DYYYfilterUsers"]) {
-				    NSString *savedValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterUsers"];
+			    } else if ([item.identifier isEqualToString:@"DYYYfilterKeywords"]) {
+				    NSString *savedValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterKeywords"];
 				    item.detail = savedValue ?: @"";
 				    item.cellTappedBlock = ^{
 				      // 将保存的逗号分隔字符串转换为数组
-				      NSString *savedKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterUsers"] ?: @"";
+				      NSString *savedKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterKeywords"] ?: @"";
 				      NSArray *keywordArray = [savedKeywords length] > 0 ? [savedKeywords componentsSeparatedByString:@","] : @[];
 
 				      // 创建并显示关键词列表视图
-				      DYYYKeywordListView *keywordListView = [[DYYYKeywordListView alloc] initWithTitle:@"过滤用户列表" keywords:keywordArray];
+				      DYYYKeywordListView *keywordListView = [[DYYYKeywordListView alloc] initWithTitle:@"设置过滤关键词" keywords:keywordArray];
 
 				      // 设置确认回调
 				      keywordListView.onConfirm = ^(NSArray *keywords) {
@@ -797,7 +797,7 @@ static void showUserAgreementAlert() {
 					NSString *keywordString = [keywords componentsJoinedByString:@","];
 
 					// 保存到用户默认设置
-					setUserDefaults(keywordString, @"DYYYfilterUsers");
+					setUserDefaults(keywordString, @"DYYYfilterKeywords");
 
 					// 更新UI显示
 					item.detail = keywordString;
@@ -1606,16 +1606,16 @@ static void showUserAgreementAlert() {
 		    // 【过滤功能】分类
 		    NSMutableArray<AWESettingItemModel *> *filterItems = [NSMutableArray array];
 		    NSArray *filterSettings = @[
-			    @{@"identifier" : @"DYYYLongPressFilterTitle",
-			      @"title" : @"长按面板调整过滤",
-			      @"detail" : @"",
-			      @"cellType" : @6,
-			      @"imageName" : @"ic_funnel_outlined_20"},
 			    @{@"identifier" : @"DYYYLongPressFilterUser",
-			      @"title" : @"长按面板不看某人",
+			      @"title" : @"长按面板过滤用户",
 			      @"detail" : @"",
 			      @"cellType" : @6,
-			      @"imageName" : @"ic_userban_outlined_20"}
+			      @"imageName" : @"ic_userban_outlined_20"},
+			    @{@"identifier" : @"DYYYLongPressFilterTitle",
+			      @"title" : @"长按面板过滤标题",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_funnel_outlined_20"}
 		    ];
 
 		    for (NSDictionary *dict in filterSettings) {

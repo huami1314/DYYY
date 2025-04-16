@@ -2270,75 +2270,12 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 		[viewModels addObject:copyShareLink];
 	}
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYLongPressFilterTitle"]) {
-		// 新增修改过滤规则功能
-		AWELongPressPanelBaseViewModel *filterKeywords = [[%c(AWELongPressPanelBaseViewModel) alloc] init];
-		filterKeywords.awemeModel = self.awemeModel;
-		filterKeywords.actionType = 674;
-		filterKeywords.duxIconName = @"ic_funnel_outlined_20";
-		filterKeywords.describeString = @"过滤关键词调整";
-
-		filterKeywords.action = ^{
-		  NSString *descText = [self.awemeModel valueForKey:@"descriptionString"];
-
-		  DYYYFilterSettingsView *filterView = [[DYYYFilterSettingsView alloc] initWithTitle:@"过滤关键词调整" text:descText];
-		  filterView.onConfirm = ^(NSString *selectedText) {
-		    if (selectedText.length > 0) {
-			    NSString *currentKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterKeywords"] ?: @"";
-			    NSString *newKeywords;
-
-			    if (currentKeywords.length > 0) {
-				    newKeywords = [NSString stringWithFormat:@"%@,%@", currentKeywords, selectedText];
-			    } else {
-				    newKeywords = selectedText;
-			    }
-
-			    [[NSUserDefaults standardUserDefaults] setObject:newKeywords forKey:@"DYYYfilterKeywords"];
-			    [[NSUserDefaults standardUserDefaults] synchronize];
-			    [DYYYManager showToast:[NSString stringWithFormat:@"已添加过滤词: %@", selectedText]];
-		    }
-		  };
-
-		  // 设置过滤关键词按钮回调
-		  filterView.onKeywordFilterTap = ^{
-		    // 获取保存的关键词
-		    NSString *savedKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterKeywords"] ?: @"";
-		    NSArray *keywordArray = [savedKeywords length] > 0 ? [savedKeywords componentsSeparatedByString:@","] : @[];
-
-		    // 创建并显示关键词列表视图
-		    DYYYKeywordListView *keywordListView = [[DYYYKeywordListView alloc] initWithTitle:@"设置过滤关键词" keywords:keywordArray];
-
-		    // 设置确认回调
-		    keywordListView.onConfirm = ^(NSArray *keywords) {
-		      // 将关键词数组转换为逗号分隔的字符串
-		      NSString *keywordString = [keywords componentsJoinedByString:@","];
-
-		      // 保存到用户默认设置
-		      [[NSUserDefaults standardUserDefaults] setObject:keywordString forKey:@"DYYYfilterKeywords"];
-		      [[NSUserDefaults standardUserDefaults] synchronize];
-
-		      // 显示提示
-		      [DYYYManager showToast:@"过滤关键词已更新"];
-		    };
-
-		    // 显示关键词列表视图
-		    [keywordListView show];
-		  };
-
-		  [filterView show];
-
-		  AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
-		  [panelManager dismissWithAnimation:YES completion:nil];
-		};
-
-		[viewModels addObject:filterKeywords];
-	}
 
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYLongPressFilterUser"]) {
 		// 新增修改过滤规则功能
 		AWELongPressPanelBaseViewModel *filterKeywords = [[%c(AWELongPressPanelBaseViewModel) alloc] init];
 		filterKeywords.awemeModel = self.awemeModel;
-		filterKeywords.actionType = 675;
+		filterKeywords.actionType = 674;
 		filterKeywords.duxIconName = @"ic_userban_outlined_20";
 		filterKeywords.describeString = @"过滤用户视频";
 
@@ -2449,6 +2386,70 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 		  }
 		  [topVC presentViewController:alertController animated:YES completion:nil];
 
+		};
+
+		[viewModels addObject:filterKeywords];
+	}
+
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYLongPressFilterTitle"]) {
+		// 新增修改过滤规则功能
+		AWELongPressPanelBaseViewModel *filterKeywords = [[%c(AWELongPressPanelBaseViewModel) alloc] init];
+		filterKeywords.awemeModel = self.awemeModel;
+		filterKeywords.actionType = 675;
+		filterKeywords.duxIconName = @"ic_funnel_outlined_20";
+		filterKeywords.describeString = @"过滤关键词调整";
+
+		filterKeywords.action = ^{
+		  NSString *descText = [self.awemeModel valueForKey:@"descriptionString"];
+
+		  DYYYFilterSettingsView *filterView = [[DYYYFilterSettingsView alloc] initWithTitle:@"过滤关键词调整" text:descText];
+		  filterView.onConfirm = ^(NSString *selectedText) {
+		    if (selectedText.length > 0) {
+			    NSString *currentKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterKeywords"] ?: @"";
+			    NSString *newKeywords;
+
+			    if (currentKeywords.length > 0) {
+				    newKeywords = [NSString stringWithFormat:@"%@,%@", currentKeywords, selectedText];
+			    } else {
+				    newKeywords = selectedText;
+			    }
+
+			    [[NSUserDefaults standardUserDefaults] setObject:newKeywords forKey:@"DYYYfilterKeywords"];
+			    [[NSUserDefaults standardUserDefaults] synchronize];
+			    [DYYYManager showToast:[NSString stringWithFormat:@"已添加过滤词: %@", selectedText]];
+		    }
+		  };
+
+		  // 设置过滤关键词按钮回调
+		  filterView.onKeywordFilterTap = ^{
+		    // 获取保存的关键词
+		    NSString *savedKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterKeywords"] ?: @"";
+		    NSArray *keywordArray = [savedKeywords length] > 0 ? [savedKeywords componentsSeparatedByString:@","] : @[];
+
+		    // 创建并显示关键词列表视图
+		    DYYYKeywordListView *keywordListView = [[DYYYKeywordListView alloc] initWithTitle:@"设置过滤关键词" keywords:keywordArray];
+
+		    // 设置确认回调
+		    keywordListView.onConfirm = ^(NSArray *keywords) {
+		      // 将关键词数组转换为逗号分隔的字符串
+		      NSString *keywordString = [keywords componentsJoinedByString:@","];
+
+		      // 保存到用户默认设置
+		      [[NSUserDefaults standardUserDefaults] setObject:keywordString forKey:@"DYYYfilterKeywords"];
+		      [[NSUserDefaults standardUserDefaults] synchronize];
+
+		      // 显示提示
+		      [DYYYManager showToast:@"过滤关键词已更新"];
+		    };
+
+		    // 显示关键词列表视图
+		    [keywordListView show];
+		  };
+
+		  [filterView show];
+
+		  AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
+		  [panelManager dismissWithAnimation:YES completion:nil];
 		};
 
 		[viewModels addObject:filterKeywords];
