@@ -500,18 +500,17 @@ static void showUserAgreementAlert() {
 				    item.detail = savedSpeed ?: @"1.0x";
 
 				    item.cellTappedBlock = ^{
-				      UIViewController *topVC = topView();
 				      NSArray *speedOptions = @[ @"0.75x", @"1.0x", @"1.25x", @"1.5x", @"2.0x", @"2.5x", @"3.0x" ];
 
 				      // 显示选项选择视图并直接获取返回值
 				      NSString *selectedValue = [DYYYOptionsSelectionView showWithPreferenceKey:@"DYYYDefaultSpeed"
 												   optionsArray:speedOptions
 												     headerText:@"选择默认倍速"
-												 onPresentingVC:topVC];
+												 onPresentingVC:topView()];
 
 				      // 设置详情文本为选中的值
 				      item.detail = selectedValue;
-
+				      UIViewController *topVC = topView();
 				      // 刷新表格视图
 				      if ([topVC isKindOfClass:%c(AWESettingBaseViewController)]) {
 					      dispatch_async(dispatch_get_main_queue(), ^{
@@ -534,7 +533,6 @@ static void showUserAgreementAlert() {
 			    else if ([item.identifier isEqualToString:@"DYYYScheduleStyle"]) {
 				    NSString *savedStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
 				    item.detail = savedStyle ?: @"默认";
-				    UIViewController *topVC = topView();
 				    item.cellTappedBlock = ^{
 				      NSArray *styleOptions = @[ @"进度条两侧上下", @"进度条两侧左右", @"进度条右侧剩余", @"进度条右侧完整" ];
 
@@ -542,12 +540,12 @@ static void showUserAgreementAlert() {
 				      NSString *selectedValue = [DYYYOptionsSelectionView showWithPreferenceKey:@"DYYYScheduleStyle"
 												   optionsArray:styleOptions
 												     headerText:@"选择进度时长样式"
-												 onPresentingVC:topVC];
+												 onPresentingVC:topView()];
 
 				      // 设置详情文本为选中的值
-					  
-				      item.detail = selectedValue;
 
+				      item.detail = selectedValue;
+				      UIViewController *topVC = topView();
 				      // 刷新表格视图
 				      if ([topVC isKindOfClass:%c(AWESettingBaseViewController)]) {
 					      dispatch_async(dispatch_get_main_queue(), ^{
