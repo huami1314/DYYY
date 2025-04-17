@@ -682,3 +682,97 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWEFakeProgressSliderView : UIView
 - (void)applyCustomProgressStyle;
 @end
+
+// 添加 DUXContentSheet 相关声明
+@protocol IESIMContentSheetVCProtocol, AWEMRGlobalAlertTrackProtocol;
+@interface DUXBasicSheet : UIViewController
+@end
+
+@interface AWEBinding : NSObject
+@end
+
+@interface AWESettingItemModel : NSObject
+@property(nonatomic, copy) NSString *identifier;
+@property(nonatomic, copy) NSString *title;
+@property(nonatomic, copy) NSString *detail;
+@property(nonatomic, assign) NSInteger type;
+@property(nonatomic, copy) NSString *iconImageName;
+@property(nonatomic, copy) NSString *svgIconImageName;
+@property(nonatomic, assign) NSInteger cellType;
+@property(nonatomic, assign) NSInteger colorStyle;
+@property(nonatomic, assign) BOOL isEnable;
+@property(nonatomic, assign) BOOL isSwitchOn;
+@property(nonatomic, copy) void (^cellTappedBlock)(void);
+@property(nonatomic, copy) void (^switchChangedBlock)(void);
+@end
+
+
+@interface AWESettingBaseViewModel : NSObject
+@end
+
+@interface AWESettingBaseViewController : UIViewController
+@property(nonatomic, strong) UIView *view;
+- (AWESettingBaseViewModel *)viewModel;
+@end
+
+@interface AWESettingsViewModel : AWESettingBaseViewModel
+@property(nonatomic, assign) NSInteger colorStyle;
+@property(nonatomic, strong) NSArray *sectionDataArray;
+@property(nonatomic, weak) id controllerDelegate;
+@property(nonatomic, strong) NSString *traceEnterFrom;
+
+- (AWESettingItemModel *)createSettingItem:(NSDictionary *)dict;
+- (AWESettingItemModel *)createSettingItem:(NSDictionary *)dict cellTapHandlers:(NSMutableDictionary *)cellTapHandlers;
+
+- (void)applyDependencyRulesForItem:(AWESettingItemModel *)item;
+- (void)handleConflictsAndDependenciesForSetting:(NSString *)identifier isEnabled:(BOOL)isEnabled;
+- (void)updateDependentItemsForSetting:(NSString *)identifier value:(id)value;
+@end
+
+
+@interface AWENavigationBar : UIView
+@property(nonatomic, strong) UILabel *titleLabel;
+@end
+
+@interface AWESettingSectionModel : NSObject
+@property(nonatomic, assign) NSInteger type;
+@property(nonatomic, assign) CGFloat sectionHeaderHeight;
+@property(nonatomic, copy) NSString *sectionHeaderTitle;
+@property(nonatomic, strong) NSArray *itemArray;
+@property (retain, nonatomic) NSString *identifier;
+@property (copy, nonatomic) NSString *title;
+- (id)initWithIdentifier:(id)arg1;
+- (void)setIsSelect:(BOOL)arg1;
+- (BOOL)isSelect;
+- (void)setCellTappedBlock:(id)arg1;
+- (AWESettingItemModel *)createSettingItem:(NSDictionary *)dict;
+- (AWESettingItemModel *)createSettingItem:(NSDictionary *)dict cellTapHandlers:(NSMutableDictionary *)cellTapHandlers;
+- (void)applyDependencyRulesForItem:(AWESettingItemModel *)item;
+- (void)handleConflictsAndDependenciesForSetting:(NSString *)identifier isEnabled:(BOOL)isEnabled;
+- (void)updateDependentItemsForSetting:(NSString *)identifier value:(id)value;
+@end
+
+@interface AWEPrivacySettingActionSheetConfig : NSObject
+@property (copy, nonatomic) NSArray *models;
+@property (copy, nonatomic) NSString *headerText;
+@property (copy, nonatomic) NSString *headerTitleText;
+@property (nonatomic) BOOL needHighLight;
+@property (nonatomic) BOOL useCardUIStyle;
+@property (nonatomic) BOOL fromHalfScreen;
+@property (retain, nonatomic) UIImage *headerLabelIcon;
+@property (nonatomic) CGFloat sheetWidth;
+@property (nonatomic) BOOL adaptIpadFromHalfVC;
+@end
+
+@interface AWEPrivacySettingActionSheet : UIView
++ (id)sheetWithConfig:(id)arg1;
+@property (copy, nonatomic) id closeBlock;
+@end
+
+@interface DUXContentSheet : UIViewController
+- (void)showOnViewController:(id)arg1 completion:(id)arg2;
+- (instancetype)initWithRootViewController:(UIViewController *)controller withTopType:(NSInteger)topType withSheetAligment:(NSInteger)alignment;
+- (void)setAutoAlignmentCenter:(BOOL)center;
+- (void)setSheetCornerRadius:(CGFloat)radius;
+@property (retain, nonatomic) UIView *fullScreenView;
+@end

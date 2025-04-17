@@ -65,55 +65,6 @@ static void showIconOptionsDialog(NSString *title, UIImage *previewImage, NSStri
 }
 @end
 
-@interface AWESettingBaseViewModel : NSObject
-@end
-
-@interface AWESettingBaseViewController : UIViewController
-@property(nonatomic, strong) UIView *view;
-- (AWESettingBaseViewModel *)viewModel;
-@end
-
-@interface AWENavigationBar : UIView
-@property(nonatomic, strong) UILabel *titleLabel;
-@end
-
-@interface AWESettingsViewModel : AWESettingBaseViewModel
-@property(nonatomic, assign) NSInteger colorStyle;
-@property(nonatomic, strong) NSArray *sectionDataArray;
-@property(nonatomic, weak) id controllerDelegate;
-@property(nonatomic, strong) NSString *traceEnterFrom;
-@end
-
-@interface AWESettingSectionModel : NSObject
-@property(nonatomic, assign) NSInteger type;
-@property(nonatomic, assign) CGFloat sectionHeaderHeight;
-@property(nonatomic, copy) NSString *sectionHeaderTitle;
-@property(nonatomic, strong) NSArray *itemArray;
-@end
-
-@interface AWESettingItemModel : NSObject
-@property(nonatomic, copy) NSString *identifier;
-@property(nonatomic, copy) NSString *title;
-@property(nonatomic, copy) NSString *detail;
-@property(nonatomic, assign) NSInteger type;
-@property(nonatomic, copy) NSString *iconImageName;
-@property(nonatomic, copy) NSString *svgIconImageName;
-@property(nonatomic, assign) NSInteger cellType;
-@property(nonatomic, assign) NSInteger colorStyle;
-@property(nonatomic, assign) BOOL isEnable;
-@property(nonatomic, assign) BOOL isSwitchOn;
-@property(nonatomic, copy) void (^cellTappedBlock)(void);
-@property(nonatomic, copy) void (^switchChangedBlock)(void);
-@end
-
-@interface AWESettingsViewModel (DYYYAdditions)
-- (AWESettingItemModel *)createSettingItem:(NSDictionary *)dict;
-- (AWESettingItemModel *)createSettingItem:(NSDictionary *)dict cellTapHandlers:(NSMutableDictionary *)cellTapHandlers;
-- (void)applyDependencyRulesForItem:(AWESettingItemModel *)item;
-- (void)handleConflictsAndDependenciesForSetting:(NSString *)identifier isEnabled:(BOOL)isEnabled;
-- (void)updateDependentItemsForSetting:(NSString *)identifier value:(id)value;
-@end
-
 // 获取顶级视图控制器
 static UIViewController *getActiveTopViewController() {
 	UIWindowScene *activeScene = nil;
@@ -309,18 +260,6 @@ static void showTextInputAlert(NSString *title, NSString *defaultText, NSString 
 static void showTextInputAlert(NSString *title, NSString *defaultText, void (^onConfirm)(NSString *text), void (^onCancel)(void)) { showTextInputAlert(title, defaultText, nil, onConfirm, onCancel); }
 
 static void showTextInputAlert(NSString *title, void (^onConfirm)(NSString *text), void (^onCancel)(void)) { showTextInputAlert(title, nil, nil, onConfirm, onCancel); }
-
-// 显示自定义选项选择视图
-static void showOptionsSelectionSheet(UIViewController *viewController, NSArray<NSString *> *options, NSString *title, void (^onSelect)(NSInteger selectedIndex, NSString *selectedValue)) {
-	// 确保选项数组正确
-	if (!options || options.count == 0) {
-		options = @[ @"0.75x", @"1.0x", @"1.25x", @"1.5x", @"2.0x", @"2.5x", @"3.0x" ];
-	}
-
-	DYYYOptionsSelectionView *selectionView = [[DYYYOptionsSelectionView alloc] initWithTitle:title options:options];
-	selectionView.onSelect = onSelect;
-	[selectionView show];
-}
 
 // 获取和设置用户偏好
 static bool getUserDefaults(NSString *key) { return [[NSUserDefaults standardUserDefaults] boolForKey:key]; }
@@ -555,65 +494,76 @@ static void showUserAgreementAlert() {
 		    for (NSDictionary *dict in videoSettings) {
 			    AWESettingItemModel *item = [self createSettingItem:dict cellTapHandlers:cellTapHandlers];
 
-			    // 特殊处理默认倍速选项，使用showOptionsSelectionSheet而不是输入框
 			    if ([item.identifier isEqualToString:@"DYYYDefaultSpeed"]) {
 				    // 获取已保存的默认倍速值
 				    NSString *savedSpeed = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDefaultSpeed"];
 				    item.detail = savedSpeed ?: @"1.0x";
+
 				    item.cellTappedBlock = ^{
+				      UIViewController *topVC = topView();
 				      NSArray *speedOptions = @[ @"0.75x", @"1.0x", @"1.25x", @"1.5x", @"2.0x", @"2.5x", @"3.0x" ];
-				      showOptionsSelectionSheet(topView(), speedOptions, @"选择默认倍速", ^(NSInteger selectedIndex, NSString *selectedValue) {
-					setUserDefaults(selectedValue, @"DYYYDefaultSpeed");
 
-					// 更新UI
-					item.detail = selectedValue;
-					UIViewController *topVC = topView();
-					if ([topVC isKindOfClass:%c(AWESettingBaseViewController)]) {
-						dispatch_async(dispatch_get_main_queue(), ^{
-						  UITableView *tableView = nil;
-						  for (UIView *subview in topVC.view.subviews) {
-							  if ([subview isKindOfClass:[UITableView class]]) {
-								  tableView = (UITableView *)subview;
-								  break;
-							  }
-						  }
+				      // 显示选项选择视图并直接获取返回值
+				      NSString *selectedValue = [DYYYOptionsSelectionView showWithPreferenceKey:@"DYYYDefaultSpeed"
+												   optionsArray:speedOptions
+												     headerText:@"选择默认倍速"
+												 onPresentingVC:topVC];
 
-						  if (tableView) {
-							  [tableView reloadData];
-						  }
-						});
-					}
-				      });
+				      // 设置详情文本为选中的值
+				      item.detail = selectedValue;
+
+				      // 刷新表格视图
+				      if ([topVC isKindOfClass:%c(AWESettingBaseViewController)]) {
+					      dispatch_async(dispatch_get_main_queue(), ^{
+						UITableView *tableView = nil;
+						for (UIView *subview in topVC.view.subviews) {
+							if ([subview isKindOfClass:[UITableView class]]) {
+								tableView = (UITableView *)subview;
+								break;
+							}
+						}
+
+						if (tableView) {
+							[tableView reloadData];
+						}
+					      });
+				      }
 				    };
 			    }
-			    // 添加对进度时长样式的特殊处理
+
 			    else if ([item.identifier isEqualToString:@"DYYYScheduleStyle"]) {
 				    NSString *savedStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
 				    item.detail = savedStyle ?: @"默认";
+				    UIViewController *topVC = topView();
 				    item.cellTappedBlock = ^{
 				      NSArray *styleOptions = @[ @"进度条两侧上下", @"进度条两侧左右", @"进度条右侧剩余", @"进度条右侧完整" ];
-				      showOptionsSelectionSheet(topView(), styleOptions, @"选择进度时长样式", ^(NSInteger selectedIndex, NSString *selectedValue) {
-					setUserDefaults(selectedValue, @"DYYYScheduleStyle");
 
-					// 更新UI
-					item.detail = selectedValue;
-					UIViewController *topVC = topView();
-					if ([topVC isKindOfClass:%c(AWESettingBaseViewController)]) {
-						dispatch_async(dispatch_get_main_queue(), ^{
-						  UITableView *tableView = nil;
-						  for (UIView *subview in topVC.view.subviews) {
-							  if ([subview isKindOfClass:[UITableView class]]) {
-								  tableView = (UITableView *)subview;
-								  break;
-							  }
-						  }
+				      // 显示选项选择视图并直接获取返回值
+				      NSString *selectedValue = [DYYYOptionsSelectionView showWithPreferenceKey:@"DYYYScheduleStyle"
+												   optionsArray:styleOptions
+												     headerText:@"选择进度时长样式"
+												 onPresentingVC:topVC];
 
-						  if (tableView) {
-							  [tableView reloadData];
-						  }
-						});
-					}
-				      });
+				      // 设置详情文本为选中的值
+					  
+				      item.detail = selectedValue;
+
+				      // 刷新表格视图
+				      if ([topVC isKindOfClass:%c(AWESettingBaseViewController)]) {
+					      dispatch_async(dispatch_get_main_queue(), ^{
+						UITableView *tableView = nil;
+						for (UIView *subview in topVC.view.subviews) {
+							if ([subview isKindOfClass:[UITableView class]]) {
+								tableView = (UITableView *)subview;
+								break;
+							}
+						}
+
+						if (tableView) {
+							[tableView reloadData];
+						}
+					      });
+				      }
 				    };
 			    }
 

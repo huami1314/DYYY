@@ -12,11 +12,7 @@ ARCHS = arm64 arm64e
 #export THEOS=/Users/huami/theos
 #export THEOS_PACKAGE_SCHEME=roothide
 
-ifeq ($(SCHEME),roothide)
-    export THEOS_PACKAGE_SCHEME = roothide
-else ifeq ($(SCHEME),rootless)
-    export THEOS_PACKAGE_SCHEME = rootless
-endif
+export THEOS_PACKAGE_SCHEME = rootless
 
 export DEBUG = 0
 INSTALL_TARGET_PROCESSES = Aweme
@@ -42,19 +38,20 @@ export LOGOS_DEFAULT_GENERATOR=internal
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 
-THEOS_DEVICE_IP = 192.168.31.222
+THEOS_DEVICE_IP = 192.168.15.246
 THEOS_DEVICE_PORT = 22
 
+# 清理 packages 目录
 clean::
 	@echo -e "\033[31m==>\033[0m Cleaning packages…"
 	@rm -rf .theos packages
 
+# 编译并自动安装
 after-package::
-	@if [ "$(THEOS_PACKAGE_SCHEME)" = "roothide" ] && [ "$(INSTALL)" = "1" ]; then \
-	echo -e "\033[31m==>\033[0m Installing package to device…"; \
-	DEB_FILE=$$(ls -t packages/*.deb | head -1); \
+	@echo -e "\033[32m==>\033[0m Packaging complete."
+	@DEB_FILE=$$(ls -t packages/*.deb | head -1); \
 	PACKAGE_NAME=$$(basename "$$DEB_FILE" | cut -d'_' -f1); \
+	echo -e "\033[34m==>\033[0m Installing $$PACKAGE_NAME to device…"; \
 	ssh root@$(THEOS_DEVICE_IP) "rm -rf /tmp/$${PACKAGE_NAME}.deb"; \
 	scp "$$DEB_FILE" root@$(THEOS_DEVICE_IP):/tmp/$${PACKAGE_NAME}.deb; \
-	ssh root@$(THEOS_DEVICE_IP) "dpkg -i --force-overwrite /tmp/$${PACKAGE_NAME}.deb && rm -f /tmp/$${PACKAGE_NAME}.deb"; \
-	fi
+	ssh root@$(THEOS_DEVICE_IP) "dpkg -i --force-overwrite /tmp/$${PACKAGE_NAME}.deb && rm -f /tmp/$${PACKAGE_NAME}.deb"

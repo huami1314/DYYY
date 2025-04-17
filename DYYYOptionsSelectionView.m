@@ -1,120 +1,87 @@
 #import "DYYYOptionsSelectionView.h"
+#import <objc/runtime.h>
+#import "AwemeHeaders.h"
 
 @implementation DYYYOptionsSelectionView
 
-- (instancetype)initWithTitle:(NSString *)title options:(NSArray<NSString *> *)options {
-    if (self = [super initWithFrame:UIScreen.mainScreen.bounds]) {
-        self.options = options;
-        self.optionButtons = [NSMutableArray array];
-        self.backgroundColor = [UIColor colorWithWhite:0 alpha:0.2];
-        
-        // 创建模糊效果视图
-        self.blurView = [[UIVisualEffectView alloc] initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleDark]];
-        self.blurView.frame = self.bounds;
-        self.blurView.alpha = 0.2;
-        [self addSubview:self.blurView];
++ (NSString *)showWithPreferenceKey:(NSString *)preferenceKey
+                       optionsArray:(NSArray<NSString *> *)optionsArray
+                         headerText:(NSString *)headerText
+                     onPresentingVC:(UIViewController *)presentingVC {
 
-        CGFloat titleHeight = 60;
-        CGFloat optionHeight = 50;
-        CGFloat separatorHeight = 0.5;
-        CGFloat bottomPadding = 0; 
-        CGFloat contentHeight = titleHeight + (options.count * optionHeight) + (options.count * separatorHeight) + optionHeight + separatorHeight + bottomPadding;
-        
-        // 内容视图 - 纯白背景
-        self.contentView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 300, contentHeight)];
-        self.contentView.center = CGPointMake(self.frame.size.width / 2, self.frame.size.height / 2);
-        self.contentView.backgroundColor = [UIColor whiteColor];
-        self.contentView.layer.cornerRadius = 12;
-        self.contentView.layer.masksToBounds = YES;
-        self.contentView.alpha = 0;
-        self.contentView.transform = CGAffineTransformMakeScale(0.8, 0.8);
-        [self addSubview:self.contentView];
-        
-        // 标题 - 颜色为 #2d2f38
-        self.titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(20, 20, 260, 30)];
-        self.titleLabel.text = title;
-        self.titleLabel.textColor = [UIColor colorWithRed:45/255.0 green:47/255.0 blue:56/255.0 alpha:1.0]; // #2d2f38
-        self.titleLabel.textAlignment = NSTextAlignmentCenter;
-        self.titleLabel.font = [UIFont systemFontOfSize:18 weight:UIFontWeightMedium];
-        [self.contentView addSubview:self.titleLabel];
-        
-        // 添加标题和选项之间的分割线
-        UIView *titleSeparator = [[UIView alloc] initWithFrame:CGRectMake(0, titleHeight, 300, separatorHeight)];
-        titleSeparator.backgroundColor = [UIColor colorWithRed:230/255.0 green:230/255.0 blue:230/255.0 alpha:1.0];
-        [self.contentView addSubview:titleSeparator];
-        
-        // 选项按钮 - 确保垂直排列且不重叠
-        CGFloat currentY = titleHeight + separatorHeight;
-        for (NSInteger i = 0; i < options.count; i++) {
-            UIButton *optionButton = [UIButton buttonWithType:UIButtonTypeSystem];
-            optionButton.frame = CGRectMake(0, currentY, 300, optionHeight);
-            optionButton.backgroundColor = [UIColor clearColor];
-            [optionButton setTitle:options[i] forState:UIControlStateNormal];
-            [optionButton setTitleColor:[UIColor colorWithRed:45/255.0 green:47/255.0 blue:56/255.0 alpha:1.0] forState:UIControlStateNormal]; // #2d2f38
-            optionButton.tag = i;
-            [optionButton addTarget:self action:@selector(optionTapped:) forControlEvents:UIControlEventTouchUpInside];
-            [self.contentView addSubview:optionButton];
-            [self.optionButtons addObject:optionButton];
-            
-            currentY += optionHeight;
-            
-            // 添加选项之间的分割线
-            if (i < options.count - 1) {
-                UIView *optionSeparator = [[UIView alloc] initWithFrame:CGRectMake(0, currentY, 300, separatorHeight)];
-                optionSeparator.backgroundColor = [UIColor colorWithRed:230/255.0 green:230/255.0 blue:230/255.0 alpha:1.0];
-                [self.contentView addSubview:optionSeparator];
-                currentY += separatorHeight;
+    NSString *savedPreference = [[NSUserDefaults standardUserDefaults] stringForKey:preferenceKey];
+    if (!savedPreference && optionsArray.count > 0) {
+        savedPreference = optionsArray[0]; // 默认使用第一个
+    }
+
+    Class AWESettingItemModelClass = NSClassFromString(@"AWESettingItemModel");
+    Class AWEPrivacySettingActionSheetConfigClass = NSClassFromString(@"AWEPrivacySettingActionSheetConfig");
+    Class AWEPrivacySettingActionSheetClass = NSClassFromString(@"AWEPrivacySettingActionSheet");
+    Class DUXContentSheetClass = NSClassFromString(@"DUXContentSheet");
+
+    NSMutableArray *models = [NSMutableArray array];
+    NSMutableArray *modelRefs = [NSMutableArray array];
+
+    for (NSString *option in optionsArray) {
+        id model = [[AWESettingItemModelClass alloc] initWithIdentifier:option];
+        [model setTitle:option];
+        [model setIsSelect:[savedPreference isEqualToString:option]];
+        [models addObject:model];
+        [modelRefs addObject:model];
+    }
+
+    for (int i = 0; i < modelRefs.count; i++) {
+        id currentModel = modelRefs[i];
+        [currentModel setCellTappedBlock:^{
+            for (int j = 0; j < modelRefs.count; j++) {
+                [modelRefs[j] setIsSelect:(j == i)];
             }
-        }
-        
-        // 添加选项和取消按钮之间的分割线
-        UIView *cancelSeparator = [[UIView alloc] initWithFrame:CGRectMake(0, currentY, 300, separatorHeight)];
-        cancelSeparator.backgroundColor = [UIColor colorWithRed:230/255.0 green:230/255.0 blue:230/255.0 alpha:1.0];
-        [self.contentView addSubview:cancelSeparator];
-        currentY += separatorHeight;
-        
-        // 取消按钮 - 颜色为 #7c7c82
-        self.cancelButton = [UIButton buttonWithType:UIButtonTypeSystem];
-        self.cancelButton.frame = CGRectMake(0, currentY, 300, optionHeight);
-        self.cancelButton.backgroundColor = [UIColor clearColor];
-        [self.cancelButton setTitle:@"取消" forState:UIControlStateNormal];
-        [self.cancelButton setTitleColor:[UIColor colorWithRed:124/255.0 green:124/255.0 blue:130/255.0 alpha:1.0] forState:UIControlStateNormal]; // #7c7c82
-        [self.cancelButton addTarget:self action:@selector(cancelTapped) forControlEvents:UIControlEventTouchUpInside];
-        [self.contentView addSubview:self.cancelButton];
-    }
-    return self;
-}
 
-- (void)show {
-    UIWindow *window = [UIApplication sharedApplication].keyWindow;
-    [window addSubview:self];
+            NSString *selectedValue = [currentModel title];
+            [[NSUserDefaults standardUserDefaults] setObject:selectedValue forKey:preferenceKey];
+            [[NSUserDefaults standardUserDefaults] synchronize];
+        }];
+    }
+
+    id config = [[AWEPrivacySettingActionSheetConfigClass alloc] init];
+    [config setModels:models];
+    [config setHeaderText:headerText];
+    [config setHeaderTitleText:@""];
+    [config setNeedHighLight:NO];
+    [config setUseCardUIStyle:YES];
+    [config setFromHalfScreen:NO];
+    [config setHeaderLabelIcon:nil];
+    [config setSheetWidth:0];
+    [config setAdaptIpadFromHalfVC:NO];
+
+    id actionSheet = [AWEPrivacySettingActionSheetClass sheetWithConfig:config];
+
+    UIViewController *containerVC = [[UIViewController alloc] init];
+    [containerVC.view addSubview:actionSheet];
+
+    UIView *sheetView = (UIView *)actionSheet;
+    sheetView.translatesAutoresizingMaskIntoConstraints = NO;
+    [NSLayoutConstraint activateConstraints:@[
+        [sheetView.leadingAnchor constraintEqualToAnchor:containerVC.view.leadingAnchor],
+        [sheetView.trailingAnchor constraintEqualToAnchor:containerVC.view.trailingAnchor],
+        [sheetView.topAnchor constraintEqualToAnchor:containerVC.view.topAnchor],
+        [sheetView.bottomAnchor constraintEqualToAnchor:containerVC.view.bottomAnchor]
+    ]];
+
+    id contentSheet = [[DUXContentSheetClass alloc] initWithRootViewController:containerVC
+                                                                 withTopType:0
+                                                            withSheetAligment:0];
+    [contentSheet setAutoAlignmentCenter:YES];
+    [contentSheet setSheetCornerRadius:10.0];
+
+    [actionSheet setCloseBlock:^{
+        [contentSheet dismissViewControllerAnimated:YES completion:nil];
+    }];
+
+    [contentSheet showOnViewController:presentingVC completion:nil];
     
-    [UIView animateWithDuration:0.12 animations:^{
-        self.contentView.alpha = 1.0;
-        self.contentView.transform = CGAffineTransformIdentity;
-    }];
-}
-
-- (void)dismiss {
-    [UIView animateWithDuration:0.1 animations:^{
-        self.contentView.alpha = 0;
-        self.contentView.transform = CGAffineTransformMakeScale(0.8, 0.8);
-        self.blurView.alpha = 0;
-    } completion:^(BOOL finished) {
-        [self removeFromSuperview];
-    }];
-}
-
-- (void)optionTapped:(UIButton *)sender {
-    NSInteger index = sender.tag;
-    if (self.onSelect && index < self.options.count) {
-        self.onSelect(index, self.options[index]);
-    }
-    [self dismiss];
-}
-
-- (void)cancelTapped {
-    [self dismiss];
+    // 直接返回当前选择的值
+    return savedPreference;
 }
 
 @end
