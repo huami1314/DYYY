@@ -818,4 +818,8 @@ typedef NS_ENUM(NSInteger, MediaType) {
 
 - (void)setCornerRadius:(CGFloat)radius;
 - (void)setOnlyTopCornerClips:(BOOL)onlyTop;
+- (void)setUseCardUIStyle:(BOOL)arg1;
+- (void)setShouldShowToggle:(BOOL)arg1;
+- (NSUInteger)animationStyle;
+- (NSUInteger)viewStyle;
 @end

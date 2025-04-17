@@ -1,6 +1,8 @@
 #import "DYYYBottomAlertView.h"
 #import "AwemeHeaders.h"
 
+#import "DYYYUtils.h"
+
 @implementation DYYYBottomAlertView
 
 + (UIViewController *)showAlertWithTitle:(NSString *)title
@@ -28,15 +30,17 @@
     [vc setCornerRadius:16.0];
     [vc setOnlyTopCornerClips:YES];
     
+    [vc setUseCardUIStyle:YES];
+
     // 使用 keyWindow 直接添加视图，而不是模态呈现
     UIWindow *window = [UIApplication sharedApplication].keyWindow;
     [vc.view setFrame:window.bounds];
     [window addSubview:vc.view];
     
     // 将视图控制器作为子视图控制器添加到根视图控制器
-    UIViewController *rootVC = window.rootViewController;
-    [rootVC addChildViewController:vc];
-    [vc didMoveToParentViewController:rootVC];
+	UIViewController *topVC = topView();
+    [topVC addChildViewController:vc];
+    [vc didMoveToParentViewController:topVC];
     
     return vc;
 }

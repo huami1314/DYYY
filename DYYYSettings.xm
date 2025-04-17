@@ -13,6 +13,8 @@
 #import "DYYYKeywordListView.h"
 #import "DYYYOptionsSelectionView.h"
 
+#import "DYYYUtils.h"
+
 @class DYYYIconOptionsDialogView;
 static void showIconOptionsDialog(NSString *title, UIImage *previewImage, NSString *saveFilename, void (^onClear)(void), void (^onSelect)(void));
 
@@ -90,35 +92,6 @@ static UIViewController *getActiveTopViewController() {
 		topController = topController.presentedViewController;
 	}
 	return topController;
-}
-
-// 获取最上层视图控制器
-static UIViewController *topView(void) {
-	UIWindow *window = nil;
-	for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
-		if (scene.activationState == UISceneActivationStateForegroundActive) {
-			window = scene.windows.firstObject;
-			break;
-		}
-	}
-	if (!window) {
-		for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
-			if ([scene isKindOfClass:[UIWindowScene class]]) {
-				window = scene.windows.firstObject;
-				break;
-			}
-		}
-	}
-	if (!window)
-		return nil;
-	UIViewController *rootVC = window.rootViewController;
-	while (rootVC.presentedViewController) {
-		rootVC = rootVC.presentedViewController;
-	}
-	if ([rootVC isKindOfClass:[UINavigationController class]]) {
-		return ((UINavigationController *)rootVC).topViewController;
-	}
-	return rootVC;
 }
 
 static AWESettingItemModel *createIconCustomizationItem(NSString *identifier, NSString *title, NSString *svgIconName, NSString *saveFilename) {
