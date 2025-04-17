@@ -776,3 +776,46 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (void)setSheetCornerRadius:(CGFloat)radius;
 @property (retain, nonatomic) UIView *fullScreenView;
 @end
+
+@protocol AFDPrivacyHalfScreenViewControllerProtocol <NSObject>
+@end
+
+@interface AWEHalfScreenBaseViewController : UIViewController
+- (void)setCornerRadius:(CGFloat)radius;
+- (void)setOnlyTopCornerClips:(BOOL)onlyTop;
+@end
+
+@interface AWEButton : UIButton
+@end
+
+@interface AFDButton : UIButton
+@end
+
+@interface AWEProfileToggleView : UIView
+@end
+
+@interface DUXAbandonedButton : UIButton
+@end
+
+@interface AFDPrivacyHalfScreenViewController : AWEHalfScreenBaseViewController <AFDPrivacyHalfScreenViewControllerProtocol>
+@property (retain, nonatomic) UILabel *titleLabel;
+@property (retain, nonatomic) UILabel *contentLabel;
+@property (retain, nonatomic) UIImageView *imageView;
+@property (copy, nonatomic) void (^rightBtnClickedBlock)(void);
+@property (copy, nonatomic) void (^leftButtonClickedBlock)(void);
+@property (retain, nonatomic) AWEButton *leftCancelButton;
+@property (retain, nonatomic) AWEButton *rightConfirmButton;
+
+- (void)configWithImageView:(UIImageView *)imageView 
+                  lockImage:(UIImage *)lockImage 
+            defaultLockState:(BOOL)defaultLockState 
+             titleLabelText:(NSString *)titleText 
+           contentLabelText:(NSString *)contentText 
+       leftCancelButtonText:(NSString *)leftButtonText 
+      rightConfirmButtonText:(NSString *)rightButtonText 
+        rightBtnClickedBlock:(void (^)(void))rightBtnBlock 
+       leftButtonClickedBlock:(void (^)(void))leftBtnBlock;
+
+- (void)setCornerRadius:(CGFloat)radius;
+- (void)setOnlyTopCornerClips:(BOOL)onlyTop;
+@end
