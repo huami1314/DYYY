@@ -1831,8 +1831,10 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 			imageViewModel.describeString = @"保存当前图片";
 
 			AWEImageAlbumImageModel *currimge = self.awemeModel.albumImages[self.awemeModel.currentImageIndex - 1];
-			if (currimge.clipVideo != nil) {
-				imageViewModel.describeString = @"保存当前实况";
+			if (@available(iOS 15.0, *)) {
+				if (currimge.clipVideo != nil) {
+					imageViewModel.describeString = @"保存当前实况";
+				}
 			}
 			imageViewModel.action = ^{
 			  AWEAwemeModel *awemeModel = self.awemeModel;
@@ -1844,15 +1846,17 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 				  currentImageModel = awemeModel.albumImages.firstObject;
 			  }
 			  // 如果是实况的话
-			  if (currimge.clipVideo != nil) {
-				  NSURL *url = [NSURL URLWithString:currentImageModel.urlList.firstObject];
-				  NSURL *videoURL = [currimge.clipVideo.playURL getDYYYSrcURLDownload];
-
-				  [DYYYManager downloadLivePhoto:url
-							videoURL:videoURL
-						      completion:^{
-							[DYYYManager showToast:@"实况照片已保存到相册"];
-						      }];
+			  if (@available(iOS 15.0, *)) {
+				  if (currimge.clipVideo != nil) {
+					  NSURL *photoURL = [NSURL URLWithString:currentImageModel.urlList.firstObject];
+					  NSURL *videoURL = [currimge.clipVideo.playURL getDYYYSrcURLDownload];
+					  [DYYYManager downloadLivePhoto:photoURL
+								videoURL:videoURL
+							      completion:^{
+								[DYYYManager showToast:@"实况照片已保存到相册"];
+							      }];
+					  return;
+				  }
 			  } else if (currentImageModel && currentImageModel.urlList.count > 0) {
 				  NSURL *url = [NSURL URLWithString:currentImageModel.urlList.firstObject];
 				  [DYYYManager downloadMedia:url
@@ -2270,7 +2274,6 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 		[viewModels addObject:copyShareLink];
 	}
 
-
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYLongPressFilterUser"]) {
 		// 新增修改过滤规则功能
 		AWELongPressPanelBaseViewModel *filterKeywords = [[%c(AWELongPressPanelBaseViewModel) alloc] init];
@@ -2385,7 +2388,6 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 			  topVC = topVC.presentedViewController;
 		  }
 		  [topVC presentViewController:alertController animated:YES completion:nil];
-
 		};
 
 		[viewModels addObject:filterKeywords];
@@ -2893,6 +2895,8 @@ static BOOL isDownloadFlied = NO;
 // 获取资源的地址
 %hook AWEURLModel
 %new - (NSURL *)getDYYYSrcURLDownload {
+	;
+	;
 	;
 	;
 	;
