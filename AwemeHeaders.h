@@ -103,6 +103,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @property (nonatomic, assign) BOOL showIfNeed;
 @property (nonatomic, copy) NSString *duxIconName;
 @property (nonatomic, copy) void (^action)(void);
+@property (nonatomic) BOOL isModern;
 @property (nonatomic, strong) AWEAwemeModel *awemeModel;
 - (void)setDuxIconName:(NSString *)iconName;
 - (void)setDescribeString:(NSString *)descString;
@@ -112,6 +113,8 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWELongPressPanelViewGroupModel : NSObject
 @property (nonatomic, assign) NSInteger groupType;
 @property (nonatomic, strong) NSArray *groupArr;
+@property (nonatomic) BOOL isModern;
+@property (nonatomic) BOOL hasMore;
 @end
 
 @interface AWELongPressPanelManager : NSObject
