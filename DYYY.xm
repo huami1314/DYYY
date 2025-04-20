@@ -1651,16 +1651,15 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 		} else if ([channelID isEqualToString:@"homepage_pad_game"]) {
 			isHideChannel = [defaults boolForKey:@"DYYYHideGame"];
 		}
+
+		if (!isHideChannel) {
+			[newChannelModels addObject:tabItemModel];
+		} else {
+			[newCurrentChannelIDList removeObject:channelID];
+		}
 	}
 
-	if (!isHideChannel) {
-		[newChannelModels addObject:tabItemModel];
-	} else {
-		[newCurrentChannelIDList removeObject:channelID];
-	}
-}
-
-%orig(newChannelModels, newCurrentChannelIDList, arg3, arg4);
+	%orig(newChannelModels, newCurrentChannelIDList, arg3, arg4);
 }
 
 %end
@@ -3027,6 +3026,8 @@ static BOOL isDownloadFlied = NO;
 // 获取资源的地址
 %hook AWEURLModel
 %new - (NSURL *)getDYYYSrcURLDownload {
+	;
+	;
 	;
 	;
 	;
