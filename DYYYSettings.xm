@@ -1456,6 +1456,21 @@ static void showUserAgreementAlert() {
 			      @"title" : @"移除短剧",
 			      @"detail" : @"",
 			      @"cellType" : @6,
+			      @"imageName" : @"ic_xmark_outlined_20"},
+			    @{@"identifier" : @"DYYYHideCinema",
+			      @"title" : @"移除看剧",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_xmark_outlined_20"},
+			    @{@"identifier" : @"DYYYHideKidsV2",
+			      @"title" : @"移除少儿",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_xmark_outlined_20"},
+			    @{@"identifier" : @"DYYYHideGame",
+			      @"title" : @"移除游戏",
+			      @"detail" : @"",
+			      @"cellType" : @6,
 			      @"imageName" : @"ic_xmark_outlined_20"}
 		    ];
 
