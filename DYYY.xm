@@ -3044,6 +3044,7 @@ static BOOL isDownloadFlied = NO;
 	;
 	;
 	;
+	;
 	NSURL *bestURL;
 	for (NSString *url in self.originURLList) {
 		if ([url containsString:@"video_mp4"] || [url containsString:@".jpeg"] || [url containsString:@".mp3"]) {
@@ -3113,145 +3114,119 @@ static BOOL isDownloadFlied = NO;
 	NSURLRequest *request = [NSURLRequest requestWithURL:url];
 	NSURLSession *session = [NSURLSession sharedSession];
 
-	NSURLSessionDataTask *dataTask = [session
-	    dataTaskWithRequest:request
-	      completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-		dispatch_async(dispatch_get_main_queue(), ^{
-		  if (error) {
-			  [self showToast:[NSString stringWithFormat:@"接口请求失败: %@", error.localizedDescription]];
-			  return;
-		  }
+	NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request
+						    completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+						      dispatch_async(dispatch_get_main_queue(), ^{
+							if (error) {
+								[self showToast:[NSString stringWithFormat:@"接口请求失败: %@", error.localizedDescription]];
+								return;
+							}
 
-		  NSError *jsonError;
-		  NSDictionary *json = [NSJSONSerialization JSONObjectWithData:data options:0 error:&jsonError];
-		  if (jsonError) {
-			  [self showToast:@"解析接口返回数据失败"];
-			  return;
-		  }
+							NSError *jsonError;
+							NSDictionary *json = [NSJSONSerialization JSONObjectWithData:data options:0 error:&jsonError];
+							if (jsonError) {
+								[self showToast:@"解析接口返回数据失败"];
+								return;
+							}
 
-		  NSInteger code = [json[@"code"] integerValue];
-		  if (code != 0 && code != 200) {
-			  [self showToast:[NSString stringWithFormat:@"接口返回错误: %@", json[@"msg"] ?: @"未知错误"]];
-			  return;
-		  }
+							NSInteger code = [json[@"code"] integerValue];
+							if (code != 0 && code != 200) {
+								[self showToast:[NSString stringWithFormat:@"接口返回错误: %@", json[@"msg"] ?: @"未知错误"]];
+								return;
+							}
 
-		  NSDictionary *dataDict = json[@"data"];
-		  if (!dataDict) {
-			  [self showToast:@"接口返回数据为空"];
-			  return;
-		  }
+							NSDictionary *dataDict = json[@"data"];
+							if (!dataDict) {
+								[self showToast:@"接口返回数据为空"];
+								return;
+							}
+							NSArray *videos = dataDict[@"videos"];
+							NSArray *images = dataDict[@"images"];
+							NSArray *videoList = dataDict[@"video_list"];
+							BOOL hasVideos = [videos isKindOfClass:[NSArray class]] && videos.count > 0;
+							BOOL hasImages = [images isKindOfClass:[NSArray class]] && images.count > 0;
+							BOOL hasVideoList = [videoList isKindOfClass:[NSArray class]] && videoList.count > 0;
+							BOOL shouldShowQualityOptions = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYShowAllVideoQuality"];
 
-		  NSArray *videos = dataDict[@"videos"];
-		  NSArray *images = dataDict[@"images"];
-		  NSArray *videoList = dataDict[@"video_list"];
-		  BOOL hasVideos = [videos isKindOfClass:[NSArray class]] && videos.count > 0;
-		  BOOL hasImages = [images isKindOfClass:[NSArray class]] && images.count > 0;
-		  BOOL hasVideoList = [videoList isKindOfClass:[NSArray class]] && videoList.count > 0;
-		  BOOL shouldShowQualityOptions = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYShowAllVideoQuality"];
+							// 如果启用了显示清晰度选项，并且存在 videoList，则弹出选择面板
+							if (shouldShowQualityOptions && hasVideoList) {
+								AWEUserActionSheetView *actionSheet = [[NSClassFromString(@"AWEUserActionSheetView") alloc] init];
+								NSMutableArray *actions = [NSMutableArray array];
 
-		  // 如果启用了显示清晰度选项并且存在 videoList，或者原本就需要显示清晰度选项
-		  if ((shouldShowQualityOptions && hasVideoList) || (!hasVideos && !hasImages && hasVideoList)) {
-			  AWEUserActionSheetView *actionSheet = [[NSClassFromString(@"AWEUserActionSheetView") alloc] init];
-			  NSMutableArray *actions = [NSMutableArray array];
+								for (NSDictionary *videoDict in videoList) {
+									NSString *url = videoDict[@"url"];
+									NSString *level = videoDict[@"level"];
+									if (url.length > 0 && level.length > 0) {
+										AWEUserSheetAction *qualityAction = [NSClassFromString(@"AWEUserSheetAction")
+										    actionWithTitle:level
+											    imgName:nil
+											    handler:^{
+											      NSURL *videoDownloadUrl = [NSURL URLWithString:url];
+											      [self downloadMedia:videoDownloadUrl
+													mediaType:MediaTypeVideo
+												       completion:^{
+													 [self showToast:[NSString stringWithFormat:@"视频已保存到相册 (%@)", level]];
+												       }];
+											    }];
+										[actions addObject:qualityAction];
+									}
+								}
 
-			  for (NSDictionary *videoDict in videoList) {
-				  NSString *url = videoDict[@"url"];
-				  NSString *level = videoDict[@"level"];
-				  if (url.length > 0 && level.length > 0) {
-					  AWEUserSheetAction *qualityAction = [NSClassFromString(@"AWEUserSheetAction")
-					      actionWithTitle:level
-						      imgName:nil
-						      handler:^{
-							NSURL *videoDownloadUrl = [NSURL URLWithString:url];
-							[self downloadMedia:videoDownloadUrl
-								  mediaType:MediaTypeVideo
-								 completion:^{
-								   [self showToast:[NSString stringWithFormat:@"视频已保存到相册 (%@)", level]];
-								 }];
-						      }];
-					  [actions addObject:qualityAction];
-				  }
-			  }
+								// 附加批量下载选项（如果开启清晰度选项 + 有视频/图片）
+								if (hasVideos || hasImages) {
+									AWEUserSheetAction *batchDownloadAction = [NSClassFromString(@"AWEUserSheetAction")
+									    actionWithTitle:@"批量下载所有资源"
+										    imgName:nil
+										    handler:^{
+										      [self batchDownloadResources:videos images:images];
+										    }];
+									[actions addObject:batchDownloadAction];
+								}
 
-			  // 如果用户选择了显示清晰度选项，并且有视频和图片需要下载，添加一个批量下载选项
-			  if (shouldShowQualityOptions && (hasVideos || hasImages)) {
-				  AWEUserSheetAction *batchDownloadAction = [NSClassFromString(@"AWEUserSheetAction") actionWithTitle:@"批量下载所有资源"
-															      imgName:nil
-															      handler:^{
-																// 执行批量下载
-																[self batchDownloadResources:videos images:images];
-															      }];
-				  [actions addObject:batchDownloadAction];
-			  }
+								if (actions.count > 0) {
+									[actionSheet setActions:actions];
+									[actionSheet show];
+									return;
+								}
+							}
 
-			  if (actions.count > 0) {
-				  [actionSheet setActions:actions];
-				  [actionSheet show];
-				  return;
-			  }
-		  }
+							// 如果未开启清晰度选项，但有 video_list，自动下载第一个清晰度
+							if (!shouldShowQualityOptions && hasVideoList) {
+								NSDictionary *firstVideo = videoList.firstObject;
+								NSString *url = firstVideo[@"url"];
+								NSString *level = firstVideo[@"level"] ?: @"默认清晰度";
 
-		  // 如果显示清晰度选项但是没有videoList，并且有videos数组（多个视频）
-		  if (shouldShowQualityOptions && !hasVideoList && hasVideos && videos.count > 1) {
-			  AWEUserActionSheetView *actionSheet = [[NSClassFromString(@"AWEUserActionSheetView") alloc] init];
-			  NSMutableArray *actions = [NSMutableArray array];
+								if (url.length > 0) {
+									NSURL *videoDownloadUrl = [NSURL URLWithString:url];
+									[self downloadMedia:videoDownloadUrl
+										  mediaType:MediaTypeVideo
+										 completion:^{
+										   [self showToast:[NSString stringWithFormat:@"视频已保存到相册 (%@)", level]];
+										 }];
+									return;
+								}
+							}
 
-			  for (NSInteger i = 0; i < videos.count; i++) {
-				  NSDictionary *videoDict = videos[i];
-				  NSString *videoUrl = videoDict[@"url"];
-				  NSString *desc = videoDict[@"desc"] ?: [NSString stringWithFormat:@"视频 %ld", (long)(i + 1)];
+							// 如果没有视频或图片数组，但有单个视频URL
+							if (!hasVideos && !hasImages && !hasVideoList) {
+								NSString *videoUrl = dataDict[@"url"];
+								if (videoUrl.length > 0) {
+									[self showToast:@"开始下载单个视频..."];
+									NSURL *videoDownloadUrl = [NSURL URLWithString:videoUrl];
+									[self downloadMedia:videoDownloadUrl
+										  mediaType:MediaTypeVideo
+										 completion:^{
+										   [self showToast:@"视频已保存到相册"];
+										 }];
+								} else {
+									[self showToast:@"接口未返回有效的视频链接"];
+								}
+								return;
+							}
 
-				  if (videoUrl.length > 0) {
-					  AWEUserSheetAction *videoAction = [NSClassFromString(@"AWEUserSheetAction")
-					      actionWithTitle:[NSString stringWithFormat:@"%@", desc]
-						      imgName:nil
-						      handler:^{
-							NSURL *videoDownloadUrl = [NSURL URLWithString:videoUrl];
-							[self downloadMedia:videoDownloadUrl
-								  mediaType:MediaTypeVideo
-								 completion:^{
-								   [self showToast:[NSString stringWithFormat:@"视频已保存到相册"]];
-								 }];
-						      }];
-					  [actions addObject:videoAction];
-				  }
-			  }
-
-			  AWEUserSheetAction *batchDownloadAction = [NSClassFromString(@"AWEUserSheetAction") actionWithTitle:@"批量下载所有资源"
-														      imgName:nil
-														      handler:^{
-															// 执行批量下载
-															[self batchDownloadResources:videos images:images];
-														      }];
-			  [actions addObject:batchDownloadAction];
-
-			  if (actions.count > 0) {
-				  [actionSheet setActions:actions];
-				  [actionSheet show];
-				  return;
-			  }
-		  }
-
-		  // 如果没有视频或图片数组，但有单个视频URL
-		  if (!hasVideos && !hasImages && !hasVideoList) {
-			  NSString *videoUrl = dataDict[@"url"];
-			  if (videoUrl.length > 0) {
-				  [self showToast:@"开始下载单个视频..."];
-				  NSURL *videoDownloadUrl = [NSURL URLWithString:videoUrl];
-				  [self downloadMedia:videoDownloadUrl
-					    mediaType:MediaTypeVideo
-					   completion:^{
-					     [self showToast:@"视频已保存到相册"];
-					   }];
-			  } else {
-				  [self showToast:@"接口未返回有效的视频链接"];
-			  }
-			  return;
-		  }
-
-		  [self batchDownloadResources:videos images:images];
-		});
-	      }];
+							[self batchDownloadResources:videos images:images];
+						      });
+						    }];
 
 	[dataTask resume];
 }
