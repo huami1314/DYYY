@@ -11,68 +11,20 @@
 - (id)abTestData;
 + (id)sharedManager;
 @end
+
+// 全局变量实现
 BOOL abTestBlockEnabled = NO;
 NSDictionary *gFixedABTestData = nil;
 dispatch_once_t onceToken;
 BOOL gDataLoaded = NO;
 static NSDate *lastLoadAttemptTime = nil;
 static const NSTimeInterval kMinLoadInterval = 60.0;
-static dispatch_queue_t abTestLoadQueue;
-static NSMutableArray *completionHandlers;
 
-// 从指定JSON文件加载ABTest数据，异步执行
-void loadABTestDataAsync(void(^completion)(NSDictionary *data, BOOL success)) {
-    // 确保队列和回调数组已初始化
-    static dispatch_once_t queueOnceToken;
-    dispatch_once(&queueOnceToken, ^{
-        abTestLoadQueue = dispatch_queue_create("com.dyyy.abtest.loadqueue", DISPATCH_QUEUE_SERIAL);
-        completionHandlers = [NSMutableArray new];
-    });
+// 从指定JSON文件加载ABTest数据，仅当需要时加载
+void ensureABTestDataLoaded(void) {
+    if (gDataLoaded) return;
     
-    // 如果已加载完成，直接返回结果
-    if (gDataLoaded) {
-        if (completion) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                completion(gFixedABTestData, YES);
-            });
-        }
-        return;
-    }
-    
-    // 添加回调到等待列表
-    if (completion) {
-        @synchronized(completionHandlers) {
-            [completionHandlers addObject:[completion copy]];
-        }
-    }
-    
-    // 检查是否已经有加载任务在执行
-    static BOOL isLoading = NO;
-    if (isLoading) {
-        // 已有加载任务在进行，只需等待它完成
-        return;
-    }
-    
-    isLoading = YES;
-    dispatch_async(abTestLoadQueue, ^{
-        // 再次检查，避免在调度队列期间数据已被加载
-        if (gDataLoaded) {
-            isLoading = NO;
-            // 处理期间添加的回调
-            NSArray *handlers;
-            @synchronized(completionHandlers) {
-                handlers = [completionHandlers copy];
-                [completionHandlers removeAllObjects];
-            }
-            
-            dispatch_async(dispatch_get_main_queue(), ^{
-                for (void(^handler)(NSDictionary *, BOOL) in handlers) {
-                    handler(gFixedABTestData, YES);
-                }
-            });
-            return;
-        }
-        
+    dispatch_once(&onceToken, ^{
         // 获取Documents目录路径
         NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
         NSString *documentsDirectory = [paths firstObject];
@@ -93,7 +45,6 @@ void loadABTestDataAsync(void(^completion)(NSDictionary *data, BOOL success)) {
         
         NSError *error = nil;
         NSData *jsonData = [NSData dataWithContentsOfFile:jsonFilePath options:0 error:&error];
-        BOOL success = NO;
         
         if (jsonData) {
             NSDictionary *loadedData = [NSJSONSerialization JSONObjectWithData:jsonData 
@@ -102,43 +53,15 @@ void loadABTestDataAsync(void(^completion)(NSDictionary *data, BOOL success)) {
             if (loadedData && !error) {
                 // 成功加载数据，保存到全局变量
                 gFixedABTestData = [loadedData copy];
-                success = YES;
+                gDataLoaded = YES;
+                return;
             }
         }
         
         // 如果加载失败，使用空字典
-        if (!success) {
-            gFixedABTestData = @{};
-        }
-        
-        // 标记为已加载，重置加载状态
+        gFixedABTestData = @{};
         gDataLoaded = YES;
-        isLoading = NO;
-        
-        // 更新最后加载时间
-        lastLoadAttemptTime = [NSDate date];
-        
-        // 在主线程执行所有等待的回调
-        NSArray *handlers;
-        @synchronized(completionHandlers) {
-            handlers = [completionHandlers copy];
-            [completionHandlers removeAllObjects];
-        }
-        
-        dispatch_async(dispatch_get_main_queue(), ^{
-            for (void(^handler)(NSDictionary *, BOOL) in handlers) {
-                handler(gFixedABTestData, success);
-            }
-        });
     });
-}
-
-// 保持兼容性的同步接口，内部使用异步加载
-void ensureABTestDataLoaded(void) {
-    if (!gDataLoaded) {
-        // 启动异步加载，但不等待结果
-        loadABTestDataAsync(nil);
-    }
 }
 
 // 优化防止频繁加载
@@ -209,18 +132,14 @@ static NSMutableDictionary *gCaseCache = nil;
         return %orig;
     }
     
-    // 延迟加载数据，仅当需要时才加载
-    if (!gDataLoaded) {
-        ensureABTestDataLoaded();
-    }
-    
     return gFixedABTestData ?: %orig;
 }
 
 // 拦截设置 ABTest 数据的方法
 - (void)setAbTestData:(id)arg1 {
-    if (abTestBlockEnabled) {
-        return; // 禁用热更新时不执行
+    if (abTestBlockEnabled && arg1 != gFixedABTestData) {
+        // 允许我们自己设置的固定数据通过，拦截其他来源的数据
+        return;
     }
     %orig;
 }
@@ -265,8 +184,29 @@ static NSMutableDictionary *gCaseCache = nil;
 
 %end
 
+
 %ctor {
     // 初始化时加载设置
     %init;
     abTestBlockEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"ABTestBlockEnabled"];
+    
+    // 启动时加载数据并设置一次
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        // 确保数据已加载
+        ensureABTestDataLoaded();
+        
+        // 获取ABTestManager实例
+        AWEABTestManager *manager = [%c(AWEABTestManager) sharedManager];
+        if (manager && gFixedABTestData) {
+            NSLog(@"[DYYY] 正在设置固定ABTest数据");
+            [manager setAbTestData:gFixedABTestData];
+            
+            // 如果有必要，也可以触发保存
+            if ([manager respondsToSelector:@selector(_saveABTestData:)]) {
+                [manager _saveABTestData:gFixedABTestData];
+            }
+        } else {
+            NSLog(@"[DYYY] 无法设置ABTest数据: manager=%@, data=%@", manager, gFixedABTestData ? @"已加载" : @"未加载");
+        }
+    });
 }
