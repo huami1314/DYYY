@@ -200,8 +200,7 @@ static NSMutableDictionary *gCaseCache = nil;
         if (manager && gFixedABTestData) {
             NSLog(@"[DYYY] 正在设置固定ABTest数据");
             [manager setAbTestData:gFixedABTestData];
-            
-            // 如果有必要，也可以触发保存
+
             if ([manager respondsToSelector:@selector(_saveABTestData:)]) {
                 [manager _saveABTestData:gFixedABTestData];
             }

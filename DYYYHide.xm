@@ -247,22 +247,10 @@
 // 隐藏大家都在搜
 %hook AWESearchAnchorListModel
 
-- (void)setHideWords:(BOOL)arg1 {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"]) {
-		%orig(YES);
-	} else {
-		%orig(arg1);
-	}
+- (BOOL)hideWords {
+  return [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"];
 }
 
-- (void)setScene:(id)arg1 {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"]) {
-		NSDictionary *customScene = @{@"hideComments" : @YES};
-		%orig(customScene);
-	} else {
-		%orig(arg1);
-	}
-}
 %end
 
 // 隐藏观看历史搜索
@@ -662,15 +650,18 @@
 
 - (void)setHidden:(BOOL)hidden {
 	%orig(hidden);
+	NSLog(@"[DYYY] setHidden:%@ 被调用", hidden ? @"YES" : @"NO");
 
 	BOOL hideShop = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShopButton"];
 	BOOL hideMsg = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMessageButton"];
 	BOOL hideFri = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFriendsButton"];
+	NSLog(@"[DYYY] 配置: hideShop=%@, hideMsg=%@, hideFri=%@", hideShop ? @"YES" : @"NO", hideMsg ? @"YES" : @"NO", hideFri ? @"YES" : @"NO");
 
 	NSMutableArray *visibleButtons = [NSMutableArray array];
 	NSMutableArray *buttonTypes = [NSMutableArray array];
 	Class generalButtonClass = %c(AWENormalModeTabBarGeneralButton);
 	Class plusButtonClass = %c(AWENormalModeTabBarGeneralPlusButton);
+	NSLog(@"[DYYY] 开始扫描底部按钮...");
 
 	// 收集所有可见按钮并记录它们的类型
 	for (UIView *subview in self.subviews) {
@@ -695,14 +686,23 @@
 		} else if ([label isEqualToString:@"我"]) {
 			buttonType = @"profile";
 		}
+
+		if (!shouldHide) {
+			[visibleButtons addObject:subview];
+			[buttonTypes addObject:buttonType];
+		} else {
+			[subview removeFromSuperview];
+			NSLog(@"[DYYY] 已移除按钮: %@", label);
+		}
 	}
+
 	// 按照x坐标排序按钮
 	NSMutableArray *pairedObjects = [NSMutableArray array];
 	for (NSInteger i = 0; i < visibleButtons.count; i++) {
 		[pairedObjects addObject:@{@"button" : visibleButtons[i], @"type" : buttonTypes[i], @"x" : @(((UIView *)visibleButtons[i]).frame.origin.x)}];
 	}
 
-	[pairedObjects sortUsingComparator:^NSComparisonResult(NSDict ionary *a, NSDictionary *b) {
+	[pairedObjects sortUsingComparator:^NSComparisonResult(NSDictionary *a, NSDictionary *b) {
 	  return [a[@"x"] compare:b[@"x"]];
 	}];
 
@@ -717,6 +717,7 @@
 	NSLog(@"[DYYY] 排序后的按钮类型: %@", buttonTypes);
 
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenBottomBg"] || [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+		NSLog(@"[DYYY] 检测到背景隐藏设置已开启");
 		for (UIView *subview in self.subviews) {
 			if ([subview class] == [UIView class]) {
 				BOOL hasImageView = NO;

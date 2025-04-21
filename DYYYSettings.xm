@@ -2626,11 +2626,11 @@ static void showUserAgreementAlert() {
 		BOOL isEnabled = getUserDefaults(@"DYYYEnableDanmuColor");
 		item.isEnable = isEnabled;
 	} else if ([item.identifier isEqualToString:@"DYYYCommentBlurTransparent"]) {
-        // 毛玻璃透明度依赖于评论区毛玻璃开关或通知玻璃效果开关
-        BOOL isCommentBlurEnabled = getUserDefaults(@"DYYYisEnableCommentBlur");
-        BOOL isNotificationBlurEnabled = getUserDefaults(@"DYYYEnableNotificationTransparency");
-        item.isEnable = isCommentBlurEnabled || isNotificationBlurEnabled;
-    } else if ([item.identifier isEqualToString:@"DYYYShowAllVideoQuality"]) {
+		// 毛玻璃透明度依赖于评论区毛玻璃开关或通知玻璃效果开关
+		BOOL isCommentBlurEnabled = getUserDefaults(@"DYYYisEnableCommentBlur");
+		BOOL isNotificationBlurEnabled = getUserDefaults(@"DYYYEnableNotificationTransparency");
+		item.isEnable = isCommentBlurEnabled || isNotificationBlurEnabled;
+	} else if ([item.identifier isEqualToString:@"DYYYShowAllVideoQuality"]) {
 		// 清晰度选项依赖于接口解析URL是否设置
 		NSString *interfaceUrl = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYInterfaceDownload"];
 		item.isEnable = (interfaceUrl != nil && interfaceUrl.length > 0);
@@ -2765,15 +2765,15 @@ static void showUserAgreementAlert() {
 
 			AWESettingItemModel *item = (AWESettingItemModel *)itemObj;
 			// 更新依赖项状态
-            if ([identifier isEqualToString:@"DYYYEnableDanmuColor"] && [item.identifier isEqualToString:@"DYYYdanmuColor"]) {
-                item.isEnable = [value boolValue];
-            } else if (([identifier isEqualToString:@"DYYYisEnableCommentBlur"] || [identifier isEqualToString:@"DYYYEnableNotificationTransparency"]) && 
-                      [item.identifier isEqualToString:@"DYYYCommentBlurTransparent"]) {
-                // 如果任一玻璃效果开启，则启用透明度设置项
-                BOOL isCommentBlurEnabled = getUserDefaults(@"DYYYisEnableCommentBlur");
-                BOOL isNotificationBlurEnabled = getUserDefaults(@"DYYYEnableNotificationTransparency");
-                item.isEnable = isCommentBlurEnabled || isNotificationBlurEnabled;
-            } else if ([identifier isEqualToString:@"DYYYInterfaceDownload"]) {
+			if ([identifier isEqualToString:@"DYYYEnableDanmuColor"] && [item.identifier isEqualToString:@"DYYYdanmuColor"]) {
+				item.isEnable = [value boolValue];
+			} else if (([identifier isEqualToString:@"DYYYisEnableCommentBlur"] || [identifier isEqualToString:@"DYYYEnableNotificationTransparency"]) &&
+				   [item.identifier isEqualToString:@"DYYYCommentBlurTransparent"]) {
+				// 如果任一玻璃效果开启，则启用透明度设置项
+				BOOL isCommentBlurEnabled = getUserDefaults(@"DYYYisEnableCommentBlur");
+				BOOL isNotificationBlurEnabled = getUserDefaults(@"DYYYEnableNotificationTransparency");
+				item.isEnable = isCommentBlurEnabled || isNotificationBlurEnabled;
+			} else if ([identifier isEqualToString:@"DYYYInterfaceDownload"]) {
 				if ([item.identifier isEqualToString:@"DYYYShowAllVideoQuality"] || [item.identifier isEqualToString:@"DYYYDoubleInterfaceDownload"]) {
 					// 对于字符串值，检查是否有内容
 					if ([value isKindOfClass:[NSString class]]) {
