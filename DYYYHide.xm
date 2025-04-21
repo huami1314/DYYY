@@ -1532,6 +1532,64 @@
 	}
 }
 
+//隐藏搜索/他人主页底部评论框
+%hook AWECommentInputBackgroundView
+ 
+ - (void)layoutSubviews {
+      %orig; 
+ 
+      if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideSearchCommentBg"]) {
+          UIViewController *controller = nil;
+          UIResponder *responder = self.nextResponder;
+          while (responder) {
+              if ([responder isKindOfClass:[UIViewController class]]) {
+                  controller = (UIViewController *)responder;
+                  break;
+              }
+              responder = responder.nextResponder;
+          }
+ 
+          if ([controller isKindOfClass:NSClassFromString(@"AWECommentInputViewController")]) {
+              NSString *enterFrom = [controller valueForKey:@"enterFrom"];
+ 
+              if ([enterFrom isEqualToString:@"general_search"]) {
+                  // 搜索场景,直接移除视图
+                  [self removeFromSuperview];
+              } 
+              else if ([enterFrom isEqualToString:@"postwork_list"]) {
+                  [self removeFromSuperview];
+                  UIView *parentView = self.superview;
+                  if (parentView) {
+                      dispatch_async(dispatch_get_main_queue(), ^{
+                          // 父视图透明设置
+                          parentView.backgroundColor = [UIColor clearColor];
+ 
+                          // 定义深度优先搜索查找 _UIVisualEffectSubview 的 block
+                          void (^findVisualEffectSubviews)(UIView *) = ^void(UIView *view) {
+                              // 检查当前视图是否是目标类型
+                              if ([NSStringFromClass([view class]) isEqualToString:@"_UIVisualEffectSubview"]) {
+                                  view.backgroundColor = [UIColor clearColor];
+                                  view.layer.backgroundColor = [UIColor clearColor].CGColor;
+                                  view.opaque = NO;
+                              }
+ 
+                              // 递归处理子视图
+                              for (UIView *subview in view.subviews) {
+                                  findVisualEffectSubviews(subview);
+                              }
+                          };
+ 
+                          // 从父视图开始深度优先搜索
+                          findVisualEffectSubviews(parentView);
+                      });
+                  }
+              }
+          }
+      }
+}
+ 
+%end
+
 %ctor {
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {
 		%init;

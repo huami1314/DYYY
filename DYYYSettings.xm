@@ -1336,10 +1336,15 @@ static void showUserAgreementAlert() {
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_eyeslash_outlined_16"},
 			    @{@"identifier" : @"DYYYHideChatCommentBg",
-			      @"title" : @"聊天评论透明",
+			      @"title" : @"隐藏聊天评论",
 			      @"detail" : @"",
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_eyeslash_outlined_16"},
+			    @{@"identifier" : @"DYYYHideSearchCommentBg",
+  			      @"title" : @"隐藏搜索评论",
+  			      @"detail" : @"",
+  			      @"cellType" : @6,
+  			      @"imageName" : @"ic_eyeslash_outlined_16"},
 			    @{@"identifier" : @"DYYYHidePendantGroup",
 			      @"title" : @"隐藏红包悬浮",
 			      @"detail" : @"",
@@ -1903,6 +1908,11 @@ static void showUserAgreementAlert() {
 		    // 【交互增强】分类
 		    NSMutableArray<AWESettingItemModel *> *interactionItems = [NSMutableArray array];
 		    NSArray *interactionSettings = @[
+			    @{@"identifier" : @"DYYYisEnableAutoTheme",
+ 			      @"title" : @"启用自动背景切换",
+ 			      @"detail" : @"",
+ 			      @"cellType" : @6,
+ 			      @"imageName" : @"ic_gearsimplify_outlined_20"},
 			    @{@"identifier" : @"DYYYisEnableModern",
 			      @"title" : @"启用新版玻璃面板",
 			      @"detail" : @"",
