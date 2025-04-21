@@ -589,8 +589,8 @@
 
 %hook AWENormalModeTabBar
 
-- (void)setHidden:(BOOL)hidden {
-    %orig(hidden);
+- (void)layoutSubviews {
+	%orig;
 
 	BOOL hideShop = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShopButton"];
 	BOOL hideMsg = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMessageButton"];
@@ -658,6 +658,63 @@
 			button.frame = CGRectMake(i * buttonWidth, button.frame.origin.y, buttonWidth, button.frame.size.height);
 		}
 	}
+}
+
+- (void)setHidden:(BOOL)hidden {
+	%orig(hidden);
+
+	BOOL hideShop = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShopButton"];
+	BOOL hideMsg = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMessageButton"];
+	BOOL hideFri = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFriendsButton"];
+
+	NSMutableArray *visibleButtons = [NSMutableArray array];
+	NSMutableArray *buttonTypes = [NSMutableArray array];
+	Class generalButtonClass = %c(AWENormalModeTabBarGeneralButton);
+	Class plusButtonClass = %c(AWENormalModeTabBarGeneralPlusButton);
+
+	// 收集所有可见按钮并记录它们的类型
+	for (UIView *subview in self.subviews) {
+		if (![subview isKindOfClass:generalButtonClass] && ![subview isKindOfClass:plusButtonClass])
+			continue;
+
+		NSString *label = subview.accessibilityLabel;
+		BOOL shouldHide = NO;
+		NSString *buttonType = @"unknown";
+
+		if ([label isEqualToString:@"首页"]) {
+			buttonType = @"home";
+		} else if ([label isEqualToString:@"商城"]) {
+			shouldHide = hideShop;
+			buttonType = @"shop";
+		} else if ([label containsString:@"消息"]) {
+			shouldHide = hideMsg;
+			buttonType = @"message";
+		} else if ([label containsString:@"朋友"]) {
+			shouldHide = hideFri;
+			buttonType = @"friends";
+		} else if ([label isEqualToString:@"我"]) {
+			buttonType = @"profile";
+		}
+	}
+	// 按照x坐标排序按钮
+	NSMutableArray *pairedObjects = [NSMutableArray array];
+	for (NSInteger i = 0; i < visibleButtons.count; i++) {
+		[pairedObjects addObject:@{@"button" : visibleButtons[i], @"type" : buttonTypes[i], @"x" : @(((UIView *)visibleButtons[i]).frame.origin.x)}];
+	}
+
+	[pairedObjects sortUsingComparator:^NSComparisonResult(NSDict ionary *a, NSDictionary *b) {
+	  return [a[@"x"] compare:b[@"x"]];
+	}];
+
+	// 更新排序后的数组
+	[visibleButtons removeAllObjects];
+	[buttonTypes removeAllObjects];
+	for (NSDictionary *pair in pairedObjects) {
+		[visibleButtons addObject:pair[@"button"]];
+		[buttonTypes addObject:pair[@"type"]];
+	}
+
+	NSLog(@"[DYYY] 排序后的按钮类型: %@", buttonTypes);
 
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenBottomBg"] || [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
 		for (UIView *subview in self.subviews) {
@@ -671,16 +728,33 @@
 				}
 
 				if (hasImageView) {
-					// 改为只在 selectedIndex 为 2 或 3 时显示背景
-					if (self.yy_viewController.selectedIndex == 2 || self.yy_viewController.selectedIndex == 3) {
-						subview.hidden = NO;
+					// 默认隐藏背景
+					BOOL shouldShowBackground = NO;
+
+					// 获取当前选中的索引
+					NSInteger selectedIndex = self.yy_viewController.selectedIndex;
+					NSLog(@"[DYYY] 当前选中索引: %ld", (long)selectedIndex);
+
+					// 如果索引有效，检查当前选中的是什么类型的按钮
+					if (selectedIndex >= 0 && selectedIndex < buttonTypes.count) {
+						NSString *selectedType = buttonTypes[selectedIndex];
+
+						// 仅在消息和我的页面显示背景
+						if ([selectedType isEqualToString:@"message"] || [selectedType isEqualToString:@"profile"]) {
+							shouldShowBackground = YES;
+							NSLog(@"[DYYY] 当前选择的是 %@ 页面，显示背景", selectedType);
+						} else {
+							NSLog(@"[DYYY] 当前选择的是 %@ 页面，隐藏背景", selectedType);
+						}
 					} else {
-						subview.hidden = YES;
 					}
+
+					subview.hidden = !shouldShowBackground;
 					break;
 				}
 			}
 		}
+	} else {
 	}
 }
 
