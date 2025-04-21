@@ -589,8 +589,8 @@
 
 %hook AWENormalModeTabBar
 
-- (void)layoutSubviews {
-	%orig;
+- (void)setHidden:(BOOL)hidden {
+    %orig(hidden);
 
 	BOOL hideShop = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShopButton"];
 	BOOL hideMsg = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMessageButton"];
@@ -671,10 +671,11 @@
 				}
 
 				if (hasImageView) {
-					if (self.yy_viewController.selectedIndex == 0) {
-						subview.hidden = YES;
-					} else {
+					// 改为只在 selectedIndex 为 2 或 3 时显示背景
+					if (self.yy_viewController.selectedIndex == 2 || self.yy_viewController.selectedIndex == 3) {
 						subview.hidden = NO;
+					} else {
+						subview.hidden = YES;
 					}
 					break;
 				}
@@ -1198,7 +1199,7 @@
 	%orig;
 	for (UIView *subview in self.subviews) {
 		if ([subview isKindOfClass:[%c(DUXBadge) class]]) {
-				if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenSidebarDot"]) {
+			if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenSidebarDot"]) {
 				subview.hidden = YES;
 			}
 		}
@@ -1209,11 +1210,11 @@
 %hook AWELeftSideBarEntranceView
 
 - (void)setRedDot:(id)redDot {
-    %orig(nil); 
+	%orig(nil);
 }
 
 - (void)setNumericalRedDot:(id)numericalRedDot {
-    %orig(nil); 
+	%orig(nil);
 }
 
 %end
@@ -1356,28 +1357,28 @@
 }
 %end
 
-//强制启用新版抖音长按 UI（现代风）
+// 强制启用新版抖音长按 UI（现代风）
 %hook AWELongPressPanelManager
 - (BOOL)shouldShowModernLongPressPanel {
-    return DYYYGetBool(@"DYYYisEnableModern");
+	return DYYYGetBool(@"DYYYisEnableModern");
 }
 %end
 
 %hook AWELongPressPanelDataManager
 + (BOOL)enableModernLongPressPanelConfigWithSceneIdentifier:(id)arg1 {
-    return DYYYGetBool(@"DYYYisEnableModern");
+	return DYYYGetBool(@"DYYYisEnableModern");
 }
 %end
 
 %hook AWELongPressPanelABSettings
 + (NSUInteger)modernLongPressPanelStyleMode {
-    return DYYYGetBool(@"DYYYisEnableModern") ? 1 : 0;
+	return DYYYGetBool(@"DYYYisEnableModern") ? 1 : 0;
 }
 %end
 
 %hook AWEModernLongPressPanelUIConfig
 + (NSUInteger)modernLongPressPanelStyleMode {
-    return DYYYGetBool(@"DYYYisEnableModern") ? 1 : 0;
+	return DYYYGetBool(@"DYYYisEnableModern") ? 1 : 0;
 }
 %end
 
@@ -1410,4 +1411,3 @@
 		%init;
 	}
 }
-
