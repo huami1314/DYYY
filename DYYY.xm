@@ -1720,9 +1720,51 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 
 		label.font = originalFont;
 	}
-	NSString *labelColor = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYLabelColor"];
-	if (labelColor.length > 0) {
-		label.textColor = [DYYYManager colorWithHexString:labelColor];
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnabsuijiyanse"]) {
+        // 随机生成3个颜色，suiji
+        UIColor *color1 = [UIColor colorWithRed:(CGFloat)arc4random_uniform(256) / 255.0 green:(CGFloat)arc4random_uniform(256) / 255.0 blue:(CGFloat)arc4random_uniform(256) / 255.0 alpha:1.0];
+        UIColor *color2 = [UIColor colorWithRed:(CGFloat)arc4random_uniform(256) / 255.0 green:(CGFloat)arc4random_uniform(256) / 255.0 blue:(CGFloat)arc4random_uniform(256) / 255.0 alpha:1.0];
+        UIColor *color3 = [UIColor colorWithRed:(CGFloat)arc4random_uniform(256) / 255.0 green:(CGFloat)arc4random_uniform(256) / 255.0 blue:(CGFloat)arc4random_uniform(256) / 255.0 alpha:1.0];
+	    
+        NSMutableAttributedString *attributedText = [[NSMutableAttributedString alloc] initWithString:label.text];
+        CFIndex length = [attributedText length];
+        for (CFIndex i = 0; i < length; i++) {
+            CGFloat progress = (CGFloat)i / (length == 0 ? 1 : length - 1);
+	    
+            UIColor *startColor;
+            UIColor *endColor;
+            CGFloat subProgress;
+	    
+            if (progress < 0.5) {
+                startColor = color1;
+                endColor = color2;
+                subProgress = progress * 2;
+            } else {
+                startColor = color2;
+                endColor = color3;
+                subProgress = (progress - 0.5) * 2;
+            }
+	    
+            CGFloat startRed, startGreen, startBlue, startAlpha;
+            CGFloat endRed, endGreen, endBlue, endAlpha;
+            [startColor getRed:&startRed green:&startGreen blue:&startBlue alpha:&startAlpha];
+            [endColor getRed:&endRed green:&endGreen blue:&endBlue alpha:&endAlpha];
+	    
+            CGFloat red = startRed + (endRed - startRed) * subProgress;
+            CGFloat green = startGreen + (endGreen - startGreen) * subProgress;
+            CGFloat blue = startBlue + (endBlue - startBlue) * subProgress;
+            CGFloat alpha = startAlpha + (endAlpha - startAlpha) * subProgress;
+	    
+            UIColor *currentColor = [UIColor colorWithRed:red green:green blue:blue alpha:alpha];
+            [attributedText addAttribute:NSForegroundColorAttributeName value:currentColor range:NSMakeRange(i, 1)];
+        }
+	    
+        label.attributedText = attributedText;
+	} else {
+	    NSString *labelColor = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYLabelColor"];
+	    if (labelColor.length > 0) {
+	    	label.textColor = [DYYYManager colorWithHexString:labelColor];
+	    }
 	}
 	return label;
 }
