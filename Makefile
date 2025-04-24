@@ -12,7 +12,22 @@ ARCHS = arm64 arm64e
 #export THEOS=/Users/huami/theos
 #export THEOS_PACKAGE_SCHEME=roothide
 
-export THEOS_PACKAGE_SCHEME = rootless
+# 根据参数选择打包方案
+ifeq ($(SCHEME),roothide)
+    export THEOS_PACKAGE_SCHEME = roothide
+else ifeq ($(SCHEME),rootless)
+    export THEOS_PACKAGE_SCHEME = rootless
+else
+    # 默认使用rootless
+    export THEOS_PACKAGE_SCHEME = rootless
+endif
+
+# 判断是否在GitHub Action环境中运行
+ifeq ($(GITHUB_ACTIONS),true)
+    # 在GitHub Actions中运行时的特殊配置
+    export THEOS_PACKAGE_SCHEME = rootless
+    export INSTALL = 0
+endif
 
 export DEBUG = 0
 INSTALL_TARGET_PROCESSES = Aweme
@@ -49,9 +64,13 @@ clean::
 # 编译并自动安装
 after-package::
 	@echo -e "\033[32m==>\033[0m Packaging complete."
-	@DEB_FILE=$$(ls -t packages/*.deb | head -1); \
-	PACKAGE_NAME=$$(basename "$$DEB_FILE" | cut -d'_' -f1); \
-	echo -e "\033[34m==>\033[0m Installing $$PACKAGE_NAME to device…"; \
-	ssh root@$(THEOS_DEVICE_IP) "rm -rf /tmp/$${PACKAGE_NAME}.deb"; \
-	scp "$$DEB_FILE" root@$(THEOS_DEVICE_IP):/tmp/$${PACKAGE_NAME}.deb; \
-	ssh root@$(THEOS_DEVICE_IP) "dpkg -i --force-overwrite /tmp/$${PACKAGE_NAME}.deb && rm -f /tmp/$${PACKAGE_NAME}.deb"
+	@if [ "$(GITHUB_ACTIONS)" != "true" ] && [ "$(INSTALL)" = "1" ]; then \
+        DEB_FILE=$$(ls -t packages/*.deb | head -1); \
+        PACKAGE_NAME=$$(basename "$$DEB_FILE" | cut -d'_' -f1); \
+        echo -e "\033[34m==>\033[0m Installing $$PACKAGE_NAME to device…"; \
+        ssh root@$(THEOS_DEVICE_IP) "rm -rf /tmp/$${PACKAGE_NAME}.deb"; \
+        scp "$$DEB_FILE" root@$(THEOS_DEVICE_IP):/tmp/$${PACKAGE_NAME}.deb; \
+        ssh root@$(THEOS_DEVICE_IP) "dpkg -i --force-overwrite /tmp/$${PACKAGE_NAME}.deb && rm -f /tmp/$${PACKAGE_NAME}.deb"; \
+	else \
+        echo -e "\033[33m==>\033[0m Skipping installation (GitHub Actions environment or INSTALL!=1)"; \
+	fi

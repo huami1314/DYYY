@@ -1837,10 +1837,8 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 			imageViewModel.describeString = @"保存当前图片";
 
 			AWEImageAlbumImageModel *currimge = self.awemeModel.albumImages[self.awemeModel.currentImageIndex - 1];
-			if (@available(iOS 15.0, *)) {
-				if (currimge.clipVideo != nil) {
-					imageViewModel.describeString = @"保存当前实况";
-				}
+			if (currimge.clipVideo != nil) {
+				imageViewModel.describeString = @"保存当前实况";
 			}
 			imageViewModel.action = ^{
 			  AWEAwemeModel *awemeModel = self.awemeModel;
@@ -1852,17 +1850,15 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 				  currentImageModel = awemeModel.albumImages.firstObject;
 			  }
 			  // 如果是实况的话
-			  if (@available(iOS 15.0, *)) {
-				  if (currimge.clipVideo != nil) {
-					  NSURL *photoURL = [NSURL URLWithString:currentImageModel.urlList.firstObject];
-					  NSURL *videoURL = [currimge.clipVideo.playURL getDYYYSrcURLDownload];
-					  [DYYYManager downloadLivePhoto:photoURL
-								videoURL:videoURL
-							      completion:^{
-								[DYYYManager showToast:@"实况照片已保存到相册"];
-							      }];
-					  return;
-				  }
+			  if (currimge.clipVideo != nil) {
+				  NSURL *url = [NSURL URLWithString:currentImageModel.urlList.firstObject];
+				  NSURL *videoURL = [currimge.clipVideo.playURL getDYYYSrcURLDownload];
+
+				  [DYYYManager downloadLivePhoto:url
+							videoURL:videoURL
+						      completion:^{
+							[DYYYManager showToast:@"实况照片已保存到相册"];
+						      }];
 			  } else if (currentImageModel && currentImageModel.urlList.count > 0) {
 				  NSURL *url = [NSURL URLWithString:currentImageModel.urlList.firstObject];
 				  [DYYYManager downloadMedia:url
@@ -3026,6 +3022,8 @@ static BOOL isDownloadFlied = NO;
 // 获取资源的地址
 %hook AWEURLModel
 %new - (NSURL *)getDYYYSrcURLDownload {
+	;
+	;
 	NSURL *bestURL;
 	for (NSString *url in self.originURLList) {
 		if ([url containsString:@"video_mp4"] || [url containsString:@".jpeg"] || [url containsString:@".mp3"]) {
