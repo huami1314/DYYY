@@ -578,90 +578,90 @@
 %hook AWENormalModeTabBar
 
 - (void)layoutSubviews {
-	%orig;
+    %orig;
 
-	BOOL hideShop = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShopButton"];
-	BOOL hideMsg = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMessageButton"];
-	BOOL hideFri = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFriendsButton"];
+    BOOL hideShop = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShopButton"];
+    BOOL hideMsg = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMessageButton"];
+    BOOL hideFri = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFriendsButton"];
+    BOOL hideMe = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMyButton"];
 
-	NSMutableArray *visibleButtons = [NSMutableArray array];
-	Class generalButtonClass = %c(AWENormalModeTabBarGeneralButton);
-	Class plusButtonClass = %c(AWENormalModeTabBarGeneralPlusButton);
+    NSMutableArray *visibleButtons = [NSMutableArray array];
+    Class generalButtonClass = %c(AWENormalModeTabBarGeneralButton);
+    Class plusButtonClass = %c(AWENormalModeTabBarGeneralPlusButton);
 
-	for (UIView *subview in self.subviews) {
-		if (![subview isKindOfClass:generalButtonClass] && ![subview isKindOfClass:plusButtonClass])
-			continue;
+    for (UIView *subview in self.subviews) {
+        if (![subview isKindOfClass:generalButtonClass] && ![subview isKindOfClass:plusButtonClass])
+            continue;
 
-		NSString *label = subview.accessibilityLabel;
-		BOOL shouldHide = NO;
+        NSString *label = subview.accessibilityLabel;
+        BOOL shouldHide = NO;
 
-		if ([label isEqualToString:@"商城"]) {
-			shouldHide = hideShop;
-		} else if ([label containsString:@"消息"]) {
-			shouldHide = hideMsg;
-		} else if ([label containsString:@"朋友"]) {
-			shouldHide = hideFri;
-		}
+        if ([label isEqualToString:@"商城"]) {
+            shouldHide = hideShop;
+        } else if ([label containsString:@"消息"]) {
+            shouldHide = hideMsg;
+        } else if ([label containsString:@"朋友"]) {
+            shouldHide = hideFri;
+        } else if ([label containsString:@"我"]) {
+            shouldHide = hideMe;
+        }
 
-		if (!shouldHide) {
-			[visibleButtons addObject:subview];
-		} else {
-			[subview removeFromSuperview];
-		}
-	}
+        if (!shouldHide) {
+            [visibleButtons addObject:subview];
+        } else {
+            [subview removeFromSuperview];
+        }
+    }
 
-	[visibleButtons sortUsingComparator:^NSComparisonResult(UIView *a, UIView *b) {
-	  return [@(a.frame.origin.x) compare:@(b.frame.origin.x)];
-	}];
+    [visibleButtons sortUsingComparator:^NSComparisonResult(UIView *a, UIView *b) {
+      return [@(a.frame.origin.x) compare:@(b.frame.origin.x)];
+    }];
 
-	if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
-		// iPad端布局逻辑
-		UIView *targetView = nil;
-		CGFloat containerWidth = self.bounds.size.width;
-		CGFloat offsetX = 0;
+    if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+        // iPad端布局逻辑
+        UIView *targetView = nil;
+        CGFloat containerWidth = self.bounds.size.width;
+        CGFloat offsetX = 0;
 
-		// 查找目标容器视图
-		for (UIView *subview in self.subviews) {
-			if ([subview class] == [UIView class] && fabs(subview.frame.size.width - self.bounds.size.width) > 0.1) {
-				targetView = subview;
-				containerWidth = subview.frame.size.width;
-				offsetX = subview.frame.origin.x;
-				break;
-			}
-		}
+        // 查找目标容器视图
+        for (UIView *subview in self.subviews) {
+            if ([subview class] == [UIView class] && fabs(subview.frame.size.width - self.bounds.size.width) > 0.1) {
+                targetView = subview;
+                containerWidth = subview.frame.size.width;
+                offsetX = subview.frame.origin.x;
+                break;
+            }
+        }
 
-		// 在目标容器内均匀分布按钮
-		CGFloat buttonWidth = containerWidth / visibleButtons.count;
-		for (NSInteger i = 0; i < visibleButtons.count; i++) {
-			UIView *button = visibleButtons[i];
-			button.frame = CGRectMake(offsetX + (i * buttonWidth), button.frame.origin.y, buttonWidth, button.frame.size.height);
-		}
-	} else {
-		// iPhone端布局逻辑
-		CGFloat totalWidth = self.bounds.size.width;
-		CGFloat buttonWidth = totalWidth / visibleButtons.count;
+        // 在目标容器内均匀分布按钮
+        CGFloat buttonWidth = containerWidth / visibleButtons.count;
+        for (NSInteger i = 0; i < visibleButtons.count; i++) {
+            UIView *button = visibleButtons[i];
+            button.frame = CGRectMake(offsetX + (i * buttonWidth), button.frame.origin.y, buttonWidth, button.frame.size.height);
+        }
+    } else {
+        // iPhone端布局逻辑
+        CGFloat totalWidth = self.bounds.size.width;
+        CGFloat buttonWidth = totalWidth / visibleButtons.count;
 
-		for (NSInteger i = 0; i < visibleButtons.count; i++) {
-			UIView *button = visibleButtons[i];
-			button.frame = CGRectMake(i * buttonWidth, button.frame.origin.y, buttonWidth, button.frame.size.height);
-		}
-	}
+        for (NSInteger i = 0; i < visibleButtons.count; i++) {
+            UIView *button = visibleButtons[i];
+            button.frame = CGRectMake(i * buttonWidth, button.frame.origin.y, buttonWidth, button.frame.size.height);
+        }
+    }
 }
 
 - (void)setHidden:(BOOL)hidden {
 	%orig(hidden);
-	NSLog(@"[DYYY] setHidden:%@ 被调用", hidden ? @"YES" : @"NO");
 
 	BOOL hideShop = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShopButton"];
 	BOOL hideMsg = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMessageButton"];
 	BOOL hideFri = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFriendsButton"];
-	NSLog(@"[DYYY] 配置: hideShop=%@, hideMsg=%@, hideFri=%@", hideShop ? @"YES" : @"NO", hideMsg ? @"YES" : @"NO", hideFri ? @"YES" : @"NO");
 
 	NSMutableArray *visibleButtons = [NSMutableArray array];
 	NSMutableArray *buttonTypes = [NSMutableArray array];
 	Class generalButtonClass = %c(AWENormalModeTabBarGeneralButton);
 	Class plusButtonClass = %c(AWENormalModeTabBarGeneralPlusButton);
-	NSLog(@"[DYYY] 开始扫描底部按钮...");
 
 	// 收集所有可见按钮并记录它们的类型
 	for (UIView *subview in self.subviews) {
@@ -692,7 +692,6 @@
 			[buttonTypes addObject:buttonType];
 		} else {
 			[subview removeFromSuperview];
-			NSLog(@"[DYYY] 已移除按钮: %@", label);
 		}
 	}
 
@@ -714,10 +713,8 @@
 		[buttonTypes addObject:pair[@"type"]];
 	}
 
-	NSLog(@"[DYYY] 排序后的按钮类型: %@", buttonTypes);
 
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenBottomBg"] || [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-		NSLog(@"[DYYY] 检测到背景隐藏设置已开启");
 		for (UIView *subview in self.subviews) {
 			if ([subview class] == [UIView class]) {
 				BOOL hasImageView = NO;
@@ -734,22 +731,14 @@
 
 					// 获取当前选中的索引
 					NSInteger selectedIndex = self.yy_viewController.selectedIndex;
-					NSLog(@"[DYYY] 当前选中索引: %ld", (long)selectedIndex);
-
 					// 如果索引有效，检查当前选中的是什么类型的按钮
 					if (selectedIndex >= 0 && selectedIndex < buttonTypes.count) {
 						NSString *selectedType = buttonTypes[selectedIndex];
 
-						// 仅在消息和我的页面显示背景
 						if ([selectedType isEqualToString:@"message"] || [selectedType isEqualToString:@"profile"]) {
 							shouldShowBackground = YES;
-							NSLog(@"[DYYY] 当前选择的是 %@ 页面，显示背景", selectedType);
-						} else {
-							NSLog(@"[DYYY] 当前选择的是 %@ 页面，隐藏背景", selectedType);
-						}
-					} else {
+						} 
 					}
-
 					subview.hidden = !shouldShowBackground;
 					break;
 				}
