@@ -1973,6 +1973,8 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 		  AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
 		  [panelManager dismissWithAnimation:YES completion:nil];
 		};
+
+		[viewModels addObject:copyShareLink];
 	}
 
 	// 添加接口保存功能
