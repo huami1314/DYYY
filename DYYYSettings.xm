@@ -1322,6 +1322,11 @@ static void showUserAgreementAlert() {
 			      @"detail" : @"",
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_eyeslash_outlined_16"},
+			    @{@"identifier" : @"DYYYHidePendantGroup",
+			      @"title" : @"隐藏红包悬浮",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_eyeslash_outlined_16"},
 		    ];
 
 		    for (NSDictionary *dict in infoSettings) {
