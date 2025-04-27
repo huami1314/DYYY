@@ -1470,6 +1470,39 @@
 
 %end
 
+// 移除极速版我的片面红包横幅
+%hook AWELuckyCatBannerView
+- (id)initWithFrame:(CGRect)frame {
+		return nil;
+	}
+
+- (id)init {
+		return nil;
+}
+%end
+
+// 极速版红包激励挂件容器视图类组（移除逻辑）
+%group IncentivePendantGroup
+%hook AWEIncentiveSwiftImplDOUYINLite_IncentivePendantContainerView
+- (void)layoutSubviews {
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePendantGroup"]) {
+		[self removeFromSuperview]; // 移除视图
+	}
+}
+%end
+%end
+
+// Swift 红包类初始化
+%ctor {
+
+	// 初始化红包激励挂件容器视图类组
+	Class incentivePendantClass = objc_getClass("AWEIncentiveSwiftImplDOUYINLite.IncentivePendantContainerView");
+	if (incentivePendantClass) {
+		%init(IncentivePendantGroup, AWEIncentiveSwiftImplDOUYINLite_IncentivePendantContainerView = incentivePendantClass);
+	}
+}
+
 %ctor {
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {
 		%init;
