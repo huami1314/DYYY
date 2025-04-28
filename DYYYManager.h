@@ -30,4 +30,18 @@
 - (void)saveLivePhoto:(NSString *)imageSourcePath videoUrl:(NSString *)videoSourcePath;
 //获取主题状态
 + (BOOL)isDarkMode;
-@end 
+
+/**
+ * 解析分享链接并下载视频
+ * @param shareLink 视频分享链接
+ * @param apiKey API密钥
+ */
+ + (void)parseAndDownloadVideoWithShareLink:(NSString *)shareLink apiKey:(NSString *)apiKey;
+
+ /**
+  * 批量下载视频和图片资源
+  * @param videos 视频资源数组
+  * @param images 图片资源数组
+  */
+ + (void)batchDownloadResources:(NSArray *)videos images:(NSArray *)images;
+@end

@@ -2427,4 +2427,233 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
   return [NSClassFromString(@"AWEUIThemeManager") isLightTheme] ? NO : YES;
 }
 
++ (void)parseAndDownloadVideoWithShareLink:(NSString *)shareLink apiKey:(NSString *)apiKey {
+    if (shareLink.length == 0 || apiKey.length == 0) {
+        [self showToast:@"分享链接或API密钥无效"];
+        return;
+    }
+
+    NSString *apiUrl = [NSString stringWithFormat:@"%@%@", apiKey, [shareLink stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLQueryAllowedCharacterSet]]];
+    [self showToast:@"正在通过接口解析..."];
+
+    NSURL *url = [NSURL URLWithString:apiUrl];
+    NSURLRequest *request = [NSURLRequest requestWithURL:url];
+    NSURLSession *session = [NSURLSession sharedSession];
+
+    NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request
+                            completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+                              dispatch_async(dispatch_get_main_queue(), ^{
+                            if (error) {
+                                [self showToast:[NSString stringWithFormat:@"接口请求失败: %@", error.localizedDescription]];
+                                return;
+                            }
+
+                            NSError *jsonError;
+                            NSDictionary *json = [NSJSONSerialization JSONObjectWithData:data options:0 error:&jsonError];
+                            if (jsonError) {
+                                [self showToast:@"解析接口返回数据失败"];
+                                return;
+                            }
+
+                            NSInteger code = [json[@"code"] integerValue];
+                            if (code != 0 && code != 200) {
+                                [self showToast:[NSString stringWithFormat:@"接口返回错误: %@", json[@"msg"] ?: @"未知错误"]];
+                                return;
+                            }
+
+                            NSDictionary *dataDict = json[@"data"];
+                            if (!dataDict) {
+                                [self showToast:@"接口返回数据为空"];
+                                return;
+                            }
+                            NSArray *videos = dataDict[@"videos"];
+                            NSArray *images = dataDict[@"images"];
+                            NSArray *videoList = dataDict[@"video_list"];
+                            BOOL hasVideos = [videos isKindOfClass:[NSArray class]] && videos.count > 0;
+                            BOOL hasImages = [images isKindOfClass:[NSArray class]] && images.count > 0;
+                            BOOL hasVideoList = [videoList isKindOfClass:[NSArray class]] && videoList.count > 0;
+                            BOOL shouldShowQualityOptions = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYShowAllVideoQuality"];
+
+                            // 如果启用了显示清晰度选项，并且存在 videoList，则弹出选择面板
+                            if (shouldShowQualityOptions && hasVideoList) {
+                                AWEUserActionSheetView *actionSheet = [[NSClassFromString(@"AWEUserActionSheetView") alloc] init];
+                                NSMutableArray *actions = [NSMutableArray array];
+
+                                for (NSDictionary *videoDict in videoList) {
+                                    NSString *url = videoDict[@"url"];
+                                    NSString *level = videoDict[@"level"];
+                                    if (url.length > 0 && level.length > 0) {
+                                        AWEUserSheetAction *qualityAction = [NSClassFromString(@"AWEUserSheetAction")
+                                            actionWithTitle:level
+                                                imgName:nil
+                                                handler:^{
+                                                  NSURL *videoDownloadUrl = [NSURL URLWithString:url];
+                                                  [self downloadMedia:videoDownloadUrl
+                                                    mediaType:MediaTypeVideo
+                                                       completion:^{
+                                                     [self showToast:[NSString stringWithFormat:@"视频已保存到相册 (%@)", level]];
+                                                       }];
+                                                }];
+                                        [actions addObject:qualityAction];
+                                    }
+                                }
+
+                                // 附加批量下载选项（如果开启清晰度选项 + 有视频/图片）
+                                if (hasVideos || hasImages) {
+                                    AWEUserSheetAction *batchDownloadAction = [NSClassFromString(@"AWEUserSheetAction")
+                                        actionWithTitle:@"批量下载所有资源"
+                                            imgName:nil
+                                            handler:^{
+                                              [self batchDownloadResources:videos images:images];
+                                            }];
+                                    [actions addObject:batchDownloadAction];
+                                }
+
+                                if (actions.count > 0) {
+                                    [actionSheet setActions:actions];
+                                    [actionSheet show];
+                                    return;
+                                }
+                            }
+
+                            // 如果未开启清晰度选项，但有 video_list，自动下载第一个清晰度
+                            if (!shouldShowQualityOptions && hasVideoList) {
+                                NSDictionary *firstVideo = videoList.firstObject;
+                                NSString *url = firstVideo[@"url"];
+                                NSString *level = firstVideo[@"level"] ?: @"默认清晰度";
+
+                                if (url.length > 0) {
+                                    NSURL *videoDownloadUrl = [NSURL URLWithString:url];
+                                    [self downloadMedia:videoDownloadUrl
+                                          mediaType:MediaTypeVideo
+                                         completion:^{
+                                           [self showToast:[NSString stringWithFormat:@"视频已保存到相册 (%@)", level]];
+                                         }];
+                                    return;
+                                }
+                            }
+
+                            // 如果没有视频或图片数组，但有单个视频URL
+                            if (!hasVideos && !hasImages && !hasVideoList) {
+                                NSString *videoUrl = dataDict[@"url"];
+                                if (videoUrl.length > 0) {
+                                    [self showToast:@"开始下载单个视频..."];
+                                    NSURL *videoDownloadUrl = [NSURL URLWithString:videoUrl];
+                                    [self downloadMedia:videoDownloadUrl
+                                          mediaType:MediaTypeVideo
+                                         completion:^{
+                                           [self showToast:@"视频已保存到相册"];
+                                         }];
+                                } else {
+                                    [self showToast:@"接口未返回有效的视频链接"];
+                                }
+                                return;
+                            }
+
+                            [self batchDownloadResources:videos images:images];
+                              });
+                            }];
+
+    [dataTask resume];
+}
+
++ (void)batchDownloadResources:(NSArray *)videos images:(NSArray *)images {
+    BOOL hasVideos = [videos isKindOfClass:[NSArray class]] && videos.count > 0;
+    BOOL hasImages = [images isKindOfClass:[NSArray class]] && images.count > 0;
+
+    NSMutableArray<id> *videoFiles = [NSMutableArray arrayWithCapacity:videos.count];
+    NSMutableArray<id> *imageFiles = [NSMutableArray arrayWithCapacity:images.count];
+    for (NSInteger i = 0; i < videos.count; i++)
+        [videoFiles addObject:[NSNull null]];
+    for (NSInteger i = 0; i < images.count; i++)
+        [imageFiles addObject:[NSNull null]];
+
+    dispatch_group_t downloadGroup = dispatch_group_create();
+    __block NSInteger totalDownloads = 0;
+    __block NSInteger completedDownloads = 0;
+
+    if (hasVideos) {
+        totalDownloads += videos.count;
+        for (NSInteger i = 0; i < videos.count; i++) {
+            NSDictionary *videoDict = videos[i];
+            NSString *videoUrl = videoDict[@"url"];
+            if (videoUrl.length == 0) {
+                completedDownloads++;
+                continue;
+            }
+            dispatch_group_enter(downloadGroup);
+            NSURL *videoDownloadUrl = [NSURL URLWithString:videoUrl];
+            [self downloadMediaWithProgress:videoDownloadUrl
+                          mediaType:MediaTypeVideo
+                           progress:nil
+                         completion:^(BOOL success, NSURL *fileURL) {
+                           if (success && fileURL) {
+                               @synchronized(videoFiles) {
+                                   videoFiles[i] = fileURL;
+                               }
+                           }
+                           completedDownloads++;
+                           dispatch_group_leave(downloadGroup);
+                         }];
+        }
+    }
+
+    if (hasImages) {
+        totalDownloads += images.count;
+        for (NSInteger i = 0; i < images.count; i++) {
+            NSString *imageUrl = images[i];
+            if (imageUrl.length == 0) {
+                completedDownloads++;
+                continue;
+            }
+            dispatch_group_enter(downloadGroup);
+            NSURL *imageDownloadUrl = [NSURL URLWithString:imageUrl];
+            [self downloadMediaWithProgress:imageDownloadUrl
+                          mediaType:MediaTypeImage
+                           progress:nil
+                         completion:^(BOOL success, NSURL *fileURL) {
+                           if (success && fileURL) {
+                               @synchronized(imageFiles) {
+                                   imageFiles[i] = fileURL;
+                               }
+                           }
+                           completedDownloads++;
+                           dispatch_group_leave(downloadGroup);
+                         }];
+        }
+    }
+
+    dispatch_group_notify(downloadGroup, dispatch_get_main_queue(), ^{
+      if (completedDownloads < totalDownloads) {
+          [self showToast:@"部分下载失败"];
+      }
+
+      NSInteger videoSuccessCount = 0;
+      for (id file in videoFiles) {
+          if ([file isKindOfClass:[NSURL class]]) {
+              [self saveMedia:(NSURL *)file mediaType:MediaTypeVideo completion:nil];
+              videoSuccessCount++;
+          }
+      }
+
+      NSInteger imageSuccessCount = 0;
+      for (id file in imageFiles) {
+          if ([file isKindOfClass:[NSURL class]]) {
+              [self saveMedia:(NSURL *)file mediaType:MediaTypeImage completion:nil];
+              imageSuccessCount++;
+          }
+      }
+
+      NSString *toastMessage;
+      if (hasVideos && hasImages) {
+          toastMessage = [NSString stringWithFormat:@"已保存 %ld/%ld 个视频和 %ld/%ld 张图片", (long)videoSuccessCount, (long)videos.count, (long)imageSuccessCount, (long)images.count];
+      } else if (hasVideos) {
+          toastMessage = [NSString stringWithFormat:@"已保存 %ld/%ld 个视频", (long)videoSuccessCount, (long)videos.count];
+      } else if (hasImages) {
+          toastMessage = [NSString stringWithFormat:@"已保存 %ld/%ld 张图片", (long)imageSuccessCount, (long)images.count];
+      }
+      [self showToast:toastMessage];
+    });
+}
+
 @end
