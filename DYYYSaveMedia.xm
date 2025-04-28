@@ -1,6 +1,7 @@
 #import "AwemeHeaders.h"
 #import "DYYYManager.h"
 
+#import "DYYYDubugTool.h"
 %hook AWECommentMediaDownloadConfigLivePhoto
 
 bool commentLivePhotoNotWaterMark = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYCommentLivePhotoNotWaterMark"];
@@ -185,8 +186,7 @@ static BOOL isDownloadFlied = NO;
         [DYYYManager showToast:@"无法获取表情包链接"];
         return;
     }
-    NSLog(@"dyyy url: %@", urlString);
-    
+
     NSURL *url = [NSURL URLWithString:urlString];
     [DYYYManager downloadMedia:url
                     mediaType:MediaTypeHeic
@@ -198,7 +198,7 @@ static BOOL isDownloadFlied = NO;
 %end
 
 %ctor {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {
-		%init;
-	}
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {
+        %init;
+    }
 }
