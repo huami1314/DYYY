@@ -5,7 +5,7 @@
 
 @implementation DYYYBottomAlertView
 
-// 完整的自定义方法，支持同时自定义取消和确认按钮文本
+// 自定义方法，支持同时自定义取消和确认按钮文本
 + (UIViewController *)showAlertWithTitle:(NSString *)title
                                  message:(NSString *)message
                          cancelButtonText:(NSString *)cancelButtonText

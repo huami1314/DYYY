@@ -5,12 +5,13 @@
 //  Channel: @huamidev
 //  Created on: 2024/10/04
 //
+#import <UIKit/UIKit.h>
+#import <objc/runtime.h>
+
 #import "AwemeHeaders.h"
 #import "CityManager.h"
 #import "DYYYBottomAlertView.h"
 #import "DYYYManager.h"
-#import <UIKit/UIKit.h>
-#import <objc/runtime.h>
 
 #import "DYYYConstants.h"
 
@@ -2020,6 +2021,23 @@ static CGFloat currentScale = 1.0;
      %orig(arg1); // 保持原始参数调用
 }
  
+%end
+
+%hook _TtC33AWECommentLongPressPanelSwiftImpl32CommentLongPressPanelCopyElement
+
+- (void)elementTapped {
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYCommentCopyText"]) {
+		AWECommentLongPressPanelContext *commentPageContext = [self commentPageContext];
+		AWECommentModel *selectdComment = [commentPageContext selectdComment];
+		if (!selectdComment) {
+			AWECommentLongPressPanelParam *params = [commentPageContext params];
+			selectdComment = [params selectdComment];
+		}
+		NSString *descText = [selectdComment content];
+		[[UIPasteboard generalPasteboard] setString:descText];
+		[DYYYManager showToast:@"文案已复制到剪贴板"];
+	}
+}
 %end
 
 %ctor {

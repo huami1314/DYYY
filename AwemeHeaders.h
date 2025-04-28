@@ -829,3 +829,17 @@ typedef NS_ENUM(NSInteger, MediaType) {
 
 @interface AWELoadingAndVolumeView : UIView
 @end
+
+@interface BDImageView : UIImageView
+@end
+
+@interface AWEIMEmoticonModel : NSObject
+- (id)valueForKey:(NSString *)key;
+@end
+
+@interface AWEIMEmoticonPreviewV2 : UIView
+@property (nonatomic, strong) UIView *container;
+@property (nonatomic, strong) BDImageView *content;
+@property (nonatomic, strong) AWEIMEmoticonModel *model;
+- (void)dyyy_saveButtonTapped:(id)sender;
+@end
