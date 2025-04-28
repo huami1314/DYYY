@@ -165,48 +165,63 @@ static AWESettingItemModel *createIconCustomizationItem(NSString *identifier, NS
 		picker.mediaTypes = @[ @"public.image" ];
 
 		// 创建并设置代理
-		DYYYImagePickerDelegate *pickerDelegate = [[DYYYImagePickerDelegate alloc] init];
-		pickerDelegate.completionBlock = ^(NSDictionary *info) {
-		  UIImage *selectedImage = info[UIImagePickerControllerOriginalImage];
-		  if (selectedImage) {
-			  // 确保路径存在
-			  NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
-			  NSString *dyyyFolderPath = [documentsPath stringByAppendingPathComponent:@"DYYY"];
-			  NSString *imagePath = [dyyyFolderPath stringByAppendingPathComponent:saveFilename];
+    DYYYImagePickerDelegate *pickerDelegate = [[DYYYImagePickerDelegate alloc] init];
+    pickerDelegate.completionBlock = ^(NSDictionary *info) {
+        // 1. 正确声明变量，作用域在块内
+        NSURL *originalImageURL = info[UIImagePickerControllerImageURL];
+        if (!originalImageURL) {
+            originalImageURL = info[UIImagePickerControllerReferenceURL];
+        }
 
-			  // 保存图片
-			  NSData *imageData = UIImagePNGRepresentation(selectedImage);
-			  BOOL success = [imageData writeToFile:imagePath atomically:YES];
+        // 2. 确保变量在非nil时使用
+        if (originalImageURL) {
+            // 路径构建
+            NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
+            NSString *dyyyFolderPath = [documentsPath stringByAppendingPathComponent:@"DYYY"];
+            NSString *imagePath = [dyyyFolderPath stringByAppendingPathComponent:saveFilename];
 
-			  if (success) {
-				  // 更新UI
-				  item.detail = @"已设置";
+            // 获取原始数据
+            NSData *imageData = [NSData dataWithContentsOfURL:originalImageURL];
 
-				  // 确保在主线程刷新UI
-				  dispatch_async(dispatch_get_main_queue(), ^{
-				    // 刷新表格视图
-				    if ([topVC isKindOfClass:%c(AWESettingBaseViewController)]) {
-					    UITableView *tableView = nil;
-					    for (UIView *subview in topVC.view.subviews) {
-						    if ([subview isKindOfClass:[UITableView class]]) {
-							    tableView = (UITableView *)subview;
-							    break;
-						    }
-					    }
+            // GIF检测（带类型转换）
+            const char *bytes = (const char *)imageData.bytes;
+            BOOL isGIF = (imageData.length >= 6 && 
+                         (memcmp(bytes, "GIF87a", 6) == 0 || memcmp(bytes, "GIF89a", 6) == 0));
 
-					    if (tableView) {
-						    [tableView reloadData];
-					    }
-				    }
-				  });
-			  }
-		  }
-		};
+            // 保存逻辑
+            if (isGIF) {
+                [imageData writeToFile:imagePath atomically:YES];
+            } else {
+                UIImage *selectedImage = [UIImage imageWithData:imageData];
+                imageData = UIImagePNGRepresentation(selectedImage);
+                [imageData writeToFile:imagePath atomically:YES];
+            }
 
-		static char kDYYYPickerDelegateKey;
-		picker.delegate = pickerDelegate;
-		objc_setAssociatedObject(picker, &kDYYYPickerDelegateKey, pickerDelegate, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-		[topVC presentViewController:picker animated:YES completion:nil];
+            // 文件存在时更新UI（在同一个块内）
+            if ([[NSFileManager defaultManager] fileExistsAtPath:imagePath]) {
+                item.detail = @"已设置";
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    if ([topVC isKindOfClass:NSClassFromString(@"AWESettingBaseViewController")]) {
+                        UITableView *tableView = nil;
+                        for (UIView *subview in topVC.view.subviews) {
+                            if ([subview isKindOfClass:[UITableView class]]) {
+                                tableView = (UITableView *)subview;
+                                break;
+                            }
+                        }
+                        if (tableView) {
+                            [tableView reloadData];
+                        }
+                    }
+                });
+            }
+        }
+    };
+
+    static char kDYYYPickerDelegateKey;
+    picker.delegate = pickerDelegate;
+    objc_setAssociatedObject(picker, &kDYYYPickerDelegateKey, pickerDelegate, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    [topVC presentViewController:picker animated:YES completion:nil];
 	      });
 	};
 
@@ -459,6 +474,11 @@ static void showUserAgreementAlert() {
 			      @"title" : @"属地标签颜色",
 			      @"detail" : @"十六进制",
 			      @"cellType" : @26,
+			      @"imageName" : @"ic_location_outlined_20"},
+			    @{@"identifier" : @"DYYYEnabsuijiyanse",
+			      @"title" : @"属地随机渐变",
+			      @"detail" : @"",
+			      @"cellType" : @6,
 			      @"imageName" : @"ic_location_outlined_20"}
 		    ];
 
@@ -1316,10 +1336,15 @@ static void showUserAgreementAlert() {
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_eyeslash_outlined_16"},
 			    @{@"identifier" : @"DYYYHideChatCommentBg",
-			      @"title" : @"聊天评论透明",
+			      @"title" : @"隐藏聊天评论",
 			      @"detail" : @"",
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_eyeslash_outlined_16"},
+			    @{@"identifier" : @"DYYYHideSearchCommentBg",
+  			      @"title" : @"隐藏搜索评论",
+  			      @"detail" : @"",
+  			      @"cellType" : @6,
+  			      @"imageName" : @"ic_eyeslash_outlined_16"},
 			    @{@"identifier" : @"DYYYHidePendantGroup",
 			      @"title" : @"隐藏红包悬浮",
 			      @"detail" : @"",
@@ -1883,6 +1908,11 @@ static void showUserAgreementAlert() {
 		    // 【交互增强】分类
 		    NSMutableArray<AWESettingItemModel *> *interactionItems = [NSMutableArray array];
 		    NSArray *interactionSettings = @[
+			    @{@"identifier" : @"DYYYisEnableAutoTheme",
+ 			      @"title" : @"启用自动背景切换",
+ 			      @"detail" : @"",
+ 			      @"cellType" : @6,
+ 			      @"imageName" : @"ic_gearsimplify_outlined_20"},
 			    @{@"identifier" : @"DYYYisEnableModern",
 			      @"title" : @"启用新版玻璃面板",
 			      @"detail" : @"",
@@ -2244,10 +2274,18 @@ static void showUserAgreementAlert() {
 		    [clearButtonItems addObject:clearButtonSizeItem];
 
 		    // 添加清屏按钮自定义图标选项
-		    AWESettingItemModel *clearButtonIcon = createIconCustomizationItem(@"DYYYClearButtonIcon", @"清屏按钮图标", @"ic_roaming_outlined", @"qingping.png");
+		    AWESettingItemModel *clearButtonIcon = createIconCustomizationItem(@"DYYYClearButtonIcon", @"清屏按钮图标", @"ic_roaming_outlined", @"qingping.gif");
 
 		    [clearButtonItems addObject:clearButtonIcon];
-
+		    // 清屏隐藏时间进度 enableqingButton 需要改名
+		    AWESettingItemModel *enableqingButton = [self
+			createSettingItem:
+			    @{@"identifier" : @"DYYYEnabshijianjindu",
+			      @"title" : @"清屏隐藏进度",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_eyeslash_outlined_16"}];
+		    [clearButtonItems addObject:enableqingButton];
 		    // 获取清屏按钮的当前开关状态
 		    BOOL isEnabled = getUserDefaults(@"DYYYEnableFloatClearButton");
 		    // 更新清屏按钮大小和图标设置项的启用状态
@@ -2298,7 +2336,7 @@ static void showUserAgreementAlert() {
 		    NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
 		    NSString *dyyyFolderPath = [documentsPath stringByAppendingPathComponent:@"DYYY"];
 
-		    NSArray *iconFileNames = @[ @"like_before.png", @"like_after.png", @"comment.png", @"unfavorite.png", @"favorite.png", @"share.png", @"qingping.png" ];
+		    NSArray *iconFileNames = @[ @"like_before.png", @"like_after.png", @"comment.png", @"unfavorite.png", @"favorite.png", @"share.png", @"qingping.gif" ];
 
 		    NSMutableDictionary *iconBase64Dict = [NSMutableDictionary dictionary];
 
