@@ -461,20 +461,16 @@ void updateSpeedButtonUI() {
 - (void)setIsAutoPlay:(BOOL)arg0 {
     // 检查是否启用了自动恢复第一个倍速的功能
     BOOL autoRestoreSpeed = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYAutoRestoreSpeed"];
-    
     // 如果启用了自动恢复功能，则将当前索引设置为0（第一个速度）
     if (autoRestoreSpeed) {
         setCurrentSpeedIndex(0);
     }
-    
     float speed = getCurrentSpeed();
     NSInteger speedIndex = getCurrentSpeedIndex();
-    
-    [self setVideoControllerPlaybackRate:speed];
-    %orig(arg0);
+
     currentVideoController = self;
-    
     updateSpeedButtonUI();
+    %orig(arg0);
 }
 
 %new
