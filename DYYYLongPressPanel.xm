@@ -235,7 +235,7 @@
 		copyShareLink.awemeModel = self.awemeModel;
 		copyShareLink.actionType = 672;
 		copyShareLink.duxIconName = @"ic_share_outlined";
-		copyShareLink.describeString = @"复制分享链接";
+		copyShareLink.describeString = @"复制链接";
 
 		copyShareLink.action = ^{
 		  NSString *shareLink = [self.awemeModel valueForKey:@"shareURL"];
@@ -256,7 +256,7 @@
 		apiDownload.awemeModel = self.awemeModel;
 		apiDownload.actionType = 673;
 		apiDownload.duxIconName = @"ic_cloudarrowdown_outlined_20";
-		apiDownload.describeString = @"接口保存视频";
+		apiDownload.describeString = @"接口保存";
 
 		apiDownload.action = ^{
 		  NSString *shareLink = [self.awemeModel valueForKey:@"shareURL"];
@@ -280,7 +280,7 @@
 		filterKeywords.awemeModel = self.awemeModel;
 		filterKeywords.actionType = 674;
 		filterKeywords.duxIconName = @"ic_userban_outlined_20";
-		filterKeywords.describeString = @"过滤用户视频";
+		filterKeywords.describeString = @"过滤用户";
 
 		filterKeywords.action = ^{
 		  // 获取当前视频作者信息
@@ -371,7 +371,7 @@
 		filterKeywords.awemeModel = self.awemeModel;
 		filterKeywords.actionType = 675;
 		filterKeywords.duxIconName = @"ic_funnel_outlined_20";
-		filterKeywords.describeString = @"过滤关键词调整";
+		filterKeywords.describeString = @"过滤关键词";
 
 		filterKeywords.action = ^{
 		  NSString *descText = [self.awemeModel valueForKey:@"descriptionString"];
@@ -430,7 +430,7 @@
 	}
 
     NSMutableArray<AWELongPressPanelViewGroupModel *> *customGroups = [NSMutableArray array];
-    NSInteger maxPerGroup = 5;
+    NSInteger maxPerGroup = 4;
     for (NSInteger i = 0; i < viewModels.count; i += maxPerGroup) {
         NSRange range = NSMakeRange(i, MIN(maxPerGroup, viewModels.count - i));
         NSArray<AWELongPressPanelBaseViewModel *> *subArr = [viewModels subarrayWithRange:range];
@@ -844,7 +844,7 @@
 		copyShareLink.awemeModel = self.awemeModel;
 		copyShareLink.actionType = 672;
 		copyShareLink.duxIconName = @"ic_share_outlined";
-		copyShareLink.describeString = @"复制分享链接";
+		copyShareLink.describeString = @"复制链接";
 
 		copyShareLink.action = ^{
 		  NSString *shareLink = [self.awemeModel valueForKey:@"shareURL"];
