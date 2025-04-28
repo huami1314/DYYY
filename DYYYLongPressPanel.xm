@@ -467,42 +467,59 @@
 
 - (void)setLongPressViewGroupModel:(AWELongPressPanelViewGroupModel *)groupModel {
     %orig;
-	
+    
     if (groupModel && [groupModel isDYYYCustomGroup]) {
         [self setupCustomLayout];
     }
 }
-
 %new
 - (void)setupCustomLayout {
     if (self.collectionView) {
-        NSInteger itemCount = self.dataArray.count;
-        
         UICollectionViewFlowLayout *layout = (UICollectionViewFlowLayout *)self.collectionView.collectionViewLayout;
         if (layout) {
             layout.scrollDirection = UICollectionViewScrollDirectionHorizontal;
             
-            CGFloat spacing = 0;
+            // 根据组索引应用不同的间距
+            NSInteger groupIndex = [self.longPressViewGroupModel groupType];
             
-            layout.minimumInteritemSpacing = spacing;
-            layout.minimumLineSpacing = spacing;
-
+            if (groupIndex == 12) {
+                // 第一排 - 均匀分布
+                layout.minimumInteritemSpacing = 0;
+                layout.minimumLineSpacing = 0;
+            } else {
+                // 第二排 - 卡片样式，带间距（类似第三排）
+                layout.minimumInteritemSpacing = 10;
+                layout.minimumLineSpacing = 10;
+                layout.sectionInset = UIEdgeInsetsMake(0, 10, 0, 10);
+            }
+            
             [self.collectionView setCollectionViewLayout:layout animated:NO];
         }
     }
 }
-
 - (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)layout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
-
     if (self.longPressViewGroupModel && [self.longPressViewGroupModel isDYYYCustomGroup]) {
         if (self.dataArray && indexPath.item < self.dataArray.count) {
-            AWELongPressPanelBaseViewModel *model = self.dataArray[indexPath.item];
-            NSString *text = model.describeString;
+            // 根据组索引设置不同尺寸
+            NSInteger groupIndex = [self.longPressViewGroupModel groupType];
             
-            CGFloat textWidth = [self widthForText:text];
-            CGFloat cellWidth = MAX(70, textWidth + 20); 
-            
-            return CGSizeMake(cellWidth, 75);
+            if (groupIndex == 12) {
+                // 第一排 - 均等分割
+                CGFloat totalWidth = collectionView.bounds.size.width;
+                NSInteger itemCount = self.dataArray.count;
+                CGFloat itemWidth = totalWidth / itemCount;
+                return CGSizeMake(itemWidth, 75);
+            } else {
+                // 第二排 - 卡片样式，类似第三排
+                AWELongPressPanelBaseViewModel *model = self.dataArray[indexPath.item];
+                NSString *text = model.describeString;
+                
+                // 根据文本计算宽度，但确保至少有最小宽度
+                CGFloat textWidth = [self widthForText:text];
+                CGFloat cardWidth = MAX(100, textWidth + 30); 
+                
+                return CGSizeMake(cardWidth, 75);
+            }
         }
         return CGSizeMake(75, 75);
     }
@@ -534,15 +551,21 @@
     %orig;
     
     if (viewModel && viewModel.actionType >= 666 && viewModel.actionType <= 680) {
+        // 获取组索引以应用不同的样式
+        NSInteger groupIndex = 12; // 默认为第一组
+        if ([self.superview.superview isKindOfClass:%c(AWEModernLongPressHorizontalSettingCell)]) {
+            AWEModernLongPressHorizontalSettingCell *parentCell = (AWEModernLongPressHorizontalSettingCell *)self.superview.superview;
+            groupIndex = [parentCell.longPressViewGroupModel groupType];
+        }
+        
         CGFloat padding = 0;
-
         CGFloat contentWidth = self.contentView.bounds.size.width;
         
         CGRect iconFrame = self.buttonIcon.frame;
         iconFrame.origin.x = (contentWidth - iconFrame.size.width) / 2;
         iconFrame.origin.y = padding;
         self.buttonIcon.frame = iconFrame;
-
+        
         CGFloat labelY = CGRectGetMaxY(iconFrame) + 4;
         CGFloat labelWidth = contentWidth;
         CGFloat labelHeight = self.contentView.bounds.size.height - labelY - padding;
@@ -553,18 +576,17 @@
         self.buttonLabel.font = [UIFont systemFontOfSize:12];
         
         if (self.separator) {
-            self.separator.hidden = YES;
+            // 对于第一排，显示分隔符；对于第二排，隐藏分隔符
+            self.separator.hidden = (groupIndex != 12);
         }
     }
 }
-
 - (void)layoutSubviews {
     %orig;
     if (self.longPressPanelVM && self.longPressPanelVM.actionType >= 666 && self.longPressPanelVM.actionType <= 680) {
         [self updateUI:self.longPressPanelVM];
     }
 }
-
 %end
 
 %hook AWELongPressPanelTableViewController
