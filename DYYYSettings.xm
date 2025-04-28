@@ -864,16 +864,16 @@ static void showUserAgreementAlert() {
 			      @"detail" : @"",
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_comment_outlined_20"},
-			    @{@"identifier" : @"DYYYEnableNotificationTransparency",
-			      @"title" : @"通知玻璃效果",
-			      @"detail" : @"",
-			      @"cellType" : @6,
-			      @"imageName" : @"ic_comment_outlined_20"},
 			    @{@"identifier" : @"DYYYCommentBlurTransparent",
 			      @"title" : @"毛玻璃透明度",
 			      @"detail" : @"0-1小数",
 			      @"cellType" : @26,
 			      @"imageName" : @"ic_eye_outlined_20"},
+			    @{@"identifier" : @"DYYYEnableNotificationTransparency",
+			      @"title" : @"通知玻璃效果",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_comment_outlined_20"},
 			    @{@"identifier" : @"DYYYNotificationCornerRadius",
 			      @"title" : @"通知圆角半径",
 			      @"detail" : @"默认12",
@@ -2145,7 +2145,7 @@ static void showUserAgreementAlert() {
 		    showXItem.title = @"倍速按钮显示后缀";
 		    showXItem.detail = @"";
 		    showXItem.type = 1000;
-		    showXItem.svgIconImageName = @"ic_text_outlined_20";
+		    showXItem.svgIconImageName = @"ic_pensketch_outlined_20";
 		    showXItem.cellType = 6;
 		    showXItem.colorStyle = 0;
 		    showXItem.isEnable = YES;
@@ -2228,7 +2228,7 @@ static void showUserAgreementAlert() {
 		    // 添加清屏按钮大小配置项
 		    AWESettingItemModel *clearButtonSizeItem = [[%c(AWESettingItemModel) alloc] init];
 		    clearButtonSizeItem.identifier = @"DYYYEnableFloatClearButtonSize";
-		    clearButtonSizeItem.title = @"快捷清屏按钮大小";
+		    clearButtonSizeItem.title = @"清屏按钮大小";
 		    // 获取当前的按钮大小，如果没有设置则默认为40
 		    CGFloat currentClearButtonSize = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYEnableFloatClearButtonSize"] ?: 40;
 		    clearButtonSizeItem.detail = [NSString stringWithFormat:@"%.0f", currentClearButtonSize];
