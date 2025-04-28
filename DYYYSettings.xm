@@ -14,6 +14,7 @@
 #import "DYYYOptionsSelectionView.h"
 
 #import "DYYYUtils.h"
+#import "DYYYConstants.h"
 
 @class DYYYIconOptionsDialogView;
 static void showIconOptionsDialog(NSString *title, UIImage *previewImage, NSString *saveFilename, void (^onClear)(void), void (^onSelect)(void));
@@ -250,9 +251,6 @@ static void showIconOptionsDialog(NSString *title, UIImage *previewImage, NSStri
 	[optionsDialog show];
 }
 
-#undef DYYY
-#define DYYY @"DYYY设置"
-
 static void *kViewModelKey = &kViewModelKey;
 %hook AWESettingBaseViewController
 - (bool)useCardUIStyle {
@@ -327,7 +325,7 @@ static void showUserAgreementAlert() {
 	NSArray *originalSections = %orig;
 	BOOL sectionExists = NO;
 	for (AWESettingSectionModel *section in originalSections) {
-		if ([section.sectionHeaderTitle isEqualToString:@"DYYY"]) {
+		if ([section.sectionHeaderTitle isEqualToString:DYYY_NAME]) {
 			sectionExists = YES;
 			break;
 		}
@@ -335,9 +333,9 @@ static void showUserAgreementAlert() {
 	if (self.traceEnterFrom && !sectionExists) {
 
 		AWESettingItemModel *dyyyItem = [[%c(AWESettingItemModel) alloc] init];
-		dyyyItem.identifier = @"DYYY";
-		dyyyItem.title = @"DYYY";
-		dyyyItem.detail = @"v2.2-4";
+		dyyyItem.identifier = DYYY_NAME;
+		dyyyItem.title = DYYY_NAME;
+		dyyyItem.detail = DYYY_VERSION_STRING;
 		dyyyItem.type = 0;
 		dyyyItem.svgIconImageName = @"ic_sapling_outlined";
 		dyyyItem.cellType = 26;
@@ -363,7 +361,7 @@ static void showUserAgreementAlert() {
 				    if ([subview isKindOfClass:%c(AWENavigationBar)]) {
 					    AWENavigationBar *navigationBar = (AWENavigationBar *)subview;
 					    if ([navigationBar respondsToSelector:@selector(titleLabel)]) {
-						    navigationBar.titleLabel.text = DYYY;
+						    navigationBar.titleLabel.text = DYYY_NAME;
 					    }
 					    break;
 				    }
@@ -2476,7 +2474,7 @@ static void showUserAgreementAlert() {
 		  AWESettingItemModel *aboutItem = [[%c(AWESettingItemModel) alloc] init];
 		  aboutItem.identifier = @"DYYYAbout";
 		  aboutItem.title = @"关于插件";
-		  aboutItem.detail = @"v2.2-4";
+		  aboutItem.detail = DYYY_VERSION_STRING;
 		  aboutItem.type = 0;
 		  aboutItem.iconImageName = @"awe-settings-icon-about";
 		  aboutItem.cellType = 26;
@@ -2484,7 +2482,7 @@ static void showUserAgreementAlert() {
 		  aboutItem.isEnable = YES;
 		  aboutItem.cellTappedBlock = ^{
 		    showAboutDialog(@"关于DYYY",
-				    @"版本: v2.2-4\n\n"
+				    @"版本: " DYYY_VERSION_STRING @"\n\n"
 				    @"感谢使用DYYY\n\n"
 				    @"感谢huami开源\n\n"
 				    @"@维他入我心 基于DYYY二次开发\n\n"

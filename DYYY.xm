@@ -14,8 +14,7 @@
 #import <UIKit/UIKit.h>
 #import <objc/runtime.h>
 
-#define DYYY @"DYYY"
-#define tweakVersion @"2.2-4"
+#import "DYYYConstants.h"
 
 @interface DYYYManager (API)
 + (void)parseAndDownloadVideoWithShareLink:(NSString *)shareLink apiKey:(NSString *)apiKey;

@@ -2,7 +2,6 @@
 #import <Photos/Photos.h>
 
 #define DYYYGetBool(key) [[NSUserDefaults standardUserDefaults] boolForKey:key]
-#define DYYY 100
 
 typedef NS_ENUM(NSInteger, MediaType) {
     MediaTypeVideo,
