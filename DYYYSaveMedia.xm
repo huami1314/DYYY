@@ -112,17 +112,7 @@ static BOOL isDownloadFlied = NO;
         UIButton *saveButton = [UIButton buttonWithType:UIButtonTypeSystem];
         
         // 使用图标而非文字
-        UIImage *downloadIcon = [UIImage imageNamed:@"ic_boxarrowdownhigh_outlined_20"];
-        if (!downloadIcon) {
-            // 备用方案：尝试从应用中查找图标
-            downloadIcon = [UIImage imageNamed:@"ic_boxarrowdownhigh_outlined_20" inBundle:[NSBundle mainBundle] compatibleWithTraitCollection:nil];
-            
-            // 如果仍然找不到，使用系统图标(iOS 13+)
-            if (!downloadIcon && @available(iOS 13.0, *)) {
-                downloadIcon = [UIImage systemImageNamed:@"arrow.down.circle"];
-            }
-        }
-        
+        UIImage *downloadIcon = [UIImage systemImageNamed:@"arrow.down.circle"];
         [saveButton setImage:downloadIcon forState:UIControlStateNormal];
         [saveButton setTintColor:[UIColor whiteColor]];
         
@@ -147,7 +137,7 @@ static BOOL isDownloadFlied = NO;
         // 修改约束 - 放在右下角
         [NSLayoutConstraint activateConstraints:@[
             [saveButton.bottomAnchor constraintEqualToAnchor:self.bottomAnchor constant:-15],
-            [saveButton.rightAnchor constraintEqualToAnchor:self.rightAnchor constant:-15],
+            [saveButton.rightAnchor constraintEqualToAnchor:self.rightAnchor constant:-10],
             [saveButton.widthAnchor constraintEqualToConstant:buttonSize],
             [saveButton.heightAnchor constraintEqualToConstant:buttonSize]
         ]];
