@@ -5,20 +5,19 @@
 
 @class AWEFeedCellViewController;
 @class AWEAwemePlayVideoViewController; 
-
 // 声明悬浮按钮类
 @interface FloatingSpeedButton : UIButton
 @property (nonatomic, assign) CGPoint lastLocation;
 @property (nonatomic, weak) AWEPlayInteractionViewController *interactionController;
 @property (nonatomic, assign) BOOL isLocked;
 @property (nonatomic, strong) NSTimer *firstStageTimer; 
-@property (nonatomic, assign) BOOL justToggledLock; 
-@property (nonatomic, assign) BOOL originalLockState; 
-@property (nonatomic, assign) BOOL isResponding; 
-@property (nonatomic, strong) NSTimer *statusCheckTimer; 
+@property (nonatomic, assign) BOOL justToggledLock; // 添加锁定状态切换标记
+@property (nonatomic, assign) BOOL originalLockState; // 保存原始锁定状态
+@property (nonatomic, assign) BOOL isResponding; // 新增属性跟踪按钮响应状态
+@property (nonatomic, strong) NSTimer *statusCheckTimer; // 新增状态检查定时器
 - (void)saveButtonPosition;
 - (void)loadSavedPosition;
-- (void)resetButtonState; 
+- (void)resetButtonState; // 添加方法确保按钮状态可以被重置
 - (void)toggleLockState; 
 @end
 
@@ -57,6 +56,9 @@
         // 使用单独的方法初始化手势，便于复用
         [self setupGestureRecognizers];
         
+        // 加载保存的位置和锁定状态
+        [self loadSavedPosition];
+        
         // justToggledLock总是初始化为NO
         self.justToggledLock = NO;
     }
@@ -87,7 +89,9 @@
     longPressGesture.delegate = (id<UIGestureRecognizerDelegate>)self;
 }
 
+// 修改手势代理方法
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
+    // 允许拖拽手势和其他手势同时工作
     if ([gestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]]) {
         return YES;
     }
@@ -103,7 +107,7 @@
 - (void)handleTouchUpInside:(UIButton *)sender {
     // 如果刚刚切换了锁定状态，不触发点击事件
     if (self.justToggledLock) {
-        self.justToggledLock = NO; 
+        self.justToggledLock = NO; // 立即重置标志
         return;
     }
     
@@ -122,10 +126,10 @@
             [self.interactionController speedButtonTapped:self];
         }
         @catch (NSException *exception) {
-            self.isResponding = NO;
+            self.isResponding = NO; // 标记按钮状态异常
         }
     } else {
-        self.isResponding = NO;
+        self.isResponding = NO; // 标记按钮状态异常
     }
 }
 
@@ -153,6 +157,7 @@
     }
 }
 
+// 替换原来的firstStageLongPress和secondStageLongPress
 - (void)toggleLockState {
     // 切换锁定状态
     self.isLocked = !self.isLocked;
@@ -205,7 +210,8 @@
     
     // 拖动时确保 justToggledLock 为 NO，避免影响后续点击
     self.justToggledLock = NO;
-
+    
+    // 使用触摸点位置而不是中心点，提高响应灵敏度
     CGPoint touchPoint = [pan locationInView:self.superview];
     
     if (pan.state == UIGestureRecognizerStateBegan) {
@@ -236,7 +242,6 @@
 - (void)saveButtonPosition {
     if (self.superview) {
         NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-        // 修改为相对于父视图的百分比位置
         [defaults setFloat:self.center.x / self.superview.bounds.size.width forKey:@"DYYYSpeedButtonCenterXPercent"];
         [defaults setFloat:self.center.y / self.superview.bounds.size.height forKey:@"DYYYSpeedButtonCenterYPercent"];
         // 保存锁定状态
@@ -256,15 +261,6 @@
     if (centerXPercent > 0 && centerYPercent > 0 && self.superview) {
         self.center = CGPointMake(centerXPercent * self.superview.bounds.size.width,
                                   centerYPercent * self.superview.bounds.size.height);
-    } else if (self.superview) {
-        // 默认位置：右下角安全区域
-        CGFloat margin = 20.0;
-        CGFloat safeBottomMargin = 0;
-        if (@available(iOS 11.0, *)) {
-            safeBottomMargin = self.superview.safeAreaInsets.bottom;
-        }
-        self.center = CGPointMake(self.superview.bounds.size.width - self.bounds.size.width - margin, 
-                                  self.superview.bounds.size.height - self.bounds.size.height - margin - safeBottomMargin);
     }
 }
 
@@ -273,24 +269,29 @@
     if (!self.isResponding) {
         // 如果已经检测到按钮无响应，尝试恢复
         [self resetButtonState];
-        [self setupGestureRecognizers];
+        [self setupGestureRecognizers]; // 重新设置所有手势
         self.isResponding = YES;
     }
     
     // 验证控制器引用是否有效
     if (!self.interactionController) {
-        UIResponder *responder = self.superview.nextResponder;
-        while (responder) {
-            if ([responder isKindOfClass:%c(AWEPlayInteractionViewController)]) {
-                self.interactionController = (AWEPlayInteractionViewController *)responder;
+        // 尝试重新获取控制器引用
+        UIViewController *topVC = [UIApplication sharedApplication].keyWindow.rootViewController;
+        while (topVC.presentedViewController) {
+            topVC = topVC.presentedViewController;
+        }
+        
+        // 查找可能的AWEPlayInteractionViewController
+        for (UIViewController *vc in [self findViewControllersInHierarchy:topVC]) {
+            if ([vc isKindOfClass:%c(AWEPlayInteractionViewController)]) {
+                self.interactionController = (AWEPlayInteractionViewController *)vc;
                 break;
             }
-            responder = responder.nextResponder;
         }
     }
 }
 
-// 查找视图控制器层级
+// 新增方法：查找视图控制器层级
 - (NSArray *)findViewControllersInHierarchy:(UIViewController *)rootViewController {
     NSMutableArray *viewControllers = [NSMutableArray array];
     [viewControllers addObject:rootViewController];
@@ -315,13 +316,15 @@
 
 static AWEAwemePlayVideoViewController *currentVideoController = nil;
 static FloatingSpeedButton *speedButton = nil;
-
+// 添加一个静态变量来跟踪评论是否正在显示
 static BOOL isCommentViewVisible = NO;
+// 添加变量用于控制是否在速度后面显示"x"
 static BOOL showSpeedX = NO;
-// 按钮大小变量
+// 添加按钮大小变量
 static CGFloat speedButtonSize = 32.0;
 static BOOL isFloatSpeedButtonEnabled = NO;
 
+// 添加对评论控制器的 hook
 %hook AWECommentContainerViewController
 
 - (void)viewWillAppear:(BOOL)animated {
@@ -453,7 +456,6 @@ void updateSpeedButtonUI() {
 - (void)adjustPlaybackSpeed:(float)speed;
 @end
 
-
 %hook AWEAwemePlayVideoViewController
 
 - (void)setIsAutoPlay:(BOOL)arg0 {
@@ -493,23 +495,16 @@ void updateSpeedButtonUI() {
     %orig;
 
 	if (!isFloatSpeedButtonEnabled) return;
-    // 添加悬浮速度控制按钮作为子视图
+    // 添加悬浮速度控制按钮
     if (speedButton == nil) {
         // 使用保存的按钮大小或默认值
         speedButtonSize = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYSpeedButtonSize"] ?: 32.0;
         
-        // 初始位置设为右下角
-        CGRect viewBounds = self.view.bounds;
-        CGFloat margin = 20.0;
-        CGFloat safeBottomMargin = 0;
-        if (@available(iOS 11.0, *)) {
-            safeBottomMargin = self.view.safeAreaInsets.bottom;
-        }
-        
-        CGRect initialFrame = CGRectMake(
-            viewBounds.size.width - speedButtonSize - margin, 
-            viewBounds.size.height - speedButtonSize - margin - safeBottomMargin, 
-            speedButtonSize, speedButtonSize);
+        CGRect screenBounds = [UIScreen mainScreen].bounds;
+        // 修改初始位置为屏幕中间
+        CGRect initialFrame = CGRectMake((screenBounds.size.width - speedButtonSize) / 2, 
+                                         (screenBounds.size.height - speedButtonSize) / 2, 
+                                         speedButtonSize, speedButtonSize);
         
         speedButton = [[FloatingSpeedButton alloc] initWithFrame:initialFrame];
         
@@ -519,32 +514,15 @@ void updateSpeedButtonUI() {
         // 加载"显示x"的设置
         showSpeedX = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYSpeedButtonShowX"];
         
-        // 添加到控制器视图
-        [self.view addSubview:speedButton];
-        
-        // 确保按钮在视图层次中保持顶层
-        [self.view bringSubviewToFront:speedButton];
-        
-        // 加载保存的位置
-        [speedButton loadSavedPosition];
-        
         updateSpeedButtonUI();
-    } else if (speedButton.superview != self.view) {
-        // 如果按钮不在当前视图中，添加它
-        [self.view addSubview:speedButton];
-        [self.view bringSubviewToFront:speedButton];
-        [speedButton loadSavedPosition];
     } else {
-        // 重置按钮状态
+        // 在每次布局时重置按钮状态，确保它始终可点击
         [speedButton resetButtonState];
         
-        // 更新控制器引用
+        // 定期检查控制器引用
         if (speedButton.interactionController == nil || speedButton.interactionController != self) {
             speedButton.interactionController = self;
         }
-        
-        // 确保按钮保持在顶层
-        [self.view bringSubviewToFront:speedButton];
         
         // 更新按钮大小如果有变化
         if (speedButton.frame.size.width != speedButtonSize) {
@@ -554,6 +532,16 @@ void updateSpeedButtonUI() {
             speedButton.center = center;
             speedButton.layer.cornerRadius = speedButtonSize / 2;
         }
+    }
+    
+    // 确保按钮总是添加到顶层窗口
+    UIWindow *keyWindow = [UIApplication sharedApplication].keyWindow;
+    if (keyWindow && ![speedButton isDescendantOfView:keyWindow]) {
+        [keyWindow addSubview:speedButton];
+        [speedButton loadSavedPosition]; 
+        
+        // 确保按钮在顶层显示
+        speedButton.layer.zPosition = 999;
     }
     
     // 只在评论不可见时才显示按钮
@@ -579,25 +567,24 @@ void updateSpeedButtonUI() {
 
 - (void)viewWillAppear:(BOOL)animated {
     %orig;
-    // 视图出现时显示按钮
+    // 视图出现时检查评论状态
     if (speedButton) {
         dispatch_async(dispatch_get_main_queue(), ^{
             speedButton.hidden = isCommentViewVisible;
+            
+            // 确保按钮位于顶层视图
+            UIWindow *keyWindow = [UIApplication sharedApplication].keyWindow;
+            if (keyWindow && ![speedButton isDescendantOfView:keyWindow]) {
+                [keyWindow addSubview:speedButton];
+                [speedButton loadSavedPosition];
+            }
         });
-    }
-}
-
-- (void)viewDidAppear:(BOOL)animated {
-    %orig;
-    // 确保按钮在视图层次中保持顶层
-    if (speedButton && speedButton.superview == self.view) {
-        [self.view bringSubviewToFront:speedButton];
     }
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
     %orig;
-    // 视图消失时隐藏按钮
+    // 临时隐藏按钮，但不移除
     if (speedButton) {
         speedButton.hidden = YES;
     }
@@ -691,10 +678,32 @@ void updateSpeedButtonUI() {
 
 %end
 
+%hook UIWindow
+
+- (void)makeKeyAndVisible {
+    %orig;
+    
+    // 检查全局开关
+    if (!isFloatSpeedButtonEnabled) return;
+    
+    // 当窗口变为key window时，根据评论状态决定按钮显示
+    if (speedButton && ![speedButton isDescendantOfView:self]) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self addSubview:speedButton];
+            [speedButton loadSavedPosition];
+            speedButton.layer.zPosition = 999;
+            speedButton.hidden = isCommentViewVisible;
+        });
+    }
+}
+%end
+
 %ctor {
+    // 加载全局开关状态
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     isFloatSpeedButtonEnabled = [defaults boolForKey:@"DYYYEnableFloatSpeedButton"];
     
+    // 只有当全局开关打开时才初始化hooks
     if (isFloatSpeedButtonEnabled) {
         %init;
     }
