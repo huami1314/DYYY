@@ -2038,7 +2038,7 @@ static void showUserAgreementAlert() {
 			      @"title" : @"启用快捷倍速按钮",
 			      @"detail" : @"",
 			      @"cellType" : @6,
-			      @"imageName" : @"ic_speed_outlined_20"}];
+			      @"imageName" : @"ic_xspeed_outlined"}];
 		    [speedButtonItems addObject:enableSpeedButton];
 
 		    // 添加倍速设置项
