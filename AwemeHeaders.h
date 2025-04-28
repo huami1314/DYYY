@@ -110,10 +110,14 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 @interface AWELongPressPanelViewGroupModel : NSObject
-@property (nonatomic, assign) NSInteger groupType;
-@property (nonatomic, strong) NSArray *groupArr;
-@property (nonatomic) BOOL isModern;
+@property (nonatomic) unsigned long long groupType;
+@property (nonatomic) NSArray *groupArr;
+@property (nonatomic) long long numberOfRowsInSection;
+@property (nonatomic) long long cellHeight;
 @property (nonatomic) BOOL hasMore;
+@property (nonatomic) BOOL isModern;
+@property (nonatomic) BOOL isDYYYCustomGroup;
+- (void)setIsDYYYCustomGroup:(BOOL)isCustom;
 @end
 
 @interface AWELongPressPanelManager : NSObject
@@ -313,6 +317,25 @@ typedef NS_ENUM(NSInteger, MediaType) {
 
 @interface AWEModernLongPressPanelTableViewController : UIViewController
 @property (nonatomic, strong) AWEAwemeModel *awemeModel;
+@end
+
+@interface AWEModernLongPressHorizontalSettingCell : UITableViewCell
+@property (nonatomic, strong) UICollectionView *collectionView;
+@property (nonatomic, strong) NSArray *dataArray;
+@property (nonatomic, strong) AWELongPressPanelViewGroupModel *longPressViewGroupModel;
+
+- (void)setupCustomLayout;
+- (CGFloat)widthForText:(NSString *)text;
+@end
+
+@interface AWEModernLongPressHorizontalSettingItemCell : UICollectionViewCell
+@property (nonatomic, strong) UIView *contentView;
+@property (nonatomic, strong) UIImageView *buttonIcon;
+@property (nonatomic, strong) UILabel *buttonLabel;
+@property (nonatomic, strong) UIView *separator;
+@property (nonatomic, strong) AWELongPressPanelBaseViewModel *longPressPanelVM;
+
+- (void)updateUI:(AWELongPressPanelBaseViewModel *)viewModel;
 @end
 
 @interface DYYYSettingViewController : UIViewController

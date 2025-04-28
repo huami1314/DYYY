@@ -18,7 +18,9 @@
 	}
 
 	AWELongPressPanelViewGroupModel *newGroupModel = [[%c(AWELongPressPanelViewGroupModel) alloc] init];
-	newGroupModel.groupType = 0;
+	[newGroupModel setIsDYYYCustomGroup:YES];
+    newGroupModel.groupType = 12;
+    newGroupModel.isModern = YES;
 
 	NSMutableArray *viewModels = [NSMutableArray array];
 
@@ -426,8 +428,141 @@
 
 		[viewModels addObject:filterKeywords];
 	}
-	newGroupModel.groupArr = viewModels;
-	return [@[ newGroupModel ] arrayByAddingObjectsFromArray:originalArray];
+
+    NSMutableArray<AWELongPressPanelViewGroupModel *> *customGroups = [NSMutableArray array];
+    NSInteger maxPerGroup = 5;
+    for (NSInteger i = 0; i < viewModels.count; i += maxPerGroup) {
+        NSRange range = NSMakeRange(i, MIN(maxPerGroup, viewModels.count - i));
+        NSArray<AWELongPressPanelBaseViewModel *> *subArr = [viewModels subarrayWithRange:range];
+        AWELongPressPanelViewGroupModel *groupModel = [[%c(AWELongPressPanelViewGroupModel) alloc] init];
+        [groupModel setIsDYYYCustomGroup:YES];
+        groupModel.groupType = 12;
+        groupModel.isModern = YES;
+        groupModel.groupArr = subArr;
+        [customGroups addObject:groupModel];
+    }
+
+    // 返回自定义分组拼接原始分组
+    return [customGroups arrayByAddingObjectsFromArray:originalArray];
+}
+
+%end
+
+%hook AWELongPressPanelViewGroupModel
+
+%new
+- (void)setIsDYYYCustomGroup:(BOOL)isCustom {
+    objc_setAssociatedObject(self, @selector(isDYYYCustomGroup), @(isCustom), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
+%new
+- (BOOL)isDYYYCustomGroup {
+    NSNumber *value = objc_getAssociatedObject(self, @selector(isDYYYCustomGroup));
+    return [value boolValue];
+}
+
+%end
+
+%hook AWEModernLongPressHorizontalSettingCell
+
+- (void)setLongPressViewGroupModel:(AWELongPressPanelViewGroupModel *)groupModel {
+    %orig;
+	
+    if (groupModel && [groupModel isDYYYCustomGroup]) {
+        [self setupCustomLayout];
+    }
+}
+
+%new
+- (void)setupCustomLayout {
+    if (self.collectionView) {
+        NSInteger itemCount = self.dataArray.count;
+        
+        UICollectionViewFlowLayout *layout = (UICollectionViewFlowLayout *)self.collectionView.collectionViewLayout;
+        if (layout) {
+            layout.scrollDirection = UICollectionViewScrollDirectionHorizontal;
+            
+            CGFloat spacing = 0;
+            
+            layout.minimumInteritemSpacing = spacing;
+            layout.minimumLineSpacing = spacing;
+
+            [self.collectionView setCollectionViewLayout:layout animated:NO];
+        }
+    }
+}
+
+- (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)layout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
+
+    if (self.longPressViewGroupModel && [self.longPressViewGroupModel isDYYYCustomGroup]) {
+        if (self.dataArray && indexPath.item < self.dataArray.count) {
+            AWELongPressPanelBaseViewModel *model = self.dataArray[indexPath.item];
+            NSString *text = model.describeString;
+            
+            CGFloat textWidth = [self widthForText:text];
+            CGFloat cellWidth = MAX(70, textWidth + 20); 
+            
+            return CGSizeMake(cellWidth, 75);
+        }
+        return CGSizeMake(75, 75);
+    }
+    
+    return %orig;
+}
+
+
+%new
+- (CGFloat)widthForText:(NSString *)text {
+    if (!text || text.length == 0) {
+        return 0;
+    }
+    
+    UIFont *font = [UIFont systemFontOfSize:12];
+    NSDictionary *attributes = @{NSFontAttributeName: font};
+    CGSize textSize = [text boundingRectWithSize:CGSizeMake(MAXFLOAT, 20)
+                                        options:NSStringDrawingUsesLineFragmentOrigin
+                                     attributes:attributes
+                                        context:nil].size;
+    return textSize.width;
+}
+
+%end
+
+%hook AWEModernLongPressHorizontalSettingItemCell
+
+- (void)updateUI:(AWELongPressPanelBaseViewModel *)viewModel {
+    %orig;
+    
+    if (viewModel && viewModel.actionType >= 666 && viewModel.actionType <= 680) {
+        CGFloat padding = 0;
+
+        CGFloat contentWidth = self.contentView.bounds.size.width;
+        
+        CGRect iconFrame = self.buttonIcon.frame;
+        iconFrame.origin.x = (contentWidth - iconFrame.size.width) / 2;
+        iconFrame.origin.y = padding;
+        self.buttonIcon.frame = iconFrame;
+
+        CGFloat labelY = CGRectGetMaxY(iconFrame) + 4;
+        CGFloat labelWidth = contentWidth;
+        CGFloat labelHeight = self.contentView.bounds.size.height - labelY - padding;
+        
+        self.buttonLabel.frame = CGRectMake(padding, labelY, labelWidth, labelHeight);
+        self.buttonLabel.textAlignment = NSTextAlignmentCenter;
+        self.buttonLabel.numberOfLines = 2;
+        self.buttonLabel.font = [UIFont systemFontOfSize:12];
+        
+        if (self.separator) {
+            self.separator.hidden = YES;
+        }
+    }
+}
+
+- (void)layoutSubviews {
+    %orig;
+    if (self.longPressPanelVM && self.longPressPanelVM.actionType >= 666 && self.longPressPanelVM.actionType <= 680) {
+        [self updateUI:self.longPressPanelVM];
+    }
 }
 
 %end

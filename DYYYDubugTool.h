@@ -13,3 +13,6 @@ NSString *dumpClassInfo(Class cls);
  * @return 人类可读的类型名称
  */
 NSString *humanReadableTypeFromEncoding(const char *encoding);
+	
+// 导出所有类的头文件到Documents目录
+void saveAllClassesToDocuments(void);

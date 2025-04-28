@@ -64,7 +64,6 @@ NSString *dumpClassInfo(Class cls) {
         // 获取方法返回类型
         char returnType[256];
         method_getReturnType(method, returnType, 256);
-        // 修改这里：由消息发送改为直接函数调用
         NSString *returnTypeString = humanReadableTypeFromEncoding(returnType);
         
         [result appendFormat:@"- (%@)%s;\n", returnTypeString, name];
