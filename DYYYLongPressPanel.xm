@@ -5,7 +5,7 @@
 #import "DYYYManager.h"
 
 %hook AWELongPressPanelViewGroupModel
-%property (nonatomic, assign) BOOL isDYYYCustomGroup;
+%property(nonatomic, assign) BOOL isDYYYCustomGroup;
 %end
 
 %hook AWEModernLongPressPanelTableViewController
@@ -435,7 +435,7 @@
 
 	NSMutableArray<AWELongPressPanelViewGroupModel *> *customGroups = [NSMutableArray array];
 	NSInteger maxPerGroup = 4;
-	int groupIndex = 0; 
+	int groupIndex = 0;
 	for (NSInteger i = 0; i < viewModels.count; i += maxPerGroup) {
 		NSRange range = NSMakeRange(i, MIN(maxPerGroup, viewModels.count - i));
 		NSArray<AWELongPressPanelBaseViewModel *> *subArr = [viewModels subarrayWithRange:range];
@@ -477,53 +477,21 @@
 
 %end
 
-%hook AWEModernLongPressHorizontalSettingItemCell
-
-- (void)updateUI:(AWELongPressPanelBaseViewModel *)viewModel {
-	%orig;
-
-	if (viewModel && viewModel.actionType >= 666 && viewModel.actionType <= 680) {
-		CGFloat padding = 0;
-		CGFloat contentWidth = self.contentView.bounds.size.width;
-
-		CGRect iconFrame = self.buttonIcon.frame;
-		iconFrame.origin.x = (contentWidth - iconFrame.size.width) / 2;
-		iconFrame.origin.y = padding;
-		self.buttonIcon.frame = iconFrame;
-
-		CGFloat labelY = CGRectGetMaxY(iconFrame) + 4;
-		CGFloat labelWidth = contentWidth;
-		CGFloat labelHeight = self.contentView.bounds.size.height - labelY - padding;
-
-		self.buttonLabel.frame = CGRectMake(padding, labelY, labelWidth, labelHeight);
-		self.buttonLabel.textAlignment = NSTextAlignmentCenter;
-		self.buttonLabel.numberOfLines = 2;
-		self.buttonLabel.font = [UIFont systemFontOfSize:12];
-	}
-}
-
-- (void)layoutSubviews {
-	%orig;
-	if (self.longPressPanelVM && self.longPressPanelVM.actionType >= 666 && self.longPressPanelVM.actionType <= 680) {
-		[self updateUI:self.longPressPanelVM];
-	}
-}
-%end
-
 %hook AWEModernLongPressInteractiveCell
 
 - (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)layout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
-    if (self.longPressViewGroupModel && [self.longPressViewGroupModel isDYYYCustomGroup]) {
-        if (self.dataArray && indexPath.item < self.dataArray.count) {
-            CGFloat totalWidth = collectionView.bounds.size.width - 15;
-            NSInteger itemCount = self.dataArray.count;
-            CGFloat itemWidth = totalWidth / itemCount;
-            return CGSizeMake(itemWidth, 73);
-        }
-        return CGSizeMake(73, 73);
-    }
-    
-    return %orig;
+	if (self.longPressViewGroupModel && [self.longPressViewGroupModel isDYYYCustomGroup]) {
+		if (self.dataArray && indexPath.item < self.dataArray.count) {
+
+			NSInteger itemCount = self.dataArray.count;
+			CGFloat totalWidth = collectionView.bounds.size.width - 12 * (itemCount - 1);
+			CGFloat itemWidth = totalWidth / itemCount;
+			return CGSizeMake(itemWidth, 73);
+		}
+		return CGSizeMake(73, 73);
+	}
+
+	return %orig;
 }
 
 %end
