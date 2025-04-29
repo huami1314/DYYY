@@ -1597,7 +1597,7 @@
 	}
 }
 
-隐藏键盘ai
+//隐藏键盘ai
 // 隐藏父视图的子视图
 static void hideParentViewsSubviews(UIView *view) {
     if (!view) return;
