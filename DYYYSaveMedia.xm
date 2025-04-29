@@ -1,7 +1,6 @@
 #import "AwemeHeaders.h"
 #import "DYYYManager.h"
 
-#import "DYYYDubugTool.h"
 %hook AWECommentMediaDownloadConfigLivePhoto
 
 bool commentLivePhotoNotWaterMark = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYCommentLivePhotoNotWaterMark"];
