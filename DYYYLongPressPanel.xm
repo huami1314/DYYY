@@ -472,27 +472,6 @@
 
 %hook AWEModernLongPressHorizontalSettingCell
 
-- (void)setLongPressViewGroupModel:(AWELongPressPanelViewGroupModel *)groupModel {
-	%orig;
-
-	if (groupModel && [groupModel isDYYYCustomGroup]) {
-		[self setupCustomLayout];
-	}
-}
-%new
-- (void)setupCustomLayout {
-	if (self.collectionView) {
-		UICollectionViewFlowLayout *layout = (UICollectionViewFlowLayout *)self.collectionView.collectionViewLayout;
-		if (layout) {
-			layout.scrollDirection = UICollectionViewScrollDirectionHorizontal;
-
-			layout.minimumInteritemSpacing = 0;
-			layout.minimumLineSpacing = 0;
-
-			[self.collectionView setCollectionViewLayout:layout animated:NO];
-		}
-	}
-}
 - (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)layout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
 	if (self.longPressViewGroupModel && [self.longPressViewGroupModel isDYYYCustomGroup]) {
 		if (self.dataArray && indexPath.item < self.dataArray.count) {
@@ -505,18 +484,6 @@
 	}
 
 	return %orig;
-}
-
-%new
-- (CGFloat)widthForText:(NSString *)text {
-	if (!text || text.length == 0) {
-		return 0;
-	}
-
-	UIFont *font = [UIFont systemFontOfSize:12];
-	NSDictionary *attributes = @{NSFontAttributeName : font};
-	CGSize textSize = [text boundingRectWithSize:CGSizeMake(MAXFLOAT, 20) options:NSStringDrawingUsesLineFragmentOrigin attributes:attributes context:nil].size;
-	return textSize.width;
 }
 
 %end
@@ -556,28 +523,6 @@
 
 %hook AWEModernLongPressInteractiveCell
 
-- (void)setLongPressViewGroupModel:(AWELongPressPanelViewGroupModel *)groupModel {
-    %orig;
-    
-    if (groupModel && [groupModel isDYYYCustomGroup]) {
-        [self setupCustomLayout];
-    }
-}
-
-%new
-- (void)setupCustomLayout {
-    if (self.collectionView) {
-        UICollectionViewFlowLayout *layout = (UICollectionViewFlowLayout *)self.collectionView.collectionViewLayout;
-        if (layout) {
-            layout.scrollDirection = UICollectionViewScrollDirectionHorizontal;
-            layout.minimumInteritemSpacing = 0;
-            layout.minimumLineSpacing = 0;
-            
-            [self.collectionView setCollectionViewLayout:layout animated:NO];
-        }
-    }
-}
-
 - (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)layout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
     if (self.longPressViewGroupModel && [self.longPressViewGroupModel isDYYYCustomGroup]) {
         if (self.dataArray && indexPath.item < self.dataArray.count) {
@@ -590,37 +535,6 @@
     }
     
     return %orig;
-}
-
-%new
-- (CGFloat)widthForText:(NSString *)text {
-    if (!text || text.length == 0) {
-        return 0;
-    }
-    
-    UIFont *font = [UIFont systemFontOfSize:12];
-    NSDictionary *attributes = @{NSFontAttributeName: font};
-    CGSize textSize = [text boundingRectWithSize:CGSizeMake(MAXFLOAT, 20) 
-                                         options:NSStringDrawingUsesLineFragmentOrigin 
-                                      attributes:attributes 
-                                         context:nil].size;
-    return textSize.width;
-}
-
-- (void)layoutSubviews {
-    %orig;
-    
-    if (self.longPressViewGroupModel && [self.longPressViewGroupModel isDYYYCustomGroup]) {
-        self.collectionView.frame = self.contentView.bounds;
-    }
-}
-
-- (void)setUpUI {
-    %orig;
-    
-    if (self.longPressViewGroupModel && [self.longPressViewGroupModel isDYYYCustomGroup]) {
-        [self setupCustomLayout];
-    }
 }
 
 %end
