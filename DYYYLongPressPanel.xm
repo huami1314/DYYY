@@ -4,6 +4,10 @@
 #import "DYYYKeywordListView.h"
 #import "DYYYManager.h"
 
+%hook AWELongPressPanelViewGroupModel
+%property (nonatomic, assign) BOOL isDYYYCustomGroup;
+%end
+
 %hook AWEModernLongPressPanelTableViewController
 
 - (NSArray *)dataArray {
@@ -18,7 +22,7 @@
 	}
 
 	AWELongPressPanelViewGroupModel *newGroupModel = [[%c(AWELongPressPanelViewGroupModel) alloc] init];
-	[newGroupModel setIsDYYYCustomGroup:YES];
+	newGroupModel.isDYYYCustomGroup = YES;
 	newGroupModel.groupType = 12;
 	newGroupModel.isModern = YES;
 
@@ -436,7 +440,7 @@
 		NSRange range = NSMakeRange(i, MIN(maxPerGroup, viewModels.count - i));
 		NSArray<AWELongPressPanelBaseViewModel *> *subArr = [viewModels subarrayWithRange:range];
 		AWELongPressPanelViewGroupModel *groupModel = [[%c(AWELongPressPanelViewGroupModel) alloc] init];
-		[groupModel setIsDYYYCustomGroup:YES];
+		groupModel.isDYYYCustomGroup = YES;
 
 		// 如果是第二列（索引为1）且元素数量小于4个，则设置groupType为11
 		if (groupIndex == 1 && subArr.count < 4) {
@@ -451,21 +455,6 @@
 		groupIndex++;
 	}
 	return [customGroups arrayByAddingObjectsFromArray:originalArray];
-}
-
-%end
-
-%hook AWELongPressPanelViewGroupModel
-
-%new
-- (void)setIsDYYYCustomGroup:(BOOL)isCustom {
-	objc_setAssociatedObject(self, @selector(isDYYYCustomGroup), @(isCustom), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-}
-
-%new
-- (BOOL)isDYYYCustomGroup {
-	NSNumber *value = objc_getAssociatedObject(self, @selector(isDYYYCustomGroup));
-	return [value boolValue];
 }
 
 %end

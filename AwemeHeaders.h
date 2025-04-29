@@ -117,7 +117,6 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @property (nonatomic) BOOL hasMore;
 @property (nonatomic) BOOL isModern;
 @property (nonatomic) BOOL isDYYYCustomGroup;
-- (void)setIsDYYYCustomGroup:(BOOL)isCustom;
 @end
 
 @interface AWELongPressPanelManager : NSObject
