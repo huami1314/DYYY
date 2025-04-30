@@ -6,7 +6,6 @@
 
 #import "DYYYABTestHook.h"
 
-// 导入所有弹窗类
 #import "DYYYAboutDialogView.h"
 #import "DYYYCustomInputView.h"
 #import "DYYYIconOptionsDialogView.h"
@@ -1344,7 +1343,7 @@ static void showUserAgreementAlert() {
 			      @"detail" : @"",
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_eyeslash_outlined_16"},
-          		@{@"identifier" : @"DYYYHidekeyboardai",
+			    @{@"identifier" : @"DYYYHidekeyboardai",
 			      @"title" : @"隐藏键盘AI",
 			      @"detail" : @"",
 			      @"cellType" : @6,
@@ -1550,7 +1549,7 @@ static void showUserAgreementAlert() {
 		  enhanceSettingItem.isEnable = YES;
 		  enhanceSettingItem.cellTappedBlock = ^{
 		    // 创建增强设置二级界面的设置项
-			
+
 		    // 【长按面板设置】分类
 		    NSMutableArray<AWESettingItemModel *> *longPressItems = [NSMutableArray array];
 		    NSArray *longPressSettings = @[
@@ -1639,8 +1638,13 @@ static void showUserAgreementAlert() {
 			      @"detail" : @"",
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_removeimage_outlined_20"},
-			    @{@"identifier" : @"DYYYFourceDownloadEmotion",
+			    @{@"identifier" : @"DYYYForceDownloadEmotion",
 			      @"title" : @"保存评论区表情包",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_emoji_outlined"},
+			    @{@"identifier" : @"DYYYForceDownloadPreviewEmotion",
+			      @"title" : @"保存预览页表情包",
 			      @"detail" : @"",
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_emoji_outlined"}
@@ -1932,7 +1936,7 @@ static void showUserAgreementAlert() {
 		    // 【交互增强】分类
 		    NSMutableArray<AWESettingItemModel *> *interactionItems = [NSMutableArray array];
 		    NSArray *interactionSettings = @[
-				@{@"identifier" : @"DYYYCommentCopyText",
+			    @{@"identifier" : @"DYYYCommentCopyText",
 			      @"title" : @"长按评论复制文案",
 			      @"detail" : @"",
 			      @"cellType" : @6,
