@@ -487,6 +487,19 @@
             secondRowGroup.groupArr = secondRowButtons;
             [customGroups addObject:secondRowGroup];
         }
+		static BOOL hasProcessedArray = NO;
+		if ((originalArray.count > 0 && !hasProcessedArray) && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelDaily"]) {
+			NSMutableArray *modifiedArray = [originalArray mutableCopy];
+			AWELongPressPanelViewGroupModel *firstGroup = modifiedArray[0];
+			if (firstGroup.groupArr.count > 1) {
+				NSMutableArray *groupArray = [firstGroup.groupArr mutableCopy];
+				[groupArray removeObjectAtIndex:1];
+				firstGroup.groupArr = groupArray;
+				modifiedArray[0] = firstGroup;
+			}
+			originalArray = modifiedArray;
+			hasProcessedArray = YES;
+		}
         return [customGroups arrayByAddingObjectsFromArray:originalArray];
         }
         
