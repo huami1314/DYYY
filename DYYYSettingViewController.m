@@ -474,6 +474,10 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
         cell.textLabel.translatesAutoresizingMaskIntoConstraints = NO;
         [cell.textLabel.leadingAnchor constraintEqualToAnchor:cell.contentView.leadingAnchor constant:16].active = YES;
         [cell.textLabel.centerYAnchor constraintEqualToAnchor:cell.contentView.centerYAnchor].active = YES;
+        
+        UIView *selectedBackgroundView = [[UIView alloc] init];
+        selectedBackgroundView.backgroundColor = [UIColor colorWithRed:84/255.0 green:84/255.0 blue:84/255.0 alpha:1.0];
+        cell.selectedBackgroundView = selectedBackgroundView;
     }
     
     cell.textLabel.text = item.title;
