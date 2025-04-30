@@ -1344,7 +1344,7 @@ static void showUserAgreementAlert() {
 			      @"detail" : @"",
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_eyeslash_outlined_16"},
-			    @{@"identifier" : @"DYYYHidekeyboardai",
+          @{@"identifier" : @"DYYYHidekeyboardai",
 			      @"title" : @"隐藏键盘ai",
 			      @"detail" : @"",
 			      @"cellType" : @6,

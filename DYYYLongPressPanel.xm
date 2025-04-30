@@ -471,74 +471,63 @@
         [viewModels addObject:filterKeywords];
     }
 
-    // 没有任何按钮可显示时，直接返回原始数组
-    if (viewModels.count == 0) {
-        return originalArray;
-    }
-
-    // 创建自定义分组模型
-    NSMutableArray<AWELongPressPanelViewGroupModel *> *customGroups = [NSMutableArray array];
-    NSInteger totalButtons = viewModels.count;
-    
-    // 根据按钮总数确定每行的按钮数
-    NSInteger firstRowCount = 0;
-    NSInteger secondRowCount = 0;
-    
-    if (totalButtons >= 9) {
-        firstRowCount = 5;
-        secondRowCount = totalButtons - firstRowCount;
-    } else if (totalButtons == 8) {
-        firstRowCount = 4;
-        secondRowCount = 4;
-    } else if (totalButtons == 7) {
-        firstRowCount = 4;
-        secondRowCount = 3;
-    } else if (totalButtons == 6) {
-        firstRowCount = 3;
-        secondRowCount = 3;
-    } else if (totalButtons == 5) {
-        firstRowCount = 3;
-        secondRowCount = 2;
-    } else if (totalButtons == 4) {
-        firstRowCount = 2;
-        secondRowCount = 2;
-    } else if (totalButtons == 3) {
-        firstRowCount = 3;
-        secondRowCount = 0;
-    } else if (totalButtons <= 2) {
-        firstRowCount = totalButtons;
-        secondRowCount = 0;
-    }
-    
-    // 创建第一行
-    if (firstRowCount > 0) {
-        NSRange firstRowRange = NSMakeRange(0, firstRowCount);
-        NSArray<AWELongPressPanelBaseViewModel *> *firstRowButtons = [viewModels subarrayWithRange:firstRowRange];
+	NSMutableArray<AWELongPressPanelViewGroupModel *> *customGroups = [NSMutableArray array];
+        NSInteger totalButtons = viewModels.count;
+        // 根据按钮总数确定每行的按钮数
+        NSInteger firstRowCount = 0;
+        NSInteger secondRowCount = 0;
+        if (totalButtons >= 9) {
+            firstRowCount = 5;
+            secondRowCount = totalButtons - firstRowCount;
+        } else if (totalButtons == 8) {
+            firstRowCount = 4;
+            secondRowCount = 4;
+        } else if (totalButtons == 7) {
+            firstRowCount = 4;
+            secondRowCount = 3;
+        } else if (totalButtons == 6) {
+            firstRowCount = 4;
+            secondRowCount = 2;
+        } else if (totalButtons == 5) {
+            firstRowCount = 3;
+            secondRowCount = 2;
+        } else if (totalButtons == 4) {
+            firstRowCount = 2;
+            secondRowCount = 2;
+        } else if (totalButtons == 3) {
+            firstRowCount = 2;
+            secondRowCount = 1;
+        } else if (totalButtons <= 2) {
+            firstRowCount = totalButtons;
+            secondRowCount = 0;
+        }
+        // 创建第一行
+        if (firstRowCount > 0) {
+            NSRange firstRowRange = NSMakeRange(0, firstRowCount);
+            NSArray<AWELongPressPanelBaseViewModel *> *firstRowButtons = [viewModels subarrayWithRange:firstRowRange];
+            
+            AWELongPressPanelViewGroupModel *firstRowGroup = [[%c(AWELongPressPanelViewGroupModel) alloc] init];
+            firstRowGroup.isDYYYCustomGroup = YES;
+            firstRowGroup.groupType = (firstRowCount <= 3) ? 11 : 12;
+            firstRowGroup.isModern = YES;
+            firstRowGroup.groupArr = firstRowButtons;
+            [customGroups addObject:firstRowGroup];
+        }
+        // 创建第二行
+        if (secondRowCount > 0) {
+            NSRange secondRowRange = NSMakeRange(firstRowCount, secondRowCount);
+            NSArray<AWELongPressPanelBaseViewModel *> *secondRowButtons = [viewModels subarrayWithRange:secondRowRange];
+            
+            AWELongPressPanelViewGroupModel *secondRowGroup = [[%c(AWELongPressPanelViewGroupModel) alloc] init];
+            secondRowGroup.isDYYYCustomGroup = YES;
+            secondRowGroup.groupType = (secondRowCount <= 3) ? 11 : 12;
+            secondRowGroup.isModern = YES;
+            secondRowGroup.groupArr = secondRowButtons;
+            [customGroups addObject:secondRowGroup];
+        }
+        return [customGroups arrayByAddingObjectsFromArray:originalArray];
+        }
         
-        AWELongPressPanelViewGroupModel *firstRowGroup = [[%c(AWELongPressPanelViewGroupModel) alloc] init];
-        firstRowGroup.isDYYYCustomGroup = YES;
-        firstRowGroup.groupType = (firstRowCount <= 3) ? 11 : 12;
-        firstRowGroup.isModern = YES;
-        firstRowGroup.groupArr = firstRowButtons;
-        [customGroups addObject:firstRowGroup];
-    }
-    
-    // 创建第二行
-    if (secondRowCount > 0) {
-        NSRange secondRowRange = NSMakeRange(firstRowCount, secondRowCount);
-        NSArray<AWELongPressPanelBaseViewModel *> *secondRowButtons = [viewModels subarrayWithRange:secondRowRange];
-        
-        AWELongPressPanelViewGroupModel *secondRowGroup = [[%c(AWELongPressPanelViewGroupModel) alloc] init];
-        secondRowGroup.isDYYYCustomGroup = YES;
-        secondRowGroup.groupType = (secondRowCount <= 3) ? 11 : 12;
-        secondRowGroup.isModern = YES;
-        secondRowGroup.groupArr = secondRowButtons;
-        [customGroups addObject:secondRowGroup];
-    }
-    
-    return [customGroups arrayByAddingObjectsFromArray:originalArray];
-}
-
 %end
 
 // 修复Modern风格长按面板水平设置单元格的大小计算
