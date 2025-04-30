@@ -481,6 +481,9 @@
         } else if (totalButtons <= 4) {
             firstRowCount = totalButtons / 2;
             secondRowCount = totalButtons - firstRowCount;
+        } else if (totalButtons <= 5) {
+            firstRowCount = 3;
+            secondRowCount = totalButtons - firstRowCount;
         } else if (totalButtons <= 6) {
             firstRowCount = 4;
             secondRowCount = totalButtons - firstRowCount;

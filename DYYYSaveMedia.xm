@@ -109,45 +109,29 @@ static BOOL isDownloadFlied = NO;
 	BOOL DYYYForceDownloadPreviewEmotion = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYForceDownloadPreviewEmotion"];
 	if (DYYYForceDownloadPreviewEmotion) {
 		if (!objc_getAssociatedObject(self, &kHasSaveButtonKey)) {
-			// 创建保存按钮
 			UIButton *saveButton = [UIButton buttonWithType:UIButtonTypeSystem];
-
-			// 使用图标而非文字
 			UIImage *downloadIcon = [UIImage systemImageNamed:@"arrow.down.circle"];
 			[saveButton setImage:downloadIcon forState:UIControlStateNormal];
 			[saveButton setTintColor:[UIColor whiteColor]];
-
-			// 设置半透明背景
 			saveButton.backgroundColor = [UIColor colorWithRed:0.0 green:0.5 blue:0.9 alpha:0.5];
-			saveButton.titleLabel.font = [UIFont systemFontOfSize:12 weight:UIFontWeightMedium];
 
-			// 添加阴影效果
 			saveButton.layer.shadowColor = [UIColor blackColor].CGColor;
 			saveButton.layer.shadowOffset = CGSizeMake(0, 2);
 			saveButton.layer.shadowOpacity = 0.3;
 			saveButton.layer.shadowRadius = 3;
 
-			// 将按钮添加到主视图
 			saveButton.translatesAutoresizingMaskIntoConstraints = NO;
 			[self addSubview:saveButton];
-
-			// 设置大小和圆角
 			CGFloat buttonSize = 24.0;
 			saveButton.layer.cornerRadius = buttonSize / 2;
 
-			// 修改约束 - 放在右下角
 			[NSLayoutConstraint activateConstraints:@[
 				[saveButton.bottomAnchor constraintEqualToAnchor:self.bottomAnchor constant:-15], [saveButton.rightAnchor constraintEqualToAnchor:self.rightAnchor constant:-10],
 				[saveButton.widthAnchor constraintEqualToConstant:buttonSize], [saveButton.heightAnchor constraintEqualToConstant:buttonSize]
 			]];
 
-			// 确保用户交互已启用
 			saveButton.userInteractionEnabled = YES;
-
-			// 添加点击事件
 			[saveButton addTarget:self action:@selector(dyyy_saveButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
-
-			// 标记已添加按钮
 			objc_setAssociatedObject(self, &kHasSaveButtonKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 		}
 	}
