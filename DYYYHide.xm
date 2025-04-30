@@ -379,6 +379,17 @@
 }
 %end
 
+//隐藏我的添加朋友
+%hook AWEProfileNavigationButton
+- (void)setupUI {
+	
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideButton"]) {
+		return;
+	}
+	%orig;
+}
+%end
+
 // 隐藏分享给朋友提示
 %hook AWEPlayInteractionStrongifyShareContentView
 
