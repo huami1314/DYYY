@@ -470,41 +470,31 @@
 
         [viewModels addObject:filterKeywords];
     }
-
 	NSMutableArray<AWELongPressPanelViewGroupModel *> *customGroups = [NSMutableArray array];
         NSInteger totalButtons = viewModels.count;
         // 根据按钮总数确定每行的按钮数
         NSInteger firstRowCount = 0;
         NSInteger secondRowCount = 0;
-        if (totalButtons >= 9) {
+        
+        if (totalButtons <= 2) {
+            firstRowCount = totalButtons;
+        } else if (totalButtons <= 4) {
+            firstRowCount = totalButtons / 2;
+            secondRowCount = totalButtons - firstRowCount;
+        } else if (totalButtons <= 6) {
+            firstRowCount = 4;
+            secondRowCount = totalButtons - firstRowCount;
+        } else if (totalButtons <= 8) {
+            firstRowCount = 4;
+            secondRowCount = totalButtons - firstRowCount;
+        } else {
             firstRowCount = 5;
             secondRowCount = totalButtons - firstRowCount;
-        } else if (totalButtons == 8) {
-            firstRowCount = 4;
-            secondRowCount = 4;
-        } else if (totalButtons == 7) {
-            firstRowCount = 4;
-            secondRowCount = 3;
-        } else if (totalButtons == 6) {
-            firstRowCount = 4;
-            secondRowCount = 2;
-        } else if (totalButtons == 5) {
-            firstRowCount = 3;
-            secondRowCount = 2;
-        } else if (totalButtons == 4) {
-            firstRowCount = 2;
-            secondRowCount = 2;
-        } else if (totalButtons == 3) {
-            firstRowCount = 2;
-            secondRowCount = 1;
-        } else if (totalButtons <= 2) {
-            firstRowCount = totalButtons;
-            secondRowCount = 0;
         }
+        
         // 创建第一行
         if (firstRowCount > 0) {
-            NSRange firstRowRange = NSMakeRange(0, firstRowCount);
-            NSArray<AWELongPressPanelBaseViewModel *> *firstRowButtons = [viewModels subarrayWithRange:firstRowRange];
+            NSArray<AWELongPressPanelBaseViewModel *> *firstRowButtons = [viewModels subarrayWithRange:NSMakeRange(0, firstRowCount)];
             
             AWELongPressPanelViewGroupModel *firstRowGroup = [[%c(AWELongPressPanelViewGroupModel) alloc] init];
             firstRowGroup.isDYYYCustomGroup = YES;
@@ -513,10 +503,10 @@
             firstRowGroup.groupArr = firstRowButtons;
             [customGroups addObject:firstRowGroup];
         }
+        
         // 创建第二行
         if (secondRowCount > 0) {
-            NSRange secondRowRange = NSMakeRange(firstRowCount, secondRowCount);
-            NSArray<AWELongPressPanelBaseViewModel *> *secondRowButtons = [viewModels subarrayWithRange:secondRowRange];
+            NSArray<AWELongPressPanelBaseViewModel *> *secondRowButtons = [viewModels subarrayWithRange:NSMakeRange(firstRowCount, secondRowCount)];
             
             AWELongPressPanelViewGroupModel *secondRowGroup = [[%c(AWELongPressPanelViewGroupModel) alloc] init];
             secondRowGroup.isDYYYCustomGroup = YES;
@@ -524,21 +514,23 @@
             secondRowGroup.isModern = YES;
             secondRowGroup.groupArr = secondRowButtons;
             [customGroups addObject:secondRowGroup];
-			
         }
-		if ((originalArray.count > 0 && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelDaily"])) {
-			NSMutableArray *modifiedArray = [originalArray mutableCopy];
-			AWELongPressPanelViewGroupModel *firstGroup = modifiedArray[0];
-			if (firstGroup.groupArr.count > 1) {
-				NSMutableArray *groupArray = [firstGroup.groupArr mutableCopy];
-				if ([[groupArray[1] valueForKey:@"describeString"] isEqualToString:@"转发到日常"]) {
-					[groupArray removeObjectAtIndex:1];
-				}
-				firstGroup.groupArr = groupArray;
-				modifiedArray[0] = firstGroup;
-			}
-			originalArray = modifiedArray;
-		}
+        
+        // 处理日常转发按钮
+        if (originalArray.count > 0 && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelDaily"]) {
+            NSMutableArray *modifiedArray = [originalArray mutableCopy];
+            AWELongPressPanelViewGroupModel *firstGroup = modifiedArray[0];
+            if (firstGroup.groupArr.count > 1) {
+                NSMutableArray *groupArray = [firstGroup.groupArr mutableCopy];
+                if ([[groupArray[1] valueForKey:@"describeString"] isEqualToString:@"转发到日常"]) {
+                    [groupArray removeObjectAtIndex:1];
+                }
+                firstGroup.groupArr = groupArray;
+                modifiedArray[0] = firstGroup;
+            }
+            originalArray = modifiedArray;
+        }
+        
         return [customGroups arrayByAddingObjectsFromArray:originalArray];
 }
 %end
