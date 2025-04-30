@@ -619,8 +619,11 @@ typedef NS_ENUM(NSInteger, MediaType) {
 
 @interface AWEUserActionSheetView : UIView
 - (instancetype)init;
+- (UIView *)containerView;
 - (void)setActions:(NSArray *)actions;
 - (void)show;
+- (void)applyBlurEffectAndWhiteText;
+- (void)setTextColorWhiteRecursivelyInView:(UIView *)view;
 @end
 
 @interface AWEUserSheetAction : NSObject
