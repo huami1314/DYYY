@@ -53,7 +53,7 @@ export LOGOS_DEFAULT_GENERATOR=internal
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 
-THEOS_DEVICE_IP = 192.168.15.246
+THEOS_DEVICE_IP = 192.168.31.222
 THEOS_DEVICE_PORT = 22
 
 # 清理 packages 目录

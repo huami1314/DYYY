@@ -524,10 +524,23 @@
             secondRowGroup.isModern = YES;
             secondRowGroup.groupArr = secondRowButtons;
             [customGroups addObject:secondRowGroup];
+			
         }
+		if ((originalArray.count > 0 && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelDaily"])) {
+			NSMutableArray *modifiedArray = [originalArray mutableCopy];
+			AWELongPressPanelViewGroupModel *firstGroup = modifiedArray[0];
+			if (firstGroup.groupArr.count > 1) {
+				NSMutableArray *groupArray = [firstGroup.groupArr mutableCopy];
+				if ([[groupArray[1] valueForKey:@"describeString"] isEqualToString:@"转发到日常"]) {
+					[groupArray removeObjectAtIndex:1];
+				}
+				firstGroup.groupArr = groupArray;
+				modifiedArray[0] = firstGroup;
+			}
+			originalArray = modifiedArray;
+		}
         return [customGroups arrayByAddingObjectsFromArray:originalArray];
-        }
-        
+}
 %end
 
 // 修复Modern风格长按面板水平设置单元格的大小计算
