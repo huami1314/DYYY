@@ -2038,16 +2038,21 @@ static void showUserAgreementAlert() {
 						@"detail" : @"",
 						@"cellType" : @6,
 						@"imageName" : @"ic_boxarrowdown_outlined"},
-					      @{@"identifier" : @"DYYYDoubleInterfaceDownload",
-						@"title" : @"接口保存",
-						@"detail" : @"",
-						@"cellType" : @6,
-						@"imageName" : @"ic_cloudarrowdown_outlined_20"},
-					      @{@"identifier" : @"DYYYDoubleTapCopyDesc",
-						@"title" : @"复制文案",
-						@"detail" : @"",
-						@"cellType" : @6,
-						@"imageName" : @"ic_rectangleonrectangleup_outlined_20"},
+
+					      @{
+						      @"identifier" : @"DYYYDoubleInterfaceDownload",
+						      @"title" : @"接口保存",
+						      @"detail" : @"",
+						      @"cellType" : @6,
+						      @"imageName" : @"ic_cloudarrowdown_outlined_20"
+					      },
+					      @{
+						      @"identifier" : @"DYYYDoubleTapCopyDesc",
+						      @"title" : @"复制文案",
+						      @"detail" : @"",
+						      @"cellType" : @6,
+						      @"imageName" : @"ic_rectangleonrectangleup_outlined_20"
+					      },
 					      @{@"identifier" : @"DYYYDoubleTapComment",
 						@"title" : @"打开评论",
 						@"detail" : @"",
@@ -2058,11 +2063,15 @@ static void showUserAgreementAlert() {
 						@"detail" : @"",
 						@"cellType" : @6,
 						@"imageName" : @"ic_heart_outlined_20"},
-					      @{@"identifier" : @"DYYYDoubleTapshowDislikeOnVideo",
-						@"title" : @"长按面板",
-						@"detail" : @"",
-						@"cellType" : @6,
-						@"imageName" : @"ic_xiaoxihuazhonghua_outlined_20"},
+
+					      @{
+						      @"identifier" : @"DYYYDoubleTapshowDislikeOnVideo",
+						      @"title" : @"长按面板",
+						      @"detail" : @"",
+						      @"cellType" : @6,
+						      @"imageName" : @"ic_xiaoxihuazhonghua_outlined_20"
+					      },
+
 					      @{@"identifier" : @"DYYYDoubleTapshowSharePanel",
 						@"title" : @"分享视频",
 						@"detail" : @"",
@@ -2559,83 +2568,77 @@ static void showUserAgreementAlert() {
 		  cleanupSection.sectionHeaderHeight = 40;
 		  cleanupSection.type = 0;
 		  NSMutableArray<AWESettingItemModel *> *cleanupItems = [NSMutableArray array];
+		  AWESettingItemModel *cleanSettingsItem = [[%c(AWESettingItemModel) alloc] init];
+		  cleanSettingsItem.identifier = @"DYYYCleanSettings";
+		  cleanSettingsItem.title = @"清除设置";
+		  cleanSettingsItem.detail = @"";
+		  cleanSettingsItem.type = 0;
+		  cleanSettingsItem.svgIconImageName = @"ic_trash_outlined_20";
+		  cleanSettingsItem.cellType = 26;
+		  cleanSettingsItem.colorStyle = 0;
+		  cleanSettingsItem.isEnable = YES;
+		  cleanSettingsItem.cellTappedBlock = ^{
+		    [DYYYBottomAlertView showAlertWithTitle:@"清除设置"
+			message:@"请选择要清除的设置类型"
+			cancelButtonText:@"清除抖音设置"
+			confirmButtonText:@"清除插件设置"
+			cancelAction:^{
+			  // 清除抖音设置的确认对话框
+			  [DYYYBottomAlertView showAlertWithTitle:@"清除抖音设置"
+							  message:@"确定要清除抖音所有设置吗？\n这将无法恢复，应用会自动退出！"
+						 cancelButtonText:@"取消"
+						confirmButtonText:@"确定"
+						     cancelAction:nil
+						    confirmAction:^{
+						      NSArray *paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
+						      if (paths.count > 0) {
+							      NSString *preferencesPath = [paths.firstObject stringByAppendingPathComponent:@"Preferences"];
+							      NSString *bundleIdentifier = [[NSBundle mainBundle] bundleIdentifier];
+							      NSString *plistPath = [preferencesPath stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.plist", bundleIdentifier]];
 
-		  AWESettingItemModel *cleanPluginSettingsItem = [[%c(AWESettingItemModel) alloc] init];
-		  cleanPluginSettingsItem.identifier = @"DYYYCleanPluginSettings";
-		  cleanPluginSettingsItem.title = @"清除插件设置";
-		  cleanPluginSettingsItem.detail = @"";
-		  cleanPluginSettingsItem.type = 0;
-		  cleanPluginSettingsItem.svgIconImageName = @"ic_trash_outlined_20";
-		  cleanPluginSettingsItem.cellType = 26;
-		  cleanPluginSettingsItem.colorStyle = 0;
-		  cleanPluginSettingsItem.isEnable = YES;
-		  cleanPluginSettingsItem.cellTappedBlock = ^{
-		    [DYYYBottomAlertView showAlertWithTitle:@"清除插件设置"
-						    message:@"确定要清除所有插件设置吗？\n这将无法恢复！"
-					   cancelButtonText:@"取消"
-					  confirmButtonText:@"确定"
-					       cancelAction:nil
-					      confirmAction:^{
-						// 获取所有以DYYY开头的NSUserDefaults键值并清除
-						NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-						NSDictionary *allDefaults = [defaults dictionaryRepresentation];
+							      NSError *error = nil;
+							      [[NSFileManager defaultManager] removeItemAtPath:plistPath error:&error];
 
-						for (NSString *key in allDefaults.allKeys) {
-							if ([key hasPrefix:@"DYYY"]) {
-								[defaults removeObjectForKey:key];
-							}
-						}
-						[defaults synchronize];
+							      if (!error) {
+								      [DYYYManager showToast:@"抖音设置已清除，应用即将退出"];
 
-						// 显示成功提示
-						[DYYYManager showToast:@"插件设置已清除，请重启应用"];
-					      }];
+								      dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+									exit(0);
+								      });
+							      } else {
+								      [DYYYManager showToast:[NSString stringWithFormat:@"清除失败: %@", error.localizedDescription]];
+							      }
+						      }
+						    }];
+			}
+			confirmAction:^{
+			  // 清除插件设置的确认对话框
+			  [DYYYBottomAlertView showAlertWithTitle:@"清除插件设置"
+							  message:@"确定要清除所有插件设置吗？\n这将无法恢复！"
+						 cancelButtonText:@"取消"
+						confirmButtonText:@"确定"
+						     cancelAction:nil
+						    confirmAction:^{
+						      // 获取所有以DYYY开头的NSUserDefaults键值并清除
+						      NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+						      NSDictionary *allDefaults = [defaults dictionaryRepresentation];
+
+						      for (NSString *key in allDefaults.allKeys) {
+							      if ([key hasPrefix:@"DYYY"]) {
+								      [defaults removeObjectForKey:key];
+							      }
+						      }
+						      [defaults synchronize];
+
+						      // 显示成功提示
+						      [DYYYManager showToast:@"插件设置已清除，请重启应用"];
+						    }];
+			}];
 		  };
-		  [cleanupItems addObject:cleanPluginSettingsItem];
-
-		  AWESettingItemModel *cleanAwemeSettingsItem = [[%c(AWESettingItemModel) alloc] init];
-		  cleanAwemeSettingsItem.identifier = @"DYYYCleanAwemeSettings";
-		  cleanAwemeSettingsItem.title = @"清除抖音设置";
-		  cleanAwemeSettingsItem.detail = @"";
-		  cleanAwemeSettingsItem.type = 0;
-		  cleanAwemeSettingsItem.svgIconImageName = @"ic_trash_outlined_20";
-		  cleanAwemeSettingsItem.cellType = 26;
-		  cleanAwemeSettingsItem.colorStyle = 0;
-		  cleanAwemeSettingsItem.isEnable = YES;
-		  cleanAwemeSettingsItem.cellTappedBlock = ^{
-		    [DYYYBottomAlertView showAlertWithTitle:@"清除抖音设置"
-						    message:@"确定要清除抖音所有设置吗？\n这将无法恢复，应用会自动退出！"
-					   cancelButtonText:@"取消"
-					  confirmButtonText:@"确定"
-					       cancelAction:nil
-					      confirmAction:^{
-						NSArray *paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
-						if (paths.count > 0) {
-							NSString *preferencesPath = [paths.firstObject stringByAppendingPathComponent:@"Preferences"];
-							NSString *bundleIdentifier = [[NSBundle mainBundle] bundleIdentifier];
-							NSString *plistPath = [preferencesPath stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.plist", bundleIdentifier]];
-
-							NSError *error = nil;
-							[[NSFileManager defaultManager] removeItemAtPath:plistPath error:&error];
-
-							if (!error) {
-								[DYYYManager showToast:@"抖音设置已清除，应用即将退出"];
-
-								dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-								  exit(0);
-								});
-							} else {
-								[DYYYManager showToast:[NSString stringWithFormat:@"清除失败: %@", error.localizedDescription]];
-							}
-						}
-					      }];
-		  };
-
-		  [cleanupItems addObject:cleanAwemeSettingsItem];
-
+		  [cleanupItems addObject:cleanSettingsItem];
 		  AWESettingItemModel *cleanCacheItem = [[%c(AWESettingItemModel) alloc] init];
 		  cleanCacheItem.identifier = @"DYYYCleanCache";
-		  cleanCacheItem.title = @"清理缓存垃圾";
+		  cleanCacheItem.title = @"清理缓存";
 		  cleanCacheItem.detail = @"";
 		  cleanCacheItem.type = 0;
 		  cleanCacheItem.svgIconImageName = @"ic_broom_outlined";
@@ -2644,7 +2647,7 @@ static void showUserAgreementAlert() {
 		  cleanCacheItem.isEnable = YES;
 
 		  cleanCacheItem.cellTappedBlock = ^{
-		    [DYYYBottomAlertView showAlertWithTitle:@"清理缓存垃圾"
+		    [DYYYBottomAlertView showAlertWithTitle:@"清理缓存"
 						    message:@"确定要清理缓存吗？\n这将删除临时文件和缓存"
 					   cancelButtonText:@"取消"
 					  confirmButtonText:@"确定"
