@@ -2105,31 +2105,39 @@ static CGFloat currentScale = 1.0;
 }
 %end
 
-// 改顶栏标题
-%hook UILabel
+// 设置修改顶栏标题
+%hook AWEHPTopTabItemTextContentView
 
 - (void)layoutSubviews {
-	%orig;
+    %orig;
 
-	if ([self.superview isKindOfClass:NSClassFromString(@"AWEHPTopTabItemTextContentView")]) {
-		NSString *filterKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYModifyTopTabText"];
+    NSString *topTitleConfig = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYModifyTopTabText"];
+    if (topTitleConfig.length == 0) return;
 
-		if (filterKeywords && [filterKeywords length] > 0) {
-			NSArray *keywordsArray = [filterKeywords componentsSeparatedByString:@"#"];
-			NSString *originalText = self.text;
-			for (NSString *keyword in keywordsArray) {
-				// 每个标题以 "=" 修改，前半部分是原始文本，后半部分是替换后的文本
-				NSArray *parts = [keyword componentsSeparatedByString:@"="];
-				if (parts.count == 2) {
-					NSString *oldKeyword = parts[0];
-					NSString *newKeyword = parts[1];
-					if ([originalText containsString:oldKeyword]) {
-						self.text = [originalText stringByReplacingOccurrencesOfString:oldKeyword withString:newKeyword];
-					}
-				}
-			}
-		}
-	}
+    NSArray *titlePairs = [topTitleConfig componentsSeparatedByString:@"#"];
+
+    NSString *accessibilityLabel = nil;
+    if ([self.superview respondsToSelector:@selector(accessibilityLabel)]) {
+        accessibilityLabel = self.superview.accessibilityLabel;
+    }
+    if (accessibilityLabel.length == 0) return;
+
+    for (NSString *pair in titlePairs) {
+        NSArray *components = [pair componentsSeparatedByString:@"="];
+        if (components.count != 2) continue;
+
+        NSString *originalTitle = components[0];
+        NSString *newTitle = components[1];
+
+        if ([accessibilityLabel isEqualToString:originalTitle]) {
+            if ([self respondsToSelector:@selector(setContentText:)]) {
+                [self setContentText:newTitle];
+            } else {
+                [self setValue:newTitle forKey:@"contentText"];
+            }
+            break;
+        }
+    }
 }
 
 %end
