@@ -1136,8 +1136,12 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 
 		// 获取显示样式设置
 		NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
-		BOOL showRemainingTime = [scheduleStyle isEqualToString:@"进度条右侧剩余"];
-		BOOL showCompleteTime = [scheduleStyle isEqualToString:@"进度条右侧完整"];
+		BOOL showRemainingTimeRight  = [scheduleStyle isEqualToString:@"进度条右侧剩余"];
+		BOOL showCompleteTimeRight   = [scheduleStyle isEqualToString:@"进度条右侧完整"];
+		BOOL showRemainingTimeLeft   = [scheduleStyle isEqualToString:@"进度条左侧剩余"];
+		BOOL showCompleteTimeLeft    = [scheduleStyle isEqualToString:@"进度条左侧完整"];
+		BOOL showRemainingTime = showRemainingTimeRight || showRemainingTimeLeft;
+    	BOOL showCompleteTime  = showCompleteTimeRight  || showCompleteTimeLeft;
 
 		// 获取用户设置的时间标签颜色
 		NSString *labelColorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYProgressLabelColor"];
@@ -1145,8 +1149,8 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 		if (labelColorHex && labelColorHex.length > 0) {
 			labelColor = [DYYYManager colorWithHexString:labelColorHex];
 		}
-
-		// 只有在非"进度条右侧剩余"和非"进度条右侧完整"模式时创建左侧时间标签
+		
+		// 只有在非"进度条剩余"和非"进度条完整"模式时创建左侧时间标签
 		if (!showRemainingTime && !showCompleteTime) {
 			// 创建左侧时间标签
 			UILabel *leftLabel = [[UILabel alloc] init];
@@ -1162,11 +1166,21 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 		// 创建右侧时间标签
 		UILabel *rightLabel = [[UILabel alloc] init];
 		if (showCompleteTime) {
-			rightLabel.frame = CGRectMake(sliderFrame.origin.x + sliderFrame.size.width - 50, sliderFrame.origin.y + verticalOffset, 50, 15);
-			// 修改这里：始终使用 00:00/时长 的格式
+			if(showCompleteTimeRight){
+				rightLabel.frame = CGRectMake(sliderFrame.origin.x + sliderFrame.size.width - 50, sliderFrame.origin.y + verticalOffset, 50, 15);
+				// 修改这里：始终使用 00:00/时长 的格式
+			}
+			else{
+				rightLabel.frame = CGRectMake(sliderFrame.origin.x, sliderFrame.origin.y + verticalOffset, 50, 15);
+			}
 			[rightLabel setText:[NSString stringWithFormat:@"00:00/%@", duration]];
 		} else {
-			rightLabel.frame = CGRectMake(sliderFrame.origin.x + sliderFrame.size.width - 23, sliderFrame.origin.y + verticalOffset, 50, 15);
+			if(showRemainingTimeRight){
+				rightLabel.frame = CGRectMake(sliderFrame.origin.x + sliderFrame.size.width - 23, sliderFrame.origin.y + verticalOffset, 50, 15);
+			}
+			else{
+				rightLabel.frame = CGRectMake(sliderFrame.origin.x, sliderFrame.origin.y + verticalOffset, 50, 15);
+			}
 			[rightLabel setText:showRemainingTime ? @"00:00" : duration];
 		}
 		rightLabel.backgroundColor = [UIColor clearColor];
@@ -1236,8 +1250,12 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 
 		// 获取显示样式设置
 		NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
-		BOOL showRemainingTime = [scheduleStyle isEqualToString:@"进度条右侧剩余"];
-		BOOL showCompleteTime = [scheduleStyle isEqualToString:@"进度条右侧完整"];
+		BOOL showRemainingTimeRight  = [scheduleStyle isEqualToString:@"进度条右侧剩余"];
+		BOOL showCompleteTimeRight   = [scheduleStyle isEqualToString:@"进度条右侧完整"];
+		BOOL showRemainingTimeLeft   = [scheduleStyle isEqualToString:@"进度条左侧剩余"];
+		BOOL showCompleteTimeLeft    = [scheduleStyle isEqualToString:@"进度条左侧完整"];
+		BOOL showRemainingTime = showRemainingTimeRight || showRemainingTimeLeft;
+    	BOOL showCompleteTime  = showCompleteTimeRight  || showCompleteTimeLeft;
 
 		// 如果检测到时间
 		if (arg1 > 0 && leftLabel) {
