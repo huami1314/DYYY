@@ -737,27 +737,21 @@
 				}
 
 				if (hasImageView) {
-					// 默认隐藏背景
-					BOOL shouldShowBackground = NO;
+					BOOL shouldShowBackground = YES;
 
 					// 获取当前选中的索引
 					NSInteger selectedIndex = self.yy_viewController.selectedIndex;
-					// 如果索引有效，检查当前选中的是什么类型的按钮
-					if (selectedIndex >= 0 && selectedIndex < buttonTypes.count) {
-						NSString *selectedType = buttonTypes[selectedIndex];
-
-						if ([selectedType isEqualToString:@"message"] || [selectedType isEqualToString:@"profile"]) {
-							shouldShowBackground = YES;
-						} 
+					// 如果索引非0，不隐藏背景
+					if (selectedIndex != 0) {
+						shouldShowBackground = NO;
 					}
-					subview.hidden = !shouldShowBackground;
+					subview.hidden = shouldShowBackground;
 					break;
 				}
 			}
 		}
-	} else {
 	}
-// 隐藏分隔虾线
+    // 隐藏分隔虾线
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
 				for (UIView *subview in self.subviews) {
 					if (![subview isKindOfClass:[UIView class]]) continue;
@@ -770,7 +764,6 @@
 					}
 				}
 			}
-// 隐藏分割虾线结束
 }
 
 %end
