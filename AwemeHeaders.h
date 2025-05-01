@@ -872,3 +872,16 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @property (nonatomic, strong) AWEIMEmoticonModel *model;
 - (void)dyyy_saveButtonTapped:(id)sender;
 @end
+
+// 设置修改顶栏标题
+@interface AWEHPTopTabItemTextContentView : UIView
+- (void)setContentText:(NSString *)text;
+@end
+
+// 直播间商品信息
+@interface IESECLivePluginLayoutView : UIView
+@end
+
+// 直播间点赞动画
+@interface HTSLiveDiggView : UIView
+@end

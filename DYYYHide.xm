@@ -1433,6 +1433,27 @@
 }
 %end
 
+// 隐藏直播间商品信息
+%hook IESECLivePluginLayoutView
+- (void)layoutSubviews {
+  %orig;
+  if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveGoodsMsg"]) {
+    [self removeFromSuperview];
+  }
+}
+%end
+
+// 隐藏直播间点赞动画
+%hook HTSLiveDiggView
+- (void)setIconImageView:(UIImageView *)arg1 {
+  if (DYYYGetBool(@"DYYYHideLiveLikeAnimation")) {
+    %orig(nil); 
+  } else {
+    %orig(arg1);
+  }
+}
+%end
+
 // 屏蔽青少年模式弹窗
 %hook AWEUIAlertView
 - (void)show {

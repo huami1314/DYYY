@@ -1409,6 +1409,16 @@ static void showUserAgreementAlert() {
 			      @"detail" : @"",
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_eyeslash_outlined_16"},
+			    @{@"identifier" : @"DYYYHideLiveGoodsMsg",
+			      @"title" : @"隐藏商品信息",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_eyeslash_outlined_16"},
+			    @{@"identifier" : @"DYYYHideLiveLikeAnimation",
+			      @"title" : @"隐藏点赞动画",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_eyeslash_outlined_16"},
 			    @{@"identifier" : @"DYYYHideCellularAlert",
 			      @"title" : @"隐藏流量提醒",
 			      @"detail" : @"",
@@ -2028,6 +2038,7 @@ static void showUserAgreementAlert() {
 						@"detail" : @"",
 						@"cellType" : @6,
 						@"imageName" : @"ic_boxarrowdown_outlined"},
+
 					      @{
 						      @"identifier" : @"DYYYDoubleInterfaceDownload",
 						      @"title" : @"接口保存",
@@ -2052,6 +2063,7 @@ static void showUserAgreementAlert() {
 						@"detail" : @"",
 						@"cellType" : @6,
 						@"imageName" : @"ic_heart_outlined_20"},
+
 					      @{
 						      @"identifier" : @"DYYYDoubleTapshowDislikeOnVideo",
 						      @"title" : @"长按面板",
@@ -2059,6 +2071,7 @@ static void showUserAgreementAlert() {
 						      @"cellType" : @6,
 						      @"imageName" : @"ic_xiaoxihuazhonghua_outlined_20"
 					      },
+
 					      @{@"identifier" : @"DYYYDoubleTapshowSharePanel",
 						@"title" : @"分享视频",
 						@"detail" : @"",
