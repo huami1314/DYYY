@@ -1449,50 +1449,59 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 		label.font = originalFont;
 	}
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnabsuijiyanse"]) {
-        // 随机生成3个颜色，suiji
-        UIColor *color1 = [UIColor colorWithRed:(CGFloat)arc4random_uniform(256) / 255.0 green:(CGFloat)arc4random_uniform(256) / 255.0 blue:(CGFloat)arc4random_uniform(256) / 255.0 alpha:1.0];
-        UIColor *color2 = [UIColor colorWithRed:(CGFloat)arc4random_uniform(256) / 255.0 green:(CGFloat)arc4random_uniform(256) / 255.0 blue:(CGFloat)arc4random_uniform(256) / 255.0 alpha:1.0];
-        UIColor *color3 = [UIColor colorWithRed:(CGFloat)arc4random_uniform(256) / 255.0 green:(CGFloat)arc4random_uniform(256) / 255.0 blue:(CGFloat)arc4random_uniform(256) / 255.0 alpha:1.0];
-	    
-        NSMutableAttributedString *attributedText = [[NSMutableAttributedString alloc] initWithString:label.text];
-        CFIndex length = [attributedText length];
-        for (CFIndex i = 0; i < length; i++) {
-            CGFloat progress = (CGFloat)i / (length == 0 ? 1 : length - 1);
-	    
-            UIColor *startColor;
-            UIColor *endColor;
-            CGFloat subProgress;
-	    
-            if (progress < 0.5) {
-                startColor = color1;
-                endColor = color2;
-                subProgress = progress * 2;
-            } else {
-                startColor = color2;
-                endColor = color3;
-                subProgress = (progress - 0.5) * 2;
-            }
-	    
-            CGFloat startRed, startGreen, startBlue, startAlpha;
-            CGFloat endRed, endGreen, endBlue, endAlpha;
-            [startColor getRed:&startRed green:&startGreen blue:&startBlue alpha:&startAlpha];
-            [endColor getRed:&endRed green:&endGreen blue:&endBlue alpha:&endAlpha];
-	    
-            CGFloat red = startRed + (endRed - startRed) * subProgress;
-            CGFloat green = startGreen + (endGreen - startGreen) * subProgress;
-            CGFloat blue = startBlue + (endBlue - startBlue) * subProgress;
-            CGFloat alpha = startAlpha + (endAlpha - startAlpha) * subProgress;
-	    
-            UIColor *currentColor = [UIColor colorWithRed:red green:green blue:blue alpha:alpha];
-            [attributedText addAttribute:NSForegroundColorAttributeName value:currentColor range:NSMakeRange(i, 1)];
-        }
-	    
-        label.attributedText = attributedText;
+		// 随机生成3个颜色，suiji
+		UIColor *color1 = [UIColor colorWithRed:(CGFloat)arc4random_uniform(256) / 255.0
+						  green:(CGFloat)arc4random_uniform(256) / 255.0
+						   blue:(CGFloat)arc4random_uniform(256) / 255.0
+						  alpha:1.0];
+		UIColor *color2 = [UIColor colorWithRed:(CGFloat)arc4random_uniform(256) / 255.0
+						  green:(CGFloat)arc4random_uniform(256) / 255.0
+						   blue:(CGFloat)arc4random_uniform(256) / 255.0
+						  alpha:1.0];
+		UIColor *color3 = [UIColor colorWithRed:(CGFloat)arc4random_uniform(256) / 255.0
+						  green:(CGFloat)arc4random_uniform(256) / 255.0
+						   blue:(CGFloat)arc4random_uniform(256) / 255.0
+						  alpha:1.0];
+
+		NSMutableAttributedString *attributedText = [[NSMutableAttributedString alloc] initWithString:label.text];
+		CFIndex length = [attributedText length];
+		for (CFIndex i = 0; i < length; i++) {
+			CGFloat progress = (CGFloat)i / (length == 0 ? 1 : length - 1);
+
+			UIColor *startColor;
+			UIColor *endColor;
+			CGFloat subProgress;
+
+			if (progress < 0.5) {
+				startColor = color1;
+				endColor = color2;
+				subProgress = progress * 2;
+			} else {
+				startColor = color2;
+				endColor = color3;
+				subProgress = (progress - 0.5) * 2;
+			}
+
+			CGFloat startRed, startGreen, startBlue, startAlpha;
+			CGFloat endRed, endGreen, endBlue, endAlpha;
+			[startColor getRed:&startRed green:&startGreen blue:&startBlue alpha:&startAlpha];
+			[endColor getRed:&endRed green:&endGreen blue:&endBlue alpha:&endAlpha];
+
+			CGFloat red = startRed + (endRed - startRed) * subProgress;
+			CGFloat green = startGreen + (endGreen - startGreen) * subProgress;
+			CGFloat blue = startBlue + (endBlue - startBlue) * subProgress;
+			CGFloat alpha = startAlpha + (endAlpha - startAlpha) * subProgress;
+
+			UIColor *currentColor = [UIColor colorWithRed:red green:green blue:blue alpha:alpha];
+			[attributedText addAttribute:NSForegroundColorAttributeName value:currentColor range:NSMakeRange(i, 1)];
+		}
+
+		label.attributedText = attributedText;
 	} else {
-	    NSString *labelColor = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYLabelColor"];
-	    if (labelColor.length > 0) {
-	    	label.textColor = [DYYYManager colorWithHexString:labelColor];
-	    }
+		NSString *labelColor = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYLabelColor"];
+		if (labelColor.length > 0) {
+			label.textColor = [DYYYManager colorWithHexString:labelColor];
+		}
 	}
 	return label;
 }
@@ -1794,7 +1803,6 @@ static CGFloat currentScale = 1.0;
 
 %end
 
-
 // 去除启动视频广告
 %hook AWEAwesomeSplashFeedCellOldAccessoryView
 
@@ -1824,6 +1832,9 @@ static CGFloat currentScale = 1.0;
 // 获取资源的地址
 %hook AWEURLModel
 %new - (NSURL *)getDYYYSrcURLDownload {
+	;
+	;
+	;
 	;
 	;
 	NSURL *bestURL;
@@ -1878,7 +1889,6 @@ static CGFloat currentScale = 1.0;
 }
 
 %end
-
 
 // 应用内推送毛玻璃效果
 %hook AWEInnerNotificationWindow
@@ -1966,9 +1976,7 @@ static CGFloat currentScale = 1.0;
 
 	[self clearBackgroundRecursivelyInView:containerView];
 
-	if (isDarkMode) {
-		[self setLabelsColorWhiteInView:containerView];
-	}
+	[self setLabelsColorWhiteInView:containerView];
 }
 
 %new
@@ -2000,84 +2008,81 @@ static CGFloat currentScale = 1.0;
 
 %end
 
-//开启自动背景切换
+// 开启自动背景切换
 %hook AWESettingThemeManager
- 
+
 // 控制自动主题开关状态
 - (BOOL)isAutoChangeEnable {
-     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableAutoTheme"]) {
-         return YES; // 强制启用自动主题
-     }
-     return %orig; // 保持原始逻辑
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableAutoTheme"]) {
+		return YES; // 强制启用自动主题
+	}
+	return %orig; // 保持原始逻辑
 }
- 
+
 // 控制自动切换主题行为
 - (void)startAutoChangeThemeCanRequest:(BOOL)arg1 {
-     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableAutoTheme"]) {
-         BOOL newArg = YES; // 创建新变量避免直接修改参数
-         %orig(newArg);     // 调用原始方法并传入新参数
-         return;
-     }
-     %orig(arg1); // 保持原始参数调用
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableAutoTheme"]) {
+		BOOL newArg = YES;	  // 创建新变量避免直接修改参数
+		%orig(newArg); // 调用原始方法并传入新参数
+		return;
+	}
+	%orig(arg1); // 保持原始参数调用
 }
- 
+
 %end
 
-// 为 AWEUserActionSheetView 添加毛玻璃效果和白色文字
+// 为 AWEUserActionSheetView 添加毛玻璃效果
 %hook AWEUserActionSheetView
 
 - (void)layoutSubviews {
-    %orig;
-    [self applyBlurEffectAndWhiteText];
+	%orig;
+	[self applyBlurEffectAndWhiteText];
 }
-
-
 
 %new
 - (void)applyBlurEffectAndWhiteText {
-    // 应用毛玻璃效果到容器视图
-    if (self.containerView) {
-        self.containerView.backgroundColor = [UIColor clearColor];
-        
-        for (UIView *subview in self.containerView.subviews) {
-            if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == 9999) {
-                [subview removeFromSuperview];
-            }
-        }
+	// 应用毛玻璃效果到容器视图
+	if (self.containerView) {
+		self.containerView.backgroundColor = [UIColor clearColor];
 
-        UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
-        UIVisualEffectView *blurEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
-        blurEffectView.frame = self.containerView.bounds;
-        blurEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-        blurEffectView.alpha = 0.85; 
-        blurEffectView.tag = 9999;
+		for (UIView *subview in self.containerView.subviews) {
+			if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == 9999) {
+				[subview removeFromSuperview];
+			}
+		}
 
-        [self.containerView insertSubview:blurEffectView atIndex:0];
+		UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
+		UIVisualEffectView *blurEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
+		blurEffectView.frame = self.containerView.bounds;
+		blurEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+		blurEffectView.alpha = 0.9;
+		blurEffectView.tag = 9999;
 
-        [self setTextColorWhiteRecursivelyInView:self.containerView];
-        
-    }
+		[self.containerView insertSubview:blurEffectView atIndex:0];
+
+		[self setTextColorWhiteRecursivelyInView:self.containerView];
+	}
 }
 
 %new
 - (void)setTextColorWhiteRecursivelyInView:(UIView *)view {
-    for (UIView *subview in view.subviews) {
-        if (![subview isKindOfClass:[UIVisualEffectView class]]) {
-            subview.backgroundColor = [UIColor clearColor];
-        }
+	for (UIView *subview in view.subviews) {
+		if (![subview isKindOfClass:[UIVisualEffectView class]]) {
+			subview.backgroundColor = [UIColor clearColor];
+		}
 
-        if ([subview isKindOfClass:[UILabel class]]) {
-            UILabel *label = (UILabel *)subview;
-            label.textColor = [UIColor whiteColor];
-        }
+		if ([subview isKindOfClass:[UILabel class]]) {
+			UILabel *label = (UILabel *)subview;
+			label.textColor = [UIColor whiteColor];
+		}
 
-        if ([subview isKindOfClass:[UIButton class]]) {
-            UIButton *button = (UIButton *)subview;
-            [button setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-        }
-        
-        [self setTextColorWhiteRecursivelyInView:subview];
-    }
+		if ([subview isKindOfClass:[UIButton class]]) {
+			UIButton *button = (UIButton *)subview;
+			[button setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+		}
+
+		[self setTextColorWhiteRecursivelyInView:subview];
+	}
 }
 %end
 
@@ -2098,45 +2103,31 @@ static CGFloat currentScale = 1.0;
 }
 %end
 
-// 设置改顶栏标题
+// 改顶栏标题
 %hook UILabel
 
 - (void)layoutSubviews {
-    // 调用原始的 layoutSubviews 方法
-    %orig;
-    
-    // 获取父视图是否是 AWEHPTopTabItemTextContentView
-    if ([self.superview isKindOfClass:NSClassFromString(@"AWEHPTopTabItemTextContentView")]) {
-                    
-        // 获取过滤关键词配置
-        NSString *filterKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYModifyTopTabText"];
-            
-        // 如果配置存在且格式正确
-        if (filterKeywords && [filterKeywords length] > 0) {
-                
-            // 将配置字符串按 "#" 分割
-            NSArray *keywordsArray = [filterKeywords componentsSeparatedByString:@"#"];
-                
-            // 获取原始 text 内容
-            NSString *originalText = self.text;
-                
-            // 查找配置中的关键词，并进行替换
-            for (NSString *keyword in keywordsArray) {
-                // 每个标题以 "=" 修改，前半部分是原始文本，后半部分是替换后的文本
-                NSArray *parts = [keyword componentsSeparatedByString:@"="];
-                if (parts.count == 2) {
-                    NSString *oldKeyword = parts[0]; // 原始文本
-                    NSString *newKeyword = parts[1]; // 新文本
-                        
-                    // 判断原始文本是否包含在当前 UILabel 的 text 中
-                    if ([originalText containsString:oldKeyword]) {
-                        // 替换文本
-                        self.text = [originalText stringByReplacingOccurrencesOfString:oldKeyword withString:newKeyword];
-                    }
-                }
-            }
-        }
-    }
+	%orig;
+
+	if ([self.superview isKindOfClass:NSClassFromString(@"AWEHPTopTabItemTextContentView")]) {
+		NSString *filterKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYModifyTopTabText"];
+
+		if (filterKeywords && [filterKeywords length] > 0) {
+			NSArray *keywordsArray = [filterKeywords componentsSeparatedByString:@"#"];
+			NSString *originalText = self.text;
+			for (NSString *keyword in keywordsArray) {
+				// 每个标题以 "=" 修改，前半部分是原始文本，后半部分是替换后的文本
+				NSArray *parts = [keyword componentsSeparatedByString:@"="];
+				if (parts.count == 2) {
+					NSString *oldKeyword = parts[0];
+					NSString *newKeyword = parts[1];
+					if ([originalText containsString:oldKeyword]) {
+						self.text = [originalText stringByReplacingOccurrencesOfString:oldKeyword withString:newKeyword];
+					}
+				}
+			}
+		}
+	}
 }
 
 %end

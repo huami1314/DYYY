@@ -7,6 +7,7 @@
 #import "DYYYABTestHook.h"
 
 #import "DYYYAboutDialogView.h"
+#import "DYYYBottomAlertView.h"
 #import "DYYYCustomInputView.h"
 #import "DYYYIconOptionsDialogView.h"
 #import "DYYYKeywordListView.h"
@@ -857,6 +858,11 @@ static void showUserAgreementAlert() {
 			      @"detail" : @"0-1小数",
 			      @"cellType" : @26,
 			      @"imageName" : @"ic_user_outlined_20"},
+			    @{@"identifier" : @"DYYYisEnableSheetBlur",
+			      @"title" : @"菜单玻璃效果",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_list_outlined"},
 			    @{@"identifier" : @"DYYYisEnableCommentBlur",
 			      @"title" : @"评论区毛玻璃",
 			      @"detail" : @"",
@@ -1144,7 +1150,7 @@ static void showUserAgreementAlert() {
 			      @"detail" : @"",
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_eyeslash_outlined_16"},
-                            @{@"identifier" : @"DYYYHideButton",
+			    @{@"identifier" : @"DYYYHideButton",
 			      @"title" : @"隐藏我的添加朋友",
 			      @"detail" : @"",
 			      @"cellType" : @6,
@@ -2543,6 +2549,151 @@ static void showUserAgreementAlert() {
 		  [backupItems addObject:restoreItem];
 		  backupSection.itemArray = backupItems;
 
+		  // 创建清理section
+		  AWESettingSectionModel *cleanupSection = [[%c(AWESettingSectionModel) alloc] init];
+		  cleanupSection.sectionHeaderTitle = @"清理";
+		  cleanupSection.sectionHeaderHeight = 40;
+		  cleanupSection.type = 0;
+		  NSMutableArray<AWESettingItemModel *> *cleanupItems = [NSMutableArray array];
+
+		  AWESettingItemModel *cleanPluginSettingsItem = [[%c(AWESettingItemModel) alloc] init];
+		  cleanPluginSettingsItem.identifier = @"DYYYCleanPluginSettings";
+		  cleanPluginSettingsItem.title = @"清除插件设置";
+		  cleanPluginSettingsItem.detail = @"";
+		  cleanPluginSettingsItem.type = 0;
+		  cleanPluginSettingsItem.svgIconImageName = @"ic_trash_outlined_20";
+		  cleanPluginSettingsItem.cellType = 26;
+		  cleanPluginSettingsItem.colorStyle = 0;
+		  cleanPluginSettingsItem.isEnable = YES;
+		  cleanPluginSettingsItem.cellTappedBlock = ^{
+		    [DYYYBottomAlertView showAlertWithTitle:@"清除插件设置"
+						    message:@"确定要清除所有插件设置吗？\n这将无法恢复！"
+					   cancelButtonText:@"取消"
+					  confirmButtonText:@"确定"
+					       cancelAction:nil
+					      confirmAction:^{
+						// 获取所有以DYYY开头的NSUserDefaults键值并清除
+						NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+						NSDictionary *allDefaults = [defaults dictionaryRepresentation];
+
+						for (NSString *key in allDefaults.allKeys) {
+							if ([key hasPrefix:@"DYYY"]) {
+								[defaults removeObjectForKey:key];
+							}
+						}
+						[defaults synchronize];
+
+						// 显示成功提示
+						[DYYYManager showToast:@"插件设置已清除，请重启应用"];
+					      }];
+		  };
+		  [cleanupItems addObject:cleanPluginSettingsItem];
+
+		  AWESettingItemModel *cleanAwemeSettingsItem = [[%c(AWESettingItemModel) alloc] init];
+		  cleanAwemeSettingsItem.identifier = @"DYYYCleanAwemeSettings";
+		  cleanAwemeSettingsItem.title = @"清除抖音设置";
+		  cleanAwemeSettingsItem.detail = @"";
+		  cleanAwemeSettingsItem.type = 0;
+		  cleanAwemeSettingsItem.svgIconImageName = @"ic_trash_outlined_20";
+		  cleanAwemeSettingsItem.cellType = 26;
+		  cleanAwemeSettingsItem.colorStyle = 0;
+		  cleanAwemeSettingsItem.isEnable = YES;
+		  cleanAwemeSettingsItem.cellTappedBlock = ^{
+		    [DYYYBottomAlertView showAlertWithTitle:@"清除抖音设置"
+						    message:@"确定要清除抖音所有设置吗？\n这将无法恢复，应用会自动退出！"
+					   cancelButtonText:@"取消"
+					  confirmButtonText:@"确定"
+					       cancelAction:nil
+					      confirmAction:^{
+						NSArray *paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
+						if (paths.count > 0) {
+							NSString *preferencesPath = [paths.firstObject stringByAppendingPathComponent:@"Preferences"];
+							NSString *bundleIdentifier = [[NSBundle mainBundle] bundleIdentifier];
+							NSString *plistPath = [preferencesPath stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.plist", bundleIdentifier]];
+
+							NSError *error = nil;
+							[[NSFileManager defaultManager] removeItemAtPath:plistPath error:&error];
+
+							if (!error) {
+								[DYYYManager showToast:@"抖音设置已清除，应用即将退出"];
+
+								dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+								  exit(0);
+								});
+							} else {
+								[DYYYManager showToast:[NSString stringWithFormat:@"清除失败: %@", error.localizedDescription]];
+							}
+						}
+					      }];
+		  };
+
+		  [cleanupItems addObject:cleanAwemeSettingsItem];
+
+		  AWESettingItemModel *cleanCacheItem = [[%c(AWESettingItemModel) alloc] init];
+		  cleanCacheItem.identifier = @"DYYYCleanCache";
+		  cleanCacheItem.title = @"清理缓存垃圾";
+		  cleanCacheItem.detail = @"";
+		  cleanCacheItem.type = 0;
+		  cleanCacheItem.svgIconImageName = @"ic_broom_outlined";
+		  cleanCacheItem.cellType = 26;
+		  cleanCacheItem.colorStyle = 0;
+		  cleanCacheItem.isEnable = YES;
+
+		  cleanCacheItem.cellTappedBlock = ^{
+		    [DYYYBottomAlertView showAlertWithTitle:@"清理缓存垃圾"
+						    message:@"确定要清理缓存吗？\n这将删除临时文件和缓存"
+					   cancelButtonText:@"取消"
+					  confirmButtonText:@"确定"
+					       cancelAction:nil
+					      confirmAction:^{
+						NSFileManager *fileManager = [NSFileManager defaultManager];
+						NSError *error = nil;
+						NSUInteger totalSize = 0;
+
+						NSString *cachesDir = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject;
+
+						NSString *tempDir = NSTemporaryDirectory();
+
+						NSArray<NSString *> *customDirs = @[ @"BDByteCast" ];
+						NSString *libraryDir = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES).firstObject;
+
+						NSMutableArray<NSString *> *allPaths = [NSMutableArray arrayWithObjects:cachesDir, tempDir, nil];
+						for (NSString *sub in customDirs) {
+							NSString *full = [libraryDir stringByAppendingPathComponent:sub];
+							[allPaths addObject:full];
+						}
+
+						for (NSString *basePath in allPaths) {
+							if (![fileManager fileExistsAtPath:basePath]) {
+								continue;
+							}
+							NSDirectoryEnumerator<NSString *> *enumerator = [fileManager enumeratorAtPath:basePath];
+							NSString *relPath = nil;
+							while ((relPath = [enumerator nextObject])) {
+								NSString *fullPath = [basePath stringByAppendingPathComponent:relPath];
+
+								NSDictionary<NSFileAttributeKey, id> *attrs = [fileManager attributesOfItemAtPath:fullPath error:nil];
+								if (attrs) {
+									totalSize += [attrs fileSize];
+								}
+
+								NSError *delErr = nil;
+								[fileManager removeItemAtPath:fullPath error:&delErr];
+								if (delErr) {
+									NSLog(@"删除失败 %@: %@", fullPath, delErr);
+								}
+							}
+						}
+
+						float sizeInMB = totalSize / 1024.0 / 1024.0;
+						NSString *toastMsg = [NSString stringWithFormat:@"已清理 %.2f MB 的缓存", sizeInMB];
+						[DYYYManager showToast:toastMsg];
+					      }];
+		  };
+		  [cleanupItems addObject:cleanCacheItem];
+
+		  cleanupSection.itemArray = cleanupItems;
+
 		  // 创建关于分类（单独section）
 		  AWESettingSectionModel *aboutSection = [[%c(AWESettingSectionModel) alloc] init];
 		  aboutSection.sectionHeaderTitle = @"关于";
@@ -2608,7 +2759,7 @@ static void showUserAgreementAlert() {
 		  mainSection.itemArray = mainItems;
 		  aboutSection.itemArray = aboutItems;
 
-		  viewModel.sectionDataArray = @[ mainSection, backupSection, aboutSection ];
+		  viewModel.sectionDataArray = @[ mainSection, cleanupSection, backupSection, aboutSection ];
 		  objc_setAssociatedObject(settingsVC, kViewModelKey, viewModel, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 		  [rootVC.navigationController pushViewController:(UIViewController *)settingsVC animated:YES];
 		};

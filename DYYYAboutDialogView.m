@@ -23,9 +23,10 @@
         CGFloat textHeight = textRect.size.height;
         CGFloat maxTextHeight = 280; 
         CGFloat titleHeight = 44; 
-        CGFloat buttonHeight = 56; 
+        CGFloat buttonHeight = 58; 
+        CGFloat buttonPadding = 18;
         CGFloat actualTextHeight = MIN(textHeight, maxTextHeight);
-        CGFloat contentHeight = titleHeight + actualTextHeight + buttonHeight;
+        CGFloat contentHeight = titleHeight + actualTextHeight + buttonHeight + buttonPadding;
         BOOL needsScrolling = textHeight > maxTextHeight;
         
         // 创建内容视图 - 使用纯白背景，高度根据内容调整
@@ -100,13 +101,13 @@
         [self.contentView addSubview:self.messageTextView];
         
         // 添加内容和按钮之间的分割线，调整位置
-        UIView *contentButtonSeparator = [[UIView alloc] initWithFrame:CGRectMake(0, contentHeight - 39, 300, 0.5)];
+        UIView *contentButtonSeparator = [[UIView alloc] initWithFrame:CGRectMake(0, contentHeight - buttonHeight, 300, 0.5)];
         contentButtonSeparator.backgroundColor = [UIColor colorWithRed:230/255.0 green:230/255.0 blue:230/255.0 alpha:1.0];
         [self.contentView addSubview:contentButtonSeparator];
         
-        // 确认按钮 - 颜色使用 #2d2f38，无背景色，调整位置
+        // 确认按钮 - 颜色使用 #2d2f38，无背景色
         self.confirmButton = [UIButton buttonWithType:UIButtonTypeSystem];
-        self.confirmButton.frame = CGRectMake(0, contentHeight - 45, 300, 50.5);
+        self.confirmButton.frame = CGRectMake(0, contentHeight - buttonHeight + 0.5, 300, 53); 
         self.confirmButton.backgroundColor = [UIColor clearColor];
         [self.confirmButton setTitle:@"确定" forState:UIControlStateNormal];
         [self.confirmButton setTitleColor:[UIColor colorWithRed:45/255.0 green:47/255.0 blue:56/255.0 alpha:1.0] forState:UIControlStateNormal]; // #2d2f38
