@@ -2036,7 +2036,9 @@ static CGFloat currentScale = 1.0;
 
 - (void)layoutSubviews {
 	%orig;
-	[self applyBlurEffectAndWhiteText];
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableSheetBlur"]) {
+        [self applyBlurEffectAndWhiteText];
+    }
 }
 
 %new
