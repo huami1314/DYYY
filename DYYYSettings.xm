@@ -2851,6 +2851,11 @@ static void showUserAgreementAlert() {
 			  BOOL isSwitchOn = !strongItem.isSwitchOn;
 			  strongItem.isSwitchOn = isSwitchOn;
 			  setUserDefaults(@(isSwitchOn), strongItem.identifier);
+			  
+			  // 添加DYYYForceDownloadEmotion启用时的提示
+			  if ([strongItem.identifier isEqualToString:@"DYYYForceDownloadEmotion"] && isSwitchOn) {
+				showAboutDialog(@"防蠢提示", @"这里指的是长按整条评论而非单一个表情包", nil);
+			  }
 			  [self handleConflictsAndDependenciesForSetting:strongItem.identifier isEnabled:isSwitchOn];
 		  }
 		};

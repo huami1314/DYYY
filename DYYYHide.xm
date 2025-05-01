@@ -736,10 +736,19 @@
 					}
 				}
 
-                if (hasImageView) {
-                    subview.hidden = YES;
-                    break;
-                }
+				if (hasImageView) {
+					// 默认隐藏背景
+					BOOL shouldShowBackground = NO;
+
+					// 获取当前选中的索引
+					NSInteger selectedIndex = self.yy_viewController.selectedIndex;
+					// 如果索引有效，检查当前选中的是什么类型的按钮
+					if (selectedIndex >= 0) {
+							shouldShowBackground = YES;
+					}
+					subview.hidden = !shouldShowBackground;
+					break;
+				}
 			}
 		}
 	}
