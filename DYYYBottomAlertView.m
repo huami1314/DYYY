@@ -40,20 +40,12 @@
     
     [vc setUseCardUIStyle:YES];
 
-    // 使用 keyWindow 直接添加视图，而不是模态呈现
-    UIWindow *window = [UIApplication sharedApplication].keyWindow;
-    [vc.view setFrame:window.bounds];
-    [window addSubview:vc.view];
-    
-    // 将视图控制器作为子视图控制器添加到根视图控制器
     UIViewController *topVC = topView();
-    [topVC addChildViewController:vc];
-    [vc didMoveToParentViewController:topVC];
+    [topVC presentViewController:vc animated:NO completion:nil];
     
     return vc;
 }
 
-// 原始方法保持不变，维持向后兼容性
 + (UIViewController *)showAlertWithTitle:(NSString *)title
                                  message:(NSString *)message
                             cancelAction:(DYYYAlertActionHandler)cancelAction
@@ -64,20 +56,6 @@
                    confirmButtonText:@"确定" 
                         cancelAction:cancelAction 
                        confirmAction:confirmAction];
-}
-
-// 修改 dismiss 方法的实现以适应新的显示方式
-- (void)dismiss {
-    UIResponder *responder = self;
-    while ((responder = [responder nextResponder])) {
-        if ([responder isKindOfClass:[UIViewController class]]) {
-            UIViewController *vc = (UIViewController *)responder;
-            [vc willMoveToParentViewController:nil];
-            [vc.view removeFromSuperview];
-            [vc removeFromParentViewController];
-            break;
-        }
-    }
 }
 
 @end
