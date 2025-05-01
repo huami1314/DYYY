@@ -861,21 +861,12 @@
 }
 %end
 
-// 隐藏作者作品集搜索
+// 隐藏视频上方搜索长框
 %hook AWESearchEntranceView
 
 - (void)layoutSubviews {
 
-	Class targetClass = NSClassFromString(@"AWESearchEntranceView");
-	if (!targetClass)
-		return;
-
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideInteractionSearch"]) {
-
-		SEL removeSel = NSSelectorFromString(@"removeFromSuperview");
-		if ([targetClass instancesRespondToSelector:removeSel]) {
-			[self performSelector:removeSel];
-		}
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideSearchEntrance"]) {
 		self.hidden = YES;
 		return;
 	}
