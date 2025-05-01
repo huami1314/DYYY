@@ -2098,6 +2098,49 @@ static CGFloat currentScale = 1.0;
 }
 %end
 
+// 设置改顶栏标题
+%hook UILabel
+
+- (void)layoutSubviews {
+    // 调用原始的 layoutSubviews 方法
+    %orig;
+    
+    // 获取父视图是否是 AWEHPTopTabItemTextContentView
+    if ([self.superview isKindOfClass:NSClassFromString(@"AWEHPTopTabItemTextContentView")]) {
+                    
+        // 获取过滤关键词配置
+        NSString *filterKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYModifyTopTabText"];
+            
+        // 如果配置存在且格式正确
+        if (filterKeywords && [filterKeywords length] > 0) {
+                
+            // 将配置字符串按 "#" 分割
+            NSArray *keywordsArray = [filterKeywords componentsSeparatedByString:@"#"];
+                
+            // 获取原始 text 内容
+            NSString *originalText = self.text;
+                
+            // 查找配置中的关键词，并进行替换
+            for (NSString *keyword in keywordsArray) {
+                // 每个标题以 "=" 修改，前半部分是原始文本，后半部分是替换后的文本
+                NSArray *parts = [keyword componentsSeparatedByString:@"="];
+                if (parts.count == 2) {
+                    NSString *oldKeyword = parts[0]; // 原始文本
+                    NSString *newKeyword = parts[1]; // 新文本
+                        
+                    // 判断原始文本是否包含在当前 UILabel 的 text 中
+                    if ([originalText containsString:oldKeyword]) {
+                        // 替换文本
+                        self.text = [originalText stringByReplacingOccurrencesOfString:oldKeyword withString:newKeyword];
+                    }
+                }
+            }
+        }
+    }
+}
+
+%end
+
 %ctor {
 	%init(DYYYSettingsGesture);
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {
