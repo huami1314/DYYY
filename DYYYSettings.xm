@@ -858,11 +858,6 @@ static void showUserAgreementAlert() {
 			      @"detail" : @"0-1小数",
 			      @"cellType" : @26,
 			      @"imageName" : @"ic_user_outlined_20"},
-			    @{@"identifier" : @"DYYYisEnableSheetBlur",
-			      @"title" : @"菜单玻璃效果",
-			      @"detail" : @"",
-			      @"cellType" : @6,
-			      @"imageName" : @"ic_list_outlined"},
 			    @{@"identifier" : @"DYYYisEnableCommentBlur",
 			      @"title" : @"评论区毛玻璃",
 			      @"detail" : @"",
@@ -2010,7 +2005,7 @@ static void showUserAgreementAlert() {
 				      NSMutableArray<AWESettingItemModel *> *doubleTapItems = [NSMutableArray array];
 				      AWESettingItemModel *enableDoubleTapMenu = [self createSettingItem:@{
 					      @"identifier" : @"DYYYEnableDoubleOpenAlertController",
-					      @"title" : @"启用双击打开菜单",
+					      @"title" : @"启用双击菜单",
 					      @"detail" : @"",
 					      @"cellType" : @6,
 					      @"imageName" : @"ic_xiaoxihuazhonghua_outlined_20"
@@ -2018,6 +2013,11 @@ static void showUserAgreementAlert() {
 				      [doubleTapItems addObject:enableDoubleTapMenu];
 
 				      NSArray *doubleTapFunctions = @[
+					      @{@"identifier" : @"DYYYisEnableSheetBlur",
+						@"title" : @"菜单玻璃效果",
+						@"detail" : @"",
+						@"cellType" : @6,
+						@"imageName" : @"ic_list_outlined"},
 					      @{@"identifier" : @"DYYYDoubleTapDownload",
 						@"title" : @"保存视频/图片",
 						@"detail" : @"",
@@ -2029,18 +2029,18 @@ static void showUserAgreementAlert() {
 						@"cellType" : @6,
 						@"imageName" : @"ic_boxarrowdown_outlined"},
 					      @{
-						      @"identifier" : @"DYYYDoubleInterfaceDownload",
-						      @"title" : @"接口保存",
-						      @"detail" : @"",
-						      @"cellType" : @6,
-						      @"imageName" : @"ic_cloudarrowdown_outlined_20"
+					      @"identifier" : @"DYYYDoubleInterfaceDownload",
+						@"title" : @"接口保存",
+						@"detail" : @"",
+						@"cellType" : @6,
+						@"imageName" : @"ic_cloudarrowdown_outlined_20"
 					      },
 					      @{
-						      @"identifier" : @"DYYYDoubleTapCopyDesc",
-						      @"title" : @"复制文案",
-						      @"detail" : @"",
-						      @"cellType" : @6,
-						      @"imageName" : @"ic_rectangleonrectangleup_outlined_20"
+					      @"identifier" : @"DYYYDoubleTapCopyDesc",
+						@"title" : @"复制文案",
+						@"detail" : @"",
+						@"cellType" : @6,
+						@"imageName" : @"ic_rectangleonrectangleup_outlined_20"
 					      },
 					      @{@"identifier" : @"DYYYDoubleTapComment",
 						@"title" : @"打开评论",
@@ -2053,11 +2053,11 @@ static void showUserAgreementAlert() {
 						@"cellType" : @6,
 						@"imageName" : @"ic_heart_outlined_20"},
 					      @{
-						      @"identifier" : @"DYYYDoubleTapshowDislikeOnVideo",
-						      @"title" : @"长按面板",
-						      @"detail" : @"",
-						      @"cellType" : @6,
-						      @"imageName" : @"ic_xiaoxihuazhonghua_outlined_20"
+					      @"identifier" : @"DYYYDoubleTapshowDislikeOnVideo",
+						@"title" : @"长按面板",
+						@"detail" : @"",
+						@"cellType" : @6,
+						@"imageName" : @"ic_xiaoxihuazhonghua_outlined_20"
 					      },
 					      @{@"identifier" : @"DYYYDoubleTapshowSharePanel",
 						@"title" : @"分享视频",
