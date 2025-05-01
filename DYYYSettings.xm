@@ -922,6 +922,11 @@ static void showUserAgreementAlert() {
 		    // 【标题自定义】分类
 		    NSMutableArray<AWESettingItemModel *> *titleItems = [NSMutableArray array];
 		    NSArray *titleSettings = @[
+			    @{@"identifier" : @"DYYYModifyTopTabText",
+			      @"title" : @"设置顶栏标题",
+			      @"detail" : @"标题=修改#标题=修改",
+			      @"cellType" : @26,
+			      @"imageName" : @"ic_tag_outlined_20"},
 			    @{@"identifier" : @"DYYYIndexTitle",
 			      @"title" : @"设置首页标题",
 			      @"detail" : @"不填默认",
