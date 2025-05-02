@@ -888,3 +888,8 @@ typedef NS_ENUM(NSInteger, MediaType) {
 // 直播间点赞动画
 @interface HTSLiveDiggView : UIView
 @end
+
+// 隐藏状态栏
+@interface AWEFeedRootViewController : UIViewController
+- (BOOL)prefersStatusBarHidden;
+@end
