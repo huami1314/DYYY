@@ -38,7 +38,7 @@ static void showIconOptionsDialog(NSString *title, UIImage *previewImage, NSStri
 
 @interface DYYYBackupPickerDelegate : NSObject <UIDocumentPickerDelegate>
 @property(nonatomic, copy) void (^completionBlock)(NSURL *url);
-@property(nonatomic, copy) NSString *tempFilePath; // 添加临时文件路径属性
+@property(nonatomic, copy) NSString *tempFilePath;
 @end
 
 @implementation DYYYBackupPickerDelegate
