@@ -783,16 +783,18 @@
 
 %end
 
+// 隐藏状态栏
 %hook AWEFeedRootViewController
-
 - (BOOL)prefersStatusBarHidden {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHideStatusbar"]) {
-		return YES;
-	} else {
-		return %orig;
-	}
+    if([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHideStatusbar"]){
+        return YES;
+    } else {
+        if (class_getInstanceMethod([self class], @selector(prefersStatusBarHidden)) != class_getInstanceMethod([%c(AWEFeedRootViewController) class], @selector(prefersStatusBarHidden))) {
+            return %orig;
+        }
+        return NO;
+    }
 }
-
 %end
 
 %hook AWEFeedTemplateAnchorView

@@ -2333,15 +2333,24 @@ static void showUserAgreementAlert() {
 		    AWESettingItemModel *clearButtonIcon = createIconCustomizationItem(@"DYYYClearButtonIcon", @"清屏按钮图标", @"ic_roaming_outlined", @"qingping.gif");
 
 		    [clearButtonItems addObject:clearButtonIcon];
-		    // 清屏隐藏时间进度 enableqingButton 需要改名
+		    // 清屏移除时间进度 enableqingButton 需要改名
 		    AWESettingItemModel *enableqingButton = [self
 			createSettingItem:
 			    @{@"identifier" : @"DYYYEnabshijianjindu",
-			      @"title" : @"清屏隐藏进度",
+			      @"title" : @"清屏移除进度",
 			      @"detail" : @"",
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_eyeslash_outlined_16"}];
 		    [clearButtonItems addObject:enableqingButton];
+			// 清屏隐藏时间进度
+			AWESettingItemModel *enableqingButton1 = [self
+			createSettingItem:
+			    @{@"identifier" : @"DYYYHideTimeProgress",
+			      @"title" : @"清屏隐藏进度",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_eyeslash_outlined_16"}];
+			[clearButtonItems addObject:enableqingButton1];
 		    // 获取清屏按钮的当前开关状态
 		    BOOL isEnabled = getUserDefaults(@"DYYYEnableFloatClearButton");
 		    // 更新清屏按钮大小和图标设置项的启用状态
@@ -2912,6 +2921,10 @@ static void showUserAgreementAlert() {
 		// 清屏按钮图标和大小设置依赖于清屏按钮开关
 		BOOL isEnabled = getUserDefaults(@"DYYYEnableFloatClearButton");
 		item.isEnable = isEnabled;
+	} else if([item.identifier isEqualToString:@"DYYYHideTimeProgress"]) {
+		// 清屏隐藏时间进度依赖于清屏移除时间进度未启用
+		BOOL isEnabled = getUserDefaults(@"DYYYEnabshijianjindu");
+		item.isEnable = !isEnabled;
 	}
 }
 
