@@ -96,8 +96,6 @@ static void initTargetClassNames(void) {
     BOOL hideBottomBar = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTimeProgress"];
     if (hideBottomBar) {
         [list removeObject:@"AWENormalModeTabBar"];
-		[list removeObject:@"AWEBaseElementView"];
-		[list removeObject:@"AWEElementStackView"];
     }
     targetClassNames = [list copy];
 }
