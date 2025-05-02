@@ -2932,10 +2932,6 @@ static void showUserAgreementAlert() {
 		// 清屏按钮图标和大小设置依赖于清屏按钮开关
 		BOOL isEnabled = getUserDefaults(@"DYYYEnableFloatClearButton");
 		item.isEnable = isEnabled;
-	} else if([item.identifier isEqualToString:@"DYYYEnabshijianjindu"]) {
-		// 清屏移除时间进度依赖于清屏隐藏时间进度未启用
-		BOOL isEnabled = getUserDefaults(@"DYYYHideTimeProgress");
-		item.isEnable = !isEnabled;
 	} else if([item.identifier isEqualToString:@"DYYYHideTimeProgress"]) {
 		// 清屏隐藏时间进度依赖于清屏移除时间进度未启用
 		BOOL isEnabled = getUserDefaults(@"DYYYEnabshijianjindu");

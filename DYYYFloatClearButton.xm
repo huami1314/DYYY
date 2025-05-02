@@ -97,6 +97,7 @@ static void initTargetClassNames(void) {
     if (hideBottomBar) {
         [list removeObject:@"AWENormalModeTabBar"];
 		[list removeObject:@"AWEBaseElementView"];
+		[list removeObject:@"AWEElementStackView"];
     }
     targetClassNames = [list copy];
 }
