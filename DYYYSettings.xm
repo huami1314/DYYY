@@ -47,12 +47,10 @@ static void showIconOptionsDialog(NSString *title, UIImage *previewImage, NSStri
 		self.completionBlock(urls.firstObject);
 	}
 
-	// 清理临时文件
 	[self cleanupTempFile];
 }
 
 - (void)documentPickerWasCancelled:(UIDocumentPickerViewController *)controller {
-	// 用户取消操作时清理临时文件
 	[self cleanupTempFile];
 }
 
@@ -1865,7 +1863,6 @@ static void showUserAgreementAlert() {
 			// 获取选择的文件路径
 			NSString *sourcePath = [url path];
 
-			// 目标路径
 			NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
 			NSString *documentsDirectory = [paths firstObject];
 			NSString *dyyyFolderPath = [documentsDirectory stringByAppendingPathComponent:@"DYYY"];
@@ -1893,7 +1890,6 @@ static void showUserAgreementAlert() {
 				// 重置全局变量，下次加载时会重新读取文件
 				gFixedABTestData = nil;
 				onceToken = 0;
-				// 重新加载配置
 				loadFixedABTestData();
 				message = @"配置文件已导入，请禁用下发配置，重启抖音生效";
 			} else {
@@ -1921,7 +1917,7 @@ static void showUserAgreementAlert() {
 		    deleteConfigItem.title = @"删除本地配置";
 		    deleteConfigItem.detail = @"";
 		    deleteConfigItem.type = 0;
-		    deleteConfigItem.svgIconImageName = @"ic_xmark_outlined_20";
+		    deleteConfigItem.svgIconImageName = @"ic_trash_outlined_20";
 		    deleteConfigItem.cellType = 26;
 		    deleteConfigItem.colorStyle = 0;
 		    deleteConfigItem.isEnable = YES;
@@ -1933,9 +1929,7 @@ static void showUserAgreementAlert() {
 		      NSString *dyyyFolderPath = [documentsDirectory stringByAppendingPathComponent:@"DYYY"];
 		      NSString *configPath = [dyyyFolderPath stringByAppendingPathComponent:@"abtest_data_fixed.json"];
 
-		      // 检查文件是否存在
 		      if ([[NSFileManager defaultManager] fileExistsAtPath:configPath]) {
-			      // 删除文件
 			      NSError *error = nil;
 			      BOOL success = [[NSFileManager defaultManager] removeItemAtPath:configPath error:&error];
 
@@ -1943,16 +1937,12 @@ static void showUserAgreementAlert() {
 				      // 重置全局变量
 				      gFixedABTestData = nil;
 				      onceToken = 0;
-
-				      // 显示成功提示
 				      [DYYYManager showToast:@"本地配置已删除成功"];
 			      } else {
-				      // 显示错误信息
 				      NSString *errorMsg = [NSString stringWithFormat:@"删除失败: %@", error.localizedDescription];
 				      [DYYYManager showToast:errorMsg];
 			      }
 		      } else {
-			      // 文件不存在
 			      [DYYYManager showToast:@"本地配置不存在"];
 		      }
 		    };
@@ -2856,10 +2846,9 @@ static void showUserAgreementAlert() {
 			  BOOL isSwitchOn = !strongItem.isSwitchOn;
 			  strongItem.isSwitchOn = isSwitchOn;
 			  setUserDefaults(@(isSwitchOn), strongItem.identifier);
-			  
-			  // 添加DYYYForceDownloadEmotion启用时的提示
+
 			  if ([strongItem.identifier isEqualToString:@"DYYYForceDownloadEmotion"] && isSwitchOn) {
-				showAboutDialog(@"防蠢提示", @"这里指的是长按整条评论而非单一个表情包", nil);
+				showAboutDialog(@"防蠢提示", @"这里指的是长按整条评论而非表情图片", nil);
 			  }
 			  [self handleConflictsAndDependenciesForSetting:strongItem.identifier isEnabled:isSwitchOn];
 		  }
