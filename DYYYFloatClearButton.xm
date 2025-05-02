@@ -91,12 +91,12 @@ static void initTargetClassNames(void) {
         @"ACCEditTagStickerView", @"AWEFeedTemplateAnchorView",
         @"AWESearchFeedTagView", @"AWEPlayInteractionSearchAnchorView",
         @"AFDRecommendToFriendTagView", @"AWELandscapeFeedEntryView",
-        @"AWEFeedAnchorContainerView", @"AFDAIbumFolioView",
+        @"AWEFeedAnchorContainerView", @"AFDAIbumFolioView",@"AWENormalModeTabBar"
     ] mutableCopy];
     BOOL hideBottomBar = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTimeProgress"];
     if (hideBottomBar) {
-        [list addObject:@"AWENormalModeTabBar"];
-		[list removeObject:@"AWEElementStackView"];
+        [list removeObject:@"AWENormalModeTabBar"];
+		[list removeObject:@"AWEBaseElementView"];
     }
     targetClassNames = [list copy];
 }
