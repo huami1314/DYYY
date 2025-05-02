@@ -86,8 +86,7 @@ static void initTargetClassNames(void) {
 	targetClassNames = @[
 		@"AWEHPTopBarCTAContainer", @"AWEHPDiscoverFeedEntranceView", @"AWELeftSideBarEntranceView", @"DUXBadge", @"AWEBaseElementView", @"AWEElementStackView",
 		@"AWEPlayInteractionDescriptionLabel", @"AWEUserNameLabel", @"AWEStoryProgressSlideView", @"AWEStoryProgressContainerView", @"ACCEditTagStickerView", @"AWEFeedTemplateAnchorView",
-		@"AWESearchFeedTagView", @"AWEPlayInteractionSearchAnchorView", @"AFDRecommendToFriendTagView", @"AWELandscapeFeedEntryView", @"AWEFeedAnchorContainerView", @"AFDAIbumFolioView",
-		@"AWENormalModeTabBar"
+		@"AWESearchFeedTagView", @"AWEPlayInteractionSearchAnchorView", @"AFDRecommendToFriendTagView", @"AWELandscapeFeedEntryView", @"AWEFeedAnchorContainerView", @"AFDAIbumFolioView"
 	];
 }
 @implementation HideUIButton
@@ -575,11 +574,6 @@ static void initTargetClassNames(void) {
     }
     
     return result;
-}
-%end
-%hook AWEPlayInteractionProgressContainerView
-- (BOOL)pointInside:(CGPoint)point withEvent:(UIEvent *)event {
-    return YES;   // 透明也能拖
 }
 %end
 %ctor {
