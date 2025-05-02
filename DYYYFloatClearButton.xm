@@ -285,7 +285,7 @@ static void initTargetClassNames(void) {
 
 - (void)recursivelyRestoreAWEPlayInteractionProgressContainerViewInView:(UIView *)view {
     if ([view isKindOfClass:NSClassFromString(@"AWEPlayInteractionProgressContainerView")]) {
-        view.hidden = NO;
+        view.alpha = 1.0;  // 恢复透明度
         return;
     }
 
@@ -326,7 +326,7 @@ static void initTargetClassNames(void) {
 
 - (void)recursivelyHideAWEPlayInteractionProgressContainerViewInView:(UIView *)view {
     if ([view isKindOfClass:NSClassFromString(@"AWEPlayInteractionProgressContainerView")]) {
-        view.hidden = YES;
+        view.alpha = 0.0;
         [self.hiddenViewsList addObject:view];
         return;
     }
@@ -575,6 +575,11 @@ static void initTargetClassNames(void) {
     }
     
     return result;
+}
+%end
+%hook AWEPlayInteractionProgressContainerView
+- (BOOL)pointInside:(CGPoint)point withEvent:(UIEvent *)event {
+    return YES;   // 透明也能拖
 }
 %end
 %ctor {
