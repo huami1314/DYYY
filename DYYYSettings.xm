@@ -2342,15 +2342,15 @@ static void showUserAgreementAlert() {
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_eyeslash_outlined_16"}];
 		    [clearButtonItems addObject:enableqingButton];
-			// 清屏隐藏时间进度
-			AWESettingItemModel *enableqingButton1 = [self
+		    // 清屏隐藏时间进度
+		    AWESettingItemModel *enableqingButton1 = [self
 			createSettingItem:
 			    @{@"identifier" : @"DYYYHideTimeProgress",
 			      @"title" : @"清屏隐藏进度",
 			      @"detail" : @"",
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_eyeslash_outlined_16"}];
-			[clearButtonItems addObject:enableqingButton1];
+		    [clearButtonItems addObject:enableqingButton1];
 		    // 获取清屏按钮的当前开关状态
 		    BOOL isEnabled = getUserDefaults(@"DYYYEnableFloatClearButton");
 		    // 更新清屏按钮大小和图标设置项的启用状态
@@ -2661,14 +2661,12 @@ static void showUserAgreementAlert() {
 						NSError *error = nil;
 						NSUInteger totalSize = 0;
 
-						NSString *cachesDir = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject;
-
 						NSString *tempDir = NSTemporaryDirectory();
 
-						NSArray<NSString *> *customDirs = @[ @"BDByteCast" ];
+						NSArray<NSString *> *customDirs = @[ @"Caches", @"BDByteCast", @"kitelog" ];
 						NSString *libraryDir = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES).firstObject;
 
-						NSMutableArray<NSString *> *allPaths = [NSMutableArray arrayWithObjects:cachesDir, tempDir, nil];
+						NSMutableArray<NSString *> *allPaths = [NSMutableArray arrayWithObjects:tempDir, nil];
 						for (NSString *sub in customDirs) {
 							NSString *full = [libraryDir stringByAppendingPathComponent:sub];
 							[allPaths addObject:full];
@@ -2857,7 +2855,7 @@ static void showUserAgreementAlert() {
 			  setUserDefaults(@(isSwitchOn), strongItem.identifier);
 
 			  if ([strongItem.identifier isEqualToString:@"DYYYForceDownloadEmotion"] && isSwitchOn) {
-				showAboutDialog(@"防蠢提示", @"这里指的是长按整条评论而非表情图片", nil);
+				  showAboutDialog(@"防蠢提示", @"这里指的是长按整条评论而非表情图片", nil);
 			  }
 			  [self handleConflictsAndDependenciesForSetting:strongItem.identifier isEnabled:isSwitchOn];
 		  }
@@ -2921,7 +2919,7 @@ static void showUserAgreementAlert() {
 		// 清屏按钮图标和大小设置依赖于清屏按钮开关
 		BOOL isEnabled = getUserDefaults(@"DYYYEnableFloatClearButton");
 		item.isEnable = isEnabled;
-	} else if([item.identifier isEqualToString:@"DYYYHideTimeProgress"]) {
+	} else if ([item.identifier isEqualToString:@"DYYYHideTimeProgress"]) {
 		// 清屏隐藏时间进度依赖于清屏移除时间进度未启用
 		BOOL isEnabled = getUserDefaults(@"DYYYEnabshijianjindu");
 		item.isEnable = !isEnabled;
