@@ -83,12 +83,21 @@ static void reapplyHidingToAllElements(HideUIButton *button) {
 	[button hideUIElements];
 }
 static void initTargetClassNames(void) {
-	targetClassNames = @[
-		@"AWEHPTopBarCTAContainer", @"AWEHPDiscoverFeedEntranceView", @"AWELeftSideBarEntranceView", @"DUXBadge", @"AWEBaseElementView", @"AWEElementStackView",
-		@"AWEPlayInteractionDescriptionLabel", @"AWEUserNameLabel", @"AWEStoryProgressSlideView", @"AWEStoryProgressContainerView", @"ACCEditTagStickerView", @"AWEFeedTemplateAnchorView",
-		@"AWESearchFeedTagView", @"AWEPlayInteractionSearchAnchorView", @"AFDRecommendToFriendTagView", @"AWELandscapeFeedEntryView", @"AWEFeedAnchorContainerView", @"AFDAIbumFolioView",
-		@"AWENormalModeTabBar"
-	];
+    NSMutableArray<NSString *> *list = [@[
+        @"AWEHPTopBarCTAContainer", @"AWEHPDiscoverFeedEntranceView", @"AWELeftSideBarEntranceView",
+        @"DUXBadge", @"AWEBaseElementView", @"AWEElementStackView",
+        @"AWEPlayInteractionDescriptionLabel", @"AWEUserNameLabel",
+        @"AWEStoryProgressSlideView", @"AWEStoryProgressContainerView",
+        @"ACCEditTagStickerView", @"AWEFeedTemplateAnchorView",
+        @"AWESearchFeedTagView", @"AWEPlayInteractionSearchAnchorView",
+        @"AFDRecommendToFriendTagView", @"AWELandscapeFeedEntryView",
+        @"AWEFeedAnchorContainerView", @"AFDAIbumFolioView",@"AWENormalModeTabBar"
+    ] mutableCopy];
+    BOOL hideBottomBar = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTimeProgress"];
+    if (hideBottomBar) {
+        [list removeObject:@"AWENormalModeTabBar"];
+    }
+    targetClassNames = [list copy];
 }
 @implementation HideUIButton
 - (instancetype)initWithFrame:(CGRect)frame {
@@ -276,7 +285,7 @@ static void initTargetClassNames(void) {
 }
 
 - (void)restoreAWEPlayInteractionProgressContainerView {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnabshijianjindu"]) {
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnabshijianjindu"] || [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTimeProgress"]) {
         for (UIWindow *window in [UIApplication sharedApplication].windows) {
             [self recursivelyRestoreAWEPlayInteractionProgressContainerViewInView:window];
         }
@@ -285,7 +294,13 @@ static void initTargetClassNames(void) {
 
 - (void)recursivelyRestoreAWEPlayInteractionProgressContainerViewInView:(UIView *)view {
     if ([view isKindOfClass:NSClassFromString(@"AWEPlayInteractionProgressContainerView")]) {
-        view.hidden = NO;
+		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnabshijianjindu"]) {
+			// 如果设置了移除时间进度条，直接显示
+			view.hidden = NO;
+		} else {
+			// 否则恢复透明度
+			view.alpha = 1.0;
+		}
         return;
     }
 
@@ -317,7 +332,7 @@ static void initTargetClassNames(void) {
 }
 
 - (void)hideAWEPlayInteractionProgressContainerView {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnabshijianjindu"]) {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnabshijianjindu"] || [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTimeProgress"]) {
             for (UIWindow *window in [UIApplication sharedApplication].windows) {
                     [self recursivelyHideAWEPlayInteractionProgressContainerViewInView:window];
                 }
@@ -326,7 +341,13 @@ static void initTargetClassNames(void) {
 
 - (void)recursivelyHideAWEPlayInteractionProgressContainerViewInView:(UIView *)view {
     if ([view isKindOfClass:NSClassFromString(@"AWEPlayInteractionProgressContainerView")]) {
-        view.hidden = YES;
+		if([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnabshijianjindu"]) {
+			// 如果设置了移除时间进度条
+			view.hidden = YES;
+		} else {
+			// 否则设置透明度为 0.0,可拖动
+        	view.alpha = 0.0;
+		}
         [self.hiddenViewsList addObject:view];
         return;
     }
