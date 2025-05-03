@@ -316,6 +316,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 
 @interface AWEModernLongPressPanelTableViewController : UIViewController
 @property (nonatomic, strong) AWEAwemeModel *awemeModel;
+- (void)scheduleAppCloseWithTimeInterval:(NSTimeInterval)interval;
 @end
 
 @interface AWEModernLongPressHorizontalSettingCell : UITableViewCell

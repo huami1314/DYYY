@@ -1636,7 +1636,12 @@ static void showUserAgreementAlert() {
 			      @"title" : @"长按面板过滤标题",
 			      @"detail" : @"",
 			      @"cellType" : @6,
-			      @"imageName" : @"ic_funnel_outlined_20"}
+			      @"imageName" : @"ic_funnel_outlined_20"},
+				@{@"identifier" : @"DYYYLongPressTimerClose",
+			      @"title" : @"长按定时关闭抖音",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_c_alarm_outlined"}
 		    ];
 
 		    for (NSDictionary *dict in longPressSettings) {
