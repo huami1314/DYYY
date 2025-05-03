@@ -499,7 +499,7 @@ static void initTargetClassNames(void) {
 	});
 }
 %end
-// 修改: 使用 viewWillAppear 和 loadView 来更早地显示按钮
+
 %hook AWEPlayInteractionViewController
 - (void)loadView {
     %orig;

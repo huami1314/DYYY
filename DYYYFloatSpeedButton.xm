@@ -69,8 +69,7 @@
     for (UIGestureRecognizer *recognizer in [self.gestureRecognizers copy]) {
         [self removeGestureRecognizer:recognizer];
     }
-    
-    // 重新添加拖拽手势 - 不再设置优先级依赖
+
     UIPanGestureRecognizer *panGesture = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePan:)];
     [self addGestureRecognizer:panGesture];
     
@@ -536,8 +535,6 @@ void updateSpeedButtonUI() {
         [keyWindow addSubview:speedButton];
         [speedButton loadSavedPosition]; 
         
-        // 确保按钮在顶层显示
-        speedButton.layer.zPosition = 999;
     }
     
     // 只在评论不可见时才显示按钮
@@ -567,13 +564,6 @@ void updateSpeedButtonUI() {
     if (speedButton) {
         dispatch_async(dispatch_get_main_queue(), ^{
             speedButton.hidden = isCommentViewVisible;
-            
-            // 确保按钮位于顶层视图
-            UIWindow *keyWindow = [UIApplication sharedApplication].keyWindow;
-            if (keyWindow && ![speedButton isDescendantOfView:keyWindow]) {
-                [keyWindow addSubview:speedButton];
-                [speedButton loadSavedPosition];
-            }
         });
     }
 }
@@ -687,7 +677,6 @@ void updateSpeedButtonUI() {
         dispatch_async(dispatch_get_main_queue(), ^{
             [self addSubview:speedButton];
             [speedButton loadSavedPosition];
-            speedButton.layer.zPosition = 999;
             speedButton.hidden = isCommentViewVisible;
         });
     }
