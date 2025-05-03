@@ -1437,107 +1437,107 @@ static void showUserAgreementAlert() {
 		    // 【长按面板】分类
                    NSMutableArray<AWESettingItemModel *> *modernpanels = [NSMutableArray array];
                    NSArray *modernpanelSettings = @[
-                      @{
+                       @{
                            @"identifier": @"DYYYHidePanelDaily",
-                           @"title": @"转发到日常",
+                           @"title": @"隐藏面板日常",
                            @"detail": @"",
                            @"cellType": @6,
                            @"imageName": @"ic_eyeslash_outlined_16"
                        },
                        @{
                            @"identifier": @"DYYYHidePanelRecommend",
-                           @"title": @"推荐",
-                           @"detail": @"",
-                           @"cellType": @6,
-                           @"imageName": @"ic_eyeslash_outlined_16"
-                       },
-                       @{
-                           @"identifier": @"DYYYHidePanelNotInterested",
-                           @"title": @"不感兴趣",
+                           @"title": @"隐藏面板推荐",
                            @"detail": @"",
                            @"cellType": @6,
                            @"imageName": @"ic_eyeslash_outlined_16"
                        },
                        @{
                            @"identifier": @"DYYYHidePanelReport",
-                           @"title": @"举报",
+                           @"title": @"隐藏面板举报",
                            @"detail": @"",
                            @"cellType": @6,
                            @"imageName": @"ic_eyeslash_outlined_16"
                        },
                        @{
                            @"identifier": @"DYYYHidePanelSpeed",
-                           @"title": @"倍速",
+                           @"title": @"隐藏面板倍速",
                            @"detail": @"",
                            @"cellType": @6,
                            @"imageName": @"ic_eyeslash_outlined_16"
                        },
                        @{
                            @"identifier": @"DYYYHidePanelClearScreen",
-                           @"title": @"清屏",
+                           @"title": @"隐藏面板清屏",
                            @"detail": @"",
                            @"cellType": @6,
                            @"imageName": @"ic_eyeslash_outlined_16"
                        },
                        @{
                            @"identifier": @"DYYYHidePanelFavorite",
-                           @"title": @"缓存",
-                           @"detail": @"",
-                           @"cellType": @6,
-                           @"imageName": @"ic_eyeslash_outlined_16"
-                       },
-                       @{
-                           @"identifier": @"DYYYHidePanelLater",
-                           @"title": @"添加至稍后再看",
+                           @"title": @"隐藏面板缓存",
                            @"detail": @"",
                            @"cellType": @6,
                            @"imageName": @"ic_eyeslash_outlined_16"
                        },
                        @{
                            @"identifier": @"DYYYHidePanelCast",
-                           @"title": @"投屏",
-                           @"detail": @"",
-                           @"cellType": @6,
-                           @"imageName": @"ic_eyeslash_outlined_16"
-                       },
-                       @{
-                           @"identifier": @"DYYYHidePanelOpenInPC",
-                           @"title": @"电脑/Pad打开",
+                           @"title": @"隐藏面板投屏",
                            @"detail": @"",
                            @"cellType": @6,
                            @"imageName": @"ic_eyeslash_outlined_16"
                        },
                        @{
                            @"identifier": @"DYYYHidePanelSubtitle",
-                           @"title": @"弹幕",
+                           @"title": @"隐藏面板弹幕",
                            @"detail": @"",
                            @"cellType": @6,
                            @"imageName": @"ic_eyeslash_outlined_16"
                        },
                        @{
-                           @"identifier": @"DYYYHidePanelAutoPlay",
-                           @"title": @"自动连播",
-                           @"detail": @"",
-                           @"cellType": @6,
-                           @"imageName": @"ic_eyeslash_outlined_16"
-                         },
-                         @{
                            @"identifier": @"DYYYHidePanelSearchImage",
-                           @"title": @"识图",
+                           @"title": @"隐藏面板识图",
                            @"detail": @"",
                            @"cellType": @6,
                            @"imageName": @"ic_eyeslash_outlined_16"
                        },
                        @{
                            @"identifier": @"DYYYHidePanelListenDouyin",
-                           @"title": @"听抖音",
+                           @"title": @"隐藏面板听抖音",
+                           @"detail": @"",
+                           @"cellType": @6,
+                           @"imageName": @"ic_eyeslash_outlined_16"
+                       },
+                       @{
+                           @"identifier": @"DYYYHidePanelOpenInPC",
+                           @"title": @"隐藏电脑Pad打开",
+                           @"detail": @"",
+                           @"cellType": @6,
+                           @"imageName": @"ic_eyeslash_outlined_16"
+                       },
+                       @{
+                           @"identifier": @"DYYYHidePanelLater",
+                           @"title": @"隐藏面板稍后再看",
+                           @"detail": @"",
+                           @"cellType": @6,
+                           @"imageName": @"ic_eyeslash_outlined_16"
+                       },
+                       @{
+                           @"identifier": @"DYYYHidePanelAutoPlay",
+                           @"title": @"隐藏面板自动连播",
+                           @"detail": @"",
+                           @"cellType": @6,
+                           @"imageName": @"ic_eyeslash_outlined_16"
+                       },
+                       @{
+                           @"identifier": @"DYYYHidePanelNotInterested",
+                           @"title": @"隐藏面板不感兴趣",
                            @"detail": @"",
                            @"cellType": @6,
                            @"imageName": @"ic_eyeslash_outlined_16"
                        },
                        @{
                            @"identifier": @"DYYYHidePanelBackgroundPlay",
-                           @"title": @"后台播放设置",
+                           @"title": @"隐藏面板后台播放",
                            @"detail": @"",
                            @"cellType": @6,
                            @"imageName": @"ic_eyeslash_outlined_16"
@@ -1555,7 +1555,7 @@ static void showUserAgreementAlert() {
 		    [sections addObject:createSection(@"消息页与我的页", messageAndMineItems)];
 		    [sections addObject:createSection(@"提示与位置信息", infoItems)];
 		    [sections addObject:createSection(@"直播间界面", livestreamItems)];
-        [sections addObject:createSection(@"长按面板", modernpanels)];
+                    [sections addObject:createSection(@"隐藏面板功能", modernpanels)];
                     
 		    // 创建并推入二级设置页面
 		    AWESettingBaseViewController *subVC = createSubSettingsViewController(@"隐藏设置", sections);
