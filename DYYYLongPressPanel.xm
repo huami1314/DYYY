@@ -348,17 +348,17 @@
 
 		  inputView.onConfirm = ^(NSString *inputText) {
 		    NSInteger minutes = [inputText integerValue];
-            if (minutes <= 0) {
-                minutes = 5;
-            }
-            NSInteger seconds = minutes * 60;
+		    if (minutes <= 0) {
+			    minutes = 5;
+		    }
+		    NSInteger seconds = minutes * 60;
 
 		    NSTimeInterval shutdownTimeValue = [[NSDate date] timeIntervalSince1970] + seconds;
 		    [[NSUserDefaults standardUserDefaults] setObject:@(shutdownTimeValue) forKey:@"DYYYTimerShutdownTime"];
 		    [[NSUserDefaults standardUserDefaults] synchronize];
 
 		    [DYYYManager showToast:[NSString stringWithFormat:@"抖音将在%ld分钟后关闭...", (long)minutes]];
-            
+
 		    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(seconds * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
 		      NSNumber *currentShutdownTime = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTimerShutdownTime"];
 		      if (currentShutdownTime != nil && [currentShutdownTime doubleValue] <= [[NSDate date] timeIntervalSince1970]) {
@@ -640,6 +640,7 @@
 	BOOL enableApiDownload = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYLongPressApiDownload"];
 	BOOL enableFilterUser = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYLongPressFilterUser"];
 	BOOL enableFilterKeyword = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYLongPressFilterTitle"];
+	BOOL enableTimerClose = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYLongPressTimerClose"];
 
 	// 兼容旧版设置
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYLongPressDownload"]) {
@@ -656,7 +657,7 @@
 
 	// 检查是否有任何功能启用
 	hasAnyFeatureEnabled = enableSaveVideo || enableSaveCover || enableSaveAudio || enableSaveCurrentImage || enableSaveAllImages || enableCopyText || enableCopyLink || enableApiDownload ||
-			       enableFilterUser || enableFilterKeyword;
+			       enableFilterUser || enableFilterKeyword || enableTimerClose;
 
 	if (!hasAnyFeatureEnabled) {
 		return originalArray;
@@ -917,17 +918,17 @@
 
 		  inputView.onConfirm = ^(NSString *inputText) {
 		    NSInteger minutes = [inputText integerValue];
-            if (minutes <= 0) {
-                minutes = 5;
-            }
-            NSInteger seconds = minutes * 60;
+		    if (minutes <= 0) {
+			    minutes = 5;
+		    }
+		    NSInteger seconds = minutes * 60;
 
 		    NSTimeInterval shutdownTimeValue = [[NSDate date] timeIntervalSince1970] + seconds;
 		    [[NSUserDefaults standardUserDefaults] setObject:@(shutdownTimeValue) forKey:@"DYYYTimerShutdownTime"];
 		    [[NSUserDefaults standardUserDefaults] synchronize];
 
 		    [DYYYManager showToast:[NSString stringWithFormat:@"抖音将在%ld分钟后关闭...", (long)minutes]];
-            
+
 		    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(seconds * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
 		      NSNumber *currentShutdownTime = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTimerShutdownTime"];
 		      if (currentShutdownTime != nil && [currentShutdownTime doubleValue] <= [[NSDate date] timeIntervalSince1970]) {
