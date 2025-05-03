@@ -1555,7 +1555,7 @@ static void showUserAgreementAlert() {
 		    [sections addObject:createSection(@"消息页与我的页", messageAndMineItems)];
 		    [sections addObject:createSection(@"提示与位置信息", infoItems)];
 		    [sections addObject:createSection(@"直播间界面", livestreamItems)];
-                    [sections addObject:createSection(@"长按现代面板", modernpanels)];
+        [sections addObject:createSection(@"长按面板", modernpanels)];
                     
 		    // 创建并推入二级设置页面
 		    AWESettingBaseViewController *subVC = createSubSettingsViewController(@"隐藏设置", sections);
