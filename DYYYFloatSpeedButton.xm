@@ -14,10 +14,10 @@
 @property (nonatomic, assign) BOOL justToggledLock; // 添加锁定状态切换标记
 @property (nonatomic, assign) BOOL originalLockState; // 保存原始锁定状态
 @property (nonatomic, assign) BOOL isResponding; // 新增属性跟踪按钮响应状态
-@property (nonatomic, strong) NSTimer *statusCheckTimer; // 新增状态检查定时器
+@property (nonatomic, strong) NSTimer *statusCheckTimer; // 状态检查定时器
 - (void)saveButtonPosition;
 - (void)loadSavedPosition;
-- (void)resetButtonState; // 添加方法确保按钮状态可以被重置
+- (void)resetButtonState; 
 - (void)toggleLockState; 
 @end
 
@@ -40,10 +40,7 @@
         self.layer.shadowOffset = CGSizeMake(0, 2);
         self.layer.shadowOpacity = 0.5;
         
-        // 确保用户交互始终启用
         self.userInteractionEnabled = YES;
-        
-        // 初始化响应状态为YES
         self.isResponding = YES;
         
         self.statusCheckTimer = [NSTimer scheduledTimerWithTimeInterval:60.0
@@ -53,13 +50,10 @@
                                                                 repeats:YES];
         [[NSRunLoop mainRunLoop] addTimer:self.statusCheckTimer forMode:NSRunLoopCommonModes];
         
-        // 使用单独的方法初始化手势，便于复用
         [self setupGestureRecognizers];
-        
-        // 加载保存的位置和锁定状态
+
         [self loadSavedPosition];
-        
-        // justToggledLock总是初始化为NO
+
         self.justToggledLock = NO;
     }
     return self;
@@ -88,9 +82,8 @@
     longPressGesture.delegate = (id<UIGestureRecognizerDelegate>)self;
 }
 
-// 修改手势代理方法
+
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
-    // 允许拖拽手势和其他手势同时工作
     if ([gestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]]) {
         return YES;
     }
@@ -156,7 +149,6 @@
     }
 }
 
-// 替换原来的firstStageLongPress和secondStageLongPress
 - (void)toggleLockState {
     // 切换锁定状态
     self.isLocked = !self.isLocked;
@@ -684,11 +676,9 @@ void updateSpeedButtonUI() {
 %end
 
 %ctor {
-    // 加载全局开关状态
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     isFloatSpeedButtonEnabled = [defaults boolForKey:@"DYYYEnableFloatSpeedButton"];
     
-    // 只有当全局开关打开时才初始化hooks
     if (isFloatSpeedButtonEnabled) {
         %init;
     }

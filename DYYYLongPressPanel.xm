@@ -3,6 +3,7 @@
 #import "DYYYCustomInputView.h"
 #import "DYYYFilterSettingsView.h"
 #import "DYYYKeywordListView.h"
+#import "DYYYConfirmCloseView.h"
 #import "DYYYManager.h"
 
 %hook AWELongPressPanelViewGroupModel
@@ -344,13 +345,25 @@
 			  return;
 		  }
 
-		  DYYYCustomInputView *inputView = [[DYYYCustomInputView alloc] initWithTitle:@"设置定时关闭时间" defaultText:@"5" placeholder:@"请输入关闭时间(单位:分钟)"];
+		  // 读取上次设置的时间
+		  NSInteger defaultMinutes = [[NSUserDefaults standardUserDefaults] integerForKey:@"DYYYTimerCloseMinutes"];
+		  if (defaultMinutes <= 0) {
+		      defaultMinutes = 5;
+		  }
+		  NSString *defaultText = [NSString stringWithFormat:@"%ld", (long)defaultMinutes];
+		  
+		  DYYYCustomInputView *inputView = [[DYYYCustomInputView alloc] initWithTitle:@"设置定时关闭时间" defaultText:defaultText placeholder:@"请输入关闭时间(单位:分钟)"];
 
 		  inputView.onConfirm = ^(NSString *inputText) {
 		    NSInteger minutes = [inputText integerValue];
 		    if (minutes <= 0) {
 			    minutes = 5;
 		    }
+		    
+		    // 保存用户设置的时间以供下次使用
+		    [[NSUserDefaults standardUserDefaults] setInteger:minutes forKey:@"DYYYTimerCloseMinutes"];
+		    [[NSUserDefaults standardUserDefaults] synchronize];
+		    
 		    NSInteger seconds = minutes * 60;
 
 		    NSTimeInterval shutdownTimeValue = [[NSDate date] timeIntervalSince1970] + seconds;
@@ -364,7 +377,12 @@
 		      if (currentShutdownTime != nil && [currentShutdownTime doubleValue] <= [[NSDate date] timeIntervalSince1970]) {
 			      [[NSUserDefaults standardUserDefaults] removeObjectForKey:@"DYYYTimerShutdownTime"];
 			      [[NSUserDefaults standardUserDefaults] synchronize];
-			      exit(0);
+			      
+			      // 显示确认关闭弹窗，而不是直接退出
+			      DYYYConfirmCloseView *confirmView = [[DYYYConfirmCloseView alloc] 
+                              initWithTitle:@"定时关闭" 
+                              message:@"定时关闭时间已到，是否关闭抖音？"];
+                  [confirmView show];
 		      }
 		    });
 		  };
@@ -914,13 +932,25 @@
 			  return;
 		  }
 
-		  DYYYCustomInputView *inputView = [[DYYYCustomInputView alloc] initWithTitle:@"设置定时关闭时间" defaultText:@"5" placeholder:@"请输入关闭时间(单位:分钟)"];
+		  // 读取上次设置的时间，如果没有则使用默认值5分钟
+		  NSInteger defaultMinutes = [[NSUserDefaults standardUserDefaults] integerForKey:@"DYYYTimerCloseMinutes"];
+		  if (defaultMinutes <= 0) {
+		      defaultMinutes = 5;
+		  }
+		  NSString *defaultText = [NSString stringWithFormat:@"%ld", (long)defaultMinutes];
+		  
+		  DYYYCustomInputView *inputView = [[DYYYCustomInputView alloc] initWithTitle:@"设置定时关闭时间" defaultText:defaultText placeholder:@"请输入关闭时间(单位:分钟)"];
 
 		  inputView.onConfirm = ^(NSString *inputText) {
 		    NSInteger minutes = [inputText integerValue];
 		    if (minutes <= 0) {
 			    minutes = 5;
 		    }
+		    
+		    // 保存用户设置的时间以供下次使用
+		    [[NSUserDefaults standardUserDefaults] setInteger:minutes forKey:@"DYYYTimerCloseMinutes"];
+		    [[NSUserDefaults standardUserDefaults] synchronize];
+		    
 		    NSInteger seconds = minutes * 60;
 
 		    NSTimeInterval shutdownTimeValue = [[NSDate date] timeIntervalSince1970] + seconds;
@@ -934,7 +964,12 @@
 		      if (currentShutdownTime != nil && [currentShutdownTime doubleValue] <= [[NSDate date] timeIntervalSince1970]) {
 			      [[NSUserDefaults standardUserDefaults] removeObjectForKey:@"DYYYTimerShutdownTime"];
 			      [[NSUserDefaults standardUserDefaults] synchronize];
-			      exit(0);
+			      
+			      // 显示确认关闭弹窗，而不是直接退出
+			      DYYYConfirmCloseView *confirmView = [[DYYYConfirmCloseView alloc] 
+                              initWithTitle:@"定时关闭" 
+                              message:@"定时关闭时间已到，是否关闭抖音？"];
+                  [confirmView show];
 		      }
 		    });
 		  };
