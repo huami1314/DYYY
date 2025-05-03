@@ -38,16 +38,35 @@
     // 修改左侧按钮颜色和文字颜色
     if (self.leftCancelButton) {
         if (isDarkMode) {
-            [self.leftCancelButton setBackgroundColor:[UIColor colorWithRed:0.25 green:0.25 blue:0.25 alpha:1.0]];
-            [self.leftCancelButton setTitleColor:[UIColor lightGrayColor] forState:UIControlStateNormal];
+            [self.leftCancelButton setBackgroundColor:[UIColor colorWithRed:0.25 green:0.25 blue:0.25 alpha:1.0]]; // 暗色模式按钮背景色
+            [self.leftCancelButton setTitleColor:[UIColor lightGrayColor] forState:UIControlStateNormal]; // 暗色模式文字颜色
         } else {
-            [self.leftCancelButton setBackgroundColor:[UIColor colorWithRed:0.9 green:0.9 blue:0.9 alpha:1.0]];
-            [self.leftCancelButton setTitleColor:[UIColor darkTextColor] forState:UIControlStateNormal];
+            [self.leftCancelButton setBackgroundColor:[UIColor colorWithRed:0.9 green:0.9 blue:0.9 alpha:1.0]]; // 默认按钮背景色
+            [self.leftCancelButton setTitleColor:[UIColor darkTextColor] forState:UIControlStateNormal]; // 默认文字颜色
         }
     }
 }
 
 - (void)viewDidLoad {
+    %orig;
+    [self updateDarkModeAppearance];
+}
+
+- (void)viewWillAppear:(BOOL)animated {
+    %orig;
+    [self updateDarkModeAppearance];
+}
+
+- (void)configWithImageView:(UIImageView *)imageView 
+                  lockImage:(UIImage *)lockImage 
+            defaultLockState:(BOOL)defaultLockState 
+             titleLabelText:(NSString *)titleText 
+           contentLabelText:(NSString *)contentText 
+       leftCancelButtonText:(NSString *)leftButtonText 
+      rightConfirmButtonText:(NSString *)rightButtonText 
+        rightBtnClickedBlock:(void (^)(void))rightBtnBlock 
+       leftButtonClickedBlock:(void (^)(void))leftBtnBlock {
+    
     %orig;
     [self updateDarkModeAppearance];
 }
