@@ -35,79 +35,76 @@
     self.blurView.alpha = isDarkMode ? 0.3 : 0.2;
     [self addSubview:self.blurView];
 
-    // 创建内容视图 - 纯白背景
+    // 创建内容视图 - 根据模式设置背景色
     self.contentView =
         [[UIView alloc] initWithFrame:CGRectMake(0, 0, 300, 350)];
     CGFloat screenHeight = UIScreen.mainScreen.bounds.size.height;
     self.contentView.center =
         CGPointMake(self.frame.size.width / 2, screenHeight / 3);
     self.originalFrame = self.contentView.frame;
-    self.contentView.backgroundColor = [UIColor whiteColor];
+    self.contentView.backgroundColor = isDarkMode ? 
+        [UIColor colorWithRed:30/255.0 green:30/255.0 blue:30/255.0 alpha:1.0] :
+        [UIColor whiteColor];
     self.contentView.layer.cornerRadius = 12;
     self.contentView.layer.masksToBounds = YES;
     self.contentView.alpha = 0;
     self.contentView.transform = CGAffineTransformMakeScale(0.8, 0.8);
     [self addSubview:self.contentView];
 
-    // 主标题
+    // 主标题 - 根据模式设置文本颜色
     self.titleLabel =
         [[UILabel alloc] initWithFrame:CGRectMake(20, 20, 260, 24)];
     self.titleLabel.text = title ?: @"过滤过滤项";
-    self.titleLabel.textColor = [UIColor colorWithRed:45 / 255.0
-                                                green:47 / 255.0
-                                                 blue:56 / 255.0
-                                                alpha:1.0]; // #2d2f38
+    self.titleLabel.textColor = isDarkMode ? 
+        [UIColor colorWithRed:230/255.0 green:230/255.0 blue:235/255.0 alpha:1.0] : 
+        [UIColor colorWithRed:45/255.0 green:47/255.0 blue:56/255.0 alpha:1.0];
     self.titleLabel.textAlignment = NSTextAlignmentCenter;
     self.titleLabel.font = [UIFont systemFontOfSize:18
                                              weight:UIFontWeightMedium];
     [self.contentView addSubview:self.titleLabel];
 
-    // 表格视图
+    // 表格视图 - 根据模式设置背景色和分隔线颜色
     self.keywordsTableView =
         [[UITableView alloc] initWithFrame:CGRectMake(20, 54, 260, 260)];
     self.keywordsTableView.delegate = self;
     self.keywordsTableView.dataSource = self;
-    self.keywordsTableView.backgroundColor = [UIColor colorWithRed:245 / 255.0
-                                                             green:245 / 255.0
-                                                              blue:245 / 255.0
-                                                             alpha:1.0];
+    self.keywordsTableView.backgroundColor = isDarkMode ?
+        [UIColor colorWithRed:45/255.0 green:45/255.0 blue:45/255.0 alpha:1.0] :
+        [UIColor colorWithRed:245/255.0 green:245/255.0 blue:245/255.0 alpha:1.0];
     self.keywordsTableView.layer.cornerRadius = 8;
     self.keywordsTableView.tableFooterView = [UIView new]; // 隐藏空行分隔线
     self.keywordsTableView.separatorStyle =
         UITableViewCellSeparatorStyleSingleLine;
     self.keywordsTableView.separatorInset = UIEdgeInsetsMake(0, 15, 0, 15);
-    self.keywordsTableView.separatorColor = [UIColor colorWithRed:230 / 255.0
-                                                            green:230 / 255.0
-                                                             blue:230 / 255.0
-                                                            alpha:1.0];
+    self.keywordsTableView.separatorColor = isDarkMode ?
+        [UIColor colorWithRed:60/255.0 green:60/255.0 blue:60/255.0 alpha:1.0] :
+        [UIColor colorWithRed:230/255.0 green:230/255.0 blue:230/255.0 alpha:1.0];
     [self.contentView addSubview:self.keywordsTableView];
 
-    // 添加按钮
+    // 添加按钮 - 根据模式设置背景色
     self.addButton = [UIButton buttonWithType:UIButtonTypeSystem];
     self.addButton.frame = CGRectMake(20, 324, 260, 40);
-    self.addButton.backgroundColor = [UIColor colorWithRed:245 / 255.0
-                                                     green:245 / 255.0
-                                                      blue:245 / 255.0
-                                                     alpha:1.0];
+    self.addButton.backgroundColor = isDarkMode ?
+        [UIColor colorWithRed:45/255.0 green:45/255.0 blue:45/255.0 alpha:1.0] :
+        [UIColor colorWithRed:245/255.0 green:245/255.0 blue:245/255.0 alpha:1.0];
     self.addButton.layer.cornerRadius = 8;
     [self.addButton setTitle:@"+ 添加过滤项" forState:UIControlStateNormal];
-    [self.addButton setTitleColor:[UIColor colorWithRed:11 / 255.0
-                                                  green:223 / 255.0
-                                                   blue:154 / 255.0
+    [self.addButton setTitleColor:[UIColor colorWithRed:11/255.0
+                                                  green:223/255.0
+                                                   blue:154/255.0
                                                   alpha:1.0]
-                         forState:UIControlStateNormal]; // #0BDF9A
+                         forState:UIControlStateNormal]; // 强调色保持不变 #0BDF9A
     [self.addButton addTarget:self
                        action:@selector(addKeywordTapped)
              forControlEvents:UIControlEventTouchUpInside];
     [self.contentView addSubview:self.addButton];
 
-    // 添加内容和按钮之间的分割线
+    // 添加内容和按钮之间的分割线 - 根据模式设置颜色
     UIView *contentButtonSeparator =
         [[UIView alloc] initWithFrame:CGRectMake(0, 374, 300, 0.5)];
-    contentButtonSeparator.backgroundColor = [UIColor colorWithRed:230 / 255.0
-                                                             green:230 / 255.0
-                                                              blue:230 / 255.0
-                                                             alpha:1.0];
+    contentButtonSeparator.backgroundColor = isDarkMode ?
+        [UIColor colorWithRed:60/255.0 green:60/255.0 blue:60/255.0 alpha:1.0] :
+        [UIColor colorWithRed:230/255.0 green:230/255.0 blue:230/255.0 alpha:1.0];
     [self.contentView addSubview:contentButtonSeparator];
 
     // 按钮容器
@@ -116,40 +113,37 @@
                                  300, 55.5)];
     [self.contentView addSubview:buttonContainer];
 
-    // 取消按钮
+    // 取消按钮 - 根据模式设置文本颜色
     self.cancelButton = [UIButton buttonWithType:UIButtonTypeSystem];
     self.cancelButton.frame = CGRectMake(0, 0, 149.5, 55.5);
     self.cancelButton.backgroundColor = [UIColor clearColor];
     [self.cancelButton setTitle:@"取消" forState:UIControlStateNormal];
-    [self.cancelButton setTitleColor:[UIColor colorWithRed:124 / 255.0
-                                                     green:124 / 255.0
-                                                      blue:130 / 255.0
-                                                     alpha:1.0]
-                            forState:UIControlStateNormal]; // #7c7c82
+    [self.cancelButton setTitleColor:isDarkMode ?
+        [UIColor colorWithRed:160/255.0 green:160/255.0 blue:165/255.0 alpha:1.0] :
+        [UIColor colorWithRed:124/255.0 green:124/255.0 blue:130/255.0 alpha:1.0]
+                            forState:UIControlStateNormal];
     [self.cancelButton addTarget:self
                           action:@selector(cancelTapped)
                 forControlEvents:UIControlEventTouchUpInside];
     [buttonContainer addSubview:self.cancelButton];
 
-    // 按钮之间的分割线
+    // 按钮之间的分割线 - 根据模式设置颜色
     UIView *buttonSeparator =
         [[UIView alloc] initWithFrame:CGRectMake(149.5, 0, 0.5, 55.5)];
-    buttonSeparator.backgroundColor = [UIColor colorWithRed:230 / 255.0
-                                                      green:230 / 255.0
-                                                       blue:230 / 255.0
-                                                      alpha:1.0];
+    buttonSeparator.backgroundColor = isDarkMode ?
+        [UIColor colorWithRed:60/255.0 green:60/255.0 blue:60/255.0 alpha:1.0] :
+        [UIColor colorWithRed:230/255.0 green:230/255.0 blue:230/255.0 alpha:1.0];
     [buttonContainer addSubview:buttonSeparator];
 
-    // 确认按钮
+    // 确认按钮 - 根据模式设置文本颜色
     self.confirmButton = [UIButton buttonWithType:UIButtonTypeSystem];
     self.confirmButton.frame = CGRectMake(150, 0, 150, 55.5);
     self.confirmButton.backgroundColor = [UIColor clearColor];
     [self.confirmButton setTitle:@"确定" forState:UIControlStateNormal];
-    [self.confirmButton setTitleColor:[UIColor colorWithRed:45 / 255.0
-                                                      green:47 / 255.0
-                                                       blue:56 / 255.0
-                                                      alpha:1.0]
-                             forState:UIControlStateNormal]; // #2d2f38
+    [self.confirmButton setTitleColor:isDarkMode ?
+        [UIColor colorWithRed:230/255.0 green:230/255.0 blue:235/255.0 alpha:1.0] :
+        [UIColor colorWithRed:45/255.0 green:47/255.0 blue:56/255.0 alpha:1.0]
+                             forState:UIControlStateNormal];
     [self.confirmButton addTarget:self
                            action:@selector(confirmTapped)
                  forControlEvents:UIControlEventTouchUpInside];
@@ -242,6 +236,8 @@
   static NSString *cellIdentifier = @"KeywordCell";
   UITableViewCell *cell =
       [tableView dequeueReusableCellWithIdentifier:cellIdentifier];
+  
+  BOOL isDarkMode = [DYYYManager isDarkMode];
 
   if (!cell) {
     cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault
@@ -255,6 +251,11 @@
     UIImage *xImage = [[UIImage systemImageNamed:@"xmark"]
         imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
     [deleteButton setImage:xImage forState:UIControlStateNormal];
+    
+    // 设置删除按钮颜色
+    [deleteButton setTintColor:isDarkMode ?
+        [UIColor colorWithRed:160/255.0 green:160/255.0 blue:165/255.0 alpha:1.0] :
+        [UIColor colorWithRed:124/255.0 green:124/255.0 blue:130/255.0 alpha:1.0]];
 
     // 设置灰色
     cell.accessoryView = deleteButton;
@@ -273,15 +274,17 @@
     cell.accessoryView = deleteButton;
     cell.selectionStyle = UITableViewCellSelectionStyleNone;
     cell.backgroundColor = [UIColor clearColor];
-    cell.textLabel.textColor = [UIColor colorWithRed:45 / 255.0
-                                               green:47 / 255.0
-                                                blue:56 / 255.0
-                                               alpha:1.0]; // #2d2f38
+    cell.textLabel.textColor = isDarkMode ?
+        [UIColor colorWithRed:230/255.0 green:230/255.0 blue:235/255.0 alpha:1.0] :
+        [UIColor colorWithRed:45/255.0 green:47/255.0 blue:56/255.0 alpha:1.0];
   }
 
   // 配置单元格
   cell.textLabel.text = self.keywords[indexPath.row];
   cell.accessoryView.tag = indexPath.row; // 用于识别删除哪个过滤项
+  
+  // 设置背景色透明，以便表格背景色可见
+  cell.backgroundColor = [UIColor clearColor];
 
   return cell;
 }
