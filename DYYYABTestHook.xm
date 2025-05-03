@@ -19,6 +19,7 @@ dispatch_once_t onceToken;
 BOOL gDataLoaded = NO;
 static NSDate *lastLoadAttemptTime = nil;
 static const NSTimeInterval kMinLoadInterval = 60.0;
+BOOL gABTestDataFixed = NO;
 
 // 从指定JSON文件加载ABTest数据，仅当需要时加载
 void ensureABTestDataLoaded(void) {
@@ -175,6 +176,11 @@ static NSMutableDictionary *gCaseCache = nil;
 
 // 拦截一致性ABTest值获取方法
 - (id)getValueOfConsistentABTestWithKey:(id)arg1 {
+    // 如果已经完成ABTest数据固定，则不再拦截这个方法
+    if (gABTestDataFixed) {
+        return %orig;
+    }
+
     if (abTestBlockEnabled && arg1) {
         // 确保数据已加载
         if (!gDataLoaded) {
@@ -199,23 +205,25 @@ static NSMutableDictionary *gCaseCache = nil;
 %end
 
 %ctor {
-	// 初始化时加载设置
-	%init;
-	abTestBlockEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"ABTestBlockEnabled"];
+    // 初始化时加载设置
+    %init;
+    abTestBlockEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"ABTestBlockEnabled"];
 
-	// 启动时加载数据并设置一次
-	dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-	  // 获取ABTestManager实例
-	  AWEABTestManager *manager = [%c(AWEABTestManager) sharedManager];
-	  if (manager && gFixedABTestData) {
-		  NSLog(@"[DYYY] 正在设置固定ABTest数据");
-		  [manager setAbTestData:gFixedABTestData];
+    // 启动时加载数据并设置一次
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        AWEABTestManager *manager = [%c(AWEABTestManager) sharedManager];
+        if (manager && gFixedABTestData) {
+            NSLog(@"[DYYY] 正在设置固定ABTest数据");
+            [manager setAbTestData:gFixedABTestData];
 
-		  if ([manager respondsToSelector:@selector(_saveABTestData:)]) {
-			  [manager _saveABTestData:gFixedABTestData];
-		  }
-	  } else {
-		  NSLog(@"[DYYY] 无法设置ABTest数据: manager=%@, data=%@", manager, gFixedABTestData ? @"已加载" : @"未加载");
-	  }
-	});
+            if ([manager respondsToSelector:@selector(_saveABTestData:)]) {
+                [manager _saveABTestData:gFixedABTestData];
+            }
+
+            gABTestDataFixed = YES;
+            NSLog(@"[DYYY] ABTest数据已固定，不再拦截getValueOfConsistentABTestWithKey方法");
+        } else {
+            NSLog(@"[DYYY] 无法设置ABTest数据: manager=%@, data=%@", manager, gFixedABTestData ? @"已加载" : @"未加载");
+        }
+    });
 }

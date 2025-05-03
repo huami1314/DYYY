@@ -567,7 +567,7 @@
             CGFloat totalWidth = collectionView.bounds.size.width - 12 * (itemCount - 1);
             CGFloat itemWidth = totalWidth / itemCount;
             return CGSizeMake(itemWidth, 73);
-        }
+        }  
         return CGSizeMake(73, 73);
     }
 
