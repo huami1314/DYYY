@@ -899,3 +899,6 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWEFeedRootViewController : UIViewController
 - (BOOL)prefersStatusBarHidden;
 @end
+
+@interface AWEFeedUnfollowFamiliarFollowAndDislikeView : UIView
+@end
