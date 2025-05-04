@@ -450,15 +450,10 @@ void updateSpeedButtonUI() {
 %hook AWEAwemePlayVideoViewController
 
 - (void)setIsAutoPlay:(BOOL)arg0 {
-    // 检查是否启用了自动恢复第一个倍速的功能
     BOOL autoRestoreSpeed = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYAutoRestoreSpeed"];
-    // 如果启用了自动恢复功能，则将当前索引设置为0（第一个速度）
     if (autoRestoreSpeed) {
         setCurrentSpeedIndex(0);
     }
-    float speed = getCurrentSpeed();
-    NSInteger speedIndex = getCurrentSpeedIndex();
-
     currentVideoController = self;
     updateSpeedButtonUI();
     %orig(arg0);
@@ -534,20 +529,6 @@ void updateSpeedButtonUI() {
         speedButton.hidden = isCommentViewVisible;
     }
     
-    if (currentVideoController) {
-        [currentVideoController adjustPlaybackSpeed:getCurrentSpeed()];
-    } else {
-        UIViewController *vc = [self firstAvailableUIViewController];
-        while (vc && ![vc isKindOfClass:%c(AWEAwemePlayVideoViewController)]) {
-            vc = vc.parentViewController;
-        }
-        
-        if ([vc isKindOfClass:%c(AWEAwemePlayVideoViewController)]) {
-            AWEAwemePlayVideoViewController *videoVC = (AWEAwemePlayVideoViewController *)vc;
-            [videoVC adjustPlaybackSpeed:getCurrentSpeed()];
-            currentVideoController = videoVC;
-        }
-    }
 }
 
 - (void)viewWillAppear:(BOOL)animated {
