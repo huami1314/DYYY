@@ -406,6 +406,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWEHPTopTabItemModel : NSObject
 @property (nonatomic, copy) NSString *channelID;
 @property (nonatomic, copy) NSString *channelTitle;
+@property (nonatomic, copy) NSString *title;
 @end
 
 @interface AWEPlayInteractionStrongifyShareContentView : UIView
