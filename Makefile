@@ -18,15 +18,13 @@ ifeq ($(SCHEME),roothide)
 else ifeq ($(SCHEME),rootless)
     export THEOS_PACKAGE_SCHEME = rootless
 else
-    # 默认使用rootless
-    export THEOS_PACKAGE_SCHEME = rootless
+    unexport THEOS_PACKAGE_SCHEME
 endif
 
-# 判断是否在GitHub Action环境中运行
+# 在GitHub Actions中运行时的特殊配置
 ifeq ($(GITHUB_ACTIONS),true)
-    # 在GitHub Actions中运行时的特殊配置
-    export THEOS_PACKAGE_SCHEME = rootless
     export INSTALL = 0
+    export FINALPACKAGE = 1
 endif
 
 export DEBUG = 0

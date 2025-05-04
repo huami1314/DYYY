@@ -347,7 +347,7 @@ static void showUserAgreementAlert() {
 		AWESettingItemModel *dyyyItem = [[%c(AWESettingItemModel) alloc] init];
 		dyyyItem.identifier = DYYY_NAME;
 		dyyyItem.title = DYYY_NAME;
-		dyyyItem.detail = DYYY_VERSION_STRING;
+		dyyyItem.detail = DYYY_VERSION;
 		dyyyItem.type = 0;
 		dyyyItem.svgIconImageName = @"ic_sapling_outlined";
 		dyyyItem.cellType = 26;
@@ -1148,7 +1148,7 @@ static void showUserAgreementAlert() {
 			      @"detail" : @"",
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_eyeslash_outlined_16"},
-                            @{@"identifier" : @"DYYYHideFamiliar",
+			    @{@"identifier" : @"DYYYHideFamiliar",
 			      @"title" : @"隐藏朋友日常按钮",
 			      @"detail" : @"",
 			      @"cellType" : @6,
@@ -1440,114 +1440,84 @@ static void showUserAgreementAlert() {
 		    }
 
 		    // 【长按面板】分类
-                   NSMutableArray<AWESettingItemModel *> *modernpanels = [NSMutableArray array];
-                   NSArray *modernpanelSettings = @[
-                       @{
-                           @"identifier": @"DYYYHidePanelDaily",
-                           @"title": @"隐藏面板日常",
-                           @"detail": @"",
-                           @"cellType": @6,
-                           @"imageName": @"ic_eyeslash_outlined_16"
-                       },
-                       @{
-                           @"identifier": @"DYYYHidePanelRecommend",
-                           @"title": @"隐藏面板推荐",
-                           @"detail": @"",
-                           @"cellType": @6,
-                           @"imageName": @"ic_eyeslash_outlined_16"
-                       },
-                       @{
-                           @"identifier": @"DYYYHidePanelReport",
-                           @"title": @"隐藏面板举报",
-                           @"detail": @"",
-                           @"cellType": @6,
-                           @"imageName": @"ic_eyeslash_outlined_16"
-                       },
-                       @{
-                           @"identifier": @"DYYYHidePanelSpeed",
-                           @"title": @"隐藏面板倍速",
-                           @"detail": @"",
-                           @"cellType": @6,
-                           @"imageName": @"ic_eyeslash_outlined_16"
-                       },
-                       @{
-                           @"identifier": @"DYYYHidePanelClearScreen",
-                           @"title": @"隐藏面板清屏",
-                           @"detail": @"",
-                           @"cellType": @6,
-                           @"imageName": @"ic_eyeslash_outlined_16"
-                       },
-                       @{
-                           @"identifier": @"DYYYHidePanelFavorite",
-                           @"title": @"隐藏面板缓存",
-                           @"detail": @"",
-                           @"cellType": @6,
-                           @"imageName": @"ic_eyeslash_outlined_16"
-                       },
-                       @{
-                           @"identifier": @"DYYYHidePanelCast",
-                           @"title": @"隐藏面板投屏",
-                           @"detail": @"",
-                           @"cellType": @6,
-                           @"imageName": @"ic_eyeslash_outlined_16"
-                       },
-                       @{
-                           @"identifier": @"DYYYHidePanelSubtitle",
-                           @"title": @"隐藏面板弹幕",
-                           @"detail": @"",
-                           @"cellType": @6,
-                           @"imageName": @"ic_eyeslash_outlined_16"
-                       },
-                       @{
-                           @"identifier": @"DYYYHidePanelSearchImage",
-                           @"title": @"隐藏面板识图",
-                           @"detail": @"",
-                           @"cellType": @6,
-                           @"imageName": @"ic_eyeslash_outlined_16"
-                       },
-                       @{
-                           @"identifier": @"DYYYHidePanelListenDouyin",
-                           @"title": @"隐藏面板听抖音",
-                           @"detail": @"",
-                           @"cellType": @6,
-                           @"imageName": @"ic_eyeslash_outlined_16"
-                       },
-                       @{
-                           @"identifier": @"DYYYHidePanelOpenInPC",
-                           @"title": @"隐藏电脑Pad打开",
-                           @"detail": @"",
-                           @"cellType": @6,
-                           @"imageName": @"ic_eyeslash_outlined_16"
-                       },
-                       @{
-                           @"identifier": @"DYYYHidePanelLater",
-                           @"title": @"隐藏面板稍后再看",
-                           @"detail": @"",
-                           @"cellType": @6,
-                           @"imageName": @"ic_eyeslash_outlined_16"
-                       },
-                       @{
-                           @"identifier": @"DYYYHidePanelAutoPlay",
-                           @"title": @"隐藏面板自动连播",
-                           @"detail": @"",
-                           @"cellType": @6,
-                           @"imageName": @"ic_eyeslash_outlined_16"
-                       },
-                       @{
-                           @"identifier": @"DYYYHidePanelNotInterested",
-                           @"title": @"隐藏面板不感兴趣",
-                           @"detail": @"",
-                           @"cellType": @6,
-                           @"imageName": @"ic_eyeslash_outlined_16"
-                       },
-                       @{
-                           @"identifier": @"DYYYHidePanelBackgroundPlay",
-                           @"title": @"隐藏面板后台播放",
-                           @"detail": @"",
-                           @"cellType": @6,
-                           @"imageName": @"ic_eyeslash_outlined_16"
-                       }
-                   ];
+		    NSMutableArray<AWESettingItemModel *> *modernpanels = [NSMutableArray array];
+		    NSArray *modernpanelSettings = @[
+			    @{@"identifier" : @"DYYYHidePanelDaily",
+			      @"title" : @"隐藏面板日常",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_eyeslash_outlined_16"},
+			    @{@"identifier" : @"DYYYHidePanelRecommend",
+			      @"title" : @"隐藏面板推荐",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_eyeslash_outlined_16"},
+			    @{@"identifier" : @"DYYYHidePanelReport",
+			      @"title" : @"隐藏面板举报",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_eyeslash_outlined_16"},
+			    @{@"identifier" : @"DYYYHidePanelSpeed",
+			      @"title" : @"隐藏面板倍速",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_eyeslash_outlined_16"},
+			    @{@"identifier" : @"DYYYHidePanelClearScreen",
+			      @"title" : @"隐藏面板清屏",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_eyeslash_outlined_16"},
+			    @{@"identifier" : @"DYYYHidePanelFavorite",
+			      @"title" : @"隐藏面板缓存",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_eyeslash_outlined_16"},
+			    @{@"identifier" : @"DYYYHidePanelCast",
+			      @"title" : @"隐藏面板投屏",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_eyeslash_outlined_16"},
+			    @{@"identifier" : @"DYYYHidePanelSubtitle",
+			      @"title" : @"隐藏面板弹幕",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_eyeslash_outlined_16"},
+			    @{@"identifier" : @"DYYYHidePanelSearchImage",
+			      @"title" : @"隐藏面板识图",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_eyeslash_outlined_16"},
+			    @{@"identifier" : @"DYYYHidePanelListenDouyin",
+			      @"title" : @"隐藏面板听抖音",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_eyeslash_outlined_16"},
+			    @{@"identifier" : @"DYYYHidePanelOpenInPC",
+			      @"title" : @"隐藏电脑Pad打开",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_eyeslash_outlined_16"},
+			    @{@"identifier" : @"DYYYHidePanelLater",
+			      @"title" : @"隐藏面板稍后再看",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_eyeslash_outlined_16"},
+			    @{@"identifier" : @"DYYYHidePanelAutoPlay",
+			      @"title" : @"隐藏面板自动连播",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_eyeslash_outlined_16"},
+			    @{@"identifier" : @"DYYYHidePanelNotInterested",
+			      @"title" : @"隐藏面板不感兴趣",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_eyeslash_outlined_16"},
+			    @{@"identifier" : @"DYYYHidePanelBackgroundPlay",
+			      @"title" : @"隐藏面板后台播放",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_eyeslash_outlined_16"}
+		    ];
 		    for (NSDictionary *dict in modernpanelSettings) {
 			    AWESettingItemModel *item = [self createSettingItem:dict];
 			    [modernpanels addObject:item];
@@ -1560,8 +1530,8 @@ static void showUserAgreementAlert() {
 		    [sections addObject:createSection(@"消息页与我的页", messageAndMineItems)];
 		    [sections addObject:createSection(@"提示与位置信息", infoItems)];
 		    [sections addObject:createSection(@"直播间界面", livestreamItems)];
-                    [sections addObject:createSection(@"隐藏面板功能", modernpanels)];
-                    
+		    [sections addObject:createSection(@"隐藏面板功能", modernpanels)];
+
 		    // 创建并推入二级设置页面
 		    AWESettingBaseViewController *subVC = createSubSettingsViewController(@"隐藏设置", sections);
 		    [rootVC.navigationController pushViewController:(UIViewController *)subVC animated:YES];
@@ -1646,7 +1616,7 @@ static void showUserAgreementAlert() {
 			      @"detail" : @"",
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_xmark_outlined_20"},
-				@{@"identifier" : @"DYYYHideOtherChannel",
+			    @{@"identifier" : @"DYYYHideOtherChannel",
 			      @"title" : @"移除顶栏其他",
 			      @"detail" : @"",
 			      @"cellType" : @26,
@@ -1676,7 +1646,7 @@ static void showUserAgreementAlert() {
 			    };
 			    [removeSettingsItems addObject:item];
 
-				if ([item.identifier isEqualToString:@"DYYYHideOtherChannel"]) {
+			    if ([item.identifier isEqualToString:@"DYYYHideOtherChannel"]) {
 				    NSString *savedValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYHideOtherChannel"];
 				    item.detail = savedValue ?: @"";
 				    item.cellTappedBlock = ^{
@@ -1719,7 +1689,7 @@ static void showUserAgreementAlert() {
 				      // 显示关键词列表视图
 				      [keywordListView show];
 				    };
-				}
+			    }
 		    }
 
 		    NSMutableArray *sections = [NSMutableArray array];
@@ -1746,11 +1716,6 @@ static void showUserAgreementAlert() {
 		    // 【长按面板设置】分类
 		    NSMutableArray<AWESettingItemModel *> *longPressItems = [NSMutableArray array];
 		    NSArray *longPressSettings = @[
-			    @{@"identifier" : @"DYYYLongPressDownload",
-			      @"title" : @"长按面板保存媒体",
-			      @"detail" : @"",
-			      @"cellType" : @6,
-			      @"imageName" : @"ic_boxarrowdown_outlined"},
 			    @{@"identifier" : @"DYYYLongPressSaveVideo",
 			      @"title" : @"长按保存当前视频",
 			      @"detail" : @"",
@@ -1801,7 +1766,7 @@ static void showUserAgreementAlert() {
 			      @"detail" : @"",
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_funnel_outlined_20"},
-				@{@"identifier" : @"DYYYLongPressTimerClose",
+			    @{@"identifier" : @"DYYYLongPressTimerClose",
 			      @"title" : @"长按定时关闭抖音",
 			      @"detail" : @"",
 			      @"cellType" : @6,
@@ -1899,8 +1864,6 @@ static void showUserAgreementAlert() {
 
 		    // 获取当前热更新状态
 		    abTestBlockEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"ABTestBlockEnabled"];
-
-		    // 添加"禁用热更新"开关
 		    AWESettingItemModel *disableHotUpdateItem = [[%c(AWESettingItemModel) alloc] init];
 		    disableHotUpdateItem.identifier = @"ABTestBlockEnabled";
 		    disableHotUpdateItem.title = @"禁用下发配置";
@@ -1914,36 +1877,73 @@ static void showUserAgreementAlert() {
 
 		    disableHotUpdateItem.switchChangedBlock = ^{
 		      BOOL newValue = !disableHotUpdateItem.isSwitchOn;
-		      disableHotUpdateItem.isSwitchOn = newValue;
-		      abTestBlockEnabled = newValue;
 
-		      // 保存设置
-		      [[NSUserDefaults standardUserDefaults] setBool:newValue forKey:@"ABTestBlockEnabled"];
-		      [[NSUserDefaults standardUserDefaults] synchronize];
-
-		      // 如果启用了拦截，重新加载固定数据
+		      // 当用户尝试启用"禁用下发配置"时显示确认弹窗
 		      if (newValue) {
-			      // 重置全局变量，下次加载时会重新读取文件
-			      gFixedABTestData = nil;
-			      onceToken = 0;
-			      loadFixedABTestData();
-		      }
+			      [DYYYBottomAlertView showAlertWithTitle:@"禁用下发配置"
+				  message:@"请尽量保证在禁用热更新前导入正确配置，否则会导致插件部分功能失效。确定要继续吗？"
+				  cancelButtonText:@"取消"
+				  confirmButtonText:@"确定"
+				  cancelAction:^{
+				    // 取消操作，恢复开关状态
+				    disableHotUpdateItem.isSwitchOn = !newValue;
+				  }
+				  confirmAction:^{
+				    // 用户确认后执行原来的逻辑
+				    disableHotUpdateItem.isSwitchOn = newValue;
+				    abTestBlockEnabled = newValue;
 
-		      // 刷新表格以反映状态变化
-		      UIViewController *topVC = topView();
-		      if ([topVC isKindOfClass:%c(AWESettingBaseViewController)]) {
-			      dispatch_async(dispatch_get_main_queue(), ^{
-				UITableView *tableView = nil;
-				for (UIView *subview in topVC.view.subviews) {
-					if ([subview isKindOfClass:[UITableView class]]) {
-						tableView = (UITableView *)subview;
-						break;
+				    // 保存设置
+				    [[NSUserDefaults standardUserDefaults] setBool:newValue forKey:@"ABTestBlockEnabled"];
+				    [[NSUserDefaults standardUserDefaults] synchronize];
+
+				    // 重置全局变量，下次加载时会重新读取文件
+				    gFixedABTestData = nil;
+				    onceToken = 0;
+				    loadFixedABTestData();
+
+				    // 刷新表格以反映状态变化
+				    UIViewController *topVC = topView();
+				    if ([topVC isKindOfClass:%c(AWESettingBaseViewController)]) {
+					    dispatch_async(dispatch_get_main_queue(), ^{
+					      UITableView *tableView = nil;
+					      for (UIView *subview in topVC.view.subviews) {
+						      if ([subview isKindOfClass:[UITableView class]]) {
+							      tableView = (UITableView *)subview;
+							      break;
+						      }
+					      }
+					      if (tableView) {
+						      [tableView reloadData];
+					      }
+					    });
+				    }
+				  }];
+		      } else {
+			      // 如果是关闭功能，直接执行不需要确认
+			      disableHotUpdateItem.isSwitchOn = newValue;
+			      abTestBlockEnabled = newValue;
+
+			      // 保存设置
+			      [[NSUserDefaults standardUserDefaults] setBool:newValue forKey:@"ABTestBlockEnabled"];
+			      [[NSUserDefaults standardUserDefaults] synchronize];
+
+			      // 刷新表格以反映状态变化
+			      UIViewController *topVC = topView();
+			      if ([topVC isKindOfClass:%c(AWESettingBaseViewController)]) {
+				      dispatch_async(dispatch_get_main_queue(), ^{
+					UITableView *tableView = nil;
+					for (UIView *subview in topVC.view.subviews) {
+						if ([subview isKindOfClass:[UITableView class]]) {
+							tableView = (UITableView *)subview;
+							break;
+						}
 					}
-				}
-				if (tableView) {
-					[tableView reloadData];
-				}
-			      });
+					if (tableView) {
+						[tableView reloadData];
+					}
+				      });
+			      }
 		      }
 		    };
 
@@ -2889,7 +2889,7 @@ static void showUserAgreementAlert() {
 		  AWESettingItemModel *aboutItem = [[%c(AWESettingItemModel) alloc] init];
 		  aboutItem.identifier = @"DYYYAbout";
 		  aboutItem.title = @"关于插件";
-		  aboutItem.detail = DYYY_VERSION_STRING;
+		  aboutItem.detail = DYYY_VERSION;
 		  aboutItem.type = 0;
 		  aboutItem.iconImageName = @"awe-settings-icon-about";
 		  aboutItem.cellType = 26;
@@ -2897,7 +2897,7 @@ static void showUserAgreementAlert() {
 		  aboutItem.isEnable = YES;
 		  aboutItem.cellTappedBlock = ^{
 		    showAboutDialog(@"关于DYYY",
-				    @"版本: " DYYY_VERSION_STRING @"\n\n"
+				    @"版本: " DYYY_VERSION @"\n\n"
 				    @"感谢使用DYYY\n\n"
 				    @"感谢huami开源\n\n"
 				    @"@维他入我心 基于DYYY二次开发\n\n"

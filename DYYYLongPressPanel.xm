@@ -34,18 +34,6 @@
     BOOL enableFilterKeyword = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYLongPressFilterTitle"];
     BOOL enableTimerClose = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYLongPressTimerClose"];
     
-    // 兼容旧版设置
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYLongPressDownload"]) {
-        if (!enableSaveVideo && !enableSaveCover && !enableSaveAudio && !enableSaveCurrentImage && !enableSaveAllImages) {
-            enableSaveVideo = enableSaveCover = enableSaveAudio = enableSaveCurrentImage = enableSaveAllImages = YES;
-        }
-    }
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYCopyText"]) {
-        if (!enableCopyText && !enableCopyLink) {
-            enableCopyText = enableCopyLink = YES;
-        }
-    }
-    
     // 检查是否有任何功能启用
     hasAnyFeatureEnabled = enableSaveVideo || enableSaveCover || enableSaveAudio || enableSaveCurrentImage || enableSaveAllImages || enableCopyText || enableCopyLink || enableApiDownload ||
                            enableFilterUser || enableFilterKeyword || enableTimerClose;
