@@ -1892,16 +1892,6 @@ static CGFloat currentScale = 1.0;
     return %orig;
 }
 
-- (void)setupUI {
-    %orig;
-    if ([self.accessibilityLabel isEqualToString:@"首页"] && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHomeRefresh"] && self.status == 2) {
-        if (self.gestureRecognizers && self.gestureRecognizers.count > 0) {
-            NSMutableArray *gestures = [NSMutableArray arrayWithArray:self.gestureRecognizers];
-            [gestures removeObjectAtIndex:0];
-            self.gestureRecognizers = gestures;
-        }
-    } 
-}
 %end
 
 // 屏蔽版本更新
