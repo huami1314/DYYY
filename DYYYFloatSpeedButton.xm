@@ -454,7 +454,12 @@ void updateSpeedButtonUI() {
     if (autoRestoreSpeed) {
         setCurrentSpeedIndex(0);
     }
+    float speed = getCurrentSpeed();
+    NSInteger speedIndex = getCurrentSpeedIndex();
     currentVideoController = self;
+    if (speed != 1.0) {
+        [currentVideoController adjustPlaybackSpeed:speed];
+    }
     updateSpeedButtonUI();
     %orig(arg0);
 }
@@ -528,7 +533,7 @@ void updateSpeedButtonUI() {
     if (speedButton) {
         speedButton.hidden = isCommentViewVisible;
     }
-    
+
 }
 
 - (void)viewWillAppear:(BOOL)animated {
