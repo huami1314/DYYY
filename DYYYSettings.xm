@@ -1362,11 +1362,6 @@ static void showUserAgreementAlert() {
 			      @"detail" : @"",
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_eyeslash_outlined_16"},
-			    @{@"identifier" : @"DYYYHidePanelDaily",
-			      @"title" : @"隐藏面板日常",
-			      @"detail" : @"",
-			      @"cellType" : @6,
-			      @"imageName" : @"ic_eyeslash_outlined_16"},
 			    @{@"identifier" : @"DYYYHidekeyboardai",
 			      @"title" : @"隐藏键盘AI",
 			      @"detail" : @"",
@@ -1439,6 +1434,119 @@ static void showUserAgreementAlert() {
 			    [livestreamItems addObject:item];
 		    }
 
+		    // 【长按面板】分类
+                   NSMutableArray<AWESettingItemModel *> *modernpanels = [NSMutableArray array];
+                   NSArray *modernpanelSettings = @[
+                      @{
+                           @"identifier": @"DYYYHidePanelDaily",
+                           @"title": @"转发到日常",
+                           @"detail": @"",
+                           @"cellType": @6,
+                           @"imageName": @"ic_eyeslash_outlined_16"
+                       },
+                       @{
+                           @"identifier": @"DYYYHidePanelRecommend",
+                           @"title": @"推荐",
+                           @"detail": @"",
+                           @"cellType": @6,
+                           @"imageName": @"ic_eyeslash_outlined_16"
+                       },
+                       @{
+                           @"identifier": @"DYYYHidePanelNotInterested",
+                           @"title": @"不感兴趣",
+                           @"detail": @"",
+                           @"cellType": @6,
+                           @"imageName": @"ic_eyeslash_outlined_16"
+                       },
+                       @{
+                           @"identifier": @"DYYYHidePanelReport",
+                           @"title": @"举报",
+                           @"detail": @"",
+                           @"cellType": @6,
+                           @"imageName": @"ic_eyeslash_outlined_16"
+                       },
+                       @{
+                           @"identifier": @"DYYYHidePanelSpeed",
+                           @"title": @"倍速",
+                           @"detail": @"",
+                           @"cellType": @6,
+                           @"imageName": @"ic_eyeslash_outlined_16"
+                       },
+                       @{
+                           @"identifier": @"DYYYHidePanelClearScreen",
+                           @"title": @"清屏",
+                           @"detail": @"",
+                           @"cellType": @6,
+                           @"imageName": @"ic_eyeslash_outlined_16"
+                       },
+                       @{
+                           @"identifier": @"DYYYHidePanelFavorite",
+                           @"title": @"缓存",
+                           @"detail": @"",
+                           @"cellType": @6,
+                           @"imageName": @"ic_eyeslash_outlined_16"
+                       },
+                       @{
+                           @"identifier": @"DYYYHidePanelLater",
+                           @"title": @"添加至稍后再看",
+                           @"detail": @"",
+                           @"cellType": @6,
+                           @"imageName": @"ic_eyeslash_outlined_16"
+                       },
+                       @{
+                           @"identifier": @"DYYYHidePanelCast",
+                           @"title": @"投屏",
+                           @"detail": @"",
+                           @"cellType": @6,
+                           @"imageName": @"ic_eyeslash_outlined_16"
+                       },
+                       @{
+                           @"identifier": @"DYYYHidePanelOpenInPC",
+                           @"title": @"电脑/Pad打开",
+                           @"detail": @"",
+                           @"cellType": @6,
+                           @"imageName": @"ic_eyeslash_outlined_16"
+                       },
+                       @{
+                           @"identifier": @"DYYYHidePanelSubtitle",
+                           @"title": @"弹幕",
+                           @"detail": @"",
+                           @"cellType": @6,
+                           @"imageName": @"ic_eyeslash_outlined_16"
+                       },
+                       @{
+                           @"identifier": @"DYYYHidePanelAutoPlay",
+                           @"title": @"自动连播",
+                           @"detail": @"",
+                           @"cellType": @6,
+                           @"imageName": @"ic_eyeslash_outlined_16"
+                         },
+                         @{
+                           @"identifier": @"DYYYHidePanelSearchImage",
+                           @"title": @"识图",
+                           @"detail": @"",
+                           @"cellType": @6,
+                           @"imageName": @"ic_eyeslash_outlined_16"
+                       },
+                       @{
+                           @"identifier": @"DYYYHidePanelListenDouyin",
+                           @"title": @"听抖音",
+                           @"detail": @"",
+                           @"cellType": @6,
+                           @"imageName": @"ic_eyeslash_outlined_16"
+                       },
+                       @{
+                           @"identifier": @"DYYYHidePanelBackgroundPlay",
+                           @"title": @"后台播放设置",
+                           @"detail": @"",
+                           @"cellType": @6,
+                           @"imageName": @"ic_eyeslash_outlined_16"
+                       }
+                   ];
+		    for (NSDictionary *dict in modernpanelSettings) {
+			    AWESettingItemModel *item = [self createSettingItem:dict];
+			    [modernpanels addObject:item];
+		    }
 		    // 创建并组织所有section
 		    NSMutableArray *sections = [NSMutableArray array];
 		    [sections addObject:createSection(@"主界面元素", mainUiItems)];
@@ -1447,7 +1555,8 @@ static void showUserAgreementAlert() {
 		    [sections addObject:createSection(@"消息页与我的页", messageAndMineItems)];
 		    [sections addObject:createSection(@"提示与位置信息", infoItems)];
 		    [sections addObject:createSection(@"直播间界面", livestreamItems)];
-
+        [sections addObject:createSection(@"长按面板", modernpanels)];
+                    
 		    // 创建并推入二级设置页面
 		    AWESettingBaseViewController *subVC = createSubSettingsViewController(@"隐藏设置", sections);
 		    [rootVC.navigationController pushViewController:(UIViewController *)subVC animated:YES];
