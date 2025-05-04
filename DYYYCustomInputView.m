@@ -53,6 +53,7 @@
         self.inputTextField.tintColor = [UIColor colorWithRed:11/255.0 green:223/255.0 blue:154/255.0 alpha:1.0]; // #0BDF9A 强调色保持不变
         self.inputTextField.delegate = self;
         self.inputTextField.returnKeyType = UIReturnKeyDone;
+        self.inputTextField.keyboardAppearance = isDarkMode ? UIKeyboardAppearanceDark : UIKeyboardAppearanceLight;
         
         // 设置默认文本
         if (defaultText && defaultText.length > 0) {
