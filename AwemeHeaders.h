@@ -224,6 +224,9 @@ typedef NS_ENUM(NSInteger, MediaType) {
 
 @end
 
+@interface AWEFamiliarNavView : UIView
+@end
+
 @interface AWEPlayInteractionNewBaseController : UIView
 @property (retain, nonatomic) AWEAwemeModel * model;
 @end
