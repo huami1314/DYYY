@@ -726,6 +726,21 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 %end
 
 %hook AWEAwemeModel
+
+- (BOOL)awe_enableHDR {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
+        return NO;
+    }
+    return %orig;
+}
+
+- (id)awe_HDRValueFor:(NSInteger)arg1 {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
+        return nil;
+    }
+    return %orig;
+}
+
 - (id)initWithDictionary:(id)arg1 error:(id *)arg2 {
 	id orig = %orig;
 
@@ -2210,17 +2225,6 @@ static CGFloat currentScale = 1.0;
 			break;
 		}
 	}
-}
-
-%end
-
-%hook AWEHDRModelManager
-
-+ (BOOL)enableVideoHDR {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
-        return NO;
-    }
-    return %orig;
 }
 
 %end
