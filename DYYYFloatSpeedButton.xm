@@ -647,6 +647,12 @@ void updateSpeedButtonUI() {
 			[videoVC adjustPlaybackSpeed:newSpeed];
 			currentVideoController = videoVC;
 		}
+	}
+
+	if (currentFeedVideoController) {
+		[currentFeedVideoController adjustPlaybackSpeed:newSpeed];
+	} else {
+		UIViewController *vc = [self firstAvailableUIViewController];
 
 		while (vc && ![vc isKindOfClass:%c(AWEDPlayerFeedPlayerViewController)]) {
 			vc = vc.parentViewController;
