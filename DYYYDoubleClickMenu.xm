@@ -187,6 +187,17 @@
 			[actions addObject:openCommentAction];
 		}
 
+		// 添加分享选项
+		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDoubleTapshowSharePanel"] || ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleTapshowSharePanel"]) {
+
+			AWEUserSheetAction *showSharePanel = [NSClassFromString(@"AWEUserSheetAction") actionWithTitle:@"分享视频"
+													       imgName:nil
+													       handler:^{
+														 [self showSharePanel]; // 执行分享操作
+													       }];
+			[actions addObject:showSharePanel];
+		}
+
 		// 添加点赞视频选项
 		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDoubleTapLike"] || ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleTapLike"]) {
 
@@ -198,16 +209,6 @@
 			[actions addObject:likeAction];
 		}
 
-		// 添加分享选项
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDoubleTapshowSharePanel"] || ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleTapshowSharePanel"]) {
-
-			AWEUserSheetAction *showSharePanel = [NSClassFromString(@"AWEUserSheetAction") actionWithTitle:@"分享视频"
-													       imgName:nil
-													       handler:^{
-														 [self showSharePanel]; // 执行分享操作
-													       }];
-			[actions addObject:showSharePanel];
-		}
 		// 添加长按面板
 		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDoubleTapshowDislikeOnVideo"] || ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleTapshowDislikeOnVideo"]) {
 
