@@ -128,8 +128,20 @@
 
 %end
 
-// 隐藏评论搜索
+// 隐藏评论区大家都在搜
 %hook AWECommentSearchAnchorView
+- (void)layoutSubviews {
+	%orig;
+
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"]) {
+		[self setHidden:YES];
+	}
+}
+
+%end
+
+// 隐藏评论区免费去看短剧
+%hook AWEShowPlayletCommentHeaderView
 - (void)layoutSubviews {
 	%orig;
 
@@ -244,7 +256,7 @@
 	}
 }
 
-// 隐藏大家都在搜
+// 去除隐藏大家都在搜后的留白
 %hook AWESearchAnchorListModel
 
 - (BOOL)hideWords {
@@ -951,6 +963,20 @@
 	}
 }
 
+%end
+
+//隐藏下面底部热点框
+%hook AWENewHotSpotBottomBarView
+- (void)layoutSubviews {
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideHotspot"]) {
+		if ([self respondsToSelector:@selector(removeFromSuperview)]) {
+			[self removeFromSuperview];
+		}
+		self.hidden = YES;
+		return;
+	}
+	%orig;
+}
 %end
 
 %hook AWETemplateHotspotView
