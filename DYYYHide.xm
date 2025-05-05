@@ -1508,23 +1508,6 @@
 %end
 
 // 强制启用新版抖音长按 UI（现代风）
-%hook AWELongPressPanelManager
-- (BOOL)shouldShowModernLongPressPanel {
-	return DYYYGetBool(@"DYYYisEnableModern");
-}
-%end
-
-%hook AWELongPressPanelDataManager
-+ (BOOL)enableModernLongPressPanelConfigWithSceneIdentifier:(id)arg1 {
-	return DYYYGetBool(@"DYYYisEnableModern");
-}
-%end
-
-%hook AWELongPressPanelABSettings
-+ (NSUInteger)modernLongPressPanelStyleMode {
-	return DYYYGetBool(@"DYYYisEnableModern") ? 1 : 0;
-}
-%end
 
 %hook AWEModernLongPressPanelUIConfig
 + (NSUInteger)modernLongPressPanelStyleMode {
