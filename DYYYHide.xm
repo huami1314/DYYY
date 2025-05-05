@@ -696,61 +696,86 @@
 		}
 	}
 }
+
 - (void)setHidden:(BOOL)hidden {
-	%orig(hidden);
-	Class generalButtonClass = %c(AWENormalModeTabBarGeneralButton);
+    %orig(hidden);
+    Class generalButtonClass = %c(AWENormalModeTabBarGeneralButton);
 
-	// 处理 AWENormalModeTabBarGeneralButton 子控件的检查逻辑
-	for (UIView *subview in self.subviews) {
-		if ([subview isKindOfClass:generalButtonClass]) {
-			AWENormalModeTabBarGeneralButton *button = (AWENormalModeTabBarGeneralButton *)subview;
-			if ([button.accessibilityLabel isEqualToString:@"首页"] && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHomeRefresh"] && button.status == 2) {
-				if (button.gestureRecognizers && button.gestureRecognizers.count > 0) {
-					button.userInteractionEnabled = NO;
-				}
-			} else if ([button.accessibilityLabel isEqualToString:@"首页"] && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHomeRefresh"] && button.status == 1) {
-				if (button.gestureRecognizers && button.gestureRecognizers.count > 0) {
-					button.userInteractionEnabled = YES;
-				}
-			}
-		}
-	}
+    // 处理 AWENormalModeTabBarGeneralButton 子控件的检查逻辑
+    for (UIView *subview in self.subviews) {
+        if ([subview isKindOfClass:generalButtonClass]) {
+            AWENormalModeTabBarGeneralButton *button = (AWENormalModeTabBarGeneralButton *)subview;
+            if ([button.accessibilityLabel isEqualToString:@"首页"] && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHomeRefresh"] && button.status == 2) {
+                if (button.gestureRecognizers && button.gestureRecognizers.count > 0) {
+                    button.userInteractionEnabled = NO;
+                }
+            } else if ([button.accessibilityLabel isEqualToString:@"首页"] && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHomeRefresh"] && button.status == 1) {
+                if (button.gestureRecognizers && button.gestureRecognizers.count > 0) {
+                    button.userInteractionEnabled = YES;
+                }
+            }
+        }
+    }
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenBottomBg"] || [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-		for (UIView *subview in self.subviews) {
-			if ([subview class] == [UIView class]) {
-				BOOL hasImageView = NO;
-				for (UIView *childView in subview.subviews) {
-					if ([childView isKindOfClass:[UIImageView class]]) {
-						hasImageView = YES;
-						break;
-					}
-				}
-				if (hasImageView) {
-					BOOL hideFri = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFriendsButton"];
-					NSInteger selectedIndex = self.yy_viewController.selectedIndex;
-					BOOL shouldShowBackground = (selectedIndex == 0) || (selectedIndex == 1 && !hideFri);
-					subview.hidden = shouldShowBackground;
-					break;
-				}
-			}
-		}
-	}
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenBottomBg"] || [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+        UIView *backgroundView = nil;
+        BOOL hideFriendsButton = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFriendsButton"];
+        BOOL isHomeSelected = NO;
+        BOOL isFriendsSelected = NO;
+        
+        // 查找背景视图
+        for (UIView *subview in self.subviews) {
+            if ([subview class] == [UIView class]) {
+                BOOL hasImageView = NO;
+                for (UIView *childView in subview.subviews) {
+                    if ([childView isKindOfClass:[UIImageView class]]) {
+                        hasImageView = YES;
+                        break;
+                    }
+                }
+                if (hasImageView) {
+                    backgroundView = subview;
+                    break;
+                }
+            }
+        }
+        
+        // 查找当前选中的按钮
+        for (UIView *subview in self.subviews) {
+            if ([subview isKindOfClass:generalButtonClass]) {
+                AWENormalModeTabBarGeneralButton *button = (AWENormalModeTabBarGeneralButton *)subview;
+                // status == 2 表示按钮处于选中状态
+                if (button.status == 2) {
+                    if ([button.accessibilityLabel isEqualToString:@"首页"]) {
+                        isHomeSelected = YES;
+                    } else if ([button.accessibilityLabel containsString:@"朋友"]) {
+                        isFriendsSelected = YES;
+                    }
+                }
+            }
+        }
+        
+        // 根据当前选中的按钮决定是否显示背景
+        if (backgroundView) {
+            BOOL shouldShowBackground = isHomeSelected || (isFriendsSelected && !hideFriendsButton);
+            backgroundView.hidden = shouldShowBackground;
+        }
+    }
 
-	// 隐藏分隔虾线
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-		for (UIView *subview in self.subviews) {
-			if (![subview isKindOfClass:[UIView class]])
-				continue;
-			if (subview.frame.size.height <= 0.5 && subview.frame.size.width > 300) {
-				subview.hidden = YES;
-				CGRect frame = subview.frame;
-				frame.size.height = 0;
-				subview.frame = frame;
-				subview.alpha = 0;
-			}
-		}
-	}
+    // 隐藏分隔线
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+        for (UIView *subview in self.subviews) {
+            if (![subview isKindOfClass:[UIView class]])
+                continue;
+            if (subview.frame.size.height <= 0.5 && subview.frame.size.width > 300) {
+                subview.hidden = YES;
+                CGRect frame = subview.frame;
+                frame.size.height = 0;
+                subview.frame = frame;
+                subview.alpha = 0;
+            }
+        }
+    }
 }
 
 %end
