@@ -5,6 +5,7 @@
 #import "DYYYKeywordListView.h"
 #import "DYYYConfirmCloseView.h"
 #import "DYYYManager.h"
+#import "DYYYUtils.h"
 
 %hook AWELongPressPanelViewGroupModel
 %property(nonatomic, assign) BOOL isDYYYCustomGroup;
@@ -327,7 +328,8 @@
         copyShareLink.describeString = @"复制链接";
         copyShareLink.action = ^{
             NSString *shareLink = [self.awemeModel valueForKey:@"shareURL"];
-            [[UIPasteboard generalPasteboard] setString:shareLink];
+            NSString *cleanedURL = cleanShareURL(shareLink);
+            [[UIPasteboard generalPasteboard] setString:cleanedURL];
             [DYYYManager showToast:@"分享链接已复制到剪贴板"];
             AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
             [panelManager dismissWithAnimation:YES completion:nil];
@@ -953,7 +955,8 @@
         copyShareLink.describeString = @"复制链接";
         copyShareLink.action = ^{
             NSString *shareLink = [self.awemeModel valueForKey:@"shareURL"];
-            [[UIPasteboard generalPasteboard] setString:shareLink];
+            NSString *cleanedURL = cleanShareURL(shareLink);
+            [[UIPasteboard generalPasteboard] setString:cleanedURL];
             [DYYYManager showToast:@"分享链接已复制到剪贴板"];
             AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
             [panelManager dismissWithAnimation:YES completion:nil];
