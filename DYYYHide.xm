@@ -1537,6 +1537,19 @@
 
 %end
 
+// 隐藏章节进度条
+%hook AWEDemaciaChapterProgressSlider
+
+- (void)layoutSubviews {
+	%orig;
+
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideChapterProgress"]) {
+		self.hidden = YES;
+	}
+}
+
+%end
+
 // 移除极速版我的片面红包横幅
 %hook AWELuckyCatBannerView
 - (id)initWithFrame:(CGRect)frame {
@@ -1696,3 +1709,4 @@ static void findTargetViewInView(UIView *view) {
 							}
 						      }];
 }
+
