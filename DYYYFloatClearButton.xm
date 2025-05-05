@@ -10,6 +10,8 @@
 #import <signal.h>
 // 添加变量跟踪是否在目标视图控制器中
 static BOOL isInPlayInteractionVC = NO;
+// 添加变量跟踪评论界面是否可见
+static BOOL isCommentViewVisible = NO;
 // HideUIButton 接口声明
 @interface HideUIButton : UIButton
 // 状态属性
@@ -500,29 +502,76 @@ static void initTargetClassNames(void) {
 }
 %end
 
+%hook AWECommentContainerViewController
+
+- (void)viewWillAppear:(BOOL)animated {
+    %orig;
+    // 评论界面将要显示，设置标记并隐藏按钮
+    isCommentViewVisible = YES;
+    if (hideButton) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            hideButton.hidden = YES;
+        });
+    }
+}
+
+- (void)viewDidAppear:(BOOL)animated {
+    %orig;
+    // 评论界面已显示，确保按钮隐藏
+    isCommentViewVisible = YES;
+    if (hideButton) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            hideButton.hidden = YES;
+        });
+    }
+}
+
+- (void)viewWillDisappear:(BOOL)animated {
+    %orig;
+    // 评论界面将要消失
+    if (hideButton) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            hideButton.hidden = YES;
+        });
+    }
+}
+
+- (void)viewDidDisappear:(BOOL)animated {
+    %orig;
+    // 评论界面已消失，恢复按钮显示
+    isCommentViewVisible = NO;
+    if (hideButton && isInPlayInteractionVC) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            hideButton.hidden = NO;
+        });
+    }
+}
+
+%end
+
 %hook AWEPlayInteractionViewController
 - (void)loadView {
     %orig;
     // 提前准备按钮显示
     if (hideButton) {
-        hideButton.hidden = NO;
+        hideButton.hidden = isCommentViewVisible; // 根据评论界面状态决定是否显示
         hideButton.alpha = 0.5;
     }
 }
 - (void)viewWillAppear:(BOOL)animated {
     %orig;
     isInPlayInteractionVC = YES;
-    // 立即显示按钮
+    // 立即显示按钮，除非评论界面可见
     if (hideButton) {
-        hideButton.hidden = NO;
+        hideButton.hidden = isCommentViewVisible;
         hideButton.alpha = 0.5;
     }
 }
 - (void)viewDidAppear:(BOOL)animated {
     %orig;
-    // 再次确保按钮可见
+    // 再次确保按钮可见，除非评论界面可见
     if (hideButton) {
-        hideButton.hidden = NO;
+        hideButton.hidden = isCommentViewVisible;
     }
 }
 - (void)viewWillDisappear:(BOOL)animated {
@@ -534,6 +583,7 @@ static void initTargetClassNames(void) {
     }
 }
 %end
+
 %hook AWEFeedContainerViewController
 - (void)aweme:(id)arg1 currentIndexWillChange:(NSInteger)arg2 {
 	if (hideButton && hideButton.isElementsHidden) {
