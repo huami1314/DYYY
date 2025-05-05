@@ -1516,8 +1516,14 @@ static void showUserAgreementAlert() {
 			      @"title" : @"隐藏面板后台播放",
 			      @"detail" : @"",
 			      @"cellType" : @6,
+			      @"imageName" : @"ic_eyeslash_outlined_16"},
+			     @{@"identifier" : @"DYYYHidePanelBiserial",
+			      @"title" : @"隐藏双列快捷入口",
+			      @"detail" : @"",
+			      @"cellType" : @6,
 			      @"imageName" : @"ic_eyeslash_outlined_16"}
 		    ];
+		    
 		    for (NSDictionary *dict in modernpanelSettings) {
 			    AWESettingItemModel *item = [self createSettingItem:dict];
 			    [modernpanels addObject:item];

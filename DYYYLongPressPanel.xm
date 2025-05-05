@@ -58,6 +58,7 @@
     BOOL hideSearchImage = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelSearchImage"];
     BOOL hideListenDouyin = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelListenDouyin"];
     BOOL hideBackgroundPlay = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelBackgroundPlay"];
+    BOOL hideBiserial = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelBiserial"];
     
     // 处理原始面板
     for (id group in originalArray) {
@@ -104,6 +105,8 @@
                     } else if ([descString isEqualToString:@"听抖音"] && hideListenDouyin) {
                         shouldHide = YES;
                     } else if ([descString isEqualToString:@"后台播放设置"] && hideBackgroundPlay) {
+                        shouldHide = YES;
+                    } else if ([descString isEqualToString:@"首页双列快捷入口"] && hideBiserial) {
                         shouldHide = YES;
                     }
                     
@@ -590,7 +593,7 @@
     }
     
     return [customGroups arrayByAddingObjectsFromArray:modifiedArray];
-}
+    }
 %end
 
 // 修复Modern风格长按面板水平设置单元格的大小计算
@@ -680,6 +683,7 @@
     BOOL hideSearchImage = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelSearchImage"];
     BOOL hideListenDouyin = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelListenDouyin"];
     BOOL hideBackgroundPlay = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelBackgroundPlay"];
+    BOOL hideBiserial = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelBiserial"];
     
     // 处理原始面板
     for (id group in originalArray) {
@@ -726,6 +730,8 @@
                     } else if ([descString isEqualToString:@"听抖音"] && hideListenDouyin) {
                         shouldHide = YES;
                     } else if ([descString isEqualToString:@"后台播放设置"] && hideBackgroundPlay) {
+                        shouldHide = YES;
+                    } else if ([descString isEqualToString:@"首页双列快捷入口"] && hideBiserial) {
                         shouldHide = YES;
                     }
                     
