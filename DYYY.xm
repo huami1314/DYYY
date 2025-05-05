@@ -548,6 +548,16 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 	}
 }
 
+- (void)setIsAutoPlay:(BOOL)arg0 {
+	float defaultSpeed = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYDefaultSpeed"];
+
+	if (defaultSpeed > 0 && defaultSpeed != 1) {
+		[self setVideoControllerPlaybackRate:defaultSpeed];
+	}
+
+	%orig(arg0);
+}
+
 %end
 
 %hook UIView

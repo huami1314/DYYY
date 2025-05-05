@@ -905,4 +905,5 @@ typedef NS_ENUM(NSInteger, MediaType) {
 
 @interface AWEDPlayerFeedPlayerViewController : UIViewController
 @property (nonatomic) UIView *contentView;
+- (void)setVideoControllerPlaybackRate:(double)arg0;
 @end
