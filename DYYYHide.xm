@@ -418,7 +418,7 @@
 - (void)layoutSubviews {
 
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFamiliar"]) {
-		self.hidden = YES; 
+		self.hidden = YES;
 	}
 
 	%orig;
@@ -698,65 +698,7 @@
 }
 - (void)setHidden:(BOOL)hidden {
 	%orig(hidden);
-
-	BOOL hideShop = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShopButton"];
-	BOOL hideMsg = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMessageButton"];
-	BOOL hideFri = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFriendsButton"];
-
-	NSMutableArray *visibleButtons = [NSMutableArray array];
-	NSMutableArray *buttonTypes = [NSMutableArray array];
 	Class generalButtonClass = %c(AWENormalModeTabBarGeneralButton);
-	Class plusButtonClass = %c(AWENormalModeTabBarGeneralPlusButton);
-
-	// 收集所有可见按钮并记录它们的类型
-	for (UIView *subview in self.subviews) {
-		if (![subview isKindOfClass:generalButtonClass] && ![subview isKindOfClass:plusButtonClass])
-			continue;
-
-		NSString *label = subview.accessibilityLabel;
-		BOOL shouldHide = NO;
-		NSString *buttonType = @"unknown";
-
-		if ([label isEqualToString:@"首页"]) {
-			buttonType = @"home";
-		} else if ([label isEqualToString:@"商城"]) {
-			shouldHide = hideShop;
-			buttonType = @"shop";
-		} else if ([label containsString:@"消息"]) {
-			shouldHide = hideMsg;
-			buttonType = @"message";
-		} else if ([label containsString:@"朋友"]) {
-			shouldHide = hideFri;
-			buttonType = @"friends";
-		} else if ([label isEqualToString:@"我"]) {
-			buttonType = @"profile";
-		}
-
-		if (!shouldHide) {
-			[visibleButtons addObject:subview];
-			[buttonTypes addObject:buttonType];
-		} else {
-			[subview removeFromSuperview];
-		}
-	}
-
-	// 按照x坐标排序按钮
-	NSMutableArray *pairedObjects = [NSMutableArray array];
-	for (NSInteger i = 0; i < visibleButtons.count; i++) {
-		[pairedObjects addObject:@{@"button" : visibleButtons[i], @"type" : buttonTypes[i], @"x" : @(((UIView *)visibleButtons[i]).frame.origin.x)}];
-	}
-
-	[pairedObjects sortUsingComparator:^NSComparisonResult(NSDictionary *a, NSDictionary *b) {
-	  return [a[@"x"] compare:b[@"x"]];
-	}];
-
-	// 更新排序后的数组
-	[visibleButtons removeAllObjects];
-	[buttonTypes removeAllObjects];
-	for (NSDictionary *pair in pairedObjects) {
-		[visibleButtons addObject:pair[@"button"]];
-		[buttonTypes addObject:pair[@"type"]];
-	}
 
 	// 处理 AWENormalModeTabBarGeneralButton 子控件的检查逻辑
 	for (UIView *subview in self.subviews) {
@@ -784,16 +726,10 @@
 						break;
 					}
 				}
-
 				if (hasImageView) {
-					BOOL shouldShowBackground = YES;
-
-					// 获取当前选中的索引
+					BOOL hideFri = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFriendsButton"];
 					NSInteger selectedIndex = self.yy_viewController.selectedIndex;
-					// 如果索引非0，不隐藏背景
-					if (selectedIndex != 0) {
-						shouldShowBackground = NO;
-					}
+					BOOL shouldShowBackground = (selectedIndex == 0) || (selectedIndex == 1 && !hideFri);
 					subview.hidden = shouldShowBackground;
 					break;
 				}
@@ -965,7 +901,7 @@
 
 %end
 
-//隐藏下面底部热点框
+// 隐藏下面底部热点框
 %hook AWENewHotSpotBottomBarView
 - (void)layoutSubviews {
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideHotspot"]) {
