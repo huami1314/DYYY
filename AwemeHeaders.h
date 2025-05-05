@@ -902,3 +902,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 
 @interface AWEFeedUnfollowFamiliarFollowAndDislikeView : UIView
 @end
+
+@interface AWEDPlayerFeedPlayerViewController : UIViewController
+@property (nonatomic) UIView *contentView;
+@end
