@@ -574,7 +574,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 	}
 
 	UIViewController *vc = [self firstAvailableUIViewController];
-	if ([vc isKindOfClass:%c(AWEAwemePlayVideoViewController)]) {
+	if ([vc isKindOfClass:%c(AWEAwemePlayVideoViewController)] || [vc isKindOfClass:%c(AWEDPlayerFeedPlayerViewController)]) {
 
 		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"] && frame.origin.x != 0) {
 			return;
@@ -1700,53 +1700,59 @@ static CGFloat currentScale = 1.0;
 }
 
 %end
-
 %hook AWEPlayInteractionDescriptionScrollView
 
 - (void)layoutSubviews {
-	%orig;
+    %orig;
+    
+    self.transform = CGAffineTransformIdentity;
+    
+    NSString *descriptionOffsetValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDescriptionVerticalOffset"];
+    CGFloat verticalOffset = 0;
+    if (descriptionOffsetValue.length > 0) {
+        verticalOffset = [descriptionOffsetValue floatValue];
+    }
+    
+    UIView *parentView = self.superview;
+    UIView *grandParentView = nil;
 
-	self.transform = CGAffineTransformIdentity;
-
-	// 添加文案垂直偏移支持
-	NSString *descriptionOffsetValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDescriptionVerticalOffset"];
-	CGFloat verticalOffset = 0;
-	if (descriptionOffsetValue.length > 0) {
-		verticalOffset = [descriptionOffsetValue floatValue];
-	}
-
-	UIView *parentView = self.superview;
-	UIView *grandParentView = nil;
-
-	if (parentView) {
-		grandParentView = parentView.superview;
-	}
+    if (parentView) {
+        grandParentView = parentView.superview;
+    }
+    
+    if (grandParentView && verticalOffset != 0) {
+        CGAffineTransform translationTransform = CGAffineTransformMakeTranslation(0, verticalOffset);
+        grandParentView.transform = translationTransform;
+    }
 }
 
 %end
 
-// 对新版文案的缩放（33.0以上）
-
+// 对新版文案的偏移（33.0以上）
 %hook AWEPlayInteractionDescriptionLabel
 
 - (void)layoutSubviews {
-	%orig;
+    %orig;
+    
+    self.transform = CGAffineTransformIdentity;
+    
+    NSString *descriptionOffsetValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDescriptionVerticalOffset"];
+    CGFloat verticalOffset = 0;
+    if (descriptionOffsetValue.length > 0) {
+        verticalOffset = [descriptionOffsetValue floatValue];
+    }
+    
+    UIView *parentView = self.superview;
+    UIView *grandParentView = nil;
 
-	self.transform = CGAffineTransformIdentity;
-
-	// 添加文案垂直偏移支持
-	NSString *descriptionOffsetValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDescriptionVerticalOffset"];
-	CGFloat verticalOffset = 0;
-	if (descriptionOffsetValue.length > 0) {
-		verticalOffset = [descriptionOffsetValue floatValue];
-	}
-
-	UIView *parentView = self.superview;
-	UIView *grandParentView = nil;
-
-	if (parentView) {
-		grandParentView = parentView.superview;
-	}
+    if (parentView) {
+        grandParentView = parentView.superview;
+    }
+    
+    if (grandParentView && verticalOffset != 0) {
+        CGAffineTransform translationTransform = CGAffineTransformMakeTranslation(0, verticalOffset);
+        grandParentView.transform = translationTransform;
+    }
 }
 
 %end
@@ -1891,6 +1897,7 @@ static CGFloat currentScale = 1.0;
 // 获取资源的地址
 %hook AWEURLModel
 %new - (NSURL *)getDYYYSrcURLDownload {
+	;
 	;
 	;
 	;
