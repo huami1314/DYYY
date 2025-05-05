@@ -2214,6 +2214,17 @@ static CGFloat currentScale = 1.0;
 
 %end
 
+%hook AWEHDRModelManager
+
++ (BOOL)enableVideoHDR {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
+        return NO;
+    }
+    return %orig;
+}
+
+%end
+
 %ctor {
 	%init(DYYYSettingsGesture);
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {
