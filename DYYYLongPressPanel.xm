@@ -98,6 +98,10 @@
                         shouldHide = YES;
                     } else if ([descString isEqualToString:@"弹幕"] && hideSubtitle) {
                         shouldHide = YES;
+                    } else if ([descString isEqualToString:@"弹幕开关"] && hideSubtitle) {
+                        shouldHide = YES;
+                    } else if ([descString isEqualToString:@"弹幕设置"] && hideSubtitle) {
+                        shouldHide = YES;
                     } else if ([descString isEqualToString:@"自动连播"] && hideAutoPlay) {
                         shouldHide = YES;
                     } else if ([descString isEqualToString:@"识别图片"] && hideSearchImage) {
@@ -724,6 +728,10 @@
                     } else if ([descString isEqualToString:@"电脑/Pad打开"] && hideOpenInPC) {
                         shouldHide = YES;
                     } else if ([descString isEqualToString:@"弹幕"] && hideSubtitle) {
+                        shouldHide = YES;
+                    } else if ([descString isEqualToString:@"弹幕开关"] && hideSubtitle) {
+                        shouldHide = YES;
+                    } else if ([descString isEqualToString:@"弹幕设置"] && hideSubtitle) {
                         shouldHide = YES;
                     } else if ([descString isEqualToString:@"自动连播"] && hideAutoPlay) {
                         shouldHide = YES;
