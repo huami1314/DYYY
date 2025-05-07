@@ -720,20 +720,6 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 
 %hook AWEAwemeModel
 
-- (BOOL)awe_enableHDR {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
-        return NO;
-    }
-    return %orig;
-}
-
-- (id)awe_HDRValueFor:(NSInteger)arg1 {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
-        return nil;
-    }
-    return %orig;
-}
-
 - (id)initWithDictionary:(id)arg1 error:(id *)arg2 {
 	id orig = %orig;
 
@@ -2170,6 +2156,37 @@ static CGFloat currentScale = 1.0;
 		[[UIPasteboard generalPasteboard] setString:descText];
 		[DYYYManager showToast:@"文案已复制到剪贴板"];
 	}
+}
+%end
+
+// 禁用AWEPlayVideoViewController中的HDR
+%hook AWEPlayVideoViewController
+- (void)setHDRVideoMode:(NSInteger)mode {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
+        %orig(0); 
+    } else {
+        %orig; 
+    }
+}
+%end
+// 禁用BDSimMediaPlayer中的HDR
+%hook BDSimMediaPlayer
+- (void)setHDRVideoMode:(NSInteger)mode {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
+        %orig(0);
+    } else {
+        %orig;
+    }
+}
+%end
+// 禁用BDSimPlayerMediaViewController中的HDR
+%hook BDSimPlayerMediaViewController
+- (void)setHDRVideoMode:(NSInteger)mode {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
+        %orig(0);
+    } else {
+        %orig;
+    }
 }
 %end
 
