@@ -923,3 +923,13 @@ typedef NS_ENUM(NSInteger, MediaType) {
 
 @interface AWEDemaciaChapterProgressSlider : UIView
 @end
+
+@interface AWEPlayVideoViewController : UIViewController
+- (void)setHDRVideoMode:(NSInteger)mode;
+@end
+@interface BDSimMediaPlayer : NSObject
+- (void)setHDRVideoMode:(NSInteger)mode;
+@end
+@interface BDSimPlayerMediaViewController : UIViewController
+- (void)setHDRVideoMode:(NSInteger)mode;
+@end
