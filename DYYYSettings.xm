@@ -1053,6 +1053,11 @@ static void showUserAgreementAlert() {
 			      @"detail" : @"",
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_eyeslash_outlined_16"},
+				@{@"identifier" : @"DYYYHideFollowPromptView",
+			      @"title" : @"移除头像加号",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_eyeslash_outlined_16"},
 			    @{@"identifier" : @"DYYYHideLikeLabel",
 			      @"title" : @"隐藏点赞数值",
 			      @"detail" : @"",
@@ -1386,7 +1391,13 @@ static void showUserAgreementAlert() {
 			      @"title" : @"隐藏键盘AI",
 			      @"detail" : @"",
 			      @"cellType" : @6,
-			      @"imageName" : @"ic_eyeslash_outlined_16"}
+			      @"imageName" : @"ic_eyeslash_outlined_16"},
+				@{@"identifier" : @"DYYYHideScancode",
+				  @"title" : @"隐藏输入扫码",
+				  @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_eyeslash_outlined_16"
+				}
 		    ];
 
 		    for (NSDictionary *dict in infoSettings) {
