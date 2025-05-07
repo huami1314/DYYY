@@ -2168,6 +2168,37 @@ static CGFloat currentScale = 1.0;
 }
 %end
 
+// 禁用AWEPlayVideoViewController中的HDR
+%hook AWEPlayVideoViewController
+- (void)setHDRVideoMode:(NSInteger)mode {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
+        %orig(0); 
+    } else {
+        %orig; 
+    }
+}
+%end
+// 禁用BDSimMediaPlayer中的HDR
+%hook BDSimMediaPlayer
+- (void)setHDRVideoMode:(NSInteger)mode {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
+        %orig(0);
+    } else {
+        %orig;
+    }
+}
+%end
+// 禁用BDSimPlayerMediaViewController中的HDR
+%hook BDSimPlayerMediaViewController
+- (void)setHDRVideoMode:(NSInteger)mode {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
+        %orig(0);
+    } else {
+        %orig;
+    }
+}
+%end
+
 // 设置修改顶栏标题
 %hook AWEHPTopTabItemTextContentView
 
