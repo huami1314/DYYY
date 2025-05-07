@@ -1793,7 +1793,7 @@ static void showUserAgreementAlert() {
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_userban_outlined_20"},
 			    @{@"identifier" : @"DYYYLongPressFilterTitle",
-			      @"title" : @"长按面板过滤标题",
+			      @"title" : @"长按面板过滤文案",
 			      @"detail" : @"",
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_funnel_outlined_20"},

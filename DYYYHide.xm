@@ -575,6 +575,7 @@
 }
 
 %end
+
 %hook UIButton
 
 - (void)setTitle:(NSString *)title forState:(UIControlState)state {

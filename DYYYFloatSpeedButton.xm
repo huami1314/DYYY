@@ -634,8 +634,11 @@ void updateSpeedButtonUI() {
 			       }];
 	    }];
 
+	BOOL speedApplied = NO;
+
 	if (currentVideoController) {
 		[currentVideoController adjustPlaybackSpeed:newSpeed];
+		speedApplied = YES;
 	} else {
 		UIViewController *vc = [self firstAvailableUIViewController];
 		while (vc && ![vc isKindOfClass:%c(AWEAwemePlayVideoViewController)]) {
@@ -643,25 +646,28 @@ void updateSpeedButtonUI() {
 		}
 
 		if ([vc isKindOfClass:%c(AWEAwemePlayVideoViewController)]) {
-			AWEAwemePlayVideoViewController *videoVC = (AWEAwemePlayVideoViewController *)vc;
-			[videoVC adjustPlaybackSpeed:newSpeed];
-			currentVideoController = videoVC;
+			currentVideoController = (AWEAwemePlayVideoViewController *)vc;
+			[currentVideoController adjustPlaybackSpeed:newSpeed];
+			speedApplied = YES;
 		}
 	}
+	
+	if (!speedApplied) {
+		if (currentFeedVideoController) {
+			[currentFeedVideoController adjustPlaybackSpeed:newSpeed];
+		} else {
+			UIViewController *vc = [self firstAvailableUIViewController];
+			while (vc && ![vc isKindOfClass:%c(AWEDPlayerFeedPlayerViewController)]) {
+				vc = vc.parentViewController;
+			}
 
-	if (currentFeedVideoController) {
-		[currentFeedVideoController adjustPlaybackSpeed:newSpeed];
-	} else {
-		UIViewController *vc = [self firstAvailableUIViewController];
-
-		while (vc && ![vc isKindOfClass:%c(AWEDPlayerFeedPlayerViewController)]) {
-			vc = vc.parentViewController;
-		}
-
-		if ([vc isKindOfClass:%c(AWEDPlayerFeedPlayerViewController)]) {
-			AWEDPlayerFeedPlayerViewController *videoVC1 = (AWEDPlayerFeedPlayerViewController *)vc;
-			[videoVC1 adjustPlaybackSpeed:newSpeed];
-			currentFeedVideoController = videoVC1;
+			if ([vc isKindOfClass:%c(AWEDPlayerFeedPlayerViewController)]) {
+				currentFeedVideoController = (AWEDPlayerFeedPlayerViewController *)vc;
+				[currentFeedVideoController adjustPlaybackSpeed:newSpeed];
+			} else {
+				// 两种控制器都找不到时显示提示
+				[DYYYManager showToast:@"无法找到视频控制器"];
+			}
 		}
 	}
 }
