@@ -4,20 +4,19 @@
 #define DYYYGetBool(key) [[NSUserDefaults standardUserDefaults] boolForKey:key]
 
 typedef NS_ENUM(NSInteger, MediaType) {
-    MediaTypeVideo,
-    MediaTypeImage,
-    MediaTypeAudio,
-    MediaTypeHeic
+  MediaTypeVideo,
+  MediaTypeImage,
+  MediaTypeAudio,
+  MediaTypeHeic
 };
 
 @interface URLModel : NSObject
-@property (nonatomic, strong) NSArray *originURLList;
+@property(nonatomic, strong) NSArray *originURLList;
 @end
 
 @interface DUXToast : NSObject
 + (void)showText:(NSString *)text;
 @end
-
 
 @interface AWEURLModel : NSObject
 - (NSArray *)originURLList;
@@ -26,38 +25,38 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 @interface AWEVideoModel : NSObject
-@property (retain, nonatomic) AWEURLModel *playURL;
-@property (copy, nonatomic) NSArray * manualBitrateModels;
-@property (copy, nonatomic) NSArray * bitrateModels;
-@property (nonatomic, strong) URLModel *h264URL;
-@property (nonatomic, strong) URLModel *coverURL;
+@property(retain, nonatomic) AWEURLModel *playURL;
+@property(copy, nonatomic) NSArray *manualBitrateModels;
+@property(copy, nonatomic) NSArray *bitrateModels;
+@property(nonatomic, strong) URLModel *h264URL;
+@property(nonatomic, strong) URLModel *coverURL;
 @end
 
 @interface AWEMusicModel : NSObject
-@property (nonatomic, strong) URLModel *playURL;
+@property(nonatomic, strong) URLModel *playURL;
 @end
 
 @interface AWEImageAlbumImageModel : NSObject
-@property (nonatomic, strong) NSArray *urlList;
-@property (retain, nonatomic) AWEVideoModel *clipVideo;
+@property(nonatomic, strong) NSArray *urlList;
+@property(retain, nonatomic) AWEVideoModel *clipVideo;
 @end
 
 @interface AWEAwemeStatisticsModel : NSObject
-@property (nonatomic, strong) NSNumber *diggCount;
+@property(nonatomic, strong) NSNumber *diggCount;
 @end
 
 @interface AWESearchAwemeExtraModel : NSObject
 @end
 
 @interface AWEAwemeTextExtraModel : NSObject
-@property (nonatomic, copy) NSString *hashtagName;
-@property (nonatomic, copy) NSString *hashtagId;
-@property (nonatomic, copy) NSString *type;
-@property (nonatomic, assign) NSRange textRange;
-@property (nonatomic, copy) NSString *awemeId;
-@property (nonatomic, copy) NSString *userId;
-@property (nonatomic, copy) NSString *userUniqueId;
-@property (nonatomic, copy) NSString *secUid;
+@property(nonatomic, copy) NSString *hashtagName;
+@property(nonatomic, copy) NSString *hashtagId;
+@property(nonatomic, copy) NSString *type;
+@property(nonatomic, assign) NSRange textRange;
+@property(nonatomic, copy) NSString *awemeId;
+@property(nonatomic, copy) NSString *userId;
+@property(nonatomic, copy) NSString *userUniqueId;
+@property(nonatomic, copy) NSString *secUid;
 @end
 
 @interface AWEUserModel : NSObject
@@ -65,58 +64,57 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @property(copy, nonatomic) NSString *shortID;
 @end
 
-
 @interface AWEAwemeModel : NSObject
-@property (nonatomic, strong, readwrite) NSNumber *createTime;
-@property (nonatomic, assign,readwrite) CGFloat videoDuration;
-@property (nonatomic, strong) AWEVideoModel *video;
-@property (nonatomic, strong) AWEMusicModel *music;
-@property (nonatomic, strong) NSArray<AWEImageAlbumImageModel *> *albumImages;
-@property (nonatomic, assign) NSInteger currentImageIndex;
-@property (nonatomic, assign) NSInteger awemeType;
-@property (nonatomic, strong) NSString *cityCode;
-@property (nonatomic, strong) NSString *ipAttribution;
-@property (nonatomic, strong) id currentAweme;
-@property (nonatomic, copy) NSString *descriptionString;
-@property (nonatomic, assign) BOOL isAds;
-@property (nonatomic, assign) BOOL isLive;
-@property (nonatomic, strong) NSString *shareURL;
-@property (nonatomic, strong) id hotSpotLynxCardModel;
-@property (nonatomic, copy) NSString *liveReason;
-@property (nonatomic, strong) id shareRecExtra; // 推荐视频专有属性
-@property (nonatomic, strong) NSArray<AWEAwemeTextExtraModel *> *textExtras;
-@property (nonatomic, copy) NSString *itemTitle;
-@property (nonatomic, copy) NSString *descriptionSimpleString;
-@property (nonatomic, strong) NSString *itemID;
-@property (nonatomic, strong) AWEUserModel *author;
+@property(nonatomic, strong, readwrite) NSNumber *createTime;
+@property(nonatomic, assign, readwrite) CGFloat videoDuration;
+@property(nonatomic, strong) AWEVideoModel *video;
+@property(nonatomic, strong) AWEMusicModel *music;
+@property(nonatomic, strong) NSArray<AWEImageAlbumImageModel *> *albumImages;
+@property(nonatomic, assign) NSInteger currentImageIndex;
+@property(nonatomic, assign) NSInteger awemeType;
+@property(nonatomic, strong) NSString *cityCode;
+@property(nonatomic, strong) NSString *ipAttribution;
+@property(nonatomic, strong) id currentAweme;
+@property(nonatomic, copy) NSString *descriptionString;
+@property(nonatomic, assign) BOOL isAds;
+@property(nonatomic, assign) BOOL isLive;
+@property(nonatomic, strong) NSString *shareURL;
+@property(nonatomic, strong) id hotSpotLynxCardModel;
+@property(nonatomic, copy) NSString *liveReason;
+@property(nonatomic, strong) id shareRecExtra; // 推荐视频专有属性
+@property(nonatomic, strong) NSArray<AWEAwemeTextExtraModel *> *textExtras;
+@property(nonatomic, copy) NSString *itemTitle;
+@property(nonatomic, copy) NSString *descriptionSimpleString;
+@property(nonatomic, strong) NSString *itemID;
+@property(nonatomic, strong) AWEUserModel *author;
 
-@property (nonatomic, strong) AWEAwemeStatisticsModel *statistics;
+@property(nonatomic, strong) AWEAwemeStatisticsModel *statistics;
 - (BOOL)isLive;
 - (AWESearchAwemeExtraModel *)searchExtraModel;
 @end
 
 @interface AWELongPressPanelBaseViewModel : NSObject
-@property (nonatomic, copy) NSString *describeString;
-@property (nonatomic, assign) NSInteger enterMethod;
-@property (nonatomic, assign) NSInteger actionType;
-@property (nonatomic, assign) BOOL showIfNeed;
-@property (nonatomic, copy) NSString *duxIconName;
-@property (nonatomic, copy) void (^action)(void);
-@property (nonatomic) BOOL isModern;
-@property (nonatomic, strong) AWEAwemeModel *awemeModel;
+@property(nonatomic, copy) NSString *describeString;
+@property(nonatomic, assign) NSInteger enterMethod;
+@property(nonatomic, assign) NSInteger actionType;
+@property(nonatomic, assign) BOOL showIfNeed;
+@property(nonatomic, copy) NSString *duxIconName;
+@property(nonatomic, copy) void (^action)(void);
+@property(nonatomic) BOOL isModern;
+@property(nonatomic, strong) AWEAwemeModel *awemeModel;
 - (void)setDuxIconName:(NSString *)iconName;
 - (void)setDescribeString:(NSString *)descString;
 - (void)setAction:(void (^)(void))action;
 @end
 
 @interface AWELongPressPanelViewGroupModel : NSObject
-@property (nonatomic) unsigned long long groupType;
-@property (nonatomic) NSArray *groupArr;
-@property (nonatomic) long long numberOfRowsInSection;
-@property (nonatomic) long long cellHeight;
-@property (nonatomic) BOOL hasMore;
-@property (nonatomic) BOOL isModern;
-@property (nonatomic) BOOL isDYYYCustomGroup;
+@property(nonatomic) unsigned long long groupType;
+@property(nonatomic) NSArray *groupArr;
+@property(nonatomic) long long numberOfRowsInSection;
+@property(nonatomic) long long cellHeight;
+@property(nonatomic) BOOL hasMore;
+@property(nonatomic) BOOL isModern;
+@property(nonatomic) BOOL isDYYYCustomGroup;
 @end
 
 @interface AWELongPressPanelManager : NSObject
@@ -127,7 +125,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 @interface AWENormalModeTabBarGeneralButton : UIButton
-@property (nonatomic) NSInteger status;
+@property(nonatomic) NSInteger status;
 @end
 
 @interface AWEHPTopTabItemBadgeContentView : UIView
@@ -163,7 +161,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 @interface AWEPlayInteractionViewController : UIViewController
-@property (nonatomic, strong) UIView *view;
+@property(nonatomic, strong) UIView *view;
 - (void)performCommentAction;
 - (void)performLikeAction;
 - (void)showSharePanel;
@@ -186,7 +184,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 @interface AWEAwemePlayVideoViewController : UIViewController
-- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context;
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey, id> *)change context:(void *)context;
 - (void)setVideoControllerPlaybackRate:(double)arg0;
 
 @end
@@ -228,12 +226,12 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 @interface AWEPlayInteractionNewBaseController : UIView
-@property (retain, nonatomic) AWEAwemeModel * model;
+@property(retain, nonatomic) AWEAwemeModel *model;
 @end
 
 @interface AWEPlayInteractionProgressController : AWEPlayInteractionNewBaseController
 - (UIViewController *)findViewController:(UIViewController *)vc ofClass:(Class)targetClass;
-@property (retain, nonatomic) id progressSlider;
+@property(retain, nonatomic) id progressSlider;
 - (NSString *)formatTimeFromSeconds:(CGFloat)seconds;
 - (NSString *)convertSecondsToTimeString:(NSInteger)totalSeconds;
 @end
@@ -243,7 +241,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 @interface AWENormalModeTabBar : UIView
-@property (nonatomic, assign, readonly) UITabBarController *yy_viewController;
+@property(nonatomic, assign, readonly) UITabBarController *yy_viewController;
 @end
 
 @interface AWEPlayInteractionListenFeedView : UIView
@@ -255,7 +253,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 @interface AWEPlayInteractionTimestampElement : UIView
-@property (nonatomic, strong) AWEAwemeModel *model;
+@property(nonatomic, strong) AWEAwemeModel *model;
 @end
 
 @interface AWEFeedTableViewController : UIViewController
@@ -315,48 +313,48 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 @interface AWELongPressPanelTableViewController : UIViewController
-@property (nonatomic, strong) AWEAwemeModel *awemeModel;
+@property(nonatomic, strong) AWEAwemeModel *awemeModel;
 @end
 
 @interface AWEModernLongPressPanelTableViewController : UIViewController
-@property (nonatomic, strong) AWEAwemeModel *awemeModel;
+@property(nonatomic, strong) AWEAwemeModel *awemeModel;
 @end
 
 @interface AWEModernLongPressHorizontalSettingCell : UITableViewCell
-@property (nonatomic, strong) UICollectionView *collectionView;
-@property (nonatomic, strong) NSArray *dataArray;
-@property (nonatomic, strong) AWELongPressPanelViewGroupModel *longPressViewGroupModel;
+@property(nonatomic, strong) UICollectionView *collectionView;
+@property(nonatomic, strong) NSArray *dataArray;
+@property(nonatomic, strong) AWELongPressPanelViewGroupModel *longPressViewGroupModel;
 @end
 
 @interface AWEModernLongPressHorizontalSettingItemCell : UICollectionViewCell
-@property (nonatomic, strong) UIView *contentView;
-@property (nonatomic, strong) UIImageView *buttonIcon;
-@property (nonatomic, strong) UILabel *buttonLabel;
-@property (nonatomic, strong) UIView *separator;
-@property (nonatomic, strong) AWELongPressPanelBaseViewModel *longPressPanelVM;
+@property(nonatomic, strong) UIView *contentView;
+@property(nonatomic, strong) UIImageView *buttonIcon;
+@property(nonatomic, strong) UILabel *buttonLabel;
+@property(nonatomic, strong) UIView *separator;
+@property(nonatomic, strong) AWELongPressPanelBaseViewModel *longPressPanelVM;
 
 - (void)updateUI:(AWELongPressPanelBaseViewModel *)viewModel;
 @end
 
 @interface AWEModernLongPressInteractiveCell : UITableViewCell
-@property (nonatomic, strong) UICollectionView *collectionView;
-@property (nonatomic, strong) AWELongPressPanelViewGroupModel *longPressViewGroupModel;
-@property (nonatomic, strong) NSArray *dataArray;
-@property (nonatomic, assign) BOOL isAppearing;
+@property(nonatomic, strong) UICollectionView *collectionView;
+@property(nonatomic, strong) AWELongPressPanelViewGroupModel *longPressViewGroupModel;
+@property(nonatomic, strong) NSArray *dataArray;
+@property(nonatomic, assign) BOOL isAppearing;
 @end
 
 @interface DYYYSettingViewController : UIViewController
 @end
 
 @interface AWEElementStackView : UIView
-@property (nonatomic, copy) NSString *accessibilityLabel;
-@property (nonatomic, assign) CGRect frame;
-@property (nonatomic, strong) NSArray *subviews;
-@property (nonatomic, assign) CGAffineTransform transform;
+@property(nonatomic, copy) NSString *accessibilityLabel;
+@property(nonatomic, assign) CGRect frame;
+@property(nonatomic, strong) NSArray *subviews;
+@property(nonatomic, assign) CGAffineTransform transform;
 @end
 
 @interface AWECommentImageModel : NSObject
-@property (nonatomic, copy) NSString *originUrl;
+@property(nonatomic, copy) NSString *originUrl;
 @end
 
 @class AWECommentModel;
@@ -392,14 +390,14 @@ typedef NS_ENUM(NSInteger, MediaType) {
 
 @interface AWEFeedProgressSlider : UIView
 @property(nonatomic, assign) float maximumValue;
-@property (nonatomic, strong) UIView *leftLabelUI;
-@property (nonatomic, strong) UIView *rightLabelUI;
-@property (nonatomic) AWEPlayInteractionProgressController * progressSliderDelegate;
+@property(nonatomic, strong) UIView *leftLabelUI;
+@property(nonatomic, strong) UIView *rightLabelUI;
+@property(nonatomic) AWEPlayInteractionProgressController *progressSliderDelegate;
 @end
 
 @interface AWEFeedChannelObject : NSObject
-@property (nonatomic, copy) NSString *channelID;
-@property (nonatomic, copy) NSString *channelTitle;
+@property(nonatomic, copy) NSString *channelID;
+@property(nonatomic, copy) NSString *channelTitle;
 @end
 
 @interface AWEFeedChannelManager : NSObject
@@ -407,84 +405,84 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 @interface AWEHPTopTabItemModel : NSObject
-@property (nonatomic, copy) NSString *channelID;
-@property (nonatomic, copy) NSString *channelTitle;
-@property (nonatomic, copy) NSString *title;
+@property(nonatomic, copy) NSString *channelID;
+@property(nonatomic, copy) NSString *channelTitle;
+@property(nonatomic, copy) NSString *title;
 @end
 
 @interface AWEPlayInteractionStrongifyShareContentView : UIView
-@property (nonatomic, strong, readonly) UIView *superview;
-@property (nonatomic, assign, getter=isHidden) BOOL hidden;
+@property(nonatomic, strong, readonly) UIView *superview;
+@property(nonatomic, assign, getter=isHidden) BOOL hidden;
 @end
 
 @interface AWEAntiAddictedNoticeBarView : UIView
-@property (nonatomic, strong, readonly) UIView *superview;
-@property (nonatomic, assign, getter=isHidden) BOOL hidden;
+@property(nonatomic, strong, readonly) UIView *superview;
+@property(nonatomic, assign, getter=isHidden) BOOL hidden;
 @end
 
 @interface AWEFeedAnchorContainerView : UIView
-@property (nonatomic, strong, readonly) UIView *superview;
-@property (nonatomic, assign, getter=isHidden) BOOL hidden;
+@property(nonatomic, strong, readonly) UIView *superview;
+@property(nonatomic, assign, getter=isHidden) BOOL hidden;
 @end
 
 @interface AWEIMMessageTabOptPushBannerView : UIView
-@property (nonatomic, strong, readonly) UIView *superview;
-@property (nonatomic, assign, getter=isHidden) BOOL hidden;
+@property(nonatomic, strong, readonly) UIView *superview;
+@property(nonatomic, assign, getter=isHidden) BOOL hidden;
 @end
 
 @interface AWEFeedStickerContainerView : UIView
-@property (nonatomic, strong, readonly) UIView *superview;
-@property (nonatomic, assign, getter=isHidden) BOOL hidden;
+@property(nonatomic, strong, readonly) UIView *superview;
+@property(nonatomic, assign, getter=isHidden) BOOL hidden;
 @end
 
 @interface AWEECommerceEntryView : UIView
-@property (nonatomic, strong, readonly) UIView *superview;
-@property (nonatomic, assign, getter=isHidden) BOOL hidden;
+@property(nonatomic, strong, readonly) UIView *superview;
+@property(nonatomic, assign, getter=isHidden) BOOL hidden;
 @end
 
 @interface AWETemplateTagsCommonView : UIView
-@property (nonatomic, strong, readonly) UIView *superview;
-@property (nonatomic, assign, getter=isHidden) BOOL hidden;
+@property(nonatomic, strong, readonly) UIView *superview;
+@property(nonatomic, assign, getter=isHidden) BOOL hidden;
 @end
 
 @interface AFDSkylightCellBubble : UIView
-@property (nonatomic, strong, readonly) UIView *superview;
-@property (nonatomic, assign, getter=isHidden) BOOL hidden;
+@property(nonatomic, strong, readonly) UIView *superview;
+@property(nonatomic, assign, getter=isHidden) BOOL hidden;
 @end
 
 @interface LOTAnimationView : UIView
-@property (nonatomic, strong, readonly) UIView *superview;
-@property (nonatomic, assign, getter=isHidden) BOOL hidden;
+@property(nonatomic, strong, readonly) UIView *superview;
+@property(nonatomic, assign, getter=isHidden) BOOL hidden;
 @end
 
 @interface AWENearbySkyLightCapsuleView : UIView
-@property (nonatomic, strong, readonly) UIView *superview;
-@property (nonatomic, assign, getter=isHidden) BOOL hidden;
+@property(nonatomic, strong, readonly) UIView *superview;
+@property(nonatomic, assign, getter=isHidden) BOOL hidden;
 @end
 
 @interface AWEPlayInteractionCoCreatorNewInfoView : UIView
-@property (nonatomic, strong, readonly) UIView *superview;
-@property (nonatomic, assign, getter=isHidden) BOOL hidden;
+@property(nonatomic, strong, readonly) UIView *superview;
+@property(nonatomic, assign, getter=isHidden) BOOL hidden;
 @end
 
 @interface AFDCancelMuteAwemeView : UIView
-@property (nonatomic, strong, readonly) UIView *superview;
-@property (nonatomic, assign, getter=isHidden) BOOL hidden;
+@property(nonatomic, strong, readonly) UIView *superview;
+@property(nonatomic, assign, getter=isHidden) BOOL hidden;
 @end
 
 @interface AWEPlayDanmakuInputContainView : UIView
-@property (nonatomic, strong, readonly) UIView *superview;
-@property (nonatomic, assign, getter=isHidden) BOOL hidden;
+@property(nonatomic, strong, readonly) UIView *superview;
+@property(nonatomic, assign, getter=isHidden) BOOL hidden;
 @end
 
 @interface AWEPlayInteractionRelatedVideoView : UIView
-@property (nonatomic, strong, readonly) UIView *superview;
-@property (nonatomic, assign, getter=isHidden) BOOL hidden;
+@property(nonatomic, strong, readonly) UIView *superview;
+@property(nonatomic, assign, getter=isHidden) BOOL hidden;
 @end
 
 @interface AWEFeedRelatedSearchTipView : UIView
-@property (nonatomic, strong, readonly) UIView *superview;
-@property (nonatomic, assign, getter=isHidden) BOOL hidden;
+@property(nonatomic, strong, readonly) UIView *superview;
+@property(nonatomic, assign, getter=isHidden) BOOL hidden;
 @end
 
 @interface AWEProfileMixCollectionViewCell : UIView
@@ -495,9 +493,9 @@ typedef NS_ENUM(NSInteger, MediaType) {
 
 // AWEVersionUpdateManager相关接口声明
 @interface AWEVersionUpdateManager : NSObject
-@property (nonatomic, strong) id networkModule;
-@property (nonatomic, strong) id badgeModule;
-@property (nonatomic, strong) id workflow;
+@property(nonatomic, strong) id networkModule;
+@property(nonatomic, strong) id badgeModule;
+@property(nonatomic, strong) id workflow;
 - (NSString *)currentVersion;
 - (void)startVersionUpdateWorkflow:(id)arg1 completion:(id)arg2;
 - (void)workflowDidFinish:(id)arg1;
@@ -514,13 +512,14 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 @interface AWEStoryProgressSlideView : UIView
-@property (nonatomic, strong, readonly) UIView *superview;
-@property (nonatomic, assign, getter=isHidden) BOOL hidden;
+@property(nonatomic, strong, readonly) UIView *superview;
+@property(nonatomic, assign, getter=isHidden) BOOL hidden;
 @end
 
-//隐藏好友分享私信
-@interface AFDNewFastReplyView @property (nonatomic, weak) UIView *superview;
-@property (nonatomic) BOOL hidden;
+// 隐藏好友分享私信
+@interface AFDNewFastReplyView
+@property(nonatomic, weak) UIView *superview;
+@property(nonatomic) BOOL hidden;
 @end
 
 @interface AWENewLiveSkylightViewController : UIViewController
@@ -540,7 +539,6 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWEPlayInteractionTemplateButtonGroup : UIView
 - (void)layoutSubviews;
 @end
-
 
 @interface AWEHPDiscoverFeedEntranceView : UIView
 - (void)configImage:(UIImageView *)imageView Label:(UILabel *)label position:(NSInteger)pos;
@@ -612,7 +610,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 @interface AWEFeedTopBarContainer : UIView
-- (void)applyDYYYTransparency; 
+- (void)applyDYYYTransparency;
 @end
 
 @interface AWEHPTopBarCTAContainer : UIView
@@ -648,25 +646,27 @@ typedef NS_ENUM(NSInteger, MediaType) {
 
 @interface AWEPlayInteractionDescriptionLabel : UILabel
 @end
-//关注直播
+// 关注直播
 @interface AWEConcernSkylightCapsuleView : UIView
 @end
-//直播发现
+// 直播发现
 @interface AWEFeedLiveTabRevisitControlView : UIView
 @end
-//直播 退出清屏、投屏按钮
+// 直播 退出清屏、投屏按钮
 @interface IESLiveButton : UIView
 @end
-
-//直播点歌
+// 直播右上关闭按钮
+@interface IESLiveLayoutPlaceholderView : UIView
+@end
+// 直播点歌
 @interface IESLiveKTVSongIndicatorView : UIView
 @end
-//图片滑条
-@interface AWEStoryProgressContainerView : UIView 
-@property (nonatomic, strong, readonly) UIView *superview;
-@property (nonatomic, assign, getter=isHidden) BOOL hidden;
-- (void)layoutSubviews; 
-- (void)updateIndicatorWithPageCount:(NSInteger)count; 
+// 图片滑条
+@interface AWEStoryProgressContainerView : UIView
+@property(nonatomic, strong, readonly) UIView *superview;
+@property(nonatomic, assign, getter=isHidden) BOOL hidden;
+- (void)layoutSubviews;
+- (void)updateIndicatorWithPageCount:(NSInteger)count;
 @end
 
 @interface AWESearchAnchorListModel : NSObject
@@ -678,15 +678,15 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @property(nonatomic, readonly) CGRect frame;
 @end
 
-//直播间流量提醒弹窗
+// 直播间流量提醒弹窗
 @interface AWELiveFlowAlertView : UIView
 @end
 
-//搜索视频底部评论视图
+// 搜索视频底部评论视图
 @interface AWECommentInputBackgroundView : UIView
 @end
 
-//聊天视频底部快速回复视图
+// 聊天视频底部快速回复视图
 @interface AWEIMFeedBottomQuickEmojiInputBar : UIView
 @end
 
@@ -708,7 +708,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWEHPTopBarCTAItemView : UIView
 @end
 
-//应用内推送容器
+// 应用内推送容器
 @interface AWEInnerNotificationWindow : UIWindow
 - (void)setupBlurEffectForNotificationView;
 - (void)applyBlurEffectToView:(UIView *)containerView;
@@ -721,7 +721,8 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 // 添加 DUXContentSheet 相关声明
-@protocol IESIMContentSheetVCProtocol, AWEMRGlobalAlertTrackProtocol;
+@protocol IESIMContentSheetVCProtocol
+, AWEMRGlobalAlertTrackProtocol;
 @interface DUXBasicSheet : UIViewController
 @end
 
@@ -742,7 +743,6 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @property(nonatomic, copy) void (^cellTappedBlock)(void);
 @property(nonatomic, copy) void (^switchChangedBlock)(void);
 @end
-
 
 @interface AWESettingBaseViewModel : NSObject
 @end
@@ -766,7 +766,6 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (void)updateDependentItemsForSetting:(NSString *)identifier value:(id)value;
 @end
 
-
 @interface AWENavigationBar : UIView
 @property(nonatomic, strong) UILabel *titleLabel;
 @end
@@ -776,8 +775,8 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @property(nonatomic, assign) CGFloat sectionHeaderHeight;
 @property(nonatomic, copy) NSString *sectionHeaderTitle;
 @property(nonatomic, strong) NSArray *itemArray;
-@property (retain, nonatomic) NSString *identifier;
-@property (copy, nonatomic) NSString *title;
+@property(retain, nonatomic) NSString *identifier;
+@property(copy, nonatomic) NSString *title;
 - (id)initWithIdentifier:(id)arg1;
 - (void)setIsSelect:(BOOL)arg1;
 - (BOOL)isSelect;
@@ -790,20 +789,20 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 @interface AWEPrivacySettingActionSheetConfig : NSObject
-@property (copy, nonatomic) NSArray *models;
-@property (copy, nonatomic) NSString *headerText;
-@property (copy, nonatomic) NSString *headerTitleText;
-@property (nonatomic) BOOL needHighLight;
-@property (nonatomic) BOOL useCardUIStyle;
-@property (nonatomic) BOOL fromHalfScreen;
-@property (retain, nonatomic) UIImage *headerLabelIcon;
-@property (nonatomic) CGFloat sheetWidth;
-@property (nonatomic) BOOL adaptIpadFromHalfVC;
+@property(copy, nonatomic) NSArray *models;
+@property(copy, nonatomic) NSString *headerText;
+@property(copy, nonatomic) NSString *headerTitleText;
+@property(nonatomic) BOOL needHighLight;
+@property(nonatomic) BOOL useCardUIStyle;
+@property(nonatomic) BOOL fromHalfScreen;
+@property(retain, nonatomic) UIImage *headerLabelIcon;
+@property(nonatomic) CGFloat sheetWidth;
+@property(nonatomic) BOOL adaptIpadFromHalfVC;
 @end
 
 @interface AWEPrivacySettingActionSheet : UIView
 + (id)sheetWithConfig:(id)arg1;
-@property (copy, nonatomic) id closeBlock;
+@property(copy, nonatomic) id closeBlock;
 @end
 
 @interface DUXContentSheet : UIViewController
@@ -811,7 +810,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (instancetype)initWithRootViewController:(UIViewController *)controller withTopType:(NSInteger)topType withSheetAligment:(NSInteger)alignment;
 - (void)setAutoAlignmentCenter:(BOOL)center;
 - (void)setSheetCornerRadius:(CGFloat)radius;
-@property (retain, nonatomic) UIView *fullScreenView;
+@property(retain, nonatomic) UIView *fullScreenView;
 @end
 
 @protocol AFDPrivacyHalfScreenViewControllerProtocol <NSObject>
@@ -835,23 +834,23 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 @interface AFDPrivacyHalfScreenViewController : AWEHalfScreenBaseViewController <AFDPrivacyHalfScreenViewControllerProtocol>
-@property (retain, nonatomic) UILabel *titleLabel;
-@property (retain, nonatomic) UILabel *contentLabel;
-@property (retain, nonatomic) UIImageView *imageView;
-@property (copy, nonatomic) void (^rightBtnClickedBlock)(void);
-@property (copy, nonatomic) void (^leftButtonClickedBlock)(void);
-@property (retain, nonatomic) AWEButton *leftCancelButton;
-@property (retain, nonatomic) AWEButton *rightConfirmButton;
+@property(retain, nonatomic) UILabel *titleLabel;
+@property(retain, nonatomic) UILabel *contentLabel;
+@property(retain, nonatomic) UIImageView *imageView;
+@property(copy, nonatomic) void (^rightBtnClickedBlock)(void);
+@property(copy, nonatomic) void (^leftButtonClickedBlock)(void);
+@property(retain, nonatomic) AWEButton *leftCancelButton;
+@property(retain, nonatomic) AWEButton *rightConfirmButton;
 
-- (void)configWithImageView:(UIImageView *)imageView 
-                  lockImage:(UIImage *)lockImage 
-            defaultLockState:(BOOL)defaultLockState 
-             titleLabelText:(NSString *)titleText 
-           contentLabelText:(NSString *)contentText 
-       leftCancelButtonText:(NSString *)leftButtonText 
-      rightConfirmButtonText:(NSString *)rightButtonText 
-        rightBtnClickedBlock:(void (^)(void))rightBtnBlock 
-       leftButtonClickedBlock:(void (^)(void))leftBtnBlock;
+- (void)configWithImageView:(UIImageView *)imageView
+                  lockImage:(UIImage *)lockImage
+           defaultLockState:(BOOL)defaultLockState
+             titleLabelText:(NSString *)titleText
+           contentLabelText:(NSString *)contentText
+       leftCancelButtonText:(NSString *)leftButtonText
+     rightConfirmButtonText:(NSString *)rightButtonText
+       rightBtnClickedBlock:(void (^)(void))rightBtnBlock
+     leftButtonClickedBlock:(void (^)(void))leftBtnBlock;
 
 - (void)setCornerRadius:(CGFloat)radius;
 - (void)setOnlyTopCornerClips:(BOOL)onlyTop;
@@ -876,9 +875,9 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 @interface AWEIMEmoticonPreviewV2 : UIView
-@property (nonatomic, strong) UIView *container;
-@property (nonatomic, strong) BDImageView *content;
-@property (nonatomic, strong) AWEIMEmoticonModel *model;
+@property(nonatomic, strong) UIView *container;
+@property(nonatomic, strong) BDImageView *content;
+@property(nonatomic, strong) AWEIMEmoticonModel *model;
 - (void)dyyy_saveButtonTapped:(id)sender;
 @end
 
@@ -904,17 +903,17 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 @interface AWEDPlayerFeedPlayerViewController : UIViewController
-@property (nonatomic) UIView *contentView;
+@property(nonatomic) UIView *contentView;
 - (void)setVideoControllerPlaybackRate:(double)arg0;
 @end
 
-//底部热点提示框
+// 底部热点提示框
 @interface AWENewHotSpotBottomBarView : UIView
-@property (nonatomic, strong, readonly) UIView *superview;
-@property (nonatomic, assign, getter=isHidden) BOOL hidden;
+@property(nonatomic, strong, readonly) UIView *superview;
+@property(nonatomic, assign, getter=isHidden) BOOL hidden;
 @end
 
-//评论区免费去看短剧
+// 评论区免费去看短剧
 @interface AWEShowPlayletCommentHeaderView : UIView
 - (void)setHidden:(BOOL)hidden;
 - (BOOL)isHidden;

@@ -1479,8 +1479,27 @@
 			[self.superview removeFromSuperview];
 		}
 	}
+
+	// 横屏按钮,可点击
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveRoomFullscreen"]) {
+		if ([self.accessibilityLabel isEqualToString:@"横屏"] && self.superview) {
+			for (UIView *subview in self.subviews) {
+			subview.hidden = YES;
+			}
+		}
+	}
 }
 
+%end
+
+// 隐藏直播间右上方关闭直播按钮
+%hook IESLiveLayoutPlaceholderView
+- (void)layoutSubviews {
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveRoomClose"]) {
+		self.hidden = YES;
+	}
+}
 %end
 
 // 隐藏直播间流量弹窗
