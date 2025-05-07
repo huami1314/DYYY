@@ -617,7 +617,7 @@
 
 	NSString *accessibilityLabel = self.accessibilityLabel;
 
-	if ([accessibilityLabel isEqualToString:@"拍照搜同款"]) {
+	if ([accessibilityLabel isEqualToString:@"拍照搜同款"] || [accessibilityLabel isEqualToString:@"扫一扫"]) {
 		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideScancode"]) {
 			[self removeFromSuperview];
 			return;
