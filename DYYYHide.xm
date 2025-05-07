@@ -612,6 +612,19 @@
     }
 }
 
+- (void)layoutSubviews {
+	%orig;
+
+	NSString *accessibilityLabel = self.accessibilityLabel;
+
+	if ([accessibilityLabel isEqualToString:@"拍照搜同款"] || [accessibilityLabel isEqualToString:@"扫一扫"]) {
+		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideScancode"]) {
+			[self removeFromSuperview];
+			return;
+		}
+	}
+}
+
 %end
 
 %hook AWEMusicCoverButton
@@ -654,6 +667,11 @@
 			[self removeFromSuperview];
 			return;
 		}
+	}
+
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFollowPromptView"]) {
+		self.hidden = YES;
+		return;
 	}
 }
 

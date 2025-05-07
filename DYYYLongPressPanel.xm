@@ -168,50 +168,6 @@
         [viewModels addObject:downloadViewModel];
     }
     
-    // 封面下载功能
-    if (enableSaveCover && self.awemeModel.awemeType != 68) {
-        AWELongPressPanelBaseViewModel *coverViewModel = [[%c(AWELongPressPanelBaseViewModel) alloc] init];
-        coverViewModel.awemeModel = self.awemeModel;
-        coverViewModel.actionType = 667;
-        coverViewModel.duxIconName = @"ic_boxarrowdownhigh_outlined";
-        coverViewModel.describeString = @"保存封面";
-        coverViewModel.action = ^{
-            AWEAwemeModel *awemeModel = self.awemeModel;
-            AWEVideoModel *videoModel = awemeModel.video;
-            if (videoModel && videoModel.coverURL && videoModel.coverURL.originURLList.count > 0) {
-                NSURL *url = [NSURL URLWithString:videoModel.coverURL.originURLList.firstObject];
-                [DYYYManager downloadMedia:url
-                                 mediaType:MediaTypeImage
-                                completion:^{
-                                    [DYYYManager showToast:@"封面已保存到相册"];
-                                }];
-            }
-            AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
-            [panelManager dismissWithAnimation:YES completion:nil];
-        };
-        [viewModels addObject:coverViewModel];
-    }
-    
-    // 音频下载功能
-    if (enableSaveAudio) {
-        AWELongPressPanelBaseViewModel *audioViewModel = [[%c(AWELongPressPanelBaseViewModel) alloc] init];
-        audioViewModel.awemeModel = self.awemeModel;
-        audioViewModel.actionType = 668;
-        audioViewModel.duxIconName = @"ic_boxarrowdownhigh_outlined";
-        audioViewModel.describeString = @"保存音频";
-        audioViewModel.action = ^{
-            AWEAwemeModel *awemeModel = self.awemeModel;
-            AWEMusicModel *musicModel = awemeModel.music;
-            if (musicModel && musicModel.playURL && musicModel.playURL.originURLList.count > 0) {
-                NSURL *url = [NSURL URLWithString:musicModel.playURL.originURLList.firstObject];
-                [DYYYManager downloadMedia:url mediaType:MediaTypeAudio completion:nil];
-            }
-            AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
-            [panelManager dismissWithAnimation:YES completion:nil];
-        };
-        [viewModels addObject:audioViewModel];
-    }
-    
     // 当前图片/实况下载功能
     if (enableSaveCurrentImage && self.awemeModel.awemeType == 68 && self.awemeModel.albumImages.count > 0) {
         AWELongPressPanelBaseViewModel *imageViewModel = [[%c(AWELongPressPanelBaseViewModel) alloc] init];
@@ -330,7 +286,51 @@
         };
         [viewModels addObject:apiDownload];
     }
+
+    // 封面下载功能
+    if (enableSaveCover && self.awemeModel.awemeType != 68) {
+        AWELongPressPanelBaseViewModel *coverViewModel = [[%c(AWELongPressPanelBaseViewModel) alloc] init];
+        coverViewModel.awemeModel = self.awemeModel;
+        coverViewModel.actionType = 667;
+        coverViewModel.duxIconName = @"ic_boxarrowdownhigh_outlined";
+        coverViewModel.describeString = @"保存封面";
+        coverViewModel.action = ^{
+            AWEAwemeModel *awemeModel = self.awemeModel;
+            AWEVideoModel *videoModel = awemeModel.video;
+            if (videoModel && videoModel.coverURL && videoModel.coverURL.originURLList.count > 0) {
+                NSURL *url = [NSURL URLWithString:videoModel.coverURL.originURLList.firstObject];
+                [DYYYManager downloadMedia:url
+                                 mediaType:MediaTypeImage
+                                completion:^{
+                                    [DYYYManager showToast:@"封面已保存到相册"];
+                                }];
+            }
+            AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
+            [panelManager dismissWithAnimation:YES completion:nil];
+        };
+        [viewModels addObject:coverViewModel];
+    }
     
+    // 音频下载功能
+    if (enableSaveAudio) {
+        AWELongPressPanelBaseViewModel *audioViewModel = [[%c(AWELongPressPanelBaseViewModel) alloc] init];
+        audioViewModel.awemeModel = self.awemeModel;
+        audioViewModel.actionType = 668;
+        audioViewModel.duxIconName = @"ic_boxarrowdownhigh_outlined";
+        audioViewModel.describeString = @"保存音频";
+        audioViewModel.action = ^{
+            AWEAwemeModel *awemeModel = self.awemeModel;
+            AWEMusicModel *musicModel = awemeModel.music;
+            if (musicModel && musicModel.playURL && musicModel.playURL.originURLList.count > 0) {
+                NSURL *url = [NSURL URLWithString:musicModel.playURL.originURLList.firstObject];
+                [DYYYManager downloadMedia:url mediaType:MediaTypeAudio completion:nil];
+            }
+            AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
+            [panelManager dismissWithAnimation:YES completion:nil];
+        };
+        [viewModels addObject:audioViewModel];
+    }
+
     // 复制文案功能
     if (enableCopyText) {
         AWELongPressPanelBaseViewModel *copyText = [[%c(AWELongPressPanelBaseViewModel) alloc] init];
