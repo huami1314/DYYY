@@ -1445,6 +1445,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 %end
 
 %hook AWEPlayInteractionTimestampElement
+- (id)timestampLabel {
     UILabel *label = %orig;
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableArea"]) {
         NSString *text = label.text;
