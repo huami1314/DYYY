@@ -6,6 +6,7 @@
 @property (nonatomic, strong) CAShapeLayer *progressLayer;
 @property (nonatomic, strong) UILabel *percentLabel;
 @property (nonatomic, assign) CGFloat progress;
+@property (nonatomic, strong) UIVisualEffectView *blurEffectView;
 
 @end
 
@@ -26,29 +27,33 @@
     _containerView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, containerWidth, containerHeight)];
     _containerView.center = CGPointMake(CGRectGetMidX(self.bounds), 130); 
     
-    _containerView.backgroundColor = isDarkMode ? 
-                                    [UIColor darkGrayColor] : 
-                                    [UIColor whiteColor];
-
+    _containerView.backgroundColor = [UIColor clearColor];
     _containerView.layer.cornerRadius = containerHeight / 2;
     _containerView.clipsToBounds = YES;
-    
     _containerView.userInteractionEnabled = YES;
+    
+    // 添加毛玻璃效果
+    UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:isDarkMode ? 
+                               UIBlurEffectStyleDark : 
+                               UIBlurEffectStyleLight];
+    _blurEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
+    _blurEffectView.frame = _containerView.bounds;
+    _blurEffectView.layer.cornerRadius = containerHeight / 2;
+    _blurEffectView.clipsToBounds = YES;
+    [_containerView addSubview:_blurEffectView];
+    
     [self addSubview:_containerView];
     
-    // 阴影效果
     _containerView.layer.shadowColor = [UIColor blackColor].CGColor;
     _containerView.layer.shadowOffset = CGSizeMake(0, 2);
     _containerView.layer.shadowRadius = 6;
     _containerView.layer.shadowOpacity = 0.2;
     
-    // 创建环形进度条背景 - 调整大小和位置
     CGFloat circleSize = 30; 
     CGFloat yCenter = containerHeight / 2;
     UIView *progressView = [[UIView alloc] initWithFrame:CGRectMake(10, (containerHeight - circleSize) / 2, circleSize, circleSize)];
     [_containerView addSubview:progressView];
     
-    // 创建背景圆环
     CAShapeLayer *backgroundLayer = [CAShapeLayer layer];
     UIBezierPath *circularPath = [UIBezierPath bezierPathWithArcCenter:CGPointMake(circleSize/2, circleSize/2)
                                                                radius:circleSize/2 - 2 // 稍微减小半径
@@ -56,33 +61,38 @@
                                                              endAngle:3*M_PI/2
                                                             clockwise:YES];
     backgroundLayer.path = circularPath.CGPath;
-    backgroundLayer.strokeColor = isDarkMode ? 
-                                [UIColor colorWithWhite:0.3 alpha:1.0].CGColor : 
-                                [UIColor colorWithWhite:0.88 alpha:1.0].CGColor;
+    
+    UIColor *separatorColor = isDarkMode ? 
+                            [UIColor colorWithWhite:0.4 alpha:1.0] : 
+                            [UIColor colorWithWhite:0.85 alpha:1.0];
+    backgroundLayer.strokeColor = separatorColor.CGColor;
     backgroundLayer.fillColor = [UIColor clearColor].CGColor;
     backgroundLayer.lineWidth = 2;
     backgroundLayer.lineCap = kCALineCapRound;
     [progressView.layer addSublayer:backgroundLayer];
     
-    // 创建进度圆环
     _progressLayer = [CAShapeLayer layer];
     _progressLayer.path = circularPath.CGPath;
-    _progressLayer.strokeColor = [UIColor colorWithRed:11/255.0 green:223/255.0 blue:154/255.0 alpha:1.0].CGColor;
+
+    UIColor *progressColor = isDarkMode ? 
+                           [UIColor colorWithRed:48/255.0 green:209/255.0 blue:151/255.0 alpha:1.0] : 
+                           [UIColor colorWithRed:11/255.0 green:195/255.0 blue:139/255.0 alpha:1.0];
+    _progressLayer.strokeColor = progressColor.CGColor;
     _progressLayer.fillColor = [UIColor clearColor].CGColor;
     _progressLayer.lineWidth = 2; 
     _progressLayer.lineCap = kCALineCapRound;
     _progressLayer.strokeEnd = 0;
     [progressView.layer addSublayer:_progressLayer];
     
-    // 创建百分比标签 - 调整位置和大小
     _percentLabel = [[UILabel alloc] initWithFrame:CGRectMake(circleSize + 15, 0, containerWidth - circleSize - 25, containerHeight)];
     _percentLabel.textAlignment = NSTextAlignmentLeft;
-    _percentLabel.textColor = isDarkMode ? [UIColor whiteColor] : [UIColor blackColor];
+    _percentLabel.textColor = isDarkMode ? 
+                            [UIColor colorWithWhite:0.9 alpha:1.0] : 
+                            [UIColor colorWithWhite:0.2 alpha:1.0];
     _percentLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightMedium];
     _percentLabel.text = @"下载中... 0%";
     [_containerView addSubview:_percentLabel];
     
-    // 添加点击手势
     UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] 
                                          initWithTarget:self 
                                          action:@selector(handleTap:)];
@@ -92,7 +102,6 @@
   }
   return self;
 }
-
 - (void)setProgress:(float)progress {
   // 确保在主线程中更新UI
   if (![NSThread isMainThread]) {
