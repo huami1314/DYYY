@@ -1,6 +1,15 @@
 #import "DYYYABTestHook.h"
 #import <objc/runtime.h>
-#import <AwemeHeaders.h>
+
+@interface AWEABTestManager : NSObject
+@property(retain, nonatomic) NSDictionary *abTestData;
+@property(retain, nonatomic) NSMutableDictionary *consistentABTestDic;
+@property(copy, nonatomic) NSDictionary *performanceReversalDic;
+- (void)setAbTestData:(id)arg1;
+- (void)_saveABTestData:(id)arg1;
+- (id)abTestData;
++ (id)sharedManager;
+@end
 
 BOOL abTestBlockEnabled = NO;
 NSDictionary *gFixedABTestData = nil;
@@ -95,7 +104,6 @@ NSDictionary *getCurrentABTestData(void) {
 	return currentData;
 }
 
-
 static NSMutableDictionary *gCaseCache = nil;
 
 %hook AWEABTestManager
@@ -155,7 +163,6 @@ static NSMutableDictionary *gCaseCache = nil;
         if (!gDataLoaded) {
             ensureABTestDataLoaded();
         }
-
         NSString *key = (NSString *)arg1;
         id localValue = [gFixedABTestData objectForKey:key];
         
@@ -165,16 +172,16 @@ static NSMutableDictionary *gCaseCache = nil;
 
         return nil;
     }
-
+ 
     return %orig;
 }
 
 %end
 
-%ctor {    %init;
+%ctor {
+    %init;
     abTestBlockEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"ABTestBlockEnabled"];
 
-    // 启动时加载数据并设置一次
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         AWEABTestManager *manager = [%c(AWEABTestManager) sharedManager];
         if (manager && gFixedABTestData) {

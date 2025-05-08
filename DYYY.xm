@@ -2191,29 +2191,6 @@ static CGFloat currentScale = 1.0;
 
 %end
 
-// 开启自动背景切换
-%hook AWESettingThemeManager
-
-// 控制自动主题开关状态
-- (BOOL)isAutoChangeEnable {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableAutoTheme"]) {
-		return YES; // 强制启用自动主题
-	}
-	return %orig; // 保持原始逻辑
-}
-
-// 控制自动切换主题行为
-- (void)startAutoChangeThemeCanRequest:(BOOL)arg1 {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableAutoTheme"]) {
-		BOOL newArg = YES;	  // 创建新变量避免直接修改参数
-		%orig(newArg); // 调用原始方法并传入新参数
-		return;
-	}
-	%orig(arg1); // 保持原始参数调用
-}
-
-%end
-
 // 为 AWEUserActionSheetView 添加毛玻璃效果
 %hook AWEUserActionSheetView
 

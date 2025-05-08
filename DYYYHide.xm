@@ -1652,7 +1652,7 @@
 	%orig;
 
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideChapterProgress"]) {
-		self.hidden = YES;
+		[self removeFromSuperview];
 	}
 }
 
