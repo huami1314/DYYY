@@ -20,7 +20,7 @@
 + (void)downloadLivePhoto:(NSURL *)imageURL videoURL:(NSURL *)videoURL completion:(void (^)(void))completion;
 + (void)downloadAllLivePhotos:(NSArray<NSDictionary *> *)livePhotos;
 + (void)downloadAllLivePhotosWithProgress:(NSArray<NSDictionary *> *)livePhotos progress:(void (^)(NSInteger current, NSInteger total))progressBlock completion:(void (^)(NSInteger successCount, NSInteger totalCount))completion;
-+ (void)downloadMedia:(NSURL *)url mediaType:(MediaType)mediaType completion:(void (^)(void))completion;
++ (void)downloadMedia:(NSURL *)url mediaType:(MediaType)mediaType completion:(void (^)(BOOL success))completion;
 + (void)downloadMediaWithProgress:(NSURL *)url mediaType:(MediaType)mediaType progress:(void (^)(float progress))progressBlock completion:(void (^)(BOOL success, NSURL *fileURL))completion;
 + (void)cancelAllDownloads;
 

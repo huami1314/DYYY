@@ -19,12 +19,10 @@
     self.userInteractionEnabled = YES;
     self.isCancelled = NO;
     
-    // 判断当前模式
     BOOL isDarkMode = [DYYYManager isDarkMode];
-    
-    // 创建更小的胶囊形容器视图，位置更高
-    CGFloat containerWidth = 160; // 减小宽度
-    CGFloat containerHeight = 40; // 减小高度
+
+    CGFloat containerWidth = 160; 
+    CGFloat containerHeight = 40; 
     _containerView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, containerWidth, containerHeight)];
     _containerView.center = CGPointMake(CGRectGetMidX(self.bounds), 130); 
     
@@ -35,7 +33,6 @@
     _containerView.layer.cornerRadius = containerHeight / 2;
     _containerView.clipsToBounds = YES;
     
-    // 启用用户交互，但只在容器视图上
     _containerView.userInteractionEnabled = YES;
     [self addSubview:_containerView];
     
@@ -46,7 +43,7 @@
     _containerView.layer.shadowOpacity = 0.2;
     
     // 创建环形进度条背景 - 调整大小和位置
-    CGFloat circleSize = 30; // 减小环形大小
+    CGFloat circleSize = 30; 
     CGFloat yCenter = containerHeight / 2;
     UIView *progressView = [[UIView alloc] initWithFrame:CGRectMake(10, (containerHeight - circleSize) / 2, circleSize, circleSize)];
     [_containerView addSubview:progressView];
@@ -63,7 +60,7 @@
                                 [UIColor colorWithWhite:0.3 alpha:1.0].CGColor : 
                                 [UIColor colorWithWhite:0.88 alpha:1.0].CGColor;
     backgroundLayer.fillColor = [UIColor clearColor].CGColor;
-    backgroundLayer.lineWidth = 2; // 减小线宽
+    backgroundLayer.lineWidth = 2;
     backgroundLayer.lineCap = kCALineCapRound;
     [progressView.layer addSublayer:backgroundLayer];
     
@@ -72,7 +69,7 @@
     _progressLayer.path = circularPath.CGPath;
     _progressLayer.strokeColor = [UIColor colorWithRed:11/255.0 green:223/255.0 blue:154/255.0 alpha:1.0].CGColor;
     _progressLayer.fillColor = [UIColor clearColor].CGColor;
-    _progressLayer.lineWidth = 2; // 减小线宽
+    _progressLayer.lineWidth = 2; 
     _progressLayer.lineCap = kCALineCapRound;
     _progressLayer.strokeEnd = 0;
     [progressView.layer addSublayer:_progressLayer];
@@ -81,7 +78,7 @@
     _percentLabel = [[UILabel alloc] initWithFrame:CGRectMake(circleSize + 15, 0, containerWidth - circleSize - 25, containerHeight)];
     _percentLabel.textAlignment = NSTextAlignmentLeft;
     _percentLabel.textColor = isDarkMode ? [UIColor whiteColor] : [UIColor blackColor];
-    _percentLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightMedium]; // 减小字体
+    _percentLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightMedium];
     _percentLabel.text = @"下载中... 0%";
     [_containerView addSubview:_percentLabel];
     
@@ -91,7 +88,6 @@
                                          action:@selector(handleTap:)];
     [_containerView addGestureRecognizer:tapGesture];
     
-    // 设置初始透明度为0，以便动画显示
     self.alpha = 0;
   }
   return self;
@@ -150,18 +146,15 @@
 }
 
 - (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event {
-  // 如果视图隐藏或透明度为0，直接返回nil
   if (self.hidden || self.alpha == 0) {
     return nil;
   }
   
-  // 检查点击是否在容器视图区域内
   CGPoint containerPoint = [self convertPoint:point toView:_containerView];
   if ([_containerView pointInside:containerPoint withEvent:event]) {
-    return [super hitTest:point withEvent:event]; // 在容器内，正常处理点击
+    return [super hitTest:point withEvent:event];
   }
   
-  // 点击在容器外，返回nil让事件穿透到底层视图
   return nil;
 }
 

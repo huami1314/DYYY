@@ -157,10 +157,15 @@
             if (videoModel && videoModel.h264URL && videoModel.h264URL.originURLList.count > 0) {
                 NSURL *url = [NSURL URLWithString:videoModel.h264URL.originURLList.firstObject];
                 [DYYYManager downloadMedia:url
-                                 mediaType:MediaTypeVideo
-                                completion:^{
-                                    [DYYYManager showToast:@"视频已保存到相册"];
+                                mediaType:MediaTypeVideo
+                                completion:^(BOOL success){
+                                    if (success) {
+                                        [DYYYManager showToast:@"视频已保存到相册"];
+                                    } else {
+                                        [DYYYManager showToast:@"视频保存失败"];
+                                    }
                                 }];
+
             }
             AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
             [panelManager dismissWithAnimation:YES completion:nil];
@@ -199,9 +204,13 @@
             } else if (currentImageModel && currentImageModel.urlList.count > 0) {
                 NSURL *url = [NSURL URLWithString:currentImageModel.urlList.firstObject];
                 [DYYYManager downloadMedia:url
-                                 mediaType:MediaTypeImage
-                                completion:^{
-                                    [DYYYManager showToast:@"图片已保存到相册"];
+                                mediaType:MediaTypeImage
+                                completion:^(BOOL success){
+                                    if (success) {
+                                        [DYYYManager showToast:@"图片已保存到相册"];
+                                    } else {
+                                        [DYYYManager showToast:@"图片保存失败"];
+                                    }
                                 }];
             }
             AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
@@ -300,9 +309,13 @@
             if (videoModel && videoModel.coverURL && videoModel.coverURL.originURLList.count > 0) {
                 NSURL *url = [NSURL URLWithString:videoModel.coverURL.originURLList.firstObject];
                 [DYYYManager downloadMedia:url
-                                 mediaType:MediaTypeImage
-                                completion:^{
-                                    [DYYYManager showToast:@"封面已保存到相册"];
+                                mediaType:MediaTypeImage
+                                completion:^(BOOL success){
+                                    if (success) {
+                                        [DYYYManager showToast:@"封面已保存到相册"];
+                                    } else {
+                                        [DYYYManager showToast:@"封面保存失败"];
+                                    }
                                 }];
             }
             AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
@@ -793,9 +806,13 @@
             if (videoModel && videoModel.h264URL && videoModel.h264URL.originURLList.count > 0) {
                 NSURL *url = [NSURL URLWithString:videoModel.h264URL.originURLList.firstObject];
                 [DYYYManager downloadMedia:url
-                                 mediaType:MediaTypeVideo
-                                completion:^{
-                                    [DYYYManager showToast:@"视频已保存到相册"];
+                                mediaType:MediaTypeVideo
+                                completion:^(BOOL success){
+                                    if (success) {
+                                        [DYYYManager showToast:@"视频已保存到相册"];
+                                    } else {
+                                        [DYYYManager showToast:@"视频保存失败"];
+                                    }
                                 }];
             }
             AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
@@ -817,9 +834,13 @@
             if (videoModel && videoModel.coverURL && videoModel.coverURL.originURLList.count > 0) {
                 NSURL *url = [NSURL URLWithString:videoModel.coverURL.originURLList.firstObject];
                 [DYYYManager downloadMedia:url
-                                 mediaType:MediaTypeImage
-                                completion:^{
-                                    [DYYYManager showToast:@"封面已保存到相册"];
+                                mediaType:MediaTypeImage
+                                completion:^(BOOL success){
+                                    if (success) {
+                                        [DYYYManager showToast:@"封面已保存到相册"];
+                                    } else {
+                                        [DYYYManager showToast:@"封面保存失败"];
+                                    }
                                 }];
             }
             AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
@@ -879,9 +900,13 @@
             } else if (currentImageModel && currentImageModel.urlList.count > 0) {
                 NSURL *url = [NSURL URLWithString:currentImageModel.urlList.firstObject];
                 [DYYYManager downloadMedia:url
-                                 mediaType:MediaTypeImage
-                                completion:^{
-                                    [DYYYManager showToast:@"图片已保存到相册"];
+                                mediaType:MediaTypeImage
+                                completion:^(BOOL success){
+                                    if (success) {
+                                        [DYYYManager showToast:@"图片已保存到相册"];
+                                    } else {
+                                        [DYYYManager showToast:@"图片保存失败"];
+                                    }
                                 }];
             }
             AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];

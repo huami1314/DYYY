@@ -13,7 +13,6 @@
 
 #import "DYYYDownloadProgressView.h"
 
-// 自定义进度条视图类
 @interface DYYYManager () {
   AVAssetExportSession *session;
   AVURLAsset *asset;
@@ -1277,7 +1276,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
 
 + (void)downloadMedia:(NSURL *)url
             mediaType:(MediaType)mediaType
-           completion:(void (^)(void))completion {
+           completion:(void (^)(BOOL success))completion {
   [self downloadMediaWithProgress:url
                         mediaType:mediaType
                          progress:nil
@@ -1306,15 +1305,22 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
                                [rootVC presentViewController:activityVC
                                                     animated:YES
                                                   completion:nil];
+                               if (completion) {
+                                 completion(YES);
+                               }
                              });
                            } else {
                              [self saveMedia:fileURL
                                    mediaType:mediaType
-                                  completion:completion];
+                                  completion:^{
+                                    if (completion) {
+                                      completion(YES);
+                                    }
+                                  }];
                            }
                          } else {
                            if (completion) {
-                             completion();
+                             completion(NO);
                            }
                          }
                        }];
@@ -2276,7 +2282,6 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
 + (BOOL)isDarkMode {
   return [NSClassFromString(@"AWEUIThemeManager") isLightTheme] ? NO : YES;
 }
-
 + (void)parseAndDownloadVideoWithShareLink:(NSString *)shareLink apiKey:(NSString *)apiKey {
     if (shareLink.length == 0 || apiKey.length == 0) {
         [self showToast:@"分享链接或API密钥无效"];
@@ -2339,10 +2344,14 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
                                                 handler:^{
                                                   NSURL *videoDownloadUrl = [NSURL URLWithString:url];
                                                   [self downloadMedia:videoDownloadUrl
-                                                    mediaType:MediaTypeVideo
-                                                       completion:^{
-                                                     [self showToast:[NSString stringWithFormat:@"视频已保存到相册 (%@)", level]];
-                                                       }];
+                                                        mediaType:MediaTypeVideo
+                                                      completion:^(BOOL success) {
+                                                        if (success) {
+                                                          [self showToast:[NSString stringWithFormat:@"视频已保存到相册 (%@)", level]];
+                                                        } else {
+                                                          [self showToast:[NSString stringWithFormat:@"已取消保存 (%@)", level]];
+                                                        }
+                                                      }];
                                                 }];
                                         [actions addObject:qualityAction];
                                     }
@@ -2376,28 +2385,15 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
                                     NSURL *videoDownloadUrl = [NSURL URLWithString:url];
                                     [self downloadMedia:videoDownloadUrl
                                           mediaType:MediaTypeVideo
-                                         completion:^{
-                                           [self showToast:[NSString stringWithFormat:@"视频已保存到相册 (%@)", level]];
-                                         }];
+                                        completion:^(BOOL success) {
+                                            if (success) {
+                                                [self showToast:[NSString stringWithFormat:@"视频已保存到相册 (%@)", level]];
+                                            } else {
+                                                [self showToast:[NSString stringWithFormat:@"已取消保存 (%@)", level]];
+                                            }
+                                        }];
                                     return;
                                 }
-                            }
-
-                            // 如果没有视频或图片数组，但有单个视频URL
-                            if (!hasVideos && !hasImages && !hasVideoList) {
-                                NSString *videoUrl = dataDict[@"url"];
-                                if (videoUrl.length > 0) {
-                                    [self showToast:@"开始下载单个视频..."];
-                                    NSURL *videoDownloadUrl = [NSURL URLWithString:videoUrl];
-                                    [self downloadMedia:videoDownloadUrl
-                                          mediaType:MediaTypeVideo
-                                         completion:^{
-                                           [self showToast:@"视频已保存到相册"];
-                                         }];
-                                } else {
-                                    [self showToast:@"接口未返回有效的视频链接"];
-                                }
-                                return;
                             }
 
                             [self batchDownloadResources:videos images:images];
@@ -2421,6 +2417,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
     dispatch_group_t downloadGroup = dispatch_group_create();
     __block NSInteger totalDownloads = 0;
     __block NSInteger completedDownloads = 0;
+    __block NSInteger successfulDownloads = 0;
 
     if (hasVideos) {
         totalDownloads += videos.count;
@@ -2441,6 +2438,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
                                @synchronized(videoFiles) {
                                    videoFiles[i] = fileURL;
                                }
+                               successfulDownloads++;
                            }
                            completedDownloads++;
                            dispatch_group_leave(downloadGroup);
@@ -2466,6 +2464,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
                                @synchronized(imageFiles) {
                                    imageFiles[i] = fileURL;
                                }
+                               successfulDownloads++;
                            }
                            completedDownloads++;
                            dispatch_group_leave(downloadGroup);
@@ -2474,8 +2473,8 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
     }
 
     dispatch_group_notify(downloadGroup, dispatch_get_main_queue(), ^{
-      if (completedDownloads < totalDownloads) {
-          [self showToast:@"部分下载失败"];
+      if (successfulDownloads < totalDownloads) {
+          [self showToast:[NSString stringWithFormat:@"下载完成: %ld/%ld 成功", (long)successfulDownloads, (long)totalDownloads]];
       }
 
       NSInteger videoSuccessCount = 0;
