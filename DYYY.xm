@@ -2265,33 +2265,69 @@ static CGFloat currentScale = 1.0;
 }
 %end
 
-// 禁用AWEPlayVideoViewController中的HDR
-%hook AWEPlayVideoViewController
-- (void)setHDRVideoMode:(NSInteger)mode {
+%hook AWEFeedABSettings
++ (BOOL)enableHDRBrightnessOpt {
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
-        %orig(0); 
+        return NO; // 关闭HDR亮度优化
+    }
+    return %orig;
+}
++ (BOOL)hdrAutomaticIdentification {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
+        return NO; // 关闭HDR自动识别
+    }
+    return %orig;
+}
+%end
+%hook BDSimPlayerMediaViewController
+- (void)setEnableHDR:(BOOL)enable {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
+        %orig(NO); 
     } else {
+        %orig;
+    }
+}
+- (void)setEnablePlayHDRMode {
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
         %orig; 
     }
 }
 %end
-// 禁用BDSimMediaPlayer中的HDR
-%hook BDSimMediaPlayer
-- (void)setHDRVideoMode:(NSInteger)mode {
+%hook AWEVideoPlayerConfiguration
++ (void)setHDRBrightnessStrategy:(id)strategy {
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
+        %orig;
+    }
+}
+%end
+%hook BDSimPlayerBizConfig
+- (BOOL)enableHDRBrightnessOpt {
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
-        %orig(0);
+        return NO; 
+    }
+    return %orig;
+}
+%end
+%hook AWEProtectEyesManager
+- (void)setHDRlutImage:(id)image {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
+        %orig(nil); 
     } else {
         %orig;
     }
 }
 %end
-// 禁用BDSimPlayerMediaViewController中的HDR
-%hook BDSimPlayerMediaViewController
-- (void)setHDRVideoMode:(NSInteger)mode {
+%hook BDSimMediaPlayer
+- (void)setEnableHDR:(BOOL)enable {
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
-        %orig(0);
+        %orig(NO); 
     } else {
         %orig;
+    }
+}
+- (void)setEnablePlayHDRMode {
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
+        %orig; 
     }
 }
 %end
