@@ -180,7 +180,7 @@ static NSMutableDictionary *gCaseCache = nil;
 
 %ctor {
     %init;
-    abTestBlockEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"ABTestBlockEnabled"];
+    abTestBlockEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYABTestBlockEnabled"];
 
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         AWEABTestManager *manager = [%c(AWEABTestManager) sharedManager];
