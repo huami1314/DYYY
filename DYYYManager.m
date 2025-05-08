@@ -400,12 +400,6 @@
             }
             completionHandler:^(BOOL success, NSError *_Nullable error) {
               if (success) {
-                dispatch_async(dispatch_get_main_queue(), ^{
-                  [self showToast:[NSString stringWithFormat:
-                                                @"%@已保存到相册",
-                                                [self getMediaTypeDescription:
-                                                          mediaType]]];
-                });
 
                 if (completion) {
                   completion();
