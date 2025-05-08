@@ -49,8 +49,8 @@
     self.contentView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 300, 400)];
     CGFloat screenHeight = UIScreen.mainScreen.bounds.size.height;
     self.contentView.center = CGPointMake(self.frame.size.width / 2, screenHeight / 3);
-    self.contentView.backgroundColor = isDarkMode ? 
-        [UIColor colorWithRed:30/255.0 green:30/255.0 blue:30/255.0 alpha:1.0] : 
+    self.contentView.backgroundColor = isDarkMode ?
+        [UIColor colorWithRed:30/255.0 green:30/255.0 blue:30/255.0 alpha:1.0] :
         [UIColor whiteColor];
     self.contentView.layer.cornerRadius = 12;
     self.contentView.layer.masksToBounds = YES;
@@ -61,8 +61,8 @@
     // 主标题 - 根据模式设置文本颜色
     self.titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(20, 20, 260, 24)];
     self.titleLabel.text = title ?: @"推荐过滤设置";
-    self.titleLabel.textColor = isDarkMode ? 
-        [UIColor colorWithRed:230/255.0 green:230/255.0 blue:235/255.0 alpha:1.0] : 
+    self.titleLabel.textColor = isDarkMode ?
+        [UIColor colorWithRed:230/255.0 green:230/255.0 blue:235/255.0 alpha:1.0] :
         [UIColor colorWithRed:45/255.0 green:47/255.0 blue:56/255.0 alpha:1.0];
     self.titleLabel.textAlignment = NSTextAlignmentCenter;
     self.titleLabel.font = [UIFont systemFontOfSize:18 weight:UIFontWeightMedium];
@@ -83,8 +83,8 @@
     self.selectionPreviewLabel.textAlignment = NSTextAlignmentCenter;
     self.selectionPreviewLabel.numberOfLines = 2;
     self.selectionPreviewLabel.font = [UIFont systemFontOfSize:16];
-    self.selectionPreviewLabel.backgroundColor = isDarkMode ? 
-        [UIColor colorWithRed:45/255.0 green:45/255.0 blue:45/255.0 alpha:1.0] : 
+    self.selectionPreviewLabel.backgroundColor = isDarkMode ?
+        [UIColor colorWithRed:45/255.0 green:45/255.0 blue:45/255.0 alpha:1.0] :
         [UIColor colorWithRed:245/255.0 green:245/255.0 blue:245/255.0 alpha:1.0];
     self.selectionPreviewLabel.layer.cornerRadius = 8;
     self.selectionPreviewLabel.layer.masksToBounds = YES;
@@ -92,8 +92,8 @@
 
     // 字符滚动视图 - 根据模式设置背景色
     self.charactersScrollView = [[UIScrollView alloc] initWithFrame:CGRectMake(20, 114, 260, 220)];
-    self.charactersScrollView.backgroundColor = isDarkMode ? 
-        [UIColor colorWithRed:45/255.0 green:45/255.0 blue:45/255.0 alpha:1.0] : 
+    self.charactersScrollView.backgroundColor = isDarkMode ?
+        [UIColor colorWithRed:45/255.0 green:45/255.0 blue:45/255.0 alpha:1.0] :
         [UIColor colorWithRed:245/255.0 green:245/255.0 blue:245/255.0 alpha:1.0];
     self.charactersScrollView.layer.cornerRadius = 8;
     self.charactersScrollView.bounces = YES;
@@ -106,8 +106,8 @@
 
     // 添加内容和按钮之间的分割线 - 根据模式设置颜色
     UIView *contentButtonSeparator = [[UIView alloc] initWithFrame:CGRectMake(0, 344, 300, 0.5)];
-    contentButtonSeparator.backgroundColor = isDarkMode ? 
-        [UIColor colorWithRed:60/255.0 green:60/255.0 blue:60/255.0 alpha:1.0] : 
+    contentButtonSeparator.backgroundColor = isDarkMode ?
+        [UIColor colorWithRed:60/255.0 green:60/255.0 blue:60/255.0 alpha:1.0] :
         [UIColor colorWithRed:230/255.0 green:230/255.0 blue:230/255.0 alpha:1.0];
     [self.contentView addSubview:contentButtonSeparator];
 
@@ -120,17 +120,17 @@
     self.cancelButton.frame = CGRectMake(0, 0, 149.5, 55.5);
     self.cancelButton.backgroundColor = [UIColor clearColor];
     [self.cancelButton setTitle:@"取消" forState:UIControlStateNormal];
-    [self.cancelButton setTitleColor:isDarkMode ? 
-        [UIColor colorWithRed:160/255.0 green:160/255.0 blue:165/255.0 alpha:1.0] : 
-        [UIColor colorWithRed:124/255.0 green:124/255.0 blue:130/255.0 alpha:1.0] 
+    [self.cancelButton setTitleColor:isDarkMode ?
+        [UIColor colorWithRed:160/255.0 green:160/255.0 blue:165/255.0 alpha:1.0] :
+        [UIColor colorWithRed:124/255.0 green:124/255.0 blue:130/255.0 alpha:1.0]
         forState:UIControlStateNormal];
     [self.cancelButton addTarget:self action:@selector(cancelTapped) forControlEvents:UIControlEventTouchUpInside];
     [buttonContainer addSubview:self.cancelButton];
 
     // 按钮之间的分割线 - 根据模式设置颜色
     UIView *buttonSeparator = [[UIView alloc] initWithFrame:CGRectMake(149.5, 0, 0.5, 55.5)];
-    buttonSeparator.backgroundColor = isDarkMode ? 
-        [UIColor colorWithRed:60/255.0 green:60/255.0 blue:60/255.0 alpha:1.0] : 
+    buttonSeparator.backgroundColor = isDarkMode ?
+        [UIColor colorWithRed:60/255.0 green:60/255.0 blue:60/255.0 alpha:1.0] :
         [UIColor colorWithRed:230/255.0 green:230/255.0 blue:230/255.0 alpha:1.0];
     [buttonContainer addSubview:buttonSeparator];
 
@@ -139,9 +139,9 @@
     self.confirmButton.frame = CGRectMake(150, 0, 150, 55.5);
     self.confirmButton.backgroundColor = [UIColor clearColor];
     [self.confirmButton setTitle:@"确定" forState:UIControlStateNormal];
-    [self.confirmButton setTitleColor:isDarkMode ? 
-        [UIColor colorWithRed:230/255.0 green:230/255.0 blue:235/255.0 alpha:1.0] : 
-        [UIColor colorWithRed:45/255.0 green:47/255.0 blue:56/255.0 alpha:1.0] 
+    [self.confirmButton setTitleColor:isDarkMode ?
+        [UIColor colorWithRed:230/255.0 green:230/255.0 blue:235/255.0 alpha:1.0] :
+        [UIColor colorWithRed:45/255.0 green:47/255.0 blue:56/255.0 alpha:1.0]
         forState:UIControlStateNormal];
     [self.confirmButton addTarget:self action:@selector(confirmTapped) forControlEvents:UIControlEventTouchUpInside];
     [buttonContainer addSubview:self.confirmButton];
@@ -159,20 +159,20 @@
 - (void)setupCharacterButtons {
   const CGFloat buttonSize = 25.0;
   const CGFloat margin = 1.0;
-  const int buttonsPerRow = 10; 
+  const int buttonsPerRow = 10;
   
   int row = 0;
   int col = 0;
   
   BOOL isDarkMode = [DYYYManager isDarkMode];
-  UIColor *buttonBackgroundColor = isDarkMode ? 
-      [UIColor colorWithRed:50/255.0 green:50/255.0 blue:50/255.0 alpha:1.0] : 
+  UIColor *buttonBackgroundColor = isDarkMode ?
+      [UIColor colorWithRed:50/255.0 green:50/255.0 blue:50/255.0 alpha:1.0] :
       [UIColor whiteColor];
-  UIColor *buttonTextColor = isDarkMode ? 
-      [UIColor colorWithRed:230/255.0 green:230/255.0 blue:235/255.0 alpha:1.0] : 
+  UIColor *buttonTextColor = isDarkMode ?
+      [UIColor colorWithRed:230/255.0 green:230/255.0 blue:235/255.0 alpha:1.0] :
       [UIColor colorWithRed:45/255.0 green:47/255.0 blue:56/255.0 alpha:1.0];
-  UIColor *buttonBorderColor = isDarkMode ? 
-      [UIColor colorWithRed:70/255.0 green:70/255.0 blue:70/255.0 alpha:1.0] : 
+  UIColor *buttonBorderColor = isDarkMode ?
+      [UIColor colorWithRed:70/255.0 green:70/255.0 blue:70/255.0 alpha:1.0] :
       [UIColor colorWithRed:230/255.0 green:230/255.0 blue:230/255.0 alpha:1.0];
   
   for (NSInteger i = 0; i < self.text.length; i++) {
@@ -301,7 +301,7 @@
     
     // 向下滚动 - 增加更多边距提前触发滚动
     if (CGRectGetMaxY(buttonFrame) > CGRectGetMaxY(visibleRect) - 30) {
-        CGPoint newOffset = CGPointMake(self.charactersScrollView.contentOffset.x, 
+        CGPoint newOffset = CGPointMake(self.charactersScrollView.contentOffset.x,
                                       self.charactersScrollView.contentOffset.y + 15);
         // 确保不超过内容范围
         newOffset.y = MIN(newOffset.y, self.charactersScrollView.contentSize.height - self.charactersScrollView.bounds.size.height);
@@ -310,7 +310,7 @@
     
     // 向上滚动 - 增加更多边距提前触发滚动
     else if (CGRectGetMinY(buttonFrame) < CGRectGetMinY(visibleRect) + 30) {
-        CGPoint newOffset = CGPointMake(self.charactersScrollView.contentOffset.x, 
+        CGPoint newOffset = CGPointMake(self.charactersScrollView.contentOffset.x,
                                       self.charactersScrollView.contentOffset.y - 15);
         // 确保不小于零
         newOffset.y = MAX(newOffset.y, 0);
@@ -330,8 +330,8 @@
     self.selectedText = [NSMutableString string];
     
     BOOL isDarkMode = [DYYYManager isDarkMode];
-    UIColor *buttonBackgroundColor = isDarkMode ? 
-        [UIColor colorWithRed:50/255.0 green:50/255.0 blue:50/255.0 alpha:1.0] : 
+    UIColor *buttonBackgroundColor = isDarkMode ?
+        [UIColor colorWithRed:50/255.0 green:50/255.0 blue:50/255.0 alpha:1.0] :
         [UIColor whiteColor];
     
     for (UIButton *button in self.characterButtons) {
@@ -347,8 +347,8 @@
   NSInteger endIndex = MAX(startIdx, endIdx);
   
   BOOL isDarkMode = [DYYYManager isDarkMode];
-  UIColor *buttonBackgroundColor = isDarkMode ? 
-      [UIColor colorWithRed:50/255.0 green:50/255.0 blue:50/255.0 alpha:1.0] : 
+  UIColor *buttonBackgroundColor = isDarkMode ?
+      [UIColor colorWithRed:50/255.0 green:50/255.0 blue:50/255.0 alpha:1.0] :
       [UIColor whiteColor];
   
   // 清除所有按钮选中状态
