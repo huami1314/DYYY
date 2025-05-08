@@ -16,6 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)setProgress:(float)progress;
 - (void)show;
 - (void)dismiss;
+- (void)showSuccessAnimation:(void (^)(void))completion;
 
 @end
 

@@ -1442,11 +1442,6 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
                              progress:nil
                            completion:^(NSInteger successCount,
                                         NSInteger totalCount) {
-                             [self showToast:[NSString
-                                                 stringWithFormat:
-                                                     @"已保存 %ld/%ld 张图片",
-                                                     (long)successCount,
-                                                     (long)totalCount]];
                            }];
 }
 
@@ -1603,28 +1598,54 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
       NSInteger successCount =
           [self.batchSuccessCountMap[batchID] integerValue];
 
+      // 获取进度视图
+      DYYYDownloadProgressView *progressView = self.progressViews[batchID];
+
       // 调用完成回调
       void (^completionBlock)(NSInteger successCount, NSInteger totalCount) =
           self.batchCompletionBlocks[batchID];
-      if (completionBlock) {
-        completionBlock(successCount, totalCount);
-      }
 
-      // 移除进度视图
-      [progressView dismiss];
-      [self.progressViews removeObjectForKey:batchID];
+      if (progressView && successCount > 0) {
+        // 显示成功动画，然后再执行完成回调
+        [progressView showSuccessAnimation:^{
+          [progressView dismiss];
+          if (completionBlock) {
+            completionBlock(successCount, totalCount);
+          }
+          
+          // 清理批量下载相关信息
+          [self.progressViews removeObjectForKey:batchID];
+          [self.batchCompletedCountMap removeObjectForKey:batchID];
+          [self.batchSuccessCountMap removeObjectForKey:batchID];
+          [self.batchTotalCountMap removeObjectForKey:batchID];
+          [self.batchProgressBlocks removeObjectForKey:batchID];
+          [self.batchCompletionBlocks removeObjectForKey:batchID];
 
-      // 清理批量下载相关信息
-      [self.batchCompletedCountMap removeObjectForKey:batchID];
-      [self.batchSuccessCountMap removeObjectForKey:batchID];
-      [self.batchTotalCountMap removeObjectForKey:batchID];
-      [self.batchProgressBlocks removeObjectForKey:batchID];
-      [self.batchCompletionBlocks removeObjectForKey:batchID];
+          // 移除关联的下载ID
+          NSArray *downloadIDs = [self.downloadToBatchMap allKeysForObject:batchID];
+          for (NSString *downloadID in downloadIDs) {
+            [self.downloadToBatchMap removeObjectForKey:downloadID];
+          }
+        }];
+      } else {
+        [progressView dismiss];
+        if (completionBlock) {
+          completionBlock(successCount, totalCount);
+        }
+        
+        // 清理批量下载相关信息
+        [self.progressViews removeObjectForKey:batchID];
+        [self.batchCompletedCountMap removeObjectForKey:batchID];
+        [self.batchSuccessCountMap removeObjectForKey:batchID];
+        [self.batchTotalCountMap removeObjectForKey:batchID];
+        [self.batchProgressBlocks removeObjectForKey:batchID];
+        [self.batchCompletionBlocks removeObjectForKey:batchID];
 
-      // 移除关联的下载ID
-      NSArray *downloadIDs = [self.downloadToBatchMap allKeysForObject:batchID];
-      for (NSString *downloadID in downloadIDs) {
-        [self.downloadToBatchMap removeObjectForKey:downloadID];
+        // 移除关联的下载ID
+        NSArray *downloadIDs = [self.downloadToBatchMap allKeysForObject:batchID];
+        for (NSString *downloadID in downloadIDs) {
+          [self.downloadToBatchMap removeObjectForKey:downloadID];
+        }
       }
     }
   }
@@ -1647,7 +1668,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
 
 - (void)URLSession:(NSURLSession *)session
                  downloadTask:(NSURLSessionDownloadTask *)downloadTask
-                 didWriteData:(int64_t)bytesWritten
+    didWriteData:(int64_t)bytesWritten
             totalBytesWritten:(int64_t)totalBytesWritten
     totalBytesExpectedToWrite:(int64_t)totalBytesExpectedToWrite {
   // 确保不会除以0
@@ -1781,26 +1802,31 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
           self.progressViews[downloadIDForTask];
       BOOL wasCancelled = progressView.isCancelled;
 
-      [progressView dismiss];
-      [self.progressViews removeObjectForKey:downloadIDForTask];
-      [self.downloadTasks removeObjectForKey:downloadIDForTask];
-      [self.taskProgressMap removeObjectForKey:downloadIDForTask];
-      [self.completionBlocks removeObjectForKey:downloadIDForTask];
-      [self.mediaTypeMap removeObjectForKey:downloadIDForTask];
-
-      // 如果已取消，直接返回
-      if (wasCancelled) {
-        return;
-      }
-
-      if (!moveError) {
-        if (completionBlock) {
-          completionBlock(YES, destinationURL);
-        }
+      if (!moveError && !wasCancelled) {
+          // 显示成功动画，然后再隐藏进度视图
+          [progressView showSuccessAnimation:^{
+              [progressView dismiss];
+              [self.progressViews removeObjectForKey:downloadIDForTask];
+              [self.downloadTasks removeObjectForKey:downloadIDForTask];
+              [self.taskProgressMap removeObjectForKey:downloadIDForTask];
+              [self.completionBlocks removeObjectForKey:downloadIDForTask];
+              [self.mediaTypeMap removeObjectForKey:downloadIDForTask];
+              
+              if (completionBlock) {
+                  completionBlock(YES, destinationURL);
+              }
+          }];
       } else {
-        if (completionBlock) {
-          completionBlock(NO, nil);
-        }
+          [progressView dismiss];
+          [self.progressViews removeObjectForKey:downloadIDForTask];
+          [self.downloadTasks removeObjectForKey:downloadIDForTask];
+          [self.taskProgressMap removeObjectForKey:downloadIDForTask];
+          [self.completionBlocks removeObjectForKey:downloadIDForTask];
+          [self.mediaTypeMap removeObjectForKey:downloadIDForTask];
+          
+          if (!wasCancelled && completionBlock) {
+              completionBlock(NO, nil);
+          }
       }
     });
   }
@@ -2029,7 +2055,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
                                            outputSettings:writerOuputSettings];
     if ([reader canAddOutput:output] && [writer canAddInput:input]) {
       [reader addOutput:output];
-      [writer addInput:input];
+      [writer canAddInput:input];
     }
   }
   AVAssetWriterInput *input = [self createStillImageTimeAssetWriterInput];
@@ -2160,12 +2186,6 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
                                  progress:nil
                                completion:^(NSInteger successCount,
                                             NSInteger totalCount) {
-                                 [self showToast:
-                                           [NSString
-                                               stringWithFormat:
-                                                   @"已保存 %ld/%ld 个实况照片",
-                                                   (long)successCount,
-                                                   (long)totalCount]];
                                }];
 }
 
@@ -2290,7 +2310,6 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
     }
 
     NSString *apiUrl = [NSString stringWithFormat:@"%@%@", apiKey, [shareLink stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLQueryAllowedCharacterSet]]];
-    [self showToast:@"正在通过接口解析..."];
 
     NSURL *url = [NSURL URLWithString:apiUrl];
     NSURLRequest *request = [NSURLRequest requestWithURL:url];
@@ -2348,7 +2367,6 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
                                                         mediaType:MediaTypeVideo
                                                       completion:^(BOOL success) {
                                                         if (success) {
-                                                          [self showToast:[NSString stringWithFormat:@"视频已保存到相册 (%@)", level]];
                                                         } else {
                                                           [self showToast:[NSString stringWithFormat:@"已取消保存 (%@)", level]];
                                                         }
@@ -2388,7 +2406,6 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
                                           mediaType:MediaTypeVideo
                                         completion:^(BOOL success) {
                                             if (success) {
-                                                [self showToast:[NSString stringWithFormat:@"视频已保存到相册 (%@)", level]];
                                             } else {
                                                 [self showToast:[NSString stringWithFormat:@"已取消保存 (%@)", level]];
                                             }

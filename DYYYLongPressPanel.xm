@@ -160,7 +160,6 @@
                                 mediaType:MediaTypeVideo
                                 completion:^(BOOL success){
                                     if (success) {
-                                        [DYYYManager showToast:@"视频已保存到相册"];
                                     } else {
                                         [DYYYManager showToast:@"视频保存已取消"];
                                     }
@@ -199,7 +198,6 @@
                 [DYYYManager downloadLivePhoto:url
                                       videoURL:videoURL
                                     completion:^{
-                                        [DYYYManager showToast:@"实况照片已保存到相册"];
                                     }];
             } else if (currentImageModel && currentImageModel.urlList.count > 0) {
                 // 查找非.image后缀的URL
@@ -218,7 +216,6 @@
                                     mediaType:MediaTypeImage
                                     completion:^(BOOL success){
                                         if (success) {
-                                            [DYYYManager showToast:@"图片已保存到相册"];
                                         } else {
                                             [DYYYManager showToast:@"图片保存已取消"];
                                         }
@@ -353,7 +350,6 @@
                                 mediaType:MediaTypeImage
                                 completion:^(BOOL success){
                                     if (success) {
-                                        [DYYYManager showToast:@"封面已保存到相册"];
                                     } else {
                                         [DYYYManager showToast:@"封面保存已取消"];
                                     }
@@ -850,7 +846,6 @@
                                 mediaType:MediaTypeVideo
                                 completion:^(BOOL success){
                                     if (success) {
-                                        [DYYYManager showToast:@"视频已保存到相册"];
                                     } else {
                                         [DYYYManager showToast:@"视频保存已取消"];
                                     }
@@ -878,7 +873,6 @@
                                 mediaType:MediaTypeImage
                                 completion:^(BOOL success){
                                     if (success) {
-                                        [DYYYManager showToast:@"封面已保存到相册"];
                                     } else {
                                         [DYYYManager showToast:@"封面保存已取消"];
                                     }
@@ -936,7 +930,6 @@
                 [DYYYManager downloadLivePhoto:url
                                       videoURL:videoURL
                                     completion:^{
-                                        [DYYYManager showToast:@"实况照片已保存到相册"];
                                     }];
             } else if (currentImageModel && currentImageModel.urlList.count > 0) {
                 NSURL *url = [NSURL URLWithString:currentImageModel.urlList.firstObject];
@@ -944,7 +937,6 @@
                                 mediaType:MediaTypeImage
                                 completion:^(BOOL success){
                                     if (success) {
-                                        [DYYYManager showToast:@"图片已保存到相册"];
                                     } else {
                                         [DYYYManager showToast:@"图片保存已取消"];
                                     }
