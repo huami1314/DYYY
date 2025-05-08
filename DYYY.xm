@@ -1454,20 +1454,54 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
         if (cityCode.length > 0) {
             NSString *cityName = [CityManager.sharedInstance getCityNameWithCode:cityCode];
             NSString *provinceName = [CityManager.sharedInstance getProvinceNameWithCode:cityCode];
-            
-            // 如果常规匹配没有找到城市名，检查是否是国外地址代码
+            // 使用 GeoNames API
             if (!cityName || cityName.length == 0) {
-                // 尝试国外匹配：检查前缀是否与国外代码匹配
-                for (int i = 1; i <= cityCode.length && i <= 3; i++) {
-                    NSString *prefixCode = [cityCode substringToIndex:i];
-                    NSString *foreignCountryName = [CityManager.sharedInstance getCityNameWithCode:prefixCode];
-                    if (foreignCountryName && foreignCountryName.length > 0) {
-                        label.text = [NSString stringWithFormat:@"%@  IP属地：%@", text, foreignCountryName];
-                        break;
+                [CityManager fetchLocationWithGeonameId:cityCode completionHandler:^(NSDictionary *locationInfo, NSError *error) {
+                    if (locationInfo) {
+                        NSString *countryName = locationInfo[@"countryName"];
+                        NSString *adminName1 = locationInfo[@"adminName1"];  // 州/省级名称
+                        NSString *localName = locationInfo[@"name"];         // 当前地点名称
+                        NSString *displayLocation = @"未知";
+                        
+                        // 根据返回数据构建位置显示文本
+                        if (countryName.length > 0) {
+                            if (adminName1.length > 0 && localName.length > 0 && 
+                                ![countryName isEqualToString:@"中国"] && 
+                                ![countryName isEqualToString:localName]) {
+                                // 国外位置：国家 + 州/省 + 地点
+                                displayLocation = [NSString stringWithFormat:@"%@ %@ %@", countryName, adminName1, localName];
+                            } else if (localName.length > 0 && ![countryName isEqualToString:localName]) {
+                                // 只有国家和地点名
+                                displayLocation = [NSString stringWithFormat:@"%@ %@", countryName, localName];
+                            } else {
+                                // 只有国家名
+                                displayLocation = countryName;
+                            }
+                        } else if (localName.length > 0) {
+                            displayLocation = localName;
+                        }
+                        
+                        dispatch_async(dispatch_get_main_queue(), ^{
+                            NSString *currentText = label.text ?: @"";
+                            
+                            if ([currentText containsString:@"IP属地："]) {
+                                NSRange range = [currentText rangeOfString:@"IP属地："];
+                                if (range.location != NSNotFound) {
+                                    NSString *baseText = [currentText substringToIndex:range.location];
+                                    if (![currentText containsString:displayLocation]) {
+                                        label.text = [NSString stringWithFormat:@"%@IP属地：%@", baseText, displayLocation];
+                                    }
+                                }
+                            } else {
+                                NSString *baseText = label.text ?: @"";
+                                if (baseText.length > 0) {
+                                    label.text = [NSString stringWithFormat:@"%@  IP属地：%@", baseText, displayLocation];
+                                }
+                            }
+                        });
                     }
-                }
+                }];
             } else if (![text containsString:cityName]) {
-                // 国内地址常规处理
                 if (!self.model.ipAttribution) {
                     BOOL isDirectCity = [provinceName isEqualToString:cityName] ||
                             ([cityCode hasPrefix:@"11"] || [cityCode hasPrefix:@"12"] || 
