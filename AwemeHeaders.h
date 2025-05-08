@@ -920,6 +920,9 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (void)layoutSubviews;
 @end
 
+@interface ACCGestureResponsibleStickerView : UIView
+@end
+
 @interface AWEDemaciaChapterProgressSlider : UIView
 @end
 

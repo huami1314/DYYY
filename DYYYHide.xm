@@ -627,6 +627,17 @@
 
 %end
 
+%hook ACCGestureResponsibleStickerView
+- (void)layoutSubviews {
+	%orig;
+
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideChallengeStickers"]) {
+		[self removeFromSuperview];
+		return;
+	}
+}
+%end
+
 %hook AWEMusicCoverButton
 
 - (void)layoutSubviews {
