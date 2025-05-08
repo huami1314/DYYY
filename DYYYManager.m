@@ -113,6 +113,10 @@
   }
 }
 
++ (BOOL)isDarkMode {
+  return [NSClassFromString(@"AWEUIThemeManager") isLightTheme] ? NO : YES;
+}
+
 + (UIViewController *)getActiveTopController {
   UIWindow *window = [self getActiveWindow];
   if (!window)
@@ -2279,9 +2283,6 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
   });
 }
 
-+ (BOOL)isDarkMode {
-  return [NSClassFromString(@"AWEUIThemeManager") isLightTheme] ? NO : YES;
-}
 + (void)parseAndDownloadVideoWithShareLink:(NSString *)shareLink apiKey:(NSString *)apiKey {
     if (shareLink.length == 0 || apiKey.length == 0) {
         [self showToast:@"分享链接或API密钥无效"];
