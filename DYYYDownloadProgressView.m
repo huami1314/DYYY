@@ -7,8 +7,11 @@
 @property(nonatomic, strong) UILabel *percentLabel;
 @property(nonatomic, assign) CGFloat progress;
 @property(nonatomic, strong) UIVisualEffectView *blurEffectView;
+// 新增属性
 @property(nonatomic, strong) CAShapeLayer *checkmarkLayer;
 @property(nonatomic, strong) UIView *progressView;
+@property(nonatomic, assign)
+    BOOL isShowingSuccessAnimation; // 新增属性，标记是否正在显示成功动画
 
 @end
 
@@ -54,15 +57,15 @@
 
     CGFloat circleSize = 30;
     CGFloat yCenter = containerHeight / 2;
+    // 修改为属性而非局部变量
     _progressView = [[UIView alloc]
         initWithFrame:CGRectMake(10, (containerHeight - circleSize) / 2,
                                  circleSize, circleSize)];
     [_containerView addSubview:_progressView];
-
     CAShapeLayer *backgroundLayer = [CAShapeLayer layer];
     UIBezierPath *circularPath = [UIBezierPath
         bezierPathWithArcCenter:CGPointMake(circleSize / 2, circleSize / 2)
-                         radius:circleSize / 2 - 2
+                         radius:circleSize / 2 - 2 // 稍微减小半径
                      startAngle:-M_PI / 2
                        endAngle:3 * M_PI / 2
                       clockwise:YES];
@@ -103,9 +106,11 @@
                                   : [UIColor colorWithWhite:0.2 alpha:1.0];
     _percentLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightMedium];
     _percentLabel.text = @"下载中... 0%";
-    CGFloat progressViewRightEdge = _progressView.frame.origin.x + _progressView.frame.size.width;
+    CGFloat progressViewRightEdge =
+        _progressView.frame.origin.x + _progressView.frame.size.width;
     CGFloat labelWidth = containerWidth - progressViewRightEdge;
-    _percentLabel.frame = CGRectMake(progressViewRightEdge - 3, 0, labelWidth, containerHeight);
+    _percentLabel.frame =
+        CGRectMake(progressViewRightEdge - 3, 0, labelWidth, containerHeight);
     _percentLabel.textAlignment = NSTextAlignmentCenter;
     [_containerView addSubview:_percentLabel];
 
@@ -141,56 +146,6 @@
       [NSString stringWithFormat:@"下载中... %d%%", percentage];
 }
 
-- (void)showSuccessAnimation:(void (^)(void))completion {
-  CGFloat circleSize = 30;
-  UIImageView *checkmarkView =
-      [[UIImageView alloc] initWithFrame:_progressView.frame];
-  checkmarkView.contentMode = UIViewContentModeScaleAspectFit;
-  checkmarkView.alpha = 0;
-
-  UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration
-      configurationWithPointSize:20
-                          weight:UIImageSymbolWeightBold];
-  UIImage *checkmarkImage = [UIImage systemImageNamed:@"checkmark.circle.fill"
-                                    withConfiguration:config];
-
-  checkmarkView.image = checkmarkImage;
-  checkmarkView.tintColor = [UIColor systemGreenColor];
-  [_containerView addSubview:checkmarkView];
-
-  [UIView animateWithDuration:0.2
-      animations:^{
-        _progressView.hidden = YES;
-        _percentLabel.text = @"下载完成";
-
-        checkmarkView.alpha = 1.0;
-        checkmarkView.transform = CGAffineTransformMakeScale(1.2, 1.2);
-      }
-      completion:^(BOOL finished) {
-        [UIView animateWithDuration:0.2
-            animations:^{
-              checkmarkView.transform = CGAffineTransformIdentity;
-            }
-            completion:^(BOOL finished) {
-              dispatch_after(dispatch_time(DISPATCH_TIME_NOW,
-                                           (int64_t)(0.8 * NSEC_PER_SEC)),
-                             dispatch_get_main_queue(), ^{
-                               [UIView animateWithDuration:0.2
-                                   animations:^{
-                                     self.alpha = 0;
-                                   }
-                                   completion:^(BOOL finished) {
-                                     [checkmarkView removeFromSuperview];
-                                     [self removeFromSuperview];
-                                     if (completion) {
-                                       completion();
-                                     }
-                                   }];
-                             });
-            }];
-      }];
-}
-
 - (void)show {
   UIWindow *window = [UIApplication sharedApplication].keyWindow;
   if (!window)
@@ -205,13 +160,27 @@
 }
 
 - (void)dismiss {
-  [UIView animateWithDuration:0.3
-      animations:^{
-        self.alpha = 0;
-      }
-      completion:^(BOOL finished) {
-        [self removeFromSuperview];
-      }];
+  if (_progress >= 0.5 && !self.isShowingSuccessAnimation &&
+      !self.isCancelled) {
+    self.isShowingSuccessAnimation = YES;
+    [self showSuccessAnimation:nil];
+  }
+  if (self.isCancelled) {
+    [DYYYManager showToast:[NSString stringWithFormat:@"已取消下载"]];
+    [self removeFromSuperview];
+  } else {
+    dispatch_after(
+        dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.2 * NSEC_PER_SEC)),
+        dispatch_get_main_queue(), ^{
+          [UIView animateWithDuration:0.3
+              animations:^{
+                self.alpha = 0;
+              }
+              completion:^(BOOL finished) {
+                [self removeFromSuperview];
+              }];
+        });
+  }
 }
 
 - (void)handleTap:(UITapGestureRecognizer *)gesture {
@@ -233,6 +202,129 @@
   }
 
   return nil;
+}
+
+// 下载成功动画方法
+- (void)showSuccessAnimation:(void (^)(void))completion {
+  BOOL isDarkMode = [DYYYManager isDarkMode];
+
+  UIColor *successColor = isDarkMode ? [UIColor colorWithRed:48 / 255.0
+                                                       green:209 / 255.0
+                                                        blue:151 / 255.0
+                                                       alpha:1.0]
+                                     : [UIColor colorWithRed:11 / 255.0
+                                                       green:195 / 255.0
+                                                        blue:139 / 255.0
+                                                       alpha:1.0];
+
+  [UIView animateWithDuration:0.3
+      animations:^{
+        [self setProgress:1.0];
+      }
+      completion:^(BOOL finished) {
+        CAShapeLayer *circleLayer = [CAShapeLayer layer];
+        CGFloat circleSize = 30;
+        UIBezierPath *circlePath = [UIBezierPath
+            bezierPathWithOvalInRect:CGRectMake(0, 0, circleSize, circleSize)];
+
+        circleLayer.path = circlePath.CGPath;
+        circleLayer.fillColor = successColor.CGColor;
+        circleLayer.opacity = 0;
+
+        [self.progressView.layer addSublayer:circleLayer];
+
+        CAShapeLayer *checkmarkLayer = [CAShapeLayer layer];
+
+        UIBezierPath *checkPath = [UIBezierPath bezierPath];
+        [checkPath
+            moveToPoint:CGPointMake(circleSize * 0.25, circleSize * 0.5)];
+        [checkPath
+            addLineToPoint:CGPointMake(circleSize * 0.45, circleSize * 0.7)];
+        [checkPath
+            addLineToPoint:CGPointMake(circleSize * 0.75, circleSize * 0.3)];
+
+        checkmarkLayer.path = checkPath.CGPath;
+        checkmarkLayer.fillColor = nil;
+        checkmarkLayer.strokeColor = [UIColor whiteColor].CGColor;
+        checkmarkLayer.lineWidth = 2.5;
+        checkmarkLayer.lineCap = kCALineCapRound;
+        checkmarkLayer.lineJoin = kCALineJoinRound;
+        checkmarkLayer.strokeEnd = 0;
+
+        [self.progressView.layer addSublayer:checkmarkLayer];
+
+        [UIView animateWithDuration:0.15
+            animations:^{
+              self.progressLayer.opacity = 0;
+
+              [UIView
+                  transitionWithView:self.percentLabel
+                            duration:0.2
+                             options:
+                                 UIViewAnimationOptionTransitionCrossDissolve
+                          animations:^{
+                            self.percentLabel.text = @"下载完成";
+                          }
+                          completion:nil];
+            }
+            completion:^(BOOL finished) {
+              CABasicAnimation *circleAnimation =
+                  [CABasicAnimation animationWithKeyPath:@"opacity"];
+              circleAnimation.fromValue = @0.0;
+              circleAnimation.toValue = @1.0;
+              circleAnimation.duration = 0.2;
+              circleLayer.opacity = 1.0;
+              [circleLayer addAnimation:circleAnimation forKey:@"fadeIn"];
+
+              dispatch_after(
+                  dispatch_time(DISPATCH_TIME_NOW,
+                                (int64_t)(0.2 * NSEC_PER_SEC)),
+                  dispatch_get_main_queue(), ^{
+                    CABasicAnimation *checkmarkAnimation =
+                        [CABasicAnimation animationWithKeyPath:@"strokeEnd"];
+                    checkmarkAnimation.fromValue = @0.0;
+                    checkmarkAnimation.toValue = @1.0;
+                    checkmarkAnimation.duration = 0.3;
+                    checkmarkAnimation.timingFunction = [CAMediaTimingFunction
+                        functionWithName:kCAMediaTimingFunctionEaseOut];
+                    checkmarkLayer.strokeEnd = 1.0;
+                    [checkmarkLayer addAnimation:checkmarkAnimation
+                                          forKey:@"drawCheckmark"];
+
+                    [UIView animateWithDuration:0.2
+                        delay:0.1
+                        usingSpringWithDamping:0.6
+                        initialSpringVelocity:0.8
+                        options:UIViewAnimationOptionCurveEaseInOut
+                        animations:^{
+                          self.progressView.transform =
+                              CGAffineTransformMakeScale(1.15, 1.15);
+                        }
+                        completion:^(BOOL finished) {
+                          [UIView animateWithDuration:0.2
+                                           animations:^{
+                                             self.progressView.transform =
+                                                 CGAffineTransformIdentity;
+                                           }];
+                        }];
+
+                    dispatch_after(dispatch_time(DISPATCH_TIME_NOW,
+                                                 (int64_t)(1.2 * NSEC_PER_SEC)),
+                                   dispatch_get_main_queue(), ^{
+                                     [UIView animateWithDuration:0.3
+                                         animations:^{
+                                           self.alpha = 0;
+                                         }
+                                         completion:^(BOOL finished) {
+                                           [self removeFromSuperview];
+                                           if (completion) {
+                                             completion();
+                                           }
+                                         }];
+                                   });
+                  });
+            }];
+      }];
 }
 
 @end

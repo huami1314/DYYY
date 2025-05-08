@@ -7,8 +7,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, strong) UIView *containerView;
 @property(nonatomic, strong) UIView *progressBarBackground;
 @property(nonatomic, strong) UIView *progressBar;
-@property(nonatomic, strong) UILabel *progressLabel;
-@property(nonatomic, strong) UIButton *cancelButton;
 @property(nonatomic, copy) void (^cancelBlock)(void);
 @property(nonatomic, assign) BOOL isCancelled;
 
