@@ -162,7 +162,7 @@
                                     if (success) {
                                         [DYYYManager showToast:@"视频已保存到相册"];
                                     } else {
-                                        [DYYYManager showToast:@"视频保存失败"];
+                                        [DYYYManager showToast:@"视频保存已取消"];
                                     }
                                 }];
 
@@ -209,7 +209,7 @@
                                     if (success) {
                                         [DYYYManager showToast:@"图片已保存到相册"];
                                     } else {
-                                        [DYYYManager showToast:@"图片保存失败"];
+                                        [DYYYManager showToast:@"图片保存已取消"];
                                     }
                                 }];
             }
@@ -314,7 +314,7 @@
                                     if (success) {
                                         [DYYYManager showToast:@"封面已保存到相册"];
                                     } else {
-                                        [DYYYManager showToast:@"封面保存失败"];
+                                        [DYYYManager showToast:@"封面保存已取消"];
                                     }
                                 }];
             }
@@ -811,7 +811,7 @@
                                     if (success) {
                                         [DYYYManager showToast:@"视频已保存到相册"];
                                     } else {
-                                        [DYYYManager showToast:@"视频保存失败"];
+                                        [DYYYManager showToast:@"视频保存已取消"];
                                     }
                                 }];
             }
@@ -839,7 +839,7 @@
                                     if (success) {
                                         [DYYYManager showToast:@"封面已保存到相册"];
                                     } else {
-                                        [DYYYManager showToast:@"封面保存失败"];
+                                        [DYYYManager showToast:@"封面保存已取消"];
                                     }
                                 }];
             }
@@ -905,7 +905,7 @@
                                     if (success) {
                                         [DYYYManager showToast:@"图片已保存到相册"];
                                     } else {
-                                        [DYYYManager showToast:@"图片保存失败"];
+                                        [DYYYManager showToast:@"图片保存已取消"];
                                     }
                                 }];
             }
