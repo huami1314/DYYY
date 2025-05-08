@@ -72,3 +72,41 @@
 }
 
 %end
+
+%hook UITextField
+
+- (void)willMoveToWindow:(UIWindow *)newWindow {
+    %orig;
+    
+    if (newWindow) {
+        BOOL isDarkMode = [DYYYManager isDarkMode];
+        self.keyboardAppearance = isDarkMode ? UIKeyboardAppearanceDark : UIKeyboardAppearanceLight;
+    }
+}
+
+- (BOOL)becomeFirstResponder {
+    BOOL isDarkMode = [DYYYManager isDarkMode];
+    self.keyboardAppearance = isDarkMode ? UIKeyboardAppearanceDark : UIKeyboardAppearanceLight;
+    return %orig;
+}
+
+%end
+
+%hook UITextView
+
+- (void)willMoveToWindow:(UIWindow *)newWindow {
+    %orig;
+    
+    if (newWindow) {
+        BOOL isDarkMode = [DYYYManager isDarkMode];
+        self.keyboardAppearance = isDarkMode ? UIKeyboardAppearanceDark : UIKeyboardAppearanceLight;
+    }
+}
+
+- (BOOL)becomeFirstResponder {
+    BOOL isDarkMode = [DYYYManager isDarkMode];
+    self.keyboardAppearance = isDarkMode ? UIKeyboardAppearanceDark : UIKeyboardAppearanceLight;
+    return %orig;
+}
+
+%end
