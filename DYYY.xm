@@ -50,6 +50,54 @@
 
 %end
 
+%hook AWEPlayInteractionFollowPromptView
+
+- (void)didMoveToSuperview {
+    %orig;
+
+    for (UIGestureRecognizer *gesture in self.gestureRecognizers) {
+        if ([gesture isKindOfClass:[UITapGestureRecognizer class]]) {
+            [self removeGestureRecognizer:gesture];
+        }
+    }
+    
+    UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTapWithConfirmation:)];
+    [self addGestureRecognizer:tapGesture];
+}
+
+%new
+- (void)handleTapWithConfirmation:(UITapGestureRecognizer *)gesture {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYfollowTips"]) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [DYYYBottomAlertView showAlertWithTitle:@"关注确认"
+                                            message:@"是否确认关注？"
+                                        cancelAction:nil
+                                       confirmAction:^{
+                                           [self performOriginalTapAction];
+                                       }];
+        });
+    } else {
+        [self performOriginalTapAction];
+    }
+}
+
+%new
+- (void)performOriginalTapAction {
+    UIResponder *responder = [self nextResponder];
+    while (responder != nil) {
+        if ([responder respondsToSelector:@selector(onFollowViewClicked:)]) {
+            [responder performSelector:@selector(onFollowViewClicked:) withObject:nil];
+            break;
+        }
+        if ([responder respondsToSelector:@selector(followUser)]) {
+            [responder performSelector:@selector(followUser)];
+            break;
+        }
+        responder = [responder nextResponder];
+    }
+}
+
+%end
 %end
 
 %hook AWENormalModeTabBarGeneralPlusButton
