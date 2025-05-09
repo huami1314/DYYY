@@ -13,7 +13,7 @@
 
 // Modern风格长按面板（新版UI）
 %hook AWEModernLongPressPanelTableViewController
-- (NSArray *)dataArray {
+-(NSArray *)dataArray {
     NSArray *originalArray = %orig;
     if (!originalArray) {
         originalArray = @[];
@@ -21,7 +21,6 @@
     
     // 检查是否启用了任意长按功能
     BOOL hasAnyFeatureEnabled = NO;
-    
     // 检查各个单独的功能开关
     BOOL enableSaveVideo = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYLongPressSaveVideo"];
     BOOL enableSaveCover = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYLongPressSaveCover"];
@@ -40,7 +39,7 @@
                            enableFilterUser || enableFilterKeyword || enableTimerClose;
     
     // 处理原始面板按钮的显示/隐藏
-    NSMutableArray *modifiedArray = [NSMutableArray array];
+    NSMutableArray *officialButtons = [NSMutableArray array];
     
     // 获取需要隐藏的按钮设置
     BOOL hideDaily = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelDaily"];
@@ -60,22 +59,24 @@
     BOOL hideBackgroundPlay = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelBackgroundPlay"];
     BOOL hideBiserial = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelBiserial"];
     
-    // 处理原始面板
+    // 检查是否启用了重组官方按钮
+    BOOL reorganizeOfficialButtons = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYPanelcells"];
+    
+    // 存储处理后的原始组
+    NSMutableArray *modifiedOriginalGroups = [NSMutableArray array];
+    
+    // 处理原始面板，收集所有未被隐藏的官方按钮
     for (id group in originalArray) {
-        // 检查是否为视图组模型
         if ([group isKindOfClass:%c(AWELongPressPanelViewGroupModel)]) {
             AWELongPressPanelViewGroupModel *groupModel = (AWELongPressPanelViewGroupModel *)group;
             NSMutableArray *filteredGroupArr = [NSMutableArray array];
             
             for (id item in groupModel.groupArr) {
-                // 检查是否为基础视图模型
                 if ([item isKindOfClass:%c(AWELongPressPanelBaseViewModel)]) {
                     AWELongPressPanelBaseViewModel *viewModel = (AWELongPressPanelBaseViewModel *)item;
                     NSString *descString = viewModel.describeString;
-                    
-                    // 根据描述字符串判断按钮类型并决定是否隐藏
+                    // 根据描述字符串判断按钮类型并决定是否保留
                     BOOL shouldHide = NO;
-                    
                     if ([descString isEqualToString:@"转发到日常"] && hideDaily) {
                         shouldHide = YES;
                     } else if ([descString isEqualToString:@"推荐"] && hideRecommend) {
@@ -115,33 +116,72 @@
                     }
                     
                     if (!shouldHide) {
+                        // 添加图标修改
+                        if ([descString isEqualToString:@"后台播放设置"]) {
+                            viewModel.duxIconName = @"ic_phonearrowup_outlined_20";
+                        } else if ([descString isEqualToString:@"转发到日常"]) {
+                            viewModel.duxIconName = @"ic_flash_outlined_20";
+                        } else if ([descString isEqualToString:@"首页双列快捷入口"]) {
+                            viewModel.duxIconName = @"ic_squaresplit_outlined_20";
+                        } else if ([descString isEqualToString:@"推荐"]) {
+                            viewModel.duxIconName = @"ic_thumbsup_outlined_20";
+                        } else if ([descString isEqualToString:@"不感兴趣"]) {
+                            viewModel.duxIconName = @"ic_heartbreak_outlined_20";
+                        } else if ([descString isEqualToString:@"弹幕"] || 
+                                    [descString isEqualToString:@"弹幕开关"] || 
+                                    [descString isEqualToString:@"弹幕设置"]) {
+                            viewModel.duxIconName = @"ic_dansquare_outlined_20";
+                        }
+                        
+                        // 将按钮添加到官方按钮列表
+                        [officialButtons addObject:viewModel];
+                        
+                        // 同时添加到当前组的过滤列表
                         [filteredGroupArr addObject:viewModel];
                     }
-                } else {
-                    // 不是视图模型的，直接添加
-                    [filteredGroupArr addObject:item];
                 }
             }
             
-            // 如果过滤后的数组不为空，添加到结果中
-            if (filteredGroupArr.count > 0) {
+            // 如果过滤后的组不为空且不需要重组官方按钮，则保存原始组结构
+            if (!reorganizeOfficialButtons && filteredGroupArr.count > 0) {
                 AWELongPressPanelViewGroupModel *newGroup = [[%c(AWELongPressPanelViewGroupModel) alloc] init];
+                newGroup.isDYYYCustomGroup = YES;
                 newGroup.groupType = groupModel.groupType;
-                newGroup.isModern = groupModel.isModern;
+                newGroup.isModern = YES;
                 newGroup.groupArr = filteredGroupArr;
-                [modifiedArray addObject:newGroup];
+                [modifiedOriginalGroups addObject:newGroup];
             }
-        } else {
-            // 不是组模型的，直接添加
-            [modifiedArray addObject:group];
         }
     }
     
-    // 如果没有任何功能启用，返回修改后的原始数组
+    // 如果没有任何功能启用，仅使用官方按钮
     if (!hasAnyFeatureEnabled) {
-        return modifiedArray;
+        if (!reorganizeOfficialButtons) {
+            // 如果不需要重组官方按钮，直接返回修改后的原始组
+            return modifiedOriginalGroups;
+        } else {
+            // 否则重新组织官方按钮，每行最多4个
+            NSMutableArray *resultArray = [NSMutableArray array];
+            NSInteger maxButtonsPerRow = 4; // 每行最多4个按钮
+            NSInteger totalOfficialButtons = officialButtons.count;
+            
+            for (NSInteger i = 0; i < totalOfficialButtons; i += maxButtonsPerRow) {
+                NSInteger buttonsInThisRow = MIN(maxButtonsPerRow, totalOfficialButtons - i);
+                NSRange range = NSMakeRange(i, buttonsInThisRow);
+                
+                AWELongPressPanelViewGroupModel *newGroup = [[%c(AWELongPressPanelViewGroupModel) alloc] init];
+                newGroup.isDYYYCustomGroup = YES;
+                newGroup.groupType = (buttonsInThisRow <= 3) ? 11 : 12;
+                newGroup.isModern = YES;
+                newGroup.groupArr = [officialButtons subarrayWithRange:range];
+                [resultArray addObject:newGroup];
+            }
+            
+            return resultArray;
+        }
     }
     
+    // 创建自定义功能按钮
     NSMutableArray *viewModels = [NSMutableArray array];
     
     // 视频下载功能
@@ -159,6 +199,10 @@
                 [DYYYManager downloadMedia:url
                                 mediaType:MediaTypeVideo
                                 completion:^(BOOL success){
+                                    if (success) {
+                                    } else {
+                                        [DYYYManager showToast:@"视频保存已取消"];
+                                    }
                                 }];
 
             }
@@ -210,6 +254,10 @@
                     [DYYYManager downloadMedia:downloadURL
                                     mediaType:MediaTypeImage
                                     completion:^(BOOL success){
+                                        if (success) {
+                                        } else {
+                                            [DYYYManager showToast:@"图片保存已取消"];
+                                        }
                                     }];
                 } else {
                     [DYYYManager showToast:@"没有找到合适格式的图片"];
@@ -340,6 +388,10 @@
                 [DYYYManager downloadMedia:url
                                 mediaType:MediaTypeImage
                                 completion:^(BOOL success){
+                                    if (success) {
+                                    } else {
+                                        [DYYYManager showToast:@"封面保存已取消"];
+                                    }
                                 }];
             }
             AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
@@ -585,13 +637,15 @@
         [viewModels addObject:timerCloseViewModel];
     }
     
-    NSMutableArray<AWELongPressPanelViewGroupModel *> *customGroups = [NSMutableArray array];
+    // 创建自定义组
+    NSMutableArray *customGroups = [NSMutableArray array];
     NSInteger totalButtons = viewModels.count;
     
-    // 根据按钮总数确定每行的按钮数
+    // 根据按钮总数确定每行的按钮数 
     NSInteger firstRowCount = 0;
     NSInteger secondRowCount = 0;
     
+    // 确定分配方式与原代码相同
     if (totalButtons <= 2) {
         firstRowCount = totalButtons;
     } else if (totalButtons <= 4) {
@@ -611,7 +665,7 @@
         secondRowCount = totalButtons - firstRowCount;
     }
     
-    // 创建第一行
+    // 创建第一行 
     if (firstRowCount > 0) {
         NSArray<AWELongPressPanelBaseViewModel *> *firstRowButtons = [viewModels subarrayWithRange:NSMakeRange(0, firstRowCount)];
         AWELongPressPanelViewGroupModel *firstRowGroup = [[%c(AWELongPressPanelViewGroupModel) alloc] init];
@@ -622,7 +676,7 @@
         [customGroups addObject:firstRowGroup];
     }
     
-    // 创建第二行
+    // 创建第二行 
     if (secondRowCount > 0) {
         NSArray<AWELongPressPanelBaseViewModel *> *secondRowButtons = [viewModels subarrayWithRange:NSMakeRange(firstRowCount, secondRowCount)];
         AWELongPressPanelViewGroupModel *secondRowGroup = [[%c(AWELongPressPanelViewGroupModel) alloc] init];
@@ -633,8 +687,33 @@
         [customGroups addObject:secondRowGroup];
     }
     
-    return [customGroups arrayByAddingObjectsFromArray:modifiedArray];
+    // 准备最终结果数组
+    NSMutableArray *resultArray = [NSMutableArray arrayWithArray:customGroups];
+    
+    // 根据开关决定如何处理官方按钮
+    if (!reorganizeOfficialButtons) {
+        // 如果不需要重组官方按钮，直接添加修改后的原始组
+        [resultArray addObjectsFromArray:modifiedOriginalGroups];
+    } else {
+        // 否则重新组织官方按钮，每行最多4个
+        NSInteger maxButtonsPerRow = 4; // 每行最多4个按钮
+        NSInteger totalOfficialButtons = officialButtons.count;
+        
+        for (NSInteger i = 0; i < totalOfficialButtons; i += maxButtonsPerRow) {
+            NSInteger buttonsInThisRow = MIN(maxButtonsPerRow, totalOfficialButtons - i);
+            NSRange range = NSMakeRange(i, buttonsInThisRow);
+            
+            AWELongPressPanelViewGroupModel *officialGroup = [[%c(AWELongPressPanelViewGroupModel) alloc] init];
+            officialGroup.isDYYYCustomGroup = YES; // 标记为自定义组以便应用自定义样式
+            officialGroup.groupType = (buttonsInThisRow <= 3) ? 11 : 12;
+            officialGroup.isModern = YES;
+            officialGroup.groupArr = [officialButtons subarrayWithRange:range];
+            [resultArray addObject:officialGroup];
+        }
     }
+    
+    return resultArray;
+}
 %end
 
 // 修复Modern风格长按面板水平设置单元格的大小计算
@@ -679,6 +758,7 @@
     if (!self.awemeModel.author.nickname) {
         return originalArray;
     }
+    
     // 检查是否启用了任意长按功能
     BOOL hasAnyFeatureEnabled = NO;
     
@@ -707,6 +787,13 @@
         }
     }
     
+    // 检查是否启用了重组官方按钮 - 修正逻辑
+    BOOL reorganizeOfficialButtons = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYPanelcells"];
+    
+    // 检查是否有任何功能启用
+    hasAnyFeatureEnabled = enableSaveVideo || enableSaveCover || enableSaveAudio || enableSaveCurrentImage || enableSaveAllImages || enableCopyText || enableCopyLink || enableApiDownload ||
+                           enableFilterUser || enableFilterKeyword || enableTimerClose;
+    
     // 处理原始面板按钮的显示/隐藏
     NSMutableArray *modifiedArray = [NSMutableArray array];
     
@@ -728,22 +815,22 @@
     BOOL hideBackgroundPlay = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelBackgroundPlay"];
     BOOL hideBiserial = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelBiserial"];
     
+    // 收集所有未被隐藏的官方按钮
+    NSMutableArray *officialButtons = [NSMutableArray array];
+    
     // 处理原始面板
     for (id group in originalArray) {
         // 检查是否为视图组模型
         if ([group isKindOfClass:%c(AWELongPressPanelViewGroupModel)]) {
             AWELongPressPanelViewGroupModel *groupModel = (AWELongPressPanelViewGroupModel *)group;
             NSMutableArray *filteredGroupArr = [NSMutableArray array];
-            
             for (id item in groupModel.groupArr) {
                 // 检查是否为基础视图模型
                 if ([item isKindOfClass:%c(AWELongPressPanelBaseViewModel)]) {
                     AWELongPressPanelBaseViewModel *viewModel = (AWELongPressPanelBaseViewModel *)item;
                     NSString *descString = viewModel.describeString;
-                    
                     // 根据描述字符串判断按钮类型并决定是否隐藏
                     BOOL shouldHide = NO;
-                    
                     if ([descString isEqualToString:@"转发到日常"] && hideDaily) {
                         shouldHide = YES;
                     } else if ([descString isEqualToString:@"推荐"] && hideRecommend) {
@@ -781,18 +868,37 @@
                     } else if ([descString isEqualToString:@"首页双列快捷入口"] && hideBiserial) {
                         shouldHide = YES;
                     }
-                    
                     if (!shouldHide) {
+                        // 添加图标修改逻辑
+                        if ([descString isEqualToString:@"后台播放设置"]) {
+                            viewModel.duxIconName = @"ic_phonearrowup_outlined_20";
+                        } else if ([descString isEqualToString:@"转发到日常"]) {
+                            viewModel.duxIconName = @"ic_flash_outlined_20";
+                        } else if ([descString isEqualToString:@"首页双列快捷入口"]) {
+                            viewModel.duxIconName = @"ic_squaresplit_outlined_20";
+                        } else if ([descString isEqualToString:@"推荐"]) {
+                            viewModel.duxIconName = @"ic_thumbsup_outlined_20";
+                        } else if ([descString isEqualToString:@"不感兴趣"]) {
+                            viewModel.duxIconName = @"ic_heartbreak_outlined_20";
+                        } else if ([descString isEqualToString:@"弹幕"] || 
+                                  [descString isEqualToString:@"弹幕开关"] || 
+                                  [descString isEqualToString:@"弹幕设置"]) {
+                            viewModel.duxIconName = @"ic_dansquare_outlined_20";
+                        }
+                        
+                        // 添加到过滤后的按钮组
                         [filteredGroupArr addObject:viewModel];
+                        
+                        // 同时添加到官方按钮列表，用于重组
+                        [officialButtons addObject:viewModel];
                     }
                 } else {
                     // 不是视图模型的，直接添加
                     [filteredGroupArr addObject:item];
                 }
             }
-            
-            // 如果过滤后的数组不为空，添加到结果中
-            if (filteredGroupArr.count > 0) {
+            // 如果过滤后的数组不为空，且不需要重组官方按钮，则保留原始结构
+            if (!reorganizeOfficialButtons && filteredGroupArr.count > 0) {
                 AWELongPressPanelViewGroupModel *newGroup = [[%c(AWELongPressPanelViewGroupModel) alloc] init];
                 newGroup.groupType = groupModel.groupType;
                 newGroup.groupArr = filteredGroupArr;
@@ -804,15 +910,21 @@
         }
     }
     
-    // 检查是否有任何功能启用
-    hasAnyFeatureEnabled = enableSaveVideo || enableSaveCover || enableSaveAudio || enableSaveCurrentImage || enableSaveAllImages || enableCopyText || enableCopyLink || enableApiDownload ||
-                           enableFilterUser || enableFilterKeyword || enableTimerClose;
-    
     // 如果没有任何功能启用，返回修改后的原始数组
     if (!hasAnyFeatureEnabled) {
-        return modifiedArray;
+        if (!reorganizeOfficialButtons) {
+            // 如果不需要重组官方按钮，返回修改后的原始组
+            return modifiedArray;
+        } else {
+            // 如果需要重组官方按钮，将所有官方按钮重新排列
+            AWELongPressPanelViewGroupModel *newGroup = [[%c(AWELongPressPanelViewGroupModel) alloc] init];
+            newGroup.groupType = 0;
+            newGroup.groupArr = officialButtons;
+            return @[newGroup];
+        }
     }
     
+    // 创建自定义功能组
     AWELongPressPanelViewGroupModel *newGroupModel = [[%c(AWELongPressPanelViewGroupModel) alloc] init];
     newGroupModel.groupType = 0;
     NSMutableArray *viewModels = [NSMutableArray array];
@@ -832,6 +944,10 @@
                 [DYYYManager downloadMedia:url
                                 mediaType:MediaTypeVideo
                                 completion:^(BOOL success){
+                                    if (success) {
+                                    } else {
+                                        [DYYYManager showToast:@"视频保存已取消"];
+                                    }
                                 }];
             }
             AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
@@ -855,6 +971,10 @@
                 [DYYYManager downloadMedia:url
                                 mediaType:MediaTypeImage
                                 completion:^(BOOL success){
+                                    if (success) {
+                                    } else {
+                                        [DYYYManager showToast:@"封面保存已取消"];
+                                    }
                                 }];
             }
             AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
@@ -915,6 +1035,10 @@
                 [DYYYManager downloadMedia:url
                                 mediaType:MediaTypeImage
                                 completion:^(BOOL success){
+                                    if (success) {
+                                    } else {
+                                        [DYYYManager showToast:@"图片保存已取消"];
+                                    }
                                 }];
             }
             AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
@@ -1225,12 +1349,25 @@
     }
     
     newGroupModel.groupArr = viewModels;
-    if (modifiedArray.count > 0) {
-        NSMutableArray *resultArray = [modifiedArray mutableCopy];
-        [resultArray insertObject:newGroupModel atIndex:0];
-        return [resultArray copy];
+    
+    // 根据开关决定返回结果
+    if (!reorganizeOfficialButtons) {
+        // 如果不需要重组官方按钮，将自定义组添加到原始组之前
+        if (modifiedArray.count > 0) {
+            NSMutableArray *resultArray = [modifiedArray mutableCopy];
+            [resultArray insertObject:newGroupModel atIndex:0];
+            return [resultArray copy];
+        } else {
+            return @[ newGroupModel ];
+        }
     } else {
-        return @[ newGroupModel ];
+        // 如果需要重组官方按钮，创建一个新组包含所有官方按钮
+        AWELongPressPanelViewGroupModel *officialGroupModel = [[%c(AWELongPressPanelViewGroupModel) alloc] init];
+        officialGroupModel.groupType = 0;
+        officialGroupModel.groupArr = officialButtons;
+        
+        // 返回自定义组和重组后的官方按钮组
+        return @[ newGroupModel, officialGroupModel ];
     }
 }
 %end
