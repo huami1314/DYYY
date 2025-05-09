@@ -347,10 +347,11 @@
   CAShapeLayer *crossLayer = [CAShapeLayer layer];
   
   UIBezierPath *crossPath = [UIBezierPath bezierPath];
-  [crossPath moveToPoint:CGPointMake(circleSize * 0.3, circleSize * 0.3)];
-  [crossPath addLineToPoint:CGPointMake(circleSize * 0.7, circleSize * 0.7)];
+  
   [crossPath moveToPoint:CGPointMake(circleSize * 0.7, circleSize * 0.3)];
   [crossPath addLineToPoint:CGPointMake(circleSize * 0.3, circleSize * 0.7)];
+  [crossPath moveToPoint:CGPointMake(circleSize * 0.3, circleSize * 0.3)];
+  [crossPath addLineToPoint:CGPointMake(circleSize * 0.7, circleSize * 0.7)];
 
   crossLayer.path = crossPath.CGPath;
   crossLayer.fillColor = nil;
