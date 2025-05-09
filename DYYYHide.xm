@@ -899,6 +899,7 @@
 }
 %end
 
+// 隐藏视频定位
 %hook AWEFeedTemplateAnchorView
 
 - (void)layoutSubviews {
@@ -908,6 +909,19 @@
 		[self removeFromSuperview];
 		return;
 	}
+}
+
+%end
+
+// 隐藏同城视频定位
+%hook AWEMarkView
+
+- (void)layoutSubviews {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLocation"]) {
+        [self removeFromSuperview];
+        return;
+    }
+    %orig;
 }
 
 %end
