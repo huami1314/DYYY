@@ -919,7 +919,7 @@
 - (void)layoutSubviews {
     %orig;
     
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMarkView"]) {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLocation"]) {
         self.hidden = YES;
         return;
     }
