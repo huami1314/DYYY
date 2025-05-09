@@ -917,11 +917,12 @@
 %hook AWEMarkView
 
 - (void)layoutSubviews {
+    %orig;
+    
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLocation"]) {
         [self removeFromSuperview];
         return;
     }
-    %orig;
 }
 
 %end
