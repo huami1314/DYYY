@@ -1792,7 +1792,7 @@ static void showUserAgreementAlert() {
 				    disableHotUpdateItem.isSwitchOn = newValue;
 				    abTestBlockEnabled = newValue;
 
-				    [[NSUserDefaults standardUserDefaults] setBool:newValue forKey:@"ABTestBlockEnabled"];
+				    [[NSUserDefaults standardUserDefaults] setBool:newValue forKey:@"DYYYABTestBlockEnabled"];
 				    [[NSUserDefaults standardUserDefaults] synchronize];
 
 				    // 重置全局变量，下次加载时会重新读取文件
@@ -1807,7 +1807,7 @@ static void showUserAgreementAlert() {
 			      disableHotUpdateItem.isSwitchOn = newValue;
 			      abTestBlockEnabled = newValue;
 
-			      [[NSUserDefaults standardUserDefaults] setBool:newValue forKey:@"ABTestBlockEnabled"];
+			      [[NSUserDefaults standardUserDefaults] setBool:newValue forKey:@"DYYYABTestBlockEnabled"];
 			      [[NSUserDefaults standardUserDefaults] synchronize];
 
 			      [self refreshTableView];
