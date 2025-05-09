@@ -166,8 +166,7 @@
     [self showSuccessAnimation:nil];
   }
   if (self.isCancelled) {
-    [DYYYManager showToast:[NSString stringWithFormat:@"已取消下载"]];
-    [self removeFromSuperview];
+    [self showCancelAnimation:nil];
   } else {
     dispatch_after(
         dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.2 * NSEC_PER_SEC)),
@@ -324,6 +323,105 @@
                                    });
                   });
             }];
+      }];
+}
+
+// 下载取消动画方法
+- (void)showCancelAnimation:(void (^)(void))completion {
+  BOOL isDarkMode = [DYYYManager isDarkMode];
+
+  UIColor *cancelColor = isDarkMode ? [UIColor colorWithRed:52/255.0 green:152/255.0 blue:219/255.0 alpha:1.0] 
+                                    : [UIColor colorWithRed:41/255.0 green:128/255.0 blue:185/255.0 alpha:1.0];
+
+  // 创建圆形背景
+  CAShapeLayer *circleLayer = [CAShapeLayer layer];
+  CGFloat circleSize = 30;
+  UIBezierPath *circlePath = [UIBezierPath bezierPathWithOvalInRect:CGRectMake(0, 0, circleSize, circleSize)];
+
+  circleLayer.path = circlePath.CGPath;
+  circleLayer.fillColor = cancelColor.CGColor;
+  circleLayer.opacity = 0;
+
+  [self.progressView.layer addSublayer:circleLayer];
+
+  CAShapeLayer *crossLayer = [CAShapeLayer layer];
+  
+  UIBezierPath *crossPath = [UIBezierPath bezierPath];
+  [crossPath moveToPoint:CGPointMake(circleSize * 0.3, circleSize * 0.3)];
+  [crossPath addLineToPoint:CGPointMake(circleSize * 0.7, circleSize * 0.7)];
+  [crossPath moveToPoint:CGPointMake(circleSize * 0.7, circleSize * 0.3)];
+  [crossPath addLineToPoint:CGPointMake(circleSize * 0.3, circleSize * 0.7)];
+
+  crossLayer.path = crossPath.CGPath;
+  crossLayer.fillColor = nil;
+  crossLayer.strokeColor = [UIColor whiteColor].CGColor;
+  crossLayer.lineWidth = 2.5;
+  crossLayer.lineCap = kCALineCapRound;
+  crossLayer.lineJoin = kCALineJoinRound;
+  crossLayer.strokeEnd = 0;
+
+  [self.progressView.layer addSublayer:crossLayer];
+
+  [UIView animateWithDuration:0.15
+      animations:^{
+        self.progressLayer.opacity = 0;
+        
+        [UIView transitionWithView:self.percentLabel
+                          duration:0.2
+                           options:UIViewAnimationOptionTransitionCrossDissolve
+                        animations:^{
+                          self.percentLabel.text = @"已取消下载";
+                        }
+                        completion:nil];
+      }
+      completion:^(BOOL finished) {
+        CABasicAnimation *circleAnimation = [CABasicAnimation animationWithKeyPath:@"opacity"];
+        circleAnimation.fromValue = @0.0;
+        circleAnimation.toValue = @1.0;
+        circleAnimation.duration = 0.2;
+        circleLayer.opacity = 1.0;
+        [circleLayer addAnimation:circleAnimation forKey:@"fadeIn"];
+        
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.2 * NSEC_PER_SEC)),
+                       dispatch_get_main_queue(), ^{
+          // 绘制叉号
+          CABasicAnimation *crossAnimation = [CABasicAnimation animationWithKeyPath:@"strokeEnd"];
+          crossAnimation.fromValue = @0.0;
+          crossAnimation.toValue = @1.0;
+          crossAnimation.duration = 0.3;
+          crossAnimation.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseOut];
+          crossLayer.strokeEnd = 1.0;
+          [crossLayer addAnimation:crossAnimation forKey:@"drawCross"];
+          
+          [UIView animateWithDuration:0.2
+                                delay:0.1
+               usingSpringWithDamping:0.6
+                initialSpringVelocity:0.8
+                              options:UIViewAnimationOptionCurveEaseInOut
+                           animations:^{
+            self.progressView.transform = CGAffineTransformMakeScale(1.15, 1.15);
+          }
+                           completion:^(BOOL finished) {
+            [UIView animateWithDuration:0.2
+                             animations:^{
+              self.progressView.transform = CGAffineTransformIdentity;
+            }];
+          }];
+          
+          dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.2 * NSEC_PER_SEC)),
+                         dispatch_get_main_queue(), ^{
+            [UIView animateWithDuration:0.3
+                animations:^{
+                  self.alpha = 0;
+                }
+                completion:^(BOOL finished) {
+                  [self removeFromSuperview];
+                  if (completion) {
+                    completion();
+                  }
+                }];
+          });
+        });
       }];
 }
 
