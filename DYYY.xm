@@ -1788,36 +1788,40 @@ static CGFloat currentScale = 1.0;
 		} else {
 		}
 	}
-
 	if ([self.accessibilityLabel isEqualToString:@"left"]) {
 		NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
-
-		// 首先恢复到原始状态，确保变换不会累积
-		self.transform = CGAffineTransformIdentity;
-
+		
 		if (scaleValue.length > 0) {
 			CGFloat scale = [scaleValue floatValue];
-
-			if (currentScale != scale) {
-				currentScale = scale;
+			
+			CGAffineTransform currentTransform = self.transform;
+			if (currentTransform.a == scale && currentTransform.d == scale) {
+				return;
 			}
-
+			static CGFloat lastAppliedScale = 1.0;
+			if (lastAppliedScale != scale) {
+				lastAppliedScale = scale;
+			}
+			self.transform = CGAffineTransformIdentity;
 			if (scale > 0 && scale != 1.0) {
+				NSArray *subviews = [self.subviews copy];
 				CGFloat ty = 0;
-
-				for (UIView *view in self.subviews) {
+				
+				for (UIView *view in subviews) {
 					CGFloat viewHeight = view.frame.size.height;
 					CGFloat contribution = (viewHeight - viewHeight * scale) / 2;
 					ty += contribution;
 				}
 
 				CGFloat frameWidth = self.frame.size.width;
-				left_tx = (frameWidth - frameWidth * scale) / 2 - frameWidth * (1 - scale);
-
-				self.transform = CGAffineTransformMake(scale, 0, 0, scale, left_tx, ty);
-			} else {
-				self.transform = CGAffineTransformIdentity;
-			}
+				CGFloat left_tx = (frameWidth - frameWidth * scale) / 2 - frameWidth * (1 - scale);
+				CGAffineTransform newTransform = CGAffineTransformMakeScale(scale, scale);
+				newTransform = CGAffineTransformTranslate(newTransform, left_tx/scale, ty/scale);
+				self.transform = newTransform;
+				dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+					self.transform = newTransform;
+				});
+			} 
 		}
 	}
 }
