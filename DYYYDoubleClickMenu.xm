@@ -75,10 +75,6 @@
 						      [DYYYManager downloadMedia:url
 								       mediaType:MediaTypeImage
 								      completion:^(BOOL success) {
-									if (success) {
-									} else {
-										[DYYYManager showToast:@"图片保存失败"];
-									}
 								      }];
 					      }
 				      } else {
@@ -88,10 +84,6 @@
 						      [DYYYManager downloadMedia:url
 								       mediaType:MediaTypeVideo
 								      completion:^(BOOL success) {
-									if (success) {
-									} else {
-										[DYYYManager showToast:@"视频保存失败"];
-									}
 								      }];
 					      }
 				      }
@@ -110,10 +102,6 @@
 						      [DYYYManager downloadMedia:coverURL
 								       mediaType:MediaTypeImage
 								      completion:^(BOOL success) {
-									if (success) {
-									} else {
-										[DYYYManager showToast:@"封面保存失败"];
-									}
 								      }];
 					      }
 					    }];

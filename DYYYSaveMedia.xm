@@ -173,10 +173,6 @@ static BOOL isDownloadFlied = NO;
 	[DYYYManager downloadMedia:url
 			 mediaType:MediaTypeHeic
 			completion:^(BOOL success){
-			  if (success) {
-			  } else {
-				  [DYYYManager showToast:@"表情包保存失败"];
-			  }
 			}];
 }
 

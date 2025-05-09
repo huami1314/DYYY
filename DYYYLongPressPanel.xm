@@ -159,10 +159,6 @@
                 [DYYYManager downloadMedia:url
                                 mediaType:MediaTypeVideo
                                 completion:^(BOOL success){
-                                    if (success) {
-                                    } else {
-                                        [DYYYManager showToast:@"视频保存已取消"];
-                                    }
                                 }];
 
             }
@@ -214,10 +210,6 @@
                     [DYYYManager downloadMedia:downloadURL
                                     mediaType:MediaTypeImage
                                     completion:^(BOOL success){
-                                        if (success) {
-                                        } else {
-                                            [DYYYManager showToast:@"图片保存已取消"];
-                                        }
                                     }];
                 } else {
                     [DYYYManager showToast:@"没有找到合适格式的图片"];
@@ -348,10 +340,6 @@
                 [DYYYManager downloadMedia:url
                                 mediaType:MediaTypeImage
                                 completion:^(BOOL success){
-                                    if (success) {
-                                    } else {
-                                        [DYYYManager showToast:@"封面保存已取消"];
-                                    }
                                 }];
             }
             AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
@@ -844,10 +832,6 @@
                 [DYYYManager downloadMedia:url
                                 mediaType:MediaTypeVideo
                                 completion:^(BOOL success){
-                                    if (success) {
-                                    } else {
-                                        [DYYYManager showToast:@"视频保存已取消"];
-                                    }
                                 }];
             }
             AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
@@ -871,10 +855,6 @@
                 [DYYYManager downloadMedia:url
                                 mediaType:MediaTypeImage
                                 completion:^(BOOL success){
-                                    if (success) {
-                                    } else {
-                                        [DYYYManager showToast:@"封面保存已取消"];
-                                    }
                                 }];
             }
             AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
@@ -935,10 +915,6 @@
                 [DYYYManager downloadMedia:url
                                 mediaType:MediaTypeImage
                                 completion:^(BOOL success){
-                                    if (success) {
-                                    } else {
-                                        [DYYYManager showToast:@"图片保存已取消"];
-                                    }
                                 }];
             }
             AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
