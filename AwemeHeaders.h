@@ -935,26 +935,19 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWEDemaciaChapterProgressSlider : UIView
 @end
 
-@interface AWEFeedABSettings : NSObject
-+ (BOOL)enableHDRBrightnessOpt;
-+ (BOOL)hdrAutomaticIdentification;
+//HDR
+@interface AWEHDRModelManager : NSObject
++ (BOOL)enableVideoHDR;
++ (BOOL)useOneKeyHDR;
 @end
-@interface BDSimPlayerMediaViewController : UIViewController
-- (void)setEnableHDR:(BOOL)enable;
-- (void)setEnablePlayHDRMode;
+@interface VideoFrame : NSObject
 @end
-@interface AWEVideoPlayerConfiguration : NSObject
-+ (void)setHDRBrightnessStrategy:(id)strategy;
+@interface VEHDRDetectionUtils : NSObject
++ (BOOL)isHDRVideo:(id)video;
++ (id)detectionHDRType:(id)video;
 @end
-@interface BDSimPlayerBizConfig : NSObject
-- (BOOL)enableHDRBrightnessOpt;
-@end
-@interface AWEProtectEyesManager : NSObject
-- (void)setHDRlutImage:(id)image;
-@end
-@interface BDSimMediaPlayer : NSObject
-- (void)setEnableHDR:(BOOL)enable;
-- (void)setEnablePlayHDRMode;
+@interface BmfFilterSDR2HDR : NSObject
+- (VideoFrame *)process:(VideoFrame *)frame;
 @end
 
 @interface AWEABTestManager : NSObject
