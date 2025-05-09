@@ -178,6 +178,18 @@ static BOOL isDownloadFlied = NO;
 
 %end
 
+%hook AWELongVideoControlModel
+- (bool)allowDownload {
+	return YES;
+}
+%end
+
+%hook AWELongVideoControlModel
+- (long long)preventDownloadType {
+	return 0;
+}
+%end
+
 %ctor {
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {
 		%init;

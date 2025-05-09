@@ -1,5 +1,15 @@
 #import "AwemeHeaders.h"
 
+%hook UIView
+- (void)layoutSubviews {
+	%orig;
+
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideDiscover"] && [self.accessibilityLabel isEqualToString:@"搜索"]) {
+		[self removeFromSuperview];
+	}
+}
+%end
+
 %hook AWEFeedLiveMarkView
 - (void)setHidden:(BOOL)hidden {
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAvatarButton"]) {
@@ -760,109 +770,6 @@
 		for (NSInteger i = 0; i < visibleButtons.count; i++) {
 			UIView *button = visibleButtons[i];
 			button.frame = CGRectMake(i * buttonWidth, button.frame.origin.y, buttonWidth, button.frame.size.height);
-		}
-	}
-}
-- (void)setHidden:(BOOL)hidden {
-	%orig(hidden);
-
-	BOOL hideBottomBg = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenBottomBg"];
-
-	// 如果开启了隐藏底部背景，则直接隐藏背景视图，不进行其他判断
-	if (hideBottomBg) {
-		UIView *backgroundView = nil;
-		for (UIView *subview in self.subviews) {
-			if ([subview class] == [UIView class]) {
-				BOOL hasImageView = NO;
-				for (UIView *childView in subview.subviews) {
-					if ([childView isKindOfClass:[UIImageView class]]) {
-						hasImageView = YES;
-						break;
-					}
-				}
-				if (hasImageView) {
-					backgroundView = subview;
-					backgroundView.hidden = YES;
-					break;
-				}
-			}
-		}
-	} else {
-		Class generalButtonClass = %c(AWENormalModeTabBarGeneralButton);
-
-		for (UIView *subview in self.subviews) {
-			if ([subview isKindOfClass:generalButtonClass]) {
-				AWENormalModeTabBarGeneralButton *button = (AWENormalModeTabBarGeneralButton *)subview;
-				if ([button.accessibilityLabel isEqualToString:@"首页"] && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHomeRefresh"] && button.status == 2) {
-					if (button.gestureRecognizers && button.gestureRecognizers.count > 0) {
-						button.userInteractionEnabled = NO;
-					}
-				} else if ([button.accessibilityLabel isEqualToString:@"首页"] && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHomeRefresh"] && button.status == 1) {
-					if (button.gestureRecognizers && button.gestureRecognizers.count > 0) {
-						button.userInteractionEnabled = YES;
-					}
-				}
-			}
-		}
-
-		// 仅对全屏模式处理背景显示逻辑
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-			UIView *backgroundView = nil;
-			BOOL hideFriendsButton = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFriendsButton"];
-			BOOL isHomeSelected = NO;
-			BOOL isFriendsSelected = NO;
-
-			for (UIView *subview in self.subviews) {
-				if ([subview class] == [UIView class]) {
-					BOOL hasImageView = NO;
-					for (UIView *childView in subview.subviews) {
-						if ([childView isKindOfClass:[UIImageView class]]) {
-							hasImageView = YES;
-							break;
-						}
-					}
-					if (hasImageView) {
-						backgroundView = subview;
-						break;
-					}
-				}
-			}
-
-			// 查找当前选中的按钮
-			for (UIView *subview in self.subviews) {
-				if ([subview isKindOfClass:generalButtonClass]) {
-					AWENormalModeTabBarGeneralButton *button = (AWENormalModeTabBarGeneralButton *)subview;
-					// status == 2 表示按钮处于选中状态
-					if (button.status == 2) {
-						if ([button.accessibilityLabel isEqualToString:@"首页"]) {
-							isHomeSelected = YES;
-						} else if ([button.accessibilityLabel containsString:@"朋友"]) {
-							isFriendsSelected = YES;
-						}
-					}
-				}
-			}
-
-			// 根据当前选中的按钮决定是否显示背景
-			if (backgroundView) {
-				BOOL shouldShowBackground = isHomeSelected || (isFriendsSelected && !hideFriendsButton);
-				backgroundView.hidden = shouldShowBackground;
-			}
-		}
-	}
-
-	// 隐藏分隔线
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-		for (UIView *subview in self.subviews) {
-			if (![subview isKindOfClass:[UIView class]])
-				continue;
-			if (subview.frame.size.height <= 0.5 && subview.frame.size.width > 300) {
-				subview.hidden = YES;
-				CGRect frame = subview.frame;
-				frame.size.height = 0;
-				subview.frame = frame;
-				subview.alpha = 0;
-			}
 		}
 	}
 }
