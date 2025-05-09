@@ -919,8 +919,8 @@
 - (void)layoutSubviews {
     %orig;
     
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLocation"]) {
-        [self removeFromSuperview];
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMarkView"]) {
+        self.hidden = YES;
         return;
     }
 }
