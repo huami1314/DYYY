@@ -806,6 +806,21 @@
 }
 %end
 
+// 直播状态栏
+%hook IESLiveInnerFeedViewController
+- (BOOL)prefersStatusBarHidden {
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHideStatusbar"]) {
+		return YES;
+	} else {
+		if (class_getInstanceMethod([self class], @selector(prefersStatusBarHidden)) !=
+		    class_getInstanceMethod([%c(IESLiveInnerFeedViewController) class], @selector(prefersStatusBarHidden))) {
+			return %orig;
+		}
+		return NO;
+	}
+}
+%end
+
 // 隐藏视频定位
 %hook AWEFeedTemplateAnchorView
 
