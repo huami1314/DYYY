@@ -1839,7 +1839,7 @@ static void showUserAgreementAlert() {
 				    enablePatchModeItem.isSwitchOn = newValue;
 				    abTestPatchEnabled = newValue;
 
-				    [[NSUserDefaults standardUserDefaults] setBool:newValue forKey:@"DYYYABTestBlockEnabled"];
+				    [[NSUserDefaults standardUserDefaults] setBool:newValue forKey:@"DYYYABTestPatchEnabled"];
 				    [[NSUserDefaults standardUserDefaults] synchronize];
 
 				    // 重置全局变量，下次加载时会重新读取文件
@@ -1852,7 +1852,7 @@ static void showUserAgreementAlert() {
 			      enablePatchModeItem.isSwitchOn = newValue;
 			      abTestPatchEnabled = newValue;
 
-			      [[NSUserDefaults standardUserDefaults] setBool:newValue forKey:@"DYYYABTestBlockEnabled"];
+			      [[NSUserDefaults standardUserDefaults] setBool:newValue forKey:@"DYYYABTestPatchEnabled"];
 			      [[NSUserDefaults standardUserDefaults] synchronize];
 
 			      [self refreshTableView];
@@ -2043,7 +2043,7 @@ static void showUserAgreementAlert() {
 			      @"title" : @"启用自动勾选原图",
 			      @"detail" : @"",
 			      @"cellType" : @6,
-			      @"imageName" : @"ic_gearsimplify_outlined_20"},
+			      @"imageName" : @"ic_image_outlined_20"},
 			    @{@"identifier" : @"DYYYisEnableModern",
 			      @"title" : @"启用新版玻璃面板",
 			      @"detail" : @"",
@@ -2882,6 +2882,14 @@ static void showUserAgreementAlert() {
 		// 双击打开菜单依赖于双击打开评论未启用
 		BOOL commentEnabled = getUserDefaults(@"DYYYEnableDoubleOpenComment");
 		item.isEnable = !commentEnabled;
+	} else if ([item.identifier isEqualToString:@"DYYYABTestBlockEnabled"]) {
+		// 双击打开评论依赖于双击打开菜单未启用
+		BOOL blockEnabled = getUserDefaults(@"DYYYABTestPatchEnabled");
+		item.isEnable = !blockEnabled;
+	} else if ([item.identifier isEqualToString:@"DYYYABTestPatchEnabled"]) {
+		// 双击打开菜单依赖于双击打开评论未启用
+		BOOL patchEnabled = getUserDefaults(@"DYYYABTestBlockEnabled");
+		item.isEnable = !patchEnabled;
 	} else if ([item.identifier isEqualToString:@"DYYYDoubleInterfaceDownload"]) {
 		// 接口保存功能依赖于接口解析URL是否设置
 		NSString *interfaceUrl = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYInterfaceDownload"];
@@ -2974,6 +2982,20 @@ static void showUserAgreementAlert() {
 			setUserDefaults(@(NO), @"DYYYEnableDoubleOpenComment");
 			[self updateDependentItemsForSetting:@"DYYYEnableDoubleOpenComment" value:@(NO)];
 		}
+	} else if ([identifier isEqualToString:@"DYYYABTestPatchEnabled"]) {
+		[self updateDependentItemsForSetting:identifier value:@(isEnabled)];
+
+		if (isEnabled) {
+			setUserDefaults(@(NO), @"DYYYABTestBlockEnabled");
+			[self updateDependentItemsForSetting:@"DYYYABTestBlockEnabled" value:@(NO)];
+		}
+	} else if ([identifier isEqualToString:@"DYYYABTestBlockEnabled"]) {
+		[self updateDependentItemsForSetting:identifier value:@(isEnabled)];
+
+		if (isEnabled) {
+			setUserDefaults(@(NO), @"DYYYABTestPatchEnabled");
+			[self updateDependentItemsForSetting:@"DYYYABTestPatchEnabled" value:@(NO)];
+		}
 	}
 	// 新增依赖处理
 	else if ([identifier isEqualToString:@"DYYYisEnableArea"]) {
@@ -3060,6 +3082,14 @@ static void showUserAgreementAlert() {
 			} else if ([identifier isEqualToString:@"DYYYEnableDoubleOpenAlertController"]) {
 				if ([item.identifier isEqualToString:@"DYYYEnableDoubleOpenComment"]) {
 					// 如果"双击打开菜单"被禁用，则启用"双击打开评论"选项
+					item.isEnable = ![value boolValue];
+				}
+			} else if ([identifier isEqualToString:@"DYYYABTestBlockEnabled"]) {
+				if ([item.identifier isEqualToString:@"DYYYABTestPatchEnabled"]) {
+					item.isEnable = ![value boolValue];
+				}
+			} else if ([identifier isEqualToString:@"DYYYABTestPatchEnabled"]) {
+				if ([item.identifier isEqualToString:@"DYYYABTestBlockEnabled"]) {
 					item.isEnable = ![value boolValue];
 				}
 			}
