@@ -1591,6 +1591,61 @@
 }
 %end
 
+// 隐藏免流提示
+%hook BDUGFlowStatisticsManager
+
+- (BOOL)getShowFreeFlowToast {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFreeFlowToast"]) {
+        return NO;
+    }
+    return %orig;
+}
+
+- (BOOL)shouldShowFreeFlowToast {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFreeFlowToast"]) {
+        return NO;
+    }
+    return %orig;
+}
+
+- (BOOL)getShowFreeFlowWillUseUpToast {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFreeFlowToast"]) {
+        return NO;
+    }
+    return %orig;
+}
+
+- (BOOL)shouldShowFreeFlowWillUseUpToast {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFreeFlowToast"]) {
+        return NO;
+    }
+    return %orig;
+}
+
+- (BOOL)getShowFreeFlowUsedUpToast {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFreeFlowToast"]) {
+        return NO;
+    }
+    return %orig;
+}
+
+- (BOOL)shouldShowFreeFlowUsedUpToast {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFreeFlowToast"]) {
+        return NO;
+    }
+    return %orig;
+}
+
+- (void)setShowFreeFlowToast:(BOOL)show {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFreeFlowToast"]) {
+        %orig(NO);
+    } else {
+        %orig(show);
+    }
+}
+
+%end
+
 // 极速版红包激励挂件容器视图类组（移除逻辑）
 %group IncentivePendantGroup
 %hook AWEIncentiveSwiftImplDOUYINLite_IncentivePendantContainerView

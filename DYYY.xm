@@ -1602,6 +1602,14 @@
 
 %end
 
+%hook AWESharePanelStyleOptionsManager
+
++ (unsigned long long)styleOptionsOfContext:(id)context {
+    return 101;
+}
+
+%end
+
 %ctor {
 	%init(DYYYSettingsGesture);
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {
