@@ -206,6 +206,46 @@
 }
 %end
 
+// 设置修改顶栏标题
+%hook AWEHPTopTabItemTextContentView
+
+- (void)layoutSubviews {
+	%orig;
+
+	NSString *topTitleConfig = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYModifyTopTabText"];
+	if (topTitleConfig.length == 0)
+		return;
+
+	NSArray *titlePairs = [topTitleConfig componentsSeparatedByString:@"#"];
+
+	NSString *accessibilityLabel = nil;
+	if ([self.superview respondsToSelector:@selector(accessibilityLabel)]) {
+		accessibilityLabel = self.superview.accessibilityLabel;
+	}
+	if (accessibilityLabel.length == 0)
+		return;
+
+	for (NSString *pair in titlePairs) {
+		NSArray *components = [pair componentsSeparatedByString:@"="];
+		if (components.count != 2)
+			continue;
+
+		NSString *originalTitle = components[0];
+		NSString *newTitle = components[1];
+
+		if ([accessibilityLabel isEqualToString:originalTitle]) {
+			if ([self respondsToSelector:@selector(setContentText:)]) {
+				[self setContentText:newTitle];
+			} else {
+				[self setValue:newTitle forKey:@"contentText"];
+			}
+			break;
+		}
+	}
+}
+
+%end
+
 %hook AWEDanmakuContentLabel
 - (void)setTextColor:(UIColor *)textColor {
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableDanmuColor"]) {
@@ -560,16 +600,6 @@
 	} else {
 		%orig;
 	}
-}
-
-// 确保即使进度条隐藏也可以拖动
-- (BOOL)pointInside:(CGPoint)point withEvent:(UIEvent *)event {
-	// 如果隐藏视频进度但显示进度时长，扩大判断区域以便于用户交互
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideVideoProgress"] && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisShowScheduleDisplay"]) {
-		CGRect expandedBounds = CGRectInset(self.bounds, -20, -20);
-		return CGRectContainsPoint(expandedBounds, point);
-	}
-	return %orig;
 }
 
 // MARK: 视频显示进度条以及视频进度秒数
@@ -1408,7 +1438,7 @@
 	containerView.backgroundColor = [UIColor clearColor];
 
 	float userRadius = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNotificationCornerRadius"] floatValue];
-	if (userRadius < 0 || userRadius > 50) {
+	if (!userRadius || userRadius < 0 || userRadius > 50) {
 		userRadius = 12;
 	}
 
@@ -1563,6 +1593,7 @@
     return %orig; 
 }
 %end
+
 %hook VEHDRDetectionUtils
 + (BOOL)isHDRVideo:(id)arg0 {
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
@@ -1577,6 +1608,7 @@
     return %orig; 
 }
 %end
+
 %hook BmfFilterSDR2HDR
 - (VideoFrame *)process:(VideoFrame *)frame {
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
@@ -1584,46 +1616,6 @@
     }
     return %orig; 
 }
-%end
- 
-// 设置修改顶栏标题
-%hook AWEHPTopTabItemTextContentView
-
-- (void)layoutSubviews {
-	%orig;
-
-	NSString *topTitleConfig = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYModifyTopTabText"];
-	if (topTitleConfig.length == 0)
-		return;
-
-	NSArray *titlePairs = [topTitleConfig componentsSeparatedByString:@"#"];
-
-	NSString *accessibilityLabel = nil;
-	if ([self.superview respondsToSelector:@selector(accessibilityLabel)]) {
-		accessibilityLabel = self.superview.accessibilityLabel;
-	}
-	if (accessibilityLabel.length == 0)
-		return;
-
-	for (NSString *pair in titlePairs) {
-		NSArray *components = [pair componentsSeparatedByString:@"="];
-		if (components.count != 2)
-			continue;
-
-		NSString *originalTitle = components[0];
-		NSString *newTitle = components[1];
-
-		if ([accessibilityLabel isEqualToString:originalTitle]) {
-			if ([self respondsToSelector:@selector(setContentText:)]) {
-				[self setContentText:newTitle];
-			} else {
-				[self setValue:newTitle forKey:@"contentText"];
-			}
-			break;
-		}
-	}
-}
-
 %end
 
 %ctor {

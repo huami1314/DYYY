@@ -2310,9 +2310,7 @@ static void showUserAgreementAlert() {
 			    if (size >= 20 && size <= 60) {
 				    [[NSUserDefaults standardUserDefaults] setFloat:size forKey:@"DYYYEnableFloatClearButtonSize"];
 				    [[NSUserDefaults standardUserDefaults] synchronize];
-				    // 更新UI显示
 				    clearButtonSizeItem.detail = [NSString stringWithFormat:@"%.0f", (CGFloat)size];
-				    // 刷新表格
 				    [self refreshTableView];
 			    } else {
 				    [DYYYManager showToast:@"请输入20-60之间的有效数值"];
