@@ -543,16 +543,6 @@
 
 %hook AWEFeedProgressSlider
 
-// 在初始化时设置进度条样式
-- (instancetype)initWithFrame:(CGRect)frame {
-	self = %orig;
-	if (self) {
-		[self applyCustomProgressStyle];
-	}
-	return self;
-}
-
-// 在布局更新时应用自定义样式
 - (void)layoutSubviews {
 	%orig;
 	[self applyCustomProgressStyle];
@@ -808,42 +798,9 @@
     NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
 
     if ([scheduleStyle isEqualToString:@"进度条两侧左右"]) {
-        UIView *parentView = self.superview;
-        if (!parentView) return;
-        
-        CGSize parentSize = parentView.bounds.size;
-        
-        // 计算宽度百分比
-        CGFloat widthPercent = 0.80;
-        NSString *widthPercentValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYProgressBarWidthPercent"];
-        if (widthPercentValue.length > 0) {
-            CGFloat customPercent = [widthPercentValue floatValue];
-            if (customPercent > 0 && customPercent <= 1.0) {
-                widthPercent = customPercent;
-            }
-        }
-        
-        CGFloat newWidth = parentSize.width * widthPercent;
-        
-        CGFloat newX = (parentSize.width - newWidth) / 2.0;
-        
-        CGFloat originalY = self.frame.origin.y;
-        CGFloat originalHeight = self.frame.size.height;
-        
-        self.frame = CGRectMake(newX, originalY, newWidth, originalHeight);
-        
         for (UIView *subview in self.subviews) {
             if ([subview class] == [UIView class]) {
                 subview.hidden = YES;
-            } else {
-                CGRect subFrame = subview.frame;
-                CGFloat subviewCenterX = subFrame.origin.x + (subFrame.size.width / 2.0);
-                CGFloat subviewRelativePosition = subviewCenterX / self.bounds.size.width;
-                
-                CGFloat newSubX = (subviewRelativePosition * newWidth) - (subFrame.size.width / 2.0);
-                
-                subview.frame = CGRectMake(newSubX, subFrame.origin.y, 
-                                          subFrame.size.width, subFrame.size.height);
             }
         }
     }
