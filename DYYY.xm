@@ -1580,44 +1580,6 @@
 
 %end
 
-%hook AWEPlayVideoViewController
-
-- (BOOL)enableHDR {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
-        return NO;
-    }
-    return %orig;
-}
-
-- (void)setEnableHDR:(BOOL)enabled {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
-        %orig(NO);
-    } else {
-        %orig(enabled);
-    }
-}
-
-%end
-
-%hook AWEDPlayerFeedPlayerViewController
-
-- (BOOL)enableHDR {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
-        return NO;
-    }
-    return %orig;
-}
-
-- (void)setEnableHDR:(BOOL)enabled {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
-        %orig(NO);
-    } else {
-        %orig(enabled);
-    }
-}
-
-%end
-
 // 启用自动勾选原图
 %hook AWEIMPhotoPickerFunctionModel
 
