@@ -261,6 +261,12 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWEFeedTableView : UIView
 @end
 
+@interface AWEAwemeDetailTableView : UIView
+@end
+
+@interface AWEAwemeDetailTableViewCell : UIView
+@end
+
 @interface IESLiveFeedDrawerEntranceView : UIView
 @end
 

@@ -113,7 +113,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 			}
 		}
 	}
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"]) {
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"] || [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"]) {
 		NSString *className = NSStringFromClass([self class]);
 		if ([className isEqualToString:@"AWECommentInputViewSwiftImpl.CommentInputContainerView"]) {
 			for (UIView *subview in self.subviews) {
@@ -189,11 +189,25 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 
 %end
 
+%hook AWEPlayInteractionViewController
+- (void)viewDidLayoutSubviews {
+	%orig;
+	if (![self.parentViewController isKindOfClass:%c(AWEFeedCellViewController)] && ![self.parentViewController isKindOfClass:%c(AWEAwemeDetailCellViewController)]) {
+		return;
+	}
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+		CGRect frame = self.view.frame;
+		frame.size.height = self.view.superview.frame.size.height - 83;
+		self.view.frame = frame;
+	}
+}
+
+%end
+
 %hook AWEDPlayerFeedPlayerViewController
 
 - (void)viewDidLayoutSubviews {
 	%orig;
-
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
 		UIView *contentView = self.contentView;
 		if (contentView && contentView.superview) {
@@ -203,8 +217,6 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 			if (frame.size.height == parentHeight - 83) {
 				frame.size.height = parentHeight;
 				contentView.frame = frame;
-				[contentView setNeedsLayout];
-				[contentView layoutIfNeeded];
 			}
 		}
 	}
@@ -213,6 +225,17 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 %end
 
 %hook AWEFeedTableView
+- (void)layoutSubviews {
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+		CGRect frame = self.frame;
+		frame.size.height = self.superview.frame.size.height;
+		self.frame = frame;
+	}
+}
+%end
+
+%hook AWEAwemeDetailTableView
 - (void)layoutSubviews {
 	%orig;
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
@@ -236,7 +259,17 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 }
 %end
 
+%hook AWEAwemeDetailTableViewController
 
+- (void)setCurrentCellOriginY:(double)originY {
+    // 在原始y坐标上增加83像素
+    double newOriginY = originY + 83;
+    
+    // 调用原始方法，传入修改后的值
+    %orig(newOriginY);
+}
+
+%end
 
 %hook AWEElementStackView
 static CGFloat stream_frame_y = 0;
@@ -474,21 +507,6 @@ static CGAffineTransform lockedLeftTransform;
 	%orig;
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenEntry"]) {
 		[self removeFromSuperview];
-	}
-}
-
-%end
-
-%hook AWEPlayInteractionViewController
-- (void)viewDidLayoutSubviews {
-	%orig;
-	if (![self.parentViewController isKindOfClass:%c(AWEFeedCellViewController)]) {
-		return;
-	}
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-		CGRect frame = self.view.frame;
-		frame.size.height = self.view.superview.frame.size.height - 83;
-		self.view.frame = frame;
 	}
 }
 
