@@ -291,6 +291,22 @@
 }
 %end
 
+%hook AWEMarkView
+
+- (void)layoutSubviews {
+    %orig;
+
+    UIViewController *vc = [self firstAvailableUIViewController];
+    
+    if ([vc isKindOfClass:%c(AWEPlayInteractionViewController)]) {
+        if (self.markLabel) {
+            self.markLabel.textColor = [UIColor whiteColor];
+        }
+    }
+}
+
+%end
+
 %hook AWEDanmakuItemTextInfo
 - (void)setDanmakuTextColor:(id)arg1 {
 
