@@ -52,7 +52,7 @@
 
 %end
 
-%hook AWEAwemePlayInteractionInteractor
+%hook AWEPlayInteractionUserAvatarFollowController
 - (void)onFollowViewClicked:(UITapGestureRecognizer *)gesture {
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYfollowTips"]) {
 
