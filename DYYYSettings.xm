@@ -1764,7 +1764,7 @@ static void showUserAgreementAlert() {
 		    // 获取当前热更新状态
 		    abTestBlockEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYABTestBlockEnabled"];
 		    AWESettingItemModel *disableHotUpdateItem = [[%c(AWESettingItemModel) alloc] init];
-		    disableHotUpdateItem.identifier = @"ABTestBlockEnabled";
+		    disableHotUpdateItem.identifier = @"DYYYABTestBlockEnabled";
 		    disableHotUpdateItem.title = @"禁用下发配置";
 		    disableHotUpdateItem.detail = @"";
 		    disableHotUpdateItem.type = 1000;
@@ -1814,7 +1814,7 @@ static void showUserAgreementAlert() {
 
 		    abTestPatchEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYABTestPatchEnabled"];
 		    AWESettingItemModel *enablePatchModeItem = [[%c(AWESettingItemModel) alloc] init];
-		    enablePatchModeItem.identifier = @"ABTestPatchEnabled";
+		    enablePatchModeItem.identifier = @"DYYYABTestPatchEnabled";
 		    enablePatchModeItem.title = @"启用补丁模式";
 		    enablePatchModeItem.detail = @"";
 		    enablePatchModeItem.type = 1000;
