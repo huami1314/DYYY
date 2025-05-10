@@ -383,6 +383,14 @@ static CGAffineTransform lockedLeftTransform;
     }
 }
 
+- (void)setTransform:(CGAffineTransform)transform {
+    if ([self.accessibilityLabel isEqualToString:@"left"] && leftTransformLocked) {
+        %orig(lockedLeftTransform);
+    } else {
+        %orig;
+    }
+}
+
 %end
 
 
