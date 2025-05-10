@@ -52,8 +52,6 @@
 
 %hook AWEPlayInteractionFollowPromptView
 
-%hook AWEPlayInteractionFollowPromptView
-
 - (void)layoutSubviews {
     %orig;
 
