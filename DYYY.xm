@@ -1568,6 +1568,28 @@
 }
 %end
 
+// 启用自动勾选原图
+%hook AWEIMPhotoPickerFunctionModel
+
+- (void)setUseShadowIcon:(BOOL)arg1 {
+    BOOL enabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisAutoSelectOriginalPhoto"];
+    if (enabled) {
+        %orig(YES);
+    } else {
+        %orig(arg1);
+    }
+}
+
+- (BOOL)isSelected {
+    BOOL enabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisAutoSelectOriginalPhoto"];
+    if (enabled) {
+        return YES;
+    }
+    return %orig;
+}
+
+%end
+
 %hook BmfFilterSDR2HDR
 - (VideoFrame *)process:(VideoFrame *)frame {
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
