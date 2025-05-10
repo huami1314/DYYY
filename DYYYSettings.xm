@@ -1833,13 +1833,13 @@ static void showUserAgreementAlert() {
 				  cancelButtonText:@"取消"
 				  confirmButtonText:@"确定"
 				  cancelAction:^{
-				    disableHotUpdateItem.isSwitchOn = !newValue;
+				    enablePatchModeItem.isSwitchOn = !newValue;
 				  }
 				  confirmAction:^{
-				    disableHotUpdateItem.isSwitchOn = newValue;
-				    abTestBlockEnabled = newValue;
+				    enablePatchModeItem.isSwitchOn = newValue;
+				    abTestPatchEnabled = newValue;
 
-				    [[NSUserDefaults standardUserDefaults] setBool:newValue forKey:@"ABTestPatchEnabled"];
+				    [[NSUserDefaults standardUserDefaults] setBool:newValue forKey:@"DYYYABTestBlockEnabled"];
 				    [[NSUserDefaults standardUserDefaults] synchronize];
 
 				    // 重置全局变量，下次加载时会重新读取文件
@@ -1849,8 +1849,8 @@ static void showUserAgreementAlert() {
 				  }];
 		      } else {
 			      // 如果是关闭功能，直接执行不需要确认
-			      disableHotUpdateItem.isSwitchOn = newValue;
-			      abTestBlockEnabled = newValue;
+			      enablePatchModeItem.isSwitchOn = newValue;
+			      abTestPatchEnabled = newValue;
 
 			      [[NSUserDefaults standardUserDefaults] setBool:newValue forKey:@"DYYYABTestBlockEnabled"];
 			      [[NSUserDefaults standardUserDefaults] synchronize];
@@ -1859,7 +1859,7 @@ static void showUserAgreementAlert() {
 		      }
 		    };
 
-		    [hotUpdateItems addObject:disableHotUpdateItem];
+		    [hotUpdateItems addObject:enablePatchModeItem];
 
 		    // 添加"保存当前配置"按钮
 		    AWESettingItemModel *saveCurrentConfigItem = [[%c(AWESettingItemModel) alloc] init];
