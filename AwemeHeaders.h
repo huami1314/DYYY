@@ -905,7 +905,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (BOOL)prefersStatusBarHidden;
 @end
 
-@interface IESLiveInnerFeedViewController : UIViewController
+@interface IESLiveAudienceViewController : UIView
 - (BOOL)prefersStatusBarHidden;
 @end
 
