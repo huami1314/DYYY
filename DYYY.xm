@@ -1554,34 +1554,68 @@
 }
 %end
 
-%hook AWEHDRModelManager
-+ (BOOL)enableVideoHDR {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
-		return NO;
-	}
-	return %orig;
+// 禁用HDR高亮
+%hook AWEFeedABSettings
+
++ (BOOL)enableHDRBrightnessOpt {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
+        return NO;
+    }
+    return %orig;
 }
-+ (BOOL)useOneKeyHDR {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
-		return NO;
-	}
-	return %orig;
+
++ (double)hdrBrightnessThreshold {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
+        return 999.0;
+    }
+    return %orig;
 }
+
++ (BOOL)hdrAutomaticIdentification {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
+        return NO;
+    }
+    return %orig;
+}
+
 %end
 
-%hook VEHDRDetectionUtils
-+ (BOOL)isHDRVideo:(id)arg0 {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
-		return NO;
-	}
-	return %orig;
+%hook AWEPlayVideoViewController
+
+- (BOOL)enableHDR {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
+        return NO;
+    }
+    return %orig;
 }
-+ (id)detectionHDRType:(id)arg0 {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
-		return nil;
-	}
-	return %orig;
+
+- (void)setEnableHDR:(BOOL)enabled {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
+        %orig(NO);
+    } else {
+        %orig(enabled);
+    }
 }
+
+%end
+
+%hook AWEDPlayerFeedPlayerViewController
+
+- (BOOL)enableHDR {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
+        return NO;
+    }
+    return %orig;
+}
+
+- (void)setEnableHDR:(BOOL)enabled {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
+        %orig(NO);
+    } else {
+        %orig(enabled);
+    }
+}
+
 %end
 
 // 启用自动勾选原图
@@ -1604,15 +1638,6 @@
     return %orig;
 }
 
-%end
-
-%hook BmfFilterSDR2HDR
-- (VideoFrame *)process:(VideoFrame *)frame {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
-		return frame;
-	}
-	return %orig;
-}
 %end
 
 %ctor {
