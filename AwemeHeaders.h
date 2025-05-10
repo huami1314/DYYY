@@ -912,6 +912,10 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (BOOL)prefersStatusBarHidden;
 @end
 
+@interface IESLiveAudienceViewController : UIView
+- (BOOL)prefersStatusBarHidden;
+@end
+
 @interface AWEFeedUnfollowFamiliarFollowAndDislikeView : UIView
 @end
 
@@ -939,7 +943,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWEDemaciaChapterProgressSlider : UIView
 @end
 
-//HDR
+// HDR
 @interface AWEHDRModelManager : NSObject
 + (BOOL)enableVideoHDR;
 + (BOOL)useOneKeyHDR;
