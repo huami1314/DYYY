@@ -1784,23 +1784,68 @@ static void showUserAgreementAlert() {
 				  cancelButtonText:@"取消"
 				  confirmButtonText:@"确定"
 				  cancelAction:^{
-				    // 取消操作，恢复开关状态
 				    disableHotUpdateItem.isSwitchOn = !newValue;
 				  }
 				  confirmAction:^{
-				    // 用户确认后执行原来的逻辑
 				    disableHotUpdateItem.isSwitchOn = newValue;
 				    abTestBlockEnabled = newValue;
 
 				    [[NSUserDefaults standardUserDefaults] setBool:newValue forKey:@"DYYYABTestBlockEnabled"];
 				    [[NSUserDefaults standardUserDefaults] synchronize];
 
-				    // 重置全局变量，下次加载时会重新读取文件
 				    gFixedABTestData = nil;
 				    onceToken = 0;
 				    loadFixedABTestData();
 
 				    [self refreshTableView];
+				  }];
+		      } else {
+			      disableHotUpdateItem.isSwitchOn = newValue;
+			      abTestBlockEnabled = newValue;
+
+			      [[NSUserDefaults standardUserDefaults] setBool:newValue forKey:@"DYYYABTestBlockEnabled"];
+			      [[NSUserDefaults standardUserDefaults] synchronize];
+
+			      [self refreshTableView];
+		      }
+		    };
+
+		    [hotUpdateItems addObject:disableHotUpdateItem];
+
+		    abTestPatchEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYABTestPatchEnabled"];
+		    AWESettingItemModel *enablePatchModeItem = [[%c(AWESettingItemModel) alloc] init];
+		    enablePatchModeItem.identifier = @"ABTestPatchEnabled";
+		    enablePatchModeItem.title = @"启用补丁模式";
+		    enablePatchModeItem.detail = @"";
+		    enablePatchModeItem.type = 1000;
+		    enablePatchModeItem.svgIconImageName = @"ic_enterpriseservice_outlined";
+		    enablePatchModeItem.cellType = 6;
+		    enablePatchModeItem.colorStyle = 0;
+		    enablePatchModeItem.isEnable = YES;
+		    enablePatchModeItem.isSwitchOn = abTestPatchEnabled;
+
+		    enablePatchModeItem.switchChangedBlock = ^{
+		      BOOL newValue = !enablePatchModeItem.isSwitchOn;
+
+		      if (newValue) {
+			      [DYYYBottomAlertView showAlertWithTitle:@"热更新补丁模式"
+				  message:@"这是一个全新的、更稳定的热更新配置模式，请您确保导入正确的配置文件。"
+				  cancelButtonText:@"取消"
+				  confirmButtonText:@"确定"
+				  cancelAction:^{
+				    disableHotUpdateItem.isSwitchOn = !newValue;
+				  }
+				  confirmAction:^{
+				    disableHotUpdateItem.isSwitchOn = newValue;
+				    abTestBlockEnabled = newValue;
+
+				    [[NSUserDefaults standardUserDefaults] setBool:newValue forKey:@"ABTestPatchEnabled"];
+				    [[NSUserDefaults standardUserDefaults] synchronize];
+
+				    // 重置全局变量，下次加载时会重新读取文件
+				    gFixedABTestData = nil;
+				    onceToken = 0;
+				    loadFixedABTestData();
 				  }];
 		      } else {
 			      // 如果是关闭功能，直接执行不需要确认
