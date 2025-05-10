@@ -31,6 +31,8 @@
 
 %end
 
+%end
+
 %hook AWEPlayInteractionUserAvatarElement
 - (void)onFollowViewClicked:(UITapGestureRecognizer *)gesture {
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYfollowTips"]) {
@@ -50,63 +52,23 @@
 
 %end
 
-%hook AWEPlayInteractionFollowPromptView
+%hook AWEAwemePlayInteractionInteractor
+- (void)onFollowViewClicked:(UITapGestureRecognizer *)gesture {
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYfollowTips"]) {
 
-- (void)layoutSubviews {
-    %orig;
-
-    // 移除已有的 UITapGestureRecognizer，避免重复添加
-    NSMutableArray *toRemove = [NSMutableArray array];
-    for (UIGestureRecognizer *gesture in self.gestureRecognizers) {
-        if ([gesture isKindOfClass:[UITapGestureRecognizer class]]) {
-            [toRemove addObject:gesture];
-        }
-    }
-    for (UIGestureRecognizer *gesture in toRemove) {
-        [self removeGestureRecognizer:gesture];
-    }
-
-    // 添加新的自定义手势
-    UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTapWithConfirmation:)];
-    [self addGestureRecognizer:tapGesture];
+		dispatch_async(dispatch_get_main_queue(), ^{
+		  [DYYYBottomAlertView showAlertWithTitle:@"关注确认"
+						  message:@"是否确认关注？"
+					     cancelAction:nil
+					    confirmAction:^{
+					      %orig(gesture);
+					    }];
+		});
+	} else {
+		%orig;
+	}
 }
 
-%new
-- (void)handleTapWithConfirmation:(UITapGestureRecognizer *)gesture {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYfollowTips"]) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [DYYYBottomAlertView showAlertWithTitle:@"关注确认"
-                                            message:@"是否确认关注？"
-                                        cancelAction:nil
-                                       confirmAction:^{
-                                           [self performOriginalTapAction];
-                                       }];
-        });
-    } else {
-        [self performOriginalTapAction];
-    }
-}
-
-%new
-- (void)performOriginalTapAction {
-    UIResponder *responder = self;
-    while (responder) {
-        if ([responder respondsToSelector:@selector(onFollowViewClicked:)]) {
-            NSLog(@"Calling onFollowViewClicked:");
-            void (*func)(id, SEL, id) = (void *)[responder methodForSelector:@selector(onFollowViewClicked:)];
-            if (func) func(responder, @selector(onFollowViewClicked:), nil);
-            break;
-        } else if ([responder respondsToSelector:@selector(followUser)]) {
-            NSLog(@"Calling followUser");
-            void (*func)(id, SEL) = (void *)[responder methodForSelector:@selector(followUser)];
-            if (func) func(responder, @selector(followUser));
-            break;
-        }
-        responder = [responder nextResponder];
-    }
-}
-
-%end
 %end
 
 %hook AWENormalModeTabBarGeneralPlusButton

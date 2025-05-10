@@ -215,8 +215,6 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 @interface AWEPlayInteractionFollowPromptView : UIView
- - (void)handleTapWithConfirmation:(UITapGestureRecognizer *)gesture;
- - (void)performOriginalTapAction;
 @end
 
 @interface AWENormalModeTabBarTextView : UIView
