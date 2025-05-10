@@ -52,7 +52,9 @@
 
 %hook AWEPlayInteractionFollowPromptView
 
-- (void)didMoveToSuperview {
+%hook AWEPlayInteractionFollowPromptView
+
+- (void)layoutSubviews {
     %orig;
 
     for (UIGestureRecognizer *gesture in self.gestureRecognizers) {
@@ -60,9 +62,19 @@
             [self removeGestureRecognizer:gesture];
         }
     }
-    
-    UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTapWithConfirmation:)];
-    [self addGestureRecognizer:tapGesture];
+
+    BOOL hasCustomGesture = NO;
+    for (UIGestureRecognizer *gesture in self.gestureRecognizers) {
+        if ([gesture isKindOfClass:[UITapGestureRecognizer class]] &&
+            [gesture respondsToSelector:@selector(handleTapWithConfirmation:)]) {
+            hasCustomGesture = YES;
+            break;
+        }
+    }
+    if (!hasCustomGesture) {
+        UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTapWithConfirmation:)];
+        [self addGestureRecognizer:tapGesture];
+    }
 }
 
 %new
