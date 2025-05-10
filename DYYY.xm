@@ -55,24 +55,20 @@
 - (void)layoutSubviews {
     %orig;
 
+    // 移除已有的 UITapGestureRecognizer，避免重复添加
+    NSMutableArray *toRemove = [NSMutableArray array];
     for (UIGestureRecognizer *gesture in self.gestureRecognizers) {
         if ([gesture isKindOfClass:[UITapGestureRecognizer class]]) {
-            [self removeGestureRecognizer:gesture];
+            [toRemove addObject:gesture];
         }
+    }
+    for (UIGestureRecognizer *gesture in toRemove) {
+        [self removeGestureRecognizer:gesture];
     }
 
-    BOOL hasCustomGesture = NO;
-    for (UIGestureRecognizer *gesture in self.gestureRecognizers) {
-        if ([gesture isKindOfClass:[UITapGestureRecognizer class]] &&
-            [gesture respondsToSelector:@selector(handleTapWithConfirmation:)]) {
-            hasCustomGesture = YES;
-            break;
-        }
-    }
-    if (!hasCustomGesture) {
-        UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTapWithConfirmation:)];
-        [self addGestureRecognizer:tapGesture];
-    }
+    // 添加新的自定义手势
+    UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTapWithConfirmation:)];
+    [self addGestureRecognizer:tapGesture];
 }
 
 %new
@@ -93,14 +89,17 @@
 
 %new
 - (void)performOriginalTapAction {
-    UIResponder *responder = [self nextResponder];
-    while (responder != nil) {
+    UIResponder *responder = self;
+    while (responder) {
         if ([responder respondsToSelector:@selector(onFollowViewClicked:)]) {
-            [responder performSelector:@selector(onFollowViewClicked:) withObject:nil];
+            NSLog(@"Calling onFollowViewClicked:");
+            void (*func)(id, SEL, id) = (void *)[responder methodForSelector:@selector(onFollowViewClicked:)];
+            if (func) func(responder, @selector(onFollowViewClicked:), nil);
             break;
-        }
-        if ([responder respondsToSelector:@selector(followUser)]) {
-            [responder performSelector:@selector(followUser)];
+        } else if ([responder respondsToSelector:@selector(followUser)]) {
+            NSLog(@"Calling followUser");
+            void (*func)(id, SEL) = (void *)[responder methodForSelector:@selector(followUser)];
+            if (func) func(responder, @selector(followUser));
             break;
         }
         responder = [responder nextResponder];
