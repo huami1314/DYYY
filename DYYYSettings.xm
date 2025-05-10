@@ -2160,7 +2160,7 @@ static void showUserAgreementAlert() {
 							
 							BOOL success = [[NSFileManager defaultManager] copyItemAtPath:sourcePath toPath:destPath error:&error];
 							
-							NSString *message = success ? @"配置文件已导入，请禁用下发配置，重启抖音生效" : [NSString stringWithFormat:@"导入失败: %@", error.localizedDescription];
+							NSString *message = success ? @"配置已导入，重启抖音生效" : [NSString stringWithFormat:@"导入失败: %@", error.localizedDescription];
 							[DYYYManager showToast:message];
 							
 							if (success) {
