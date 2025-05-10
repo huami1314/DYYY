@@ -10,6 +10,7 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (UIViewController *)topView;
 
++ (NSUInteger)clearDirectoryContents:(NSString *)directoryPath;
 @end
 
 #ifdef __cplusplus
