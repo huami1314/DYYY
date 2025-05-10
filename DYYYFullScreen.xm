@@ -192,7 +192,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 %hook AWEPlayInteractionViewController
 - (void)viewDidLayoutSubviews {
 	%orig;
-	if (![self.parentViewController isKindOfClass:%c(AWEFeedCellViewController)] && ![self.parentViewController isKindOfClass:%c(AWEAwemeDetailCellViewController)]) {
+	if (![self.parentViewController isKindOfClass:%c(AWEFeedCellViewController)]) {
 		return;
 	}
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
@@ -235,17 +235,6 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 }
 %end
 
-%hook AWEAwemeDetailTableView
-- (void)layoutSubviews {
-	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-		CGRect frame = self.frame;
-		frame.size.height = self.superview.frame.size.height;
-		self.frame = frame;
-	}
-}
-%end
-
 %hook AWEPlayInteractionProgressContainerView
 - (void)layoutSubviews {
 	%orig;
@@ -257,18 +246,6 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 		}
 	}
 }
-%end
-
-%hook AWEAwemeDetailTableViewController
-
-- (void)setCurrentCellOriginY:(double)originY {
-    // 在原始y坐标上增加83像素
-    double newOriginY = originY + 83;
-    
-    // 调用原始方法，传入修改后的值
-    %orig(newOriginY);
-}
-
 %end
 
 %hook AWEElementStackView
