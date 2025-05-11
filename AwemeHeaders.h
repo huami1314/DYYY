@@ -949,21 +949,6 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWEDemaciaChapterProgressSlider : UIView
 @end
 
-// HDR
-@interface AWEHDRModelManager : NSObject
-+ (BOOL)enableVideoHDR;
-+ (BOOL)useOneKeyHDR;
-@end
-@interface VideoFrame : NSObject
-@end
-@interface VEHDRDetectionUtils : NSObject
-+ (BOOL)isHDRVideo:(id)video;
-+ (id)detectionHDRType:(id)video;
-@end
-@interface BmfFilterSDR2HDR : NSObject
-- (VideoFrame *)process:(VideoFrame *)frame;
-@end
-
 @interface AWEABTestManager : NSObject
 @property(retain, nonatomic) NSDictionary *abTestData;
 @property(retain, nonatomic) NSMutableDictionary *consistentABTestDic;
