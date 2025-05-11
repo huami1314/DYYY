@@ -973,3 +973,12 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (id)abTestData;
 + (id)sharedManager;
 @end
+
+@interface IESLiveRoomComponent : NSObject
+@end
+
+@interface HTSLiveStreamQualityFragment : IESLiveRoomComponent
+@property (nonatomic, strong) NSArray *streamQualityArray; // 添加*表示指针类型
+- (NSArray *)getQualities;
+- (void)setResolutionWithIndex:(NSInteger)index isManual:(BOOL)manual beginChange:(void(^)(void))beginChangeBlock completion:(void(^)(void))completionBlock; // 添加参数名称
+@end
