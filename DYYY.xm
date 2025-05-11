@@ -1361,9 +1361,6 @@
 // 获取资源的地址
 %hook AWEURLModel
 %new - (NSURL *)getDYYYSrcURLDownload {
-	;
-	;
-	;
 	NSURL *bestURL;
 	for (NSString *url in self.originURLList) {
 		if ([url containsString:@"video_mp4"] || [url containsString:@".jpeg"] || [url containsString:@".mp3"]) {
@@ -1627,14 +1624,6 @@
 		return YES;
 	}
 	return %orig;
-}
-
-%end
-
-%hook AWESharePanelStyleOptionsManager
-
-+ (unsigned long long)styleOptionsOfContext:(id)context {
-	return 101;
 }
 
 %end
