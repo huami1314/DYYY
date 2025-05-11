@@ -978,7 +978,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 @interface HTSLiveStreamQualityFragment : IESLiveRoomComponent
-@property (nonatomic, strong) NSArray *streamQualityArray; // 添加*表示指针类型
+@property (nonatomic, strong) NSArray *streamQualityArray;
 - (NSArray *)getQualities;
-- (void)setResolutionWithIndex:(NSInteger)index isManual:(BOOL)manual beginChange:(void(^)(void))beginChangeBlock completion:(void(^)(void))completionBlock; // 添加参数名称
+- (void)setResolutionWithIndex:(NSInteger)index isManual:(BOOL)manual beginChange:(void(^)(void))beginChangeBlock completion:(void(^)(void))completionBlock;
 @end
