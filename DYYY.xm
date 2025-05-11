@@ -501,23 +501,7 @@
 %end
 
 %hook UIView
-
-- (void)setAlpha:(CGFloat)alpha {
-	UIViewController *vc = [self firstAvailableUIViewController];
-
-	if (([vc isKindOfClass:%c(AWEPlayInteractionViewController)] || [vc isKindOfClass:%c(AWELiveNewPreStreamViewController)]) && alpha > 0) {
-		NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
-		if (transparentValue.length > 0) {
-			CGFloat alphaValue = transparentValue.floatValue;
-			if (alphaValue >= 0.0 && alphaValue <= 1.0) {
-				%orig(alphaValue);
-				return;
-			}
-		}
-	}
-	%orig;
-}
-
+//关键方法,误删！
 %new
 - (UIViewController *)firstAvailableUIViewController {
 	UIResponder *responder = [self nextResponder];
@@ -528,6 +512,25 @@
 		responder = [responder nextResponder];
 	}
 	return nil;
+}
+
+%end
+
+//重构全局透明
+%hook AWEPlayInteractionViewController
+
+- (UIView *)view {
+    UIView *originalView = %orig;
+
+    NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
+    if (transparentValue.length > 0) {
+        CGFloat alphaValue = transparentValue.floatValue;
+        if (alphaValue >= 0.0 && alphaValue <= 1.0) {
+            originalView.alpha = alphaValue;
+        }
+    }
+
+    return originalView;
 }
 
 %end
