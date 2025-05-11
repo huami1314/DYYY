@@ -99,6 +99,10 @@ static void initTargetClassNames(void) {
     if (hideBottomBar) {
         [list removeObject:@"AWENormalModeTabBar"];
     }
+	BOOL hideDanmaku = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideDanmaku"];
+	if (hideDanmaku) {
+		[list addObject:@"AWEVideoPlayDanmakuContainerView"];
+	}
     targetClassNames = [list copy];
 }
 @implementation HideUIButton
