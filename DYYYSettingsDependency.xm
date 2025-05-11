@@ -28,7 +28,7 @@ static void setUserDefaults(id object, NSString *key) {
 			  @"DYYYisShowScheduleDisplay" : @[ @"DYYYScheduleStyle", @"DYYYProgressLabelColor", @"DYYYTimelineVerticalPosition" ],
 			  @"DYYYEnableNotificationTransparency" : @[ @"DYYYNotificationCornerRadius" ],
 			  @"DYYYEnableFloatSpeedButton" : @[ @"DYYYAutoRestoreSpeed", @"DYYYSpeedButtonShowX", @"DYYYSpeedButtonSize", @"DYYYSpeedSettings" ],
-			  @"DYYYEnableFloatClearButton" : @[ @"DYYYClearButtonIcon", @"DYYYHideTimeProgress", @"DYYYEnableFloatClearButtonSize", @"DYYYEnabshijianjindu" ],
+			  @"DYYYEnableFloatClearButton" : @[ @"DYYYClearButtonIcon", @"DYYYEnableFloatClearButtonSize", @"DYYYEnabshijianjindu", @"DYYYHideTimeProgress", @"DYYYHideDanmaku" ],
 		  },
 
 		  // ===== 条件依赖配置 =====
