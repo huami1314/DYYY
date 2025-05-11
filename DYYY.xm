@@ -1559,21 +1559,14 @@
 
 + (BOOL)enableHDRBrightnessOpt {
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
-        return NO;
+        return YES;
     }
     return %orig;
 }
 
 + (double)hdrBrightnessThreshold {
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
-        return 999.0;
-    }
-    return %orig;
-}
-
-+ (BOOL)hdrAutomaticIdentification {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHDR"]) {
-        return NO;
+        return 0;
     }
     return %orig;
 }
