@@ -466,7 +466,6 @@ void updateSpeedButtonUI() {
 	}
 	float speed = getCurrentSpeed();
 	NSInteger speedIndex = getCurrentSpeedIndex();
-	currentVideoController = self;
 	if (speed != 1.0) {
 		[currentVideoController adjustPlaybackSpeed:speed];
 	}
@@ -505,7 +504,6 @@ void updateSpeedButtonUI() {
 	}
 	float speed = getCurrentSpeed();
 	NSInteger speedIndex = getCurrentSpeedIndex();
-	currentVideoController = self;
 	if (speed != 1.0) {
 		[currentVideoController adjustPlaybackSpeed:speed];
 	}
