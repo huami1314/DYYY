@@ -1,66 +1,64 @@
 #import <AVFoundation/AVFoundation.h>
-#import <AVKit/AVKit.h>
 #import <UIKit/UIKit.h>
 
-static BOOL gPiPActive = NO;
-static AVAudioSessionCategoryOptions gSavedOptions = 0;
+#pragma mark
+
+static bool getUserDefaults(NSString *key) { return [[NSUserDefaults standardUserDefaults] boolForKey:key]; }
 #define DYYYALLOW_KEY @"DYYYAllowConcurrentPlay"
 
-static inline BOOL wantsMix(void) {
-    return [[NSUserDefaults standardUserDefaults] boolForKey:@DYYYALLOW_KEY] && !gPiPActive;
-}
-
-static inline BOOL isPureAudioCategory(NSString *category, NSString *mode) {
-    if ([mode isEqualToString:AVAudioSessionModeMoviePlayback] || [mode hasPrefix:@"Video"]) {
-        return NO;
-    }
-    return ([category isEqualToString:AVAudioSessionCategoryPlayAndRecord] ||
-            [category isEqualToString:AVAudioSessionCategoryMultiRoute]);
-}
-
-%group DYYYAudioPatch
 %hook AVAudioSession
 
-- (BOOL)setCategory:(NSString *)category mode:(NSString *)mode options:(AVAudioSessionCategoryOptions)options error:(NSError **)error {
-    if (wantsMix() && isPureAudioCategory(category, mode)) {
+- (BOOL)setCategory:(AVAudioSessionCategory)category withOptions:(AVAudioSessionCategoryOptions)options error:(NSError **)outError {
+    if (getUserDefaults(DYYYALLOW_KEY) &&
+        ([category isEqualToString:AVAudioSessionCategoryPlayback] ||
+        [category isEqualToString:AVAudioSessionCategoryPlayAndRecord] ||
+        [category isEqualToString:AVAudioSessionCategoryMultiRoute])) {
         options |= AVAudioSessionCategoryOptionMixWithOthers;
+        %log;
     }
-    return %orig(category, mode, options, error);
+    return %orig(category, options, outError);
 }
 
-- (BOOL)setCategory:(NSString *)category withOptions:(AVAudioSessionCategoryOptions)options error:(NSError **)error {
-    if (wantsMix() && isPureAudioCategory(category, self.mode)) {
-        options |= AVAudioSessionCategoryOptionMixWithOthers;
+- (BOOL)setCategory:(AVAudioSessionCategory)category error:(NSError **)outError {
+    if (getUserDefaults(DYYYALLOW_KEY) &&
+        ([category isEqualToString:AVAudioSessionCategoryPlayback] ||
+        [category isEqualToString:AVAudioSessionCategoryPlayAndRecord] ||
+        [category isEqualToString:AVAudioSessionCategoryMultiRoute])) {
+        return [self setCategory:category
+                     withOptions:AVAudioSessionCategoryOptionMixWithOthers
+                           error:outError];
     }
-    return %orig(category, options, error);
+    return %orig;
 }
 
-- (BOOL)setCategory:(NSString *)category error:(NSError **)error {
-    return [self setCategory:category withOptions:0 error:error];
+- (BOOL)setCategory:(AVAudioSessionCategory)category mode:(AVAudioSessionMode)mode options:(AVAudioSessionCategoryOptions)options error:(NSError **)outError {
+ 
+    if (getUserDefaults(DYYYALLOW_KEY) &&
+        ([category isEqualToString:AVAudioSessionCategoryPlayback] ||
+        [category isEqualToString:AVAudioSessionCategoryPlayAndRecord] ||
+        [category isEqualToString:AVAudioSessionCategoryMultiRoute])) {
+        options |= AVAudioSessionCategoryOptionMixWithOthers;
+        %log;
+    }
+    return %orig(category, mode, options, outError);
+}
+
+- (BOOL)setActive:(BOOL)active withOptions:(AVAudioSessionSetActiveOptions)options error:(NSError **)outError {
+    BOOL result = %orig;
+    if (getUserDefaults(DYYYALLOW_KEY) && active && result) {
+        AVAudioSessionCategoryOptions currentOptions = [self categoryOptions];
+        if (!(currentOptions & AVAudioSessionCategoryOptionMixWithOthers)) {
+            AVAudioSessionCategory currentCategory = [self category];
+            if ([currentCategory isEqualToString:AVAudioSessionCategoryPlayback] ||
+                [currentCategory isEqualToString:AVAudioSessionCategoryPlayAndRecord] ||
+                [currentCategory isEqualToString:AVAudioSessionCategoryMultiRoute]) {
+                [self setCategory:currentCategory
+                      withOptions:currentOptions | AVAudioSessionCategoryOptionMixWithOthers
+                            error:nil];
+            }
+        }
+    }
+    return result;
 }
 
 %end
-%end
-
-static void UpdateAudioSessionForPiP(BOOL active) {
-    gPiPActive = active;
-    AVAudioSession *session = [AVAudioSession sharedInstance];
-    if (active) {
-        gSavedOptions = [session categoryOptions];
-        if (gSavedOptions & AVAudioSessionCategoryOptionMixWithOthers) {
-            [session setCategory:[session category] mode:[session mode] options:(gSavedOptions & ~AVAudioSessionCategoryOptionMixWithOthers) error:nil];
-        }
-    } else {
-        AVAudioSessionCategoryOptions opt = [session categoryOptions];
-        if (wantsMix() && !(opt & AVAudioSessionCategoryOptionMixWithOthers)) {
-            [session setCategory:[session category] mode:[session mode] options:(gSavedOptions | AVAudioSessionCategoryOptionMixWithOthers) error:nil];
-        }
-    }
-}
-
-%ctor {
-    NSNotificationCenter *c = [NSNotificationCenter defaultCenter];
-    [c addObserverForName:AVPictureInPictureControllerWillStartPictureInPictureNotification object:nil queue:nil usingBlock:^(__unused NSNotification *n) { UpdateAudioSessionForPiP(YES); }];
-    [c addObserverForName:AVPictureInPictureControllerDidStopPictureInPictureNotification object:nil queue:nil usingBlock:^(__unused NSNotification *n) { UpdateAudioSessionForPiP(NO); }];
-    %init(DYYYAudioPatch);
-}
