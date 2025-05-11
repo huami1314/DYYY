@@ -2547,6 +2547,15 @@ static void showUserAgreementAlert() {
 		    AWESettingItemModel *clearButtonIcon = createIconCustomizationItem(@"DYYYClearButtonIcon", @"清屏按钮图标", @"ic_roaming_outlined", @"qingping.gif");
 
 		    [clearButtonItems addObject:clearButtonIcon];
+			// 清屏隐藏弹幕
+			AWESettingItemModel *enableqingButton = [self
+			createSettingItem:
+			    @{@"identifier" : @"DYYYHideDanmaku",
+			      @"title" : @"清屏隐藏弹幕",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_eyeslash_outlined_16"}];
+		    [clearButtonItems addObject:enableqingButton];
 		    // 清屏移除时间进度 enableqingButton 需要改名
 		    AWESettingItemModel *enableqingButton = [self
 			createSettingItem:

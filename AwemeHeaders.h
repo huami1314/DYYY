@@ -718,6 +718,9 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWEHPTopBarCTAItemView : UIView
 @end
 
+@interface AWEVideoPlayDanmakuContainerView : UIView
+@end
+
 // 应用内推送容器
 @interface AWEInnerNotificationWindow : UIWindow
 - (void)setupBlurEffectForNotificationView;
