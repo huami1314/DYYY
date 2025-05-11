@@ -448,6 +448,18 @@ void updateSpeedButtonUI() {
 %hook AWEAwemePlayVideoViewController
 
 - (void)setIsAutoPlay:(BOOL)arg0 {
+	float speed = getCurrentSpeed();
+	NSInteger speedIndex = getCurrentSpeedIndex();
+	currentVideoController = self;
+	if (speed != 1.0) {
+		[currentVideoController adjustPlaybackSpeed:speed];
+	}
+	updateSpeedButtonUI();
+	%orig(arg0);
+}
+
+- (void)setupModel:(id)arg0 {
+	%orig(arg0);
 	BOOL autoRestoreSpeed = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYAutoRestoreSpeed"];
 	if (autoRestoreSpeed) {
 		setCurrentSpeedIndex(0);
@@ -459,7 +471,6 @@ void updateSpeedButtonUI() {
 		[currentVideoController adjustPlaybackSpeed:speed];
 	}
 	updateSpeedButtonUI();
-	%orig(arg0);
 }
 
 %new
@@ -476,10 +487,6 @@ void updateSpeedButtonUI() {
 %hook AWEDPlayerFeedPlayerViewController
 
 - (void)setIsAutoPlay:(BOOL)arg0 {
-	BOOL autoRestoreSpeed = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYAutoRestoreSpeed"];
-	if (autoRestoreSpeed) {
-		setCurrentSpeedIndex(0);
-	}
 	float speed = getCurrentSpeed();
 	NSInteger speedIndex = getCurrentSpeedIndex();
 	currentFeedVideoController = self;
@@ -488,6 +495,21 @@ void updateSpeedButtonUI() {
 	}
 	updateSpeedButtonUI();
 	%orig(arg0);
+}
+
+- (void)setupModel:(id)arg0 {
+	%orig(arg0);
+	BOOL autoRestoreSpeed = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYAutoRestoreSpeed"];
+	if (autoRestoreSpeed) {
+		setCurrentSpeedIndex(0);
+	}
+	float speed = getCurrentSpeed();
+	NSInteger speedIndex = getCurrentSpeedIndex();
+	currentVideoController = self;
+	if (speed != 1.0) {
+		[currentVideoController adjustPlaybackSpeed:speed];
+	}
+	updateSpeedButtonUI();
 }
 
 %new
