@@ -1603,7 +1603,7 @@
 
 %end
 
-// 添加直播默认最高清晰度功能
+// 直播默认最高清晰度功能
 %hook HTSLiveStreamQualityFragment
 
 - (void)setupStreamQuality:(id)arg1 {
