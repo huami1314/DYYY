@@ -2548,14 +2548,14 @@ static void showUserAgreementAlert() {
 
 		    [clearButtonItems addObject:clearButtonIcon];
 			// 清屏隐藏弹幕
-			AWESettingItemModel *enableqingButton = [self
+			AWESettingItemModel *hideDanmakuButton = [self
 			createSettingItem:
 			    @{@"identifier" : @"DYYYHideDanmaku",
 			      @"title" : @"清屏隐藏弹幕",
 			      @"detail" : @"",
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_eyeslash_outlined_16"}];
-		    [clearButtonItems addObject:enableqingButton];
+		    [clearButtonItems addObject:hideDanmakuButton];
 		    // 清屏移除时间进度 enableqingButton 需要改名
 		    AWESettingItemModel *enableqingButton = [self
 			createSettingItem:
