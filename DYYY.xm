@@ -1309,6 +1309,7 @@
 %new - (NSURL *)getDYYYSrcURLDownload {
 	;
 	;
+	;
 	NSURL *bestURL;
 	for (NSString *url in self.originURLList) {
 		if ([url containsString:@"video_mp4"] || [url containsString:@".jpeg"] || [url containsString:@".mp3"]) {
@@ -1611,18 +1612,16 @@
 
 	BOOL enableHighestQuality = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableLiveHighestQuality"];
 	if (enableHighestQuality) {
-		dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.8 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-		  NSArray *qualities = self.streamQualityArray;
-		  if (!qualities || qualities.count == 0) {
-			  qualities = [self getQualities];
-		  }
+		NSArray *qualities = self.streamQualityArray;
+		if (!qualities || qualities.count == 0) {
+			qualities = [self getQualities];
+		}
 
-		  if (!qualities || qualities.count == 0) {
-			  return;
-		  }
-		  // 选择索引0作为最高清晰度
-		  [self setResolutionWithIndex:0 isManual:YES beginChange:nil completion:nil];
-		});
+		if (!qualities || qualities.count == 0) {
+			return;
+		}
+		// 选择索引0作为最高清晰度
+		[self setResolutionWithIndex:0 isManual:YES beginChange:nil completion:nil];
 	}
 }
 
