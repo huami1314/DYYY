@@ -459,7 +459,7 @@ void updateSpeedButtonUI() {
 }
 
 - (void)prepareForDisplay {
-	%orig(arg0);
+	%orig;
 	BOOL autoRestoreSpeed = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYAutoRestoreSpeed"];
 	if (autoRestoreSpeed) {
 		setCurrentSpeedIndex(0);
@@ -497,7 +497,7 @@ void updateSpeedButtonUI() {
 }
 
 - (void)prepareForDisplay {
-	%orig(arg0);
+	%orig;
 	BOOL autoRestoreSpeed = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYAutoRestoreSpeed"];
 	if (autoRestoreSpeed) {
 		setCurrentSpeedIndex(0);
