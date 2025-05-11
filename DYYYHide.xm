@@ -1202,12 +1202,14 @@
 %hook AWEHPDiscoverFeedEntranceView
 
 - (void)layoutSubviews {
-	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideDiscover"]) {
-		for (UIView *subview in self.subviews) {
-			subview.hidden = YES;
-		}
-	}
+    %orig;
+
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideDiscover"]) {
+        UIView *firstSubview = self.subviews.firstObject;
+        if ([firstSubview isKindOfClass:[UIImageView class]]) {
+            ((UIImageView *)firstSubview).image = nil;
+        }
+    }
 }
 
 %end
