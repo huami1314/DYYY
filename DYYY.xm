@@ -1584,6 +1584,24 @@
 
 %end
 
+// 屏蔽直播PCDN
+%hook HTSLiveStreamPcdnManager
+
++ (void)start {
+    BOOL disablePCDN = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableLivePCDN"];
+    if (!disablePCDN) {
+        %orig;
+    }
+}
+
++ (void)configAndStartLiveIO {
+    BOOL disablePCDN = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableLivePCDN"];
+    if (!disablePCDN) {
+        %orig;
+    }
+}
+
+%end
 %ctor {
 	%init(DYYYSettingsGesture);
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {

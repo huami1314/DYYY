@@ -602,7 +602,12 @@ static void showUserAgreementAlert() {
 			      @"title" : @"去青少年弹窗",
 			      @"detail" : @"",
 			      @"cellType" : @6,
-			      @"imageName" : @"ic_personcircleclean_outlined_20"}
+			      @"imageName" : @"ic_personcircleclean_outlined_20"},
+				@{@"identifier" : @"DYYYDisableLivePCDN",
+			      @"title" : @"屏蔽直播PCDN",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_video_outlined_20"}
 		    ];
 
 		    for (NSDictionary *dict in filterSettings) {
