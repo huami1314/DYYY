@@ -774,6 +774,16 @@ static void showUserAgreementAlert() {
 			      @"detail" : @"0-1小数",
 			      @"cellType" : @26,
 			      @"imageName" : @"ic_eye_outlined_20"},
+				@{@"identifier" : @"DYYYisEnableSheetBlur",
+				  @"title" : @"下载菜单玻璃",
+				  @"detail" : @"",
+				  @"cellType" : @6,
+				  @"imageName" : @"ic_list_outlined"},
+				@{@"identifier" : @"DYYYSheetBlurTransparent",
+				  @"title" : @"毛玻璃透明度",
+				  @"detail" : @"0-1小数",
+				  @"cellType" : @26,
+				  @"imageName" : @"ic_eye_outlined_20"},
 			    @{@"identifier" : @"DYYYEnableNotificationTransparency",
 			      @"title" : @"通知玻璃效果",
 			      @"detail" : @"",
@@ -2054,11 +2064,6 @@ static void showUserAgreementAlert() {
 				      [doubleTapItems addObject:enableDoubleTapMenu];
 
 				      NSArray *doubleTapFunctions = @[
-					      @{@"identifier" : @"DYYYisEnableSheetBlur",
-						@"title" : @"菜单玻璃效果",
-						@"detail" : @"",
-						@"cellType" : @6,
-						@"imageName" : @"ic_list_outlined"},
 					      @{@"identifier" : @"DYYYDoubleTapDownload",
 						@"title" : @"保存视频/图片",
 						@"detail" : @"",

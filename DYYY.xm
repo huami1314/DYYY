@@ -1554,11 +1554,17 @@
 			}
 		}
 
+		// 动态获取用户设置的透明度
+		float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYSheetBlurTransparent"] floatValue];
+		if (userTransparency <= 0 || userTransparency > 1) {
+			userTransparency = 0.9; // 默认值0.9
+		}
+
 		UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
 		UIVisualEffectView *blurEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
 		blurEffectView.frame = self.containerView.bounds;
 		blurEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-		blurEffectView.alpha = 0.9;
+		blurEffectView.alpha = userTransparency; // 设置为用户自定义透明度
 		blurEffectView.tag = 9999;
 
 		[self.containerView insertSubview:blurEffectView atIndex:0];
