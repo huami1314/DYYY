@@ -458,7 +458,7 @@ void updateSpeedButtonUI() {
 	%orig(arg0);
 }
 
-- (void)setupModel:(id)arg0 {
+- (void)setIsPlayStarted:(BOOL)arg0 {
 	%orig(arg0);
 	BOOL autoRestoreSpeed = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYAutoRestoreSpeed"];
 	if (autoRestoreSpeed) {
@@ -496,7 +496,7 @@ void updateSpeedButtonUI() {
 	%orig(arg0);
 }
 
-- (void)setupModel:(id)arg0 {
+- (void)setIsPlayStarted:(BOOL)arg0 {
 	%orig(arg0);
 	BOOL autoRestoreSpeed = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYAutoRestoreSpeed"];
 	if (autoRestoreSpeed) {
