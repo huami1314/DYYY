@@ -602,12 +602,7 @@ static void showUserAgreementAlert() {
 			      @"title" : @"去青少年弹窗",
 			      @"detail" : @"",
 			      @"cellType" : @6,
-			      @"imageName" : @"ic_personcircleclean_outlined_20"},
-			    @{@"identifier" : @"DYYYDisableHDR",
-			      @"title" : @"关闭HDR效果",
-			      @"detail" : @"",
-			      @"cellType" : @6,
-			      @"imageName" : @"ic_video_outlined_20"}
+			      @"imageName" : @"ic_personcircleclean_outlined_20"}
 		    ];
 
 		    for (NSDictionary *dict in filterSettings) {
