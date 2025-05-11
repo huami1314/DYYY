@@ -505,7 +505,8 @@
 - (void)setAlpha:(CGFloat)alpha {
 	UIViewController *vc = [self firstAvailableUIViewController];
 
-	if ([vc isKindOfClass:%c(AWEPlayInteractionViewController)] && alpha > 0) {
+	if (([vc isKindOfClass:%c(AWEPlayInteractionViewController)] || 
+         [vc isKindOfClass:%c(AWELiveNewPreStreamViewController)]) && alpha > 0) {
 		NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
 		if (transparentValue.length > 0) {
 			CGFloat alphaValue = transparentValue.floatValue;
