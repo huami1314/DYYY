@@ -516,7 +516,7 @@
 
 %end
 
-//重构全局透明
+//重写全局透明方法
 %hook AWEPlayInteractionViewController
 
 - (UIView *)view {
@@ -531,6 +531,57 @@
     }
 
     return originalView;
+}
+
+- (void)viewDidLoad {
+    %orig;
+    [NSTimer scheduledTimerWithTimeInterval:0.1 target:self selector:@selector(keepAlpha) userInfo:nil repeats:YES];
+}
+
+%new
+- (void)keepAlpha {
+    NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
+    if (transparentValue.length > 0) {
+        CGFloat alphaValue = transparentValue.floatValue;
+        if (alphaValue >= 0.0 && alphaValue <= 1.0) {
+            if (self.viewIfLoaded) {
+                self.viewIfLoaded.alpha = alphaValue;
+            }
+        }
+    }
+}
+
+%end
+
+//处理视频流直播文案透明度
+%hook AWEElementStackView
+
+- (void)setAlpha:(CGFloat)alpha {
+    UIViewController *vc = [self firstAvailableUIViewController];
+    
+    if ([vc isKindOfClass:%c(AWELiveNewPreStreamViewController)] && alpha > 0) {
+        NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
+        if (transparentValue.length > 0) {
+            CGFloat alphaValue = transparentValue.floatValue;
+            if (alphaValue >= 0.0 && alphaValue <= 1.0) {
+                %orig(alphaValue);
+                return;
+            }
+        }
+    }
+    %orig;
+}
+
+%new
+- (UIViewController *)firstAvailableUIViewController {
+    UIResponder *responder = [self nextResponder];
+    while (responder != nil) {
+        if ([responder isKindOfClass:[UIViewController class]]) {
+            return (UIViewController *)responder;
+        }
+        responder = [responder nextResponder];
+    }
+    return nil;
 }
 
 %end
