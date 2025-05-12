@@ -104,7 +104,7 @@
 		tryFindAndSetPureMode();
 		return;
 	}
-	// 原来的透明度设置逻辑，保持不变
+
 	NSString *transparentValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYtopbartransparent"];
 	if (transparentValue && transparentValue.length > 0) {
 		CGFloat alphaValue = [transparentValue floatValue];
@@ -133,7 +133,6 @@
 }
 %end
 
-// 添加新的 hook 来处理顶栏透明度
 %hook AWEFeedTopBarContainer
 - (void)layoutSubviews {
 	%orig;
@@ -473,7 +472,7 @@
 %end
 
 %hook UIView
-//关键方法,误删！
+//关键方法,勿删!!!
 %new
 - (UIViewController *)firstAvailableUIViewController {
 	UIResponder *responder = [self nextResponder];
@@ -569,26 +568,22 @@
 
 %hook AWEFeedProgressSlider
 
-// layoutSubviews 保持不变
 - (void)layoutSubviews {
     %orig;
     [self applyCustomProgressStyle];
 }
 
-%new
-// 应用自定义样式，增加回退逻辑
 - (void)applyCustomProgressStyle {
     NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
-    UIView *parentView = self.superview; // 先获取父视图
+    UIView *parentView = self.superview;
 
-    if (!parentView) return; // 如果没有父视图，无法进行布局
+    if (!parentView) return; 
 
     if ([scheduleStyle isEqualToString:@"进度条两侧左右"]) {
-        // 尝试获取标签
+    
         UILabel *leftLabel = [parentView viewWithTag:10001];
         UILabel *rightLabel = [parentView viewWithTag:10002];
 
-        // 仅当左右标签都存在时，才执行动态宽度逻辑
         if (leftLabel && rightLabel) {
             CGFloat padding = 5.0;
             CGFloat sliderY = self.frame.origin.y;
@@ -599,25 +594,10 @@
             if (sliderWidth < 0) sliderWidth = 0;
 
             self.frame = CGRectMake(sliderX, sliderY, sliderWidth, sliderHeight);
-        } else {
-            // *** 新增回退逻辑 ***
-            // 当样式是 "进度条两侧左右"，但左右标签不齐备时，应用一个默认的回退布局
-            // 例如：居中显示，宽度为父视图的 80%
-            CGFloat fallbackWidthPercent = 0.80;
-            CGFloat parentWidth = parentView.bounds.size.width;
-            CGFloat fallbackWidth = parentWidth * fallbackWidthPercent;
-            CGFloat fallbackX = (parentWidth - fallbackWidth) / 2.0;
-            // 使用 self.frame 获取当前 Y 和 Height (通常由 %orig 设置)
-            CGFloat currentY = self.frame.origin.y;
-            CGFloat currentHeight = self.frame.size.height;
-            // 应用回退 frame
-            self.frame = CGRectMake(fallbackX, currentY, fallbackWidth, currentHeight);
         }
-    } else {
     }
 }
 
-// setAlpha 方法保持不变
 - (void)setAlpha:(CGFloat)alpha {
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisShowScheduleDisplay"]) {
         if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideVideoProgress"]) {
