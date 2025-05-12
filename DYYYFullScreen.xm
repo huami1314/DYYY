@@ -267,6 +267,7 @@ static CGAffineTransform lockedVCTransform;
     
     %orig;
 
+	//处理视频流直播间文案缩放
 	UIResponder *nextResponder = [self nextResponder];
 	if ([nextResponder isKindOfClass:[UIView class]]) {
 		UIView *parentView = (UIView *)nextResponder;
@@ -304,6 +305,7 @@ static CGAffineTransform lockedVCTransform;
 			}
 		}
 	}
+
 
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
         UIResponder *nextResponder = [self nextResponder];
@@ -391,17 +393,6 @@ static CGAffineTransform lockedVCTransform;
     if ([self.accessibilityLabel isEqualToString:@"left"] && leftTransformLocked) {
         %orig(lockedLeftTransform);
     } else {
-        UIResponder *nextResponder = [self nextResponder];
-        if ([nextResponder isKindOfClass:[UIView class]]) {
-            UIView *parentView = (UIView *)nextResponder;
-            UIViewController *viewController = [parentView firstAvailableUIViewController];
-
-            if ([viewController isKindOfClass:%c(AWELiveNewPreStreamViewController)] && vcTransformLocked) {
-                %orig(lockedVCTransform);
-                return;
-            }
-        }
-
         %orig;
     }
 }
