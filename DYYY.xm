@@ -630,7 +630,9 @@
     }
 }
 
-// setLimitUpperActionArea 方法，确认标签定位逻辑
+static CGFloat leftLabelLeftMargin = -1;
+static CGFloat rightLabelRightMargin = -1;
+
 - (void)setLimitUpperActionArea:(BOOL)arg1 {
     %orig;
 
@@ -684,7 +686,12 @@
             else leftLabel.text = @"00:00";
 
             [leftLabel sizeToFit];
-            leftLabel.frame = CGRectMake(sliderFrame.origin.x, labelYPosition, leftLabel.frame.size.width, labelHeight);
+
+            if (leftLabelLeftMargin == -1) {
+                leftLabelLeftMargin = sliderFrame.origin.x;  // Store the left margin the first time
+            }
+
+            leftLabel.frame = CGRectMake(leftLabelLeftMargin, labelYPosition, leftLabel.frame.size.width, labelHeight);
             [parentView addSubview:leftLabel];
         }
 
@@ -699,12 +706,16 @@
             else rightLabel.text = durationFormatted;
 
             [rightLabel sizeToFit];
-            rightLabel.frame = CGRectMake(sliderFrame.origin.x + sliderFrame.size.width - rightLabel.frame.size.width, 
-                                         labelYPosition, rightLabel.frame.size.width, labelHeight);
+
+            if (rightLabelRightMargin == -1) {
+                rightLabelRightMargin = sliderFrame.origin.x + sliderFrame.size.width - rightLabel.frame.size.width; // Store the right margin the first time
+            }
+
+            rightLabel.frame = CGRectMake(rightLabelRightMargin, labelYPosition, rightLabel.frame.size.width, labelHeight);
             [parentView addSubview:rightLabel];
         }
 
-        [self setNeedsLayout]; 
+        [self setNeedsLayout];
     } else {
         UIView *parentView = self.superview;
         if (parentView) {
@@ -714,6 +725,7 @@
         [self setNeedsLayout];
     }
 }
+
 %end
 
 %hook AWEPlayInteractionProgressController
@@ -793,7 +805,6 @@
     }
 }
 
-// setHidden 方法保持不变
 - (void)setHidden:(BOOL)hidden {
     %orig;
     BOOL hideVideoProgress = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideVideoProgress"];
