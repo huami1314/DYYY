@@ -756,8 +756,6 @@
         BOOL showCompleteTime = [scheduleStyle isEqualToString:@"进度条右侧完整"];
         BOOL showLeftRemainingTime = [scheduleStyle isEqualToString:@"进度条左侧剩余"];
         BOOL showLeftCompleteTime = [scheduleStyle isEqualToString:@"进度条左侧完整"];
-
-        CGRect sliderFrame = progressSlider.frame;
         
         // 更新左标签
         if (arg1 >= 0 && leftLabel) {
@@ -770,7 +768,6 @@
                 leftLabel.text = newLeftText;
                 [leftLabel sizeToFit];
                 CGRect leftFrame = leftLabel.frame;
-                leftFrame.origin.x = sliderFrame.origin.x;
                 leftFrame.size.height = 15.0;
                 leftLabel.frame = leftFrame;
             }
@@ -789,7 +786,6 @@
                 [rightLabel sizeToFit];
                 CGRect rightFrame = rightLabel.frame;
                 rightFrame.size.height = 15.0;
-                rightFrame.origin.x = sliderFrame.origin.x + sliderFrame.size.width - rightFrame.size.width;
                 rightLabel.frame = rightFrame;
             }
             rightLabel.textColor = labelColor;
