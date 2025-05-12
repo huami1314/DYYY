@@ -644,6 +644,7 @@
         [[parentView viewWithTag:10002] removeFromSuperview];
 
         CGRect sliderOriginalFrameInParent = [self convertRect:self.bounds toView:parentView];
+        CGRect sliderFrame = self.frame;
 
         CGFloat verticalOffset = -12.5;
         NSString *offsetValueString = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTimelineVerticalPosition"];
@@ -671,11 +672,9 @@
         CGFloat labelYPosition = sliderOriginalFrameInParent.origin.y + verticalOffset;
         CGFloat labelHeight = 15.0;
         UIFont *labelFont = [UIFont systemFontOfSize:8];
-        CGFloat labelHorizontalPadding = 5.0;
 
         if (!showRemainingTime && !showCompleteTime) {
             UILabel *leftLabel = [[UILabel alloc] init];
-            // ... (label setup: color, font, tag, etc.) ...
             leftLabel.backgroundColor = [UIColor clearColor];
             leftLabel.textColor = labelColor;
             leftLabel.font = labelFont;
@@ -685,22 +684,23 @@
             else leftLabel.text = @"00:00";
 
             [leftLabel sizeToFit];
-            leftLabel.frame = CGRectMake(labelHorizontalPadding, labelYPosition, leftLabel.frame.size.width, labelHeight);
+            leftLabel.frame = CGRectMake(sliderFrame.origin.x, labelYPosition, leftLabel.frame.size.width, labelHeight);
             [parentView addSubview:leftLabel];
         }
 
         if (!showLeftRemainingTime && !showLeftCompleteTime) {
             UILabel *rightLabel = [[UILabel alloc] init];
-             rightLabel.backgroundColor = [UIColor clearColor];
-             rightLabel.textColor = labelColor;
-             rightLabel.font = labelFont;
-             rightLabel.tag = 10002;
+            rightLabel.backgroundColor = [UIColor clearColor];
+            rightLabel.textColor = labelColor;
+            rightLabel.font = labelFont;
+            rightLabel.tag = 10002;
             if (showRemainingTime) rightLabel.text = @"00:00";
             else if (showCompleteTime) rightLabel.text = [NSString stringWithFormat:@"00:00/%@", durationFormatted];
             else rightLabel.text = durationFormatted;
 
             [rightLabel sizeToFit];
-            rightLabel.frame = CGRectMake(parentView.bounds.size.width - rightLabel.frame.size.width - labelHorizontalPadding, labelYPosition, rightLabel.frame.size.width, labelHeight);
+            rightLabel.frame = CGRectMake(sliderFrame.origin.x + sliderFrame.size.width - rightLabel.frame.size.width, 
+                                         labelYPosition, rightLabel.frame.size.width, labelHeight);
             [parentView addSubview:rightLabel];
         }
 
@@ -757,6 +757,8 @@
         BOOL showLeftRemainingTime = [scheduleStyle isEqualToString:@"进度条左侧剩余"];
         BOOL showLeftCompleteTime = [scheduleStyle isEqualToString:@"进度条左侧完整"];
 
+        CGRect sliderFrame = progressSlider.frame;
+        
         // 更新左标签
         if (arg1 >= 0 && leftLabel) {
             NSString *newLeftText = @"";
@@ -767,11 +769,8 @@
             if (![leftLabel.text isEqualToString:newLeftText]) {
                 leftLabel.text = newLeftText;
                 [leftLabel sizeToFit];
-                CGFloat labelHorizontalPadding = 5.0;
                 CGRect leftFrame = leftLabel.frame;
-                leftFrame.origin.x = labelHorizontalPadding;
-                // Y 和 Height 最好也能从某个地方获取或固定
-                // leftFrame.origin.y = ...;
+                leftFrame.origin.x = sliderFrame.origin.x;
                 leftFrame.size.height = 15.0;
                 leftLabel.frame = leftFrame;
             }
@@ -788,11 +787,9 @@
             if (![rightLabel.text isEqualToString:newRightText]) {
                 rightLabel.text = newRightText;
                 [rightLabel sizeToFit];
-                CGFloat labelHorizontalPadding = 5.0;
                 CGRect rightFrame = rightLabel.frame;
-                // rightFrame.origin.y = ...;
-                 rightFrame.size.height = 15.0;
-                rightFrame.origin.x = parentView.bounds.size.width - rightFrame.size.width - labelHorizontalPadding;
+                rightFrame.size.height = 15.0;
+                rightFrame.origin.x = sliderFrame.origin.x + sliderFrame.size.width - rightFrame.size.width;
                 rightLabel.frame = rightFrame;
             }
             rightLabel.textColor = labelColor;
