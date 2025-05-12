@@ -255,6 +255,8 @@ static CGFloat left_tx = 0;
 static CGFloat currentScale = 1.0;
 static BOOL leftTransformLocked = NO;
 static CGAffineTransform lockedLeftTransform;
+static BOOL vcTransformLocked = NO;
+static CGAffineTransform lockedVCTransform;
 
 - (void)layoutSubviews {
 
@@ -264,6 +266,7 @@ static CGAffineTransform lockedLeftTransform;
     }
     
     %orig;
+
 	//处理视频流直播间文案缩放
 	UIResponder *nextResponder = [self nextResponder];
 	if ([nextResponder isKindOfClass:[UIView class]]) {
@@ -271,10 +274,9 @@ static CGAffineTransform lockedLeftTransform;
 		UIViewController *viewController = [parentView firstAvailableUIViewController];
 
 		if ([viewController isKindOfClass:%c(AWELiveNewPreStreamViewController)]) {
-			NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
-
-			if (scaleValue.length > 0) {
-				CGFloat scale = [scaleValue floatValue];
+			NSString *vcScaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
+			if (vcScaleValue.length > 0) {
+				CGFloat scale = [vcScaleValue floatValue];
 				self.transform = CGAffineTransformIdentity;
 
 				if (scale > 0 && scale != 1.0) {
@@ -294,12 +296,16 @@ static CGAffineTransform lockedLeftTransform;
 					newTransform = CGAffineTransformTranslate(newTransform, tx / scale, ty / scale);
 
 					self.transform = newTransform;
+
+					vcTransformLocked = YES;
+					lockedVCTransform = newTransform;
 				} else {
-					leftTransformLocked = NO;
+					vcTransformLocked = NO;
 				}
 			}
 		}
 	}
+
 
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
         UIResponder *nextResponder = [self nextResponder];
