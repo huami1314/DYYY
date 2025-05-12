@@ -279,6 +279,10 @@
                   dispatch_time(DISPATCH_TIME_NOW,
                                 (int64_t)(0.2 * NSEC_PER_SEC)),
                   dispatch_get_main_queue(), ^{
+                    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHapticFeedbackEnabled"]) {
+                      UINotificationFeedbackGenerator *feedbackGenerator = [[UINotificationFeedbackGenerator alloc] init];
+                      [feedbackGenerator notificationOccurred:UINotificationFeedbackTypeSuccess];
+                    }
                     CABasicAnimation *checkmarkAnimation =
                         [CABasicAnimation animationWithKeyPath:@"strokeEnd"];
                     checkmarkAnimation.fromValue = @0.0;
@@ -385,6 +389,10 @@
         
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.2 * NSEC_PER_SEC)),
                        dispatch_get_main_queue(), ^{
+          if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHapticFeedbackEnabled"]) {
+              UINotificationFeedbackGenerator *feedbackGenerator = [[UINotificationFeedbackGenerator alloc] init];
+              [feedbackGenerator notificationOccurred:UINotificationFeedbackTypeError];
+          }
           // 绘制叉号
           CABasicAnimation *crossAnimation = [CABasicAnimation animationWithKeyPath:@"strokeEnd"];
           crossAnimation.fromValue = @0.0;

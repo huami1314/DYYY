@@ -2026,19 +2026,23 @@ static void showUserAgreementAlert() {
 			      @"detail" : @"",
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_comment_outlined_20"},
-			    @{
-				    @"identifier" : @"DYYYEnableDoubleOpenAlertController",
-				    @"title" : @"启用双击打开菜单",
-				    @"detail" : @"",
-				    @"cellType" : @26,
-				    @"imageName" : @"ic_xiaoxihuazhonghua_outlined_20"
+			    @{@"identifier" : @"DYYYEnableDoubleOpenAlertController",
+				  @"title" : @"启用双击打开菜单",
+				  @"detail" : @"",
+				  @"cellType" : @26,
+				  @"imageName" : @"ic_xiaoxihuazhonghua_outlined_20"
 			    },
-				@{
-				    @"identifier" : @"DYYYAllowConcurrentPlay",
-				    @"title" : @"允许应用同时播放",
-				    @"detail" : @"",
-				    @"cellType" : @6,
-				    @"imageName" : @"ic_vertrianglesquareonsquare_outlined_20"
+				@{@"identifier" : @"DYYYAllowConcurrentPlay",
+				  @"title" : @"允许应用同时播放",
+				  @"detail" : @"",
+				  @"cellType" : @6,
+				  @"imageName" : @"ic_vertrianglesquareonsquare_outlined_20"
+			    },
+				@{@"identifier" : @"DYYYHapticFeedbackEnabled",
+				  @"title" : @"下载完成震动反馈",
+				  @"detail" : @"",
+				  @"cellType" : @6,
+				  @"imageName" : @"ic_gearsimplify_outlined_20"
 			    }
 		    ];
 
