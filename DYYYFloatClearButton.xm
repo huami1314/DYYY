@@ -305,6 +305,9 @@ static void initTargetClassNames(void) {
 			view.hidden = NO;
 		} else {
 			// 否则恢复透明度
+			if (view.tag == kDYYYIgnoreGlobalAlphaTag) {
+            	view.tag = 0;
+       		}
 			view.alpha = 1.0;
 		}
         return;
@@ -352,6 +355,7 @@ static void initTargetClassNames(void) {
 			view.hidden = YES;
 		} else {
 			// 否则设置透明度为 0.0,可拖动
+			view.tag = 0xDYYY_IGNORE_GLOBAL_ALPHA;
         	view.alpha = 0.0;
 		}
         [self.hiddenViewsList addObject:view];

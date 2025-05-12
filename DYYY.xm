@@ -499,6 +499,8 @@
         CGFloat alphaValue = transparentValue.floatValue;
         if (alphaValue >= 0.0 && alphaValue <= 1.0) {
             for (UIView *subview in originalView.subviews) {
+				// 透明度白名单视图不做处理
+				if (subview.tag == 0xDYYY_IGNORE_GLOBAL_ALPHA) { continue; }
                 subview.alpha = alphaValue;
             }
         }
