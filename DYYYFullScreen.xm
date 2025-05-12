@@ -294,8 +294,6 @@ static CGAffineTransform lockedLeftTransform;
 					newTransform = CGAffineTransformTranslate(newTransform, tx / scale, ty / scale);
 
 					self.transform = newTransform;
-					leftTransformLocked = YES;
-					lockedLeftTransform = newTransform;
 				} else {
 					leftTransformLocked = NO;
 				}
