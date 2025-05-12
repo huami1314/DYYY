@@ -256,52 +256,6 @@ static CGFloat currentScale = 1.0;
 static BOOL leftTransformLocked = NO;
 static CGAffineTransform lockedLeftTransform;
 
-- (void)viewWillAppear:(BOOL)animated {
-    %orig;
-    if ([self.accessibilityLabel isEqualToString:@"left"] && leftTransformLocked) {
-        self.transform = lockedLeftTransform;
-    }
-    
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-        UIResponder *nextResponder = [self nextResponder];
-        if ([nextResponder isKindOfClass:[UIView class]]) {
-            UIView *parentView = (UIView *)nextResponder;
-            UIViewController *viewController = [parentView firstAvailableUIViewController];
-
-            if ([viewController isKindOfClass:%c(AWELiveNewPreStreamViewController)]) {
-                CGRect frame = self.frame;
-                if (stream_frame_y != 0) {
-                    frame.origin.y = stream_frame_y;
-                    self.frame = frame;
-                }
-            }
-        }
-    }
-}
-
-- (void)viewDidAppear:(BOOL)animated {
-    %orig;
-    if ([self.accessibilityLabel isEqualToString:@"left"] && leftTransformLocked) {
-        self.transform = lockedLeftTransform;
-    }
-    
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-        UIResponder *nextResponder = [self nextResponder];
-        if ([nextResponder isKindOfClass:[UIView class]]) {
-            UIView *parentView = (UIView *)nextResponder;
-            UIViewController *viewController = [parentView firstAvailableUIViewController];
-
-            if ([viewController isKindOfClass:%c(AWELiveNewPreStreamViewController)]) {
-                CGRect frame = self.frame;
-                if (stream_frame_y != 0) {
-                    frame.origin.y = stream_frame_y;
-                    self.frame = frame;
-                }
-            }
-        }
-    }
-}
-
 - (void)layoutSubviews {
 
     if ([self.accessibilityLabel isEqualToString:@"left"] && leftTransformLocked) {
