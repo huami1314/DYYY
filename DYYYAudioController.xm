@@ -11,7 +11,7 @@ static bool getUserDefaults(NSString *key) { return [[NSUserDefaults standardUse
     NSString *category = [self category];
 
     if(getUserDefaults(DYYYALLOW_KEY)){
-        [self setCategory:AVAudioSessionCategoryPlayback withOptions:AVAudioSessionCategoryOptionMixWithOthers error:outError];
+        [self setCategory:AVAudioSessionCategoryPlayback withOptions:0 error:outError];
     }else{
         [self setCategory:category withOptions:2 error:outError];
     }
