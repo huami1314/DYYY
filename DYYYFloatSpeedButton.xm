@@ -448,6 +448,12 @@ void updateSpeedButtonUI() {
 %hook AWEAwemePlayVideoViewController
 
 - (void)setIsAutoPlay:(BOOL)arg0 {
+	float defaultSpeed = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYDefaultSpeed"];
+
+	if (defaultSpeed > 0 && defaultSpeed != 1) {
+		[self setVideoControllerPlaybackRate:defaultSpeed];
+	}
+
 	float speed = getCurrentSpeed();
 	NSInteger speedIndex = getCurrentSpeedIndex();
 	currentVideoController = self;
@@ -486,6 +492,11 @@ void updateSpeedButtonUI() {
 %hook AWEDPlayerFeedPlayerViewController
 
 - (void)setIsAutoPlay:(BOOL)arg0 {
+	float defaultSpeed = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYDefaultSpeed"];
+
+	if (defaultSpeed > 0 && defaultSpeed != 1) {
+		[self setVideoControllerPlaybackRate:defaultSpeed];
+	}
 	float speed = getCurrentSpeed();
 	NSInteger speedIndex = getCurrentSpeedIndex();
 	currentFeedVideoController = self;
