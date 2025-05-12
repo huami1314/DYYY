@@ -305,14 +305,14 @@ static void initTargetClassNames(void) {
 			view.hidden = NO;
 		} else {
 			// 否则恢复透明度
-			if (view.tag == DYYY_IGNORE_GLOBAL_ALPHA_TAG) {
-            	view.tag = 0;
-       		}
 			NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
-    		if (transparentValue.length > 0) {
+			// 默认透明度
+    		view.alpha = 1.0; 
+			if (transparentValue.length > 0) {
 				CGFloat alphaValue = transparentValue.floatValue;
 				if (alphaValue >= 0.0 && alphaValue <= 1.0) {
-					view.alpha = alphaValue;
+					//若有设置有全局透明度,则恢复该值
+					view.alpha = alphaValue; 
 				}
 			}
 		}
