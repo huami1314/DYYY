@@ -900,6 +900,18 @@
 }
 %end
 
+%hook AWEFeedIPhoneAutoPlayManager
+
+- (BOOL)getFeedIphoneAutoPlayState {
+	BOOL r = %orig;
+
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableAutoPlay"]) {
+		return YES;
+	}
+	return %orig;
+}
+%end
+
 %hook AWEPlayInteractionTimestampElement
 - (id)timestampLabel {
 	UILabel *label = %orig;
