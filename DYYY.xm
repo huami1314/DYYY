@@ -570,137 +570,149 @@
 %hook AWEFeedProgressSlider
 
 - (void)layoutSubviews {
-	%orig;
-	[self applyCustomProgressStyle];
+    %orig; 
+    [self applyCustomProgressStyle];
 }
 
 %new
 - (void)applyCustomProgressStyle {
-	NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
+    NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
 
-	if ([scheduleStyle isEqualToString:@"进度条两侧左右"]) {
-		// 获取父视图宽度，以便计算新的宽度
-		CGFloat parentWidth = self.superview.bounds.size.width;
+    if ([scheduleStyle isEqualToString:@"进度条两侧左右"]) {
+        UIView *parentView = self.superview;
+        UILabel *leftLabel = [parentView viewWithTag:10001];
+        UILabel *rightLabel = [parentView viewWithTag:10002];
 
-		// 计算宽度百分比和边距
-		CGFloat widthPercent = 0.80;
-		NSString *widthPercentValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYProgressBarWidthPercent"];
-		if (widthPercentValue.length > 0) {
-			CGFloat customPercent = [widthPercentValue floatValue];
-			if (customPercent > 0 && customPercent <= 1.0) {
-				widthPercent = customPercent;
-			}
-		}
+        if (parentView && leftLabel && rightLabel) {
+            CGFloat padding = 5.0; 
 
-		// 调整进度条宽度和位置
-		CGFloat newWidth = parentWidth * widthPercent;
-		CGFloat centerX = self.frame.origin.x + self.frame.size.width / 2;
-		CGFloat newX = centerX - newWidth / 2;
-		CGFloat height = self.frame.size.height;
-		CGFloat y = self.frame.origin.y;
+            CGFloat sliderY = self.frame.origin.y;
+            CGFloat sliderHeight = self.frame.size.height;
 
-		// 使用 CGRectMake 创建新的 frame
-		self.frame = CGRectMake(newX, y, newWidth, height);
-	}
+            CGFloat sliderX = leftLabel.frame.origin.x + leftLabel.frame.size.width + padding;
+            CGFloat sliderWidth = rightLabel.frame.origin.x - padding - sliderX;
+
+            if (sliderWidth < 0) { 
+                sliderWidth = 0;
+            }
+            self.frame = CGRectMake(sliderX, sliderY, sliderWidth, sliderHeight);
+        }
+    } else {
+        return; 
+    }
 }
 
-// 开启视频进度条后默认显示进度条的透明度否则有部分视频不会显示进度条以及秒数
+// 控制进度条的透明度
 - (void)setAlpha:(CGFloat)alpha {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisShowScheduleDisplay"]) {
-		// 如果启用了隐藏视频进度，进度条透明度为0
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideVideoProgress"]) {
-			%orig(0);
-		} else {
-			%orig(1.0);
-		}
-	} else {
-		%orig;
-	}
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisShowScheduleDisplay"]) {
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideVideoProgress"]) {
+            %orig(0); 
+        } else {
+            %orig(1.0); 
+        }
+    } else {
+        %orig;
+    }
 }
 
-// MARK: 视频显示进度条以及视频进度秒数
 - (void)setLimitUpperActionArea:(BOOL)arg1 {
-	%orig;
-	// 定义一下进度条默认算法
-	NSString *duration = [self.progressSliderDelegate formatTimeFromSeconds:floor(self.progressSliderDelegate.model.videoDuration / 1000)];
-	// 如果开启了显示时间进度
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisShowScheduleDisplay"]) {
-		UIView *parentView = self.superview;
-		if (!parentView)
-			return;
+    %orig;
 
-		// 移除之前可能存在的标签
-		[[parentView viewWithTag:10001] removeFromSuperview];
-		[[parentView viewWithTag:10002] removeFromSuperview];
+    NSString *durationFormatted = [self.progressSliderDelegate formatTimeFromSeconds:floor(self.progressSliderDelegate.model.videoDuration / 1000)];
 
-		// 计算标签在父视图中的位置
-		CGRect sliderFrame = [self convertRect:self.bounds toView:parentView];
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisShowScheduleDisplay"]) {
+        UIView *parentView = self.superview;
+        if (!parentView) return;
 
-		// 获取垂直偏移量配置值，默认为-12.5
-		CGFloat verticalOffset = -12.5;
-		NSString *offsetValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTimelineVerticalPosition"];
-		if (offsetValue.length > 0) {
-			CGFloat configOffset = [offsetValue floatValue];
-			if (configOffset != 0) {
-				verticalOffset = configOffset;
-			}
-		}
+        [[parentView viewWithTag:10001] removeFromSuperview];
+        [[parentView viewWithTag:10002] removeFromSuperview];
 
-		// 获取显示样式设置
-		NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
-		BOOL showRemainingTime = [scheduleStyle isEqualToString:@"进度条右侧剩余"];
-		BOOL showCompleteTime = [scheduleStyle isEqualToString:@"进度条右侧完整"];
-		BOOL showLeftRemainingTime = [scheduleStyle isEqualToString:@"进度条左侧剩余"];
-		BOOL showLeftCompleteTime = [scheduleStyle isEqualToString:@"进度条左侧完整"];
+        CGRect sliderOriginalFrameInParent = [self convertRect:self.bounds toView:parentView];
 
-		// 获取用户设置的时间标签颜色
-		NSString *labelColorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYProgressLabelColor"];
-		UIColor *labelColor = [UIColor whiteColor]; // 默认白色
-		if (labelColorHex && labelColorHex.length > 0) {
-			labelColor = [DYYYManager colorWithHexString:labelColorHex];
-		}
+        CGFloat verticalOffset = -12.5;
+        NSString *offsetValueString = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTimelineVerticalPosition"];
+        if (offsetValueString.length > 0) {
+            CGFloat configOffset = [offsetValueString floatValue];
+            if (configOffset != 0) {
+                verticalOffset = configOffset;
+            }
+        }
 
-		// 创建左侧时间标签 - 根据不同的显示模式处理
-		if (!showRemainingTime && !showCompleteTime) {
-			UILabel *leftLabel = [[UILabel alloc] init];
-			leftLabel.frame = CGRectMake(sliderFrame.origin.x, sliderFrame.origin.y + verticalOffset, 50, 15);
-			leftLabel.backgroundColor = [UIColor clearColor];
+        NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
+        BOOL showRemainingTime = [scheduleStyle isEqualToString:@"进度条右侧剩余"];
+        BOOL showCompleteTime = [scheduleStyle isEqualToString:@"进度条右侧完整"];
+        BOOL showLeftRemainingTime = [scheduleStyle isEqualToString:@"进度条左侧剩余"];
+        BOOL showLeftCompleteTime = [scheduleStyle isEqualToString:@"进度条左侧完整"];
 
-			// 根据左侧显示模式设置不同的初始文本
-			if (showLeftRemainingTime) {
-				[leftLabel setText:@"00:00"]; // 剩余时间模式
-			} else if (showLeftCompleteTime) {
-				[leftLabel setText:[NSString stringWithFormat:@"00:00/%@", duration]]; // 完整时间模式
-			} else {
-				[leftLabel setText:@"00:00"]; // 默认模式
-			}
+        NSString *labelColorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYProgressLabelColor"];
+        UIColor *labelColor = [UIColor whiteColor];
+        if (labelColorHex && labelColorHex.length > 0) {
+            SEL colorSelector = NSSelectorFromString(@"colorWithHexString:");
+            Class dyyyManagerClass = NSClassFromString(@"DYYYManager");
+            if (dyyyManagerClass && [dyyyManagerClass respondsToSelector:colorSelector]) {
+                labelColor = [dyyyManagerClass performSelector:colorSelector withObject:labelColorHex];
+            }
+        }
 
-			[leftLabel setTextColor:labelColor];
-			[leftLabel setFont:[UIFont systemFontOfSize:8]];
-			leftLabel.tag = 10001;
-			[parentView addSubview:leftLabel];
-		}
+        CGFloat labelYPosition = sliderOriginalFrameInParent.origin.y + verticalOffset;
+        CGFloat labelHeight = 15.0;
+        UIFont *labelFont = [UIFont systemFontOfSize:8];
+        CGFloat labelHorizontalPadding = 5.0;
 
-		// 只在非左侧显示模式下创建右侧标签
-		if (!showLeftRemainingTime && !showLeftCompleteTime) {
-			UILabel *rightLabel = [[UILabel alloc] init];
-			if (showCompleteTime) {
-				rightLabel.frame = CGRectMake(sliderFrame.origin.x + sliderFrame.size.width - 50, sliderFrame.origin.y + verticalOffset, 50, 15);
-				// 修改这里：始终使用 00:00/时长 的格式
-				[rightLabel setText:[NSString stringWithFormat:@"00:00/%@", duration]];
-			} else {
-				rightLabel.frame = CGRectMake(sliderFrame.origin.x + sliderFrame.size.width - 23, sliderFrame.origin.y + verticalOffset, 50, 15);
-				[rightLabel setText:showRemainingTime ? @"00:00" : duration];
-			}
-			rightLabel.backgroundColor = [UIColor clearColor];
-			[rightLabel setTextColor:labelColor];
-			[rightLabel setFont:[UIFont systemFontOfSize:8]];
-			rightLabel.tag = 10002;
-			[parentView addSubview:rightLabel];
-		}
-	}
+        if (!showRemainingTime && !showCompleteTime) {
+            UILabel *leftLabel = [[UILabel alloc] init];
+            leftLabel.backgroundColor = [UIColor clearColor];
+            leftLabel.textColor = labelColor;
+            leftLabel.font = labelFont;
+            leftLabel.tag = 10001;
+
+            if (showLeftRemainingTime) {
+                leftLabel.text = @"00:00";
+            } else if (showLeftCompleteTime) {
+                leftLabel.text = [NSString stringWithFormat:@"00:00/%@", durationFormatted];
+            } else { 
+                leftLabel.text = @"00:00";
+            }
+            [leftLabel sizeToFit];
+            leftLabel.frame = CGRectMake(labelHorizontalPadding,
+                                       labelYPosition,
+                                       leftLabel.frame.size.width,
+                                       labelHeight);
+            [parentView addSubview:leftLabel];
+        }
+
+        // 创建右侧标签 (如果适用)
+        if (!showLeftRemainingTime && !showLeftCompleteTime) {
+            UILabel *rightLabel = [[UILabel alloc] init];
+            rightLabel.backgroundColor = [UIColor clearColor];
+            rightLabel.textColor = labelColor;
+            rightLabel.font = labelFont;
+            rightLabel.tag = 10002;
+
+            if (showRemainingTime) {
+                rightLabel.text = @"00:00";
+            } else if (showCompleteTime) {
+                rightLabel.text = [NSString stringWithFormat:@"00:00/%@", durationFormatted];
+            } else {
+                rightLabel.text = durationFormatted;
+            }
+            [rightLabel sizeToFit];
+            rightLabel.frame = CGRectMake(parentView.bounds.size.width - rightLabel.frame.size.width - labelHorizontalPadding,
+                                        labelYPosition,
+                                        rightLabel.frame.size.width, 
+                                        labelHeight);
+            [parentView addSubview:rightLabel];
+        }
+        [self setNeedsLayout];
+    } else {
+        UIView *parentView = self.superview;
+        if (parentView) {
+            [[parentView viewWithTag:10001] removeFromSuperview];
+            [[parentView viewWithTag:10002] removeFromSuperview];
+        }
+        [self setNeedsLayout];
+    }
 }
-
 %end
 
 // MARK: 视频显示-算法
@@ -732,10 +744,8 @@
 			  rightLabel.frame = frame;
 		  }
 		});
-		// 返回 00:00:00
 		return [NSString stringWithFormat:@"%02ld:%02ld:%02ld", (long)hours, (long)minutes, (long)secs];
 	} else {
-		// 返回 00:00
 		return [NSString stringWithFormat:@"%02ld:%02ld", (long)minutes, (long)secs];
 	}
 }
@@ -744,16 +754,14 @@
 	%orig;
 	// 如果开启了显示视频进度
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisShowScheduleDisplay"]) {
-		// 获取进度条实例
 		AWEFeedProgressSlider *progressSlider = self.progressSlider;
 		UIView *parentView = progressSlider.superview;
 
 		UILabel *leftLabel = [parentView viewWithTag:10001];
 		UILabel *rightLabel = [parentView viewWithTag:10002];
 
-		// 获取用户设置的时间标签颜色
 		NSString *labelColorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYProgressLabelColor"];
-		UIColor *labelColor = [UIColor whiteColor]; // 默认白色
+		UIColor *labelColor = [UIColor whiteColor]; 
 		if (labelColorHex && labelColorHex.length > 0) {
 			labelColor = [DYYYManager colorWithHexString:labelColorHex];
 		}
@@ -798,14 +806,12 @@
 	}
 }
 
-// 增加检测是否隐藏视频进度条的处理
 - (void)setHidden:(BOOL)hidden {
 	%orig;
 
 	BOOL hideVideoProgress = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideVideoProgress"];
 	BOOL showScheduleDisplay = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisShowScheduleDisplay"];
 
-	// 如果需要隐藏视频进度但显示时长
 	if (hideVideoProgress && showScheduleDisplay && !hidden) {
 		self.alpha = 0;
 	}
