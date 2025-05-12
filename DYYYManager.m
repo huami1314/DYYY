@@ -8,7 +8,6 @@
 #import <libwebp/decode.h>
 #import <libwebp/demux.h>
 #import <libwebp/mux.h>
-#import <libheif/heif.h>
 #import <objc/message.h>
 #import <objc/runtime.h>
 
