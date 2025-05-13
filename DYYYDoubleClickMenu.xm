@@ -1,5 +1,6 @@
 #import "AwemeHeaders.h"
 #import "DYYYManager.h"
+#import "DYYYToast.h"
 
 %hook AWEPlayInteractionViewController
 
@@ -168,7 +169,8 @@
 													       handler:^{
 														 NSString *descText = [awemeModel valueForKey:@"descriptionString"];
 														 [[UIPasteboard generalPasteboard] setString:descText];
-														 [DYYYManager showToast:@"文案已复制到剪贴板"];
+														 [DYYYToast showSuccessToastWithMessage:@"文案已复制"];
+
 													       }];
 			[actions addObject:copyTextAction];
 		}

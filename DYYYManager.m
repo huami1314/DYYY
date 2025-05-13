@@ -11,7 +11,7 @@
 #import <objc/message.h>
 #import <objc/runtime.h>
 
-#import "DYYYDownloadProgressView.h"
+#import "DYYYToast.h"
 
 @interface DYYYManager () {
   AVAssetExportSession *session;
@@ -27,7 +27,7 @@
 @property(nonatomic, strong)
     NSMutableDictionary<NSString *, NSURLSessionDownloadTask *> *downloadTasks;
 @property(nonatomic, strong)
-    NSMutableDictionary<NSString *, DYYYDownloadProgressView *> *progressViews;
+    NSMutableDictionary<NSString *, DYYYToast *> *progressViews;
 @property(nonatomic, strong) NSOperationQueue *downloadQueue;
 @property(nonatomic, strong) NSMutableDictionary<NSString *, NSNumber *>
     *taskProgressMap; // 添加进度映射
@@ -1026,8 +1026,8 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
   dispatch_async(dispatch_get_main_queue(), ^{
     // 创建进度视图
     CGRect screenBounds = [UIScreen mainScreen].bounds;
-    DYYYDownloadProgressView *progressView =
-        [[DYYYDownloadProgressView alloc] initWithFrame:screenBounds];
+    DYYYToast *progressView =
+        [[DYYYToast alloc] initWithFrame:screenBounds];
     [progressView show];
 
     // 优化会话配置
@@ -1285,8 +1285,8 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
   dispatch_async(dispatch_get_main_queue(), ^{
     // 创建进度视图
     CGRect screenBounds = [UIScreen mainScreen].bounds;
-    DYYYDownloadProgressView *progressView =
-        [[DYYYDownloadProgressView alloc] initWithFrame:screenBounds];
+    DYYYToast *progressView =
+        [[DYYYToast alloc] initWithFrame:screenBounds];
 
     // 生成下载ID并保存进度视图
     NSString *downloadID = [NSUUID UUID].UUIDString;
@@ -1350,7 +1350,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
       [task cancel];
     }
 
-    DYYYDownloadProgressView *progressView =
+    DYYYToast *progressView =
         [[DYYYManager shared].progressViews objectForKey:downloadID];
     if (progressView) {
       [progressView dismiss];
@@ -1389,8 +1389,8 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
   // 创建自定义批量下载进度条界面
   dispatch_async(dispatch_get_main_queue(), ^{
     CGRect screenBounds = [UIScreen mainScreen].bounds;
-    DYYYDownloadProgressView *progressView =
-        [[DYYYDownloadProgressView alloc] initWithFrame:screenBounds];
+    DYYYToast *progressView =
+        [[DYYYToast alloc] initWithFrame:screenBounds];
     NSString *batchID = [NSUUID UUID].UUIDString;
     [[DYYYManager shared].progressViews setObject:progressView forKey:batchID];
 
@@ -1504,7 +1504,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
     NSInteger totalCount = totalCountNum ? [totalCountNum integerValue] : 0;
 
     // 更新批量下载进度视图
-    DYYYDownloadProgressView *progressView = self.progressViews[batchID];
+    DYYYToast *progressView = self.progressViews[batchID];
     if (progressView) {
       float progress = totalCount > 0 ? (float)completedCount / totalCount : 0;
       [progressView setProgress:progress];
@@ -1597,7 +1597,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
       // 更新进度记录
       [self.taskProgressMap setObject:@(progress) forKey:downloadIDForTask];
 
-      DYYYDownloadProgressView *progressView =
+      DYYYToast *progressView =
           self.progressViews[downloadIDForTask];
       if (progressView) {
         // 确保进度视图存在并且没有被取消
@@ -1697,7 +1697,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
 
     dispatch_async(dispatch_get_main_queue(), ^{
       // 隐藏进度视图
-      DYYYDownloadProgressView *progressView =
+      DYYYToast *progressView =
           self.progressViews[downloadIDForTask];
       BOOL wasCancelled = progressView.isCancelled;
 
@@ -1768,7 +1768,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
 
     dispatch_async(dispatch_get_main_queue(), ^{
       // 隐藏进度视图
-      DYYYDownloadProgressView *progressView =
+      DYYYToast *progressView =
           self.progressViews[downloadIDForTask];
       [progressView dismiss];
 
@@ -2112,8 +2112,8 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
   // 创建自定义批量下载进度条界面
   dispatch_async(dispatch_get_main_queue(), ^{
     CGRect screenBounds = [UIScreen mainScreen].bounds;
-    DYYYDownloadProgressView *progressView =
-        [[DYYYDownloadProgressView alloc] initWithFrame:screenBounds];
+    DYYYToast *progressView =
+        [[DYYYToast alloc] initWithFrame:screenBounds];
     [progressView show];
 
     NSString *batchID = [NSUUID UUID].UUIDString;

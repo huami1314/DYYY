@@ -2,7 +2,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface DYYYDownloadProgressView : UIView
+@interface DYYYToast : UIView
 
 @property(nonatomic, strong) UIView *containerView;
 @property(nonatomic, strong) UIView *progressBarBackground;
@@ -15,6 +15,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)show;
 - (void)dismiss;
 - (void)showSuccessAnimation:(void (^)(void))completion;
+
++ (void)showSuccessToastWithMessage:(NSString *)message;
+- (void)showSuccessToastWithMessage:(NSString *)message completion:(void (^)(void))completion;
 
 @end
 

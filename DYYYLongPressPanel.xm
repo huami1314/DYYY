@@ -6,6 +6,7 @@
 #import "DYYYConfirmCloseView.h"
 #import "DYYYManager.h"
 #import "DYYYUtils.h"
+#import "DYYYToast.h"
 
 %hook AWELongPressPanelViewGroupModel
 %property(nonatomic, assign) BOOL isDYYYCustomGroup;
@@ -447,7 +448,7 @@
         copyText.action = ^{
             NSString *descText = [self.awemeModel valueForKey:@"descriptionString"];
             [[UIPasteboard generalPasteboard] setString:descText];
-            [DYYYManager showToast:@"文案已复制到剪贴板"];
+            [DYYYToast showSuccessToastWithMessage:@"文案已复制"];
             AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
             [panelManager dismissWithAnimation:YES completion:nil];
         };
@@ -465,7 +466,7 @@
             NSString *shareLink = [self.awemeModel valueForKey:@"shareURL"];
             NSString *cleanedURL = cleanShareURL(shareLink);
             [[UIPasteboard generalPasteboard] setString:cleanedURL];
-            [DYYYManager showToast:@"分享链接已复制到剪贴板"];
+            [DYYYToast showSuccessToastWithMessage:@"分享链接已复制"];
             AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
             [panelManager dismissWithAnimation:YES completion:nil];
         };
@@ -1190,7 +1191,7 @@
         copyText.action = ^{
             NSString *descText = [self.awemeModel valueForKey:@"descriptionString"];
             [[UIPasteboard generalPasteboard] setString:descText];
-            [DYYYManager showToast:@"文案已复制到剪贴板"];
+            [DYYYToast showSuccessToastWithMessage:@"文案已复制"];
                         AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
             [panelManager dismissWithAnimation:YES completion:nil];
         };
@@ -1208,7 +1209,7 @@
             NSString *shareLink = [self.awemeModel valueForKey:@"shareURL"];
             NSString *cleanedURL = cleanShareURL(shareLink);
             [[UIPasteboard generalPasteboard] setString:cleanedURL];
-            [DYYYManager showToast:@"分享链接已复制到剪贴板"];
+            [DYYYToast showSuccessToastWithMessage:@"分享链接已复制"];
             AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
             [panelManager dismissWithAnimation:YES completion:nil];
         };

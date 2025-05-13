@@ -1,7 +1,7 @@
-#import "DYYYDownloadProgressView.h"
+#import "DYYYToast.h"
 #import "DYYYManager.h"
 
-@interface DYYYDownloadProgressView ()
+@interface DYYYToast ()
 
 @property(nonatomic, strong) CAShapeLayer *progressLayer;
 @property(nonatomic, strong) UILabel *percentLabel;
@@ -15,7 +15,7 @@
 
 @end
 
-@implementation DYYYDownloadProgressView
+@implementation DYYYToast
 
 - (instancetype)initWithFrame:(CGRect)frame {
   self = [super initWithFrame:frame];
@@ -432,6 +432,119 @@
           });
         });
       }];
+}
+
++ (void)showSuccessToastWithMessage:(NSString *)message {
+    DYYYToast *toast = [[DYYYToast alloc] initWithFrame:[UIScreen mainScreen].bounds];
+    [toast showSuccessToastWithMessage:message completion:nil];
+}
+
+- (void)showSuccessToastWithMessage:(NSString *)message completion:(void (^)(void))completion {
+    UIWindow *window = [UIApplication sharedApplication].keyWindow;
+    if (!window)
+        return;
+    for (UIGestureRecognizer *gesture in self.containerView.gestureRecognizers) {
+        [self.containerView removeGestureRecognizer:gesture];
+    }
+    
+    [window addSubview:self];
+
+    self.percentLabel.text = message ?: @"成功";
+    
+    self.progressLayer.opacity = 0;
+    
+    [UIView animateWithDuration:0.3
+                     animations:^{
+                         self.alpha = 1.0;
+                     } completion:^(BOOL finished) {
+                         [self directlyShowSuccessAnimation:completion];
+                     }];
+}
+
+- (void)directlyShowSuccessAnimation:(void (^)(void))completion {
+    BOOL isDarkMode = [DYYYManager isDarkMode];
+
+    UIColor *successColor = isDarkMode ? [UIColor colorWithRed:48/255.0 green:209/255.0 blue:151/255.0 alpha:1.0] 
+                                      : [UIColor colorWithRed:11/255.0 green:195/255.0 blue:139/255.0 alpha:1.0];
+    
+    CAShapeLayer *circleLayer = [CAShapeLayer layer];
+    CGFloat circleSize = 30;
+    UIBezierPath *circlePath = [UIBezierPath bezierPathWithOvalInRect:CGRectMake(0, 0, circleSize, circleSize)];
+
+    circleLayer.path = circlePath.CGPath;
+    circleLayer.fillColor = successColor.CGColor;
+    circleLayer.opacity = 0;
+
+    [self.progressView.layer addSublayer:circleLayer];
+
+    CAShapeLayer *checkmarkLayer = [CAShapeLayer layer];
+
+    UIBezierPath *checkPath = [UIBezierPath bezierPath];
+    [checkPath moveToPoint:CGPointMake(circleSize * 0.25, circleSize * 0.5)];
+    [checkPath addLineToPoint:CGPointMake(circleSize * 0.45, circleSize * 0.7)];
+    [checkPath addLineToPoint:CGPointMake(circleSize * 0.75, circleSize * 0.3)];
+
+    checkmarkLayer.path = checkPath.CGPath;
+    checkmarkLayer.fillColor = nil;
+    checkmarkLayer.strokeColor = [UIColor whiteColor].CGColor;
+    checkmarkLayer.lineWidth = 2.5;
+    checkmarkLayer.lineCap = kCALineCapRound;
+    checkmarkLayer.lineJoin = kCALineJoinRound;
+    checkmarkLayer.strokeEnd = 0;
+
+    [self.progressView.layer addSublayer:checkmarkLayer];
+
+    CABasicAnimation *circleAnimation = [CABasicAnimation animationWithKeyPath:@"opacity"];
+    circleAnimation.fromValue = @0.0;
+    circleAnimation.toValue = @1.0;
+    circleAnimation.duration = 0.2;
+    circleLayer.opacity = 1.0;
+    [circleLayer addAnimation:circleAnimation forKey:@"fadeIn"];
+
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.2 * NSEC_PER_SEC)),
+                   dispatch_get_main_queue(), ^{
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHapticFeedbackEnabled"]) {
+            UINotificationFeedbackGenerator *feedbackGenerator = [[UINotificationFeedbackGenerator alloc] init];
+            [feedbackGenerator notificationOccurred:UINotificationFeedbackTypeSuccess];
+        }
+        
+        CABasicAnimation *checkmarkAnimation = [CABasicAnimation animationWithKeyPath:@"strokeEnd"];
+        checkmarkAnimation.fromValue = @0.0;
+        checkmarkAnimation.toValue = @1.0;
+        checkmarkAnimation.duration = 0.3;
+        checkmarkAnimation.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseOut];
+        checkmarkLayer.strokeEnd = 1.0;
+        [checkmarkLayer addAnimation:checkmarkAnimation forKey:@"drawCheckmark"];
+
+        [UIView animateWithDuration:0.2
+                              delay:0.1
+             usingSpringWithDamping:0.6
+              initialSpringVelocity:0.8
+                            options:UIViewAnimationOptionCurveEaseInOut
+                         animations:^{
+            self.progressView.transform = CGAffineTransformMakeScale(1.15, 1.15);
+        }
+                         completion:^(BOOL finished) {
+            [UIView animateWithDuration:0.2
+                             animations:^{
+                self.progressView.transform = CGAffineTransformIdentity;
+            }];
+        }];
+        
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.2 * NSEC_PER_SEC)),
+                       dispatch_get_main_queue(), ^{
+            [UIView animateWithDuration:0.3
+                             animations:^{
+                self.alpha = 0;
+            }
+                             completion:^(BOOL finished) {
+                [self removeFromSuperview];
+                if (completion) {
+                    completion();
+                }
+            }];
+        });
+    });
 }
 
 @end
