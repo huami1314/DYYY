@@ -498,11 +498,20 @@
     if (transparentValue.length > 0) {
         CGFloat alphaValue = transparentValue.floatValue;
         if (alphaValue >= 0.0 && alphaValue <= 1.0) {
-            for (UIView *subview in originalView.subviews) {
-				// 透明度白名单视图不做处理
-				if (subview.tag == DYYY_IGNORE_GLOBAL_ALPHA_TAG) { continue; }
-                subview.alpha = alphaValue;
-            }
+            
+            __block void (^applyAlphaRecursively)(UIView *, CGFloat);
+            applyAlphaRecursively = ^(UIView *currentView, CGFloat targetAlpha) {
+                if (currentView.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG) {
+                    if (currentView.alpha > 0) {
+                        currentView.alpha = targetAlpha;
+                    }
+                }
+                for (UIView *subview in currentView.subviews) {
+                    applyAlphaRecursively(subview, targetAlpha);
+                }
+            };
+            
+            applyAlphaRecursively(originalView, alphaValue);
         }
     }
 
