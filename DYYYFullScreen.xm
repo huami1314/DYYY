@@ -362,7 +362,10 @@ static CGFloat currentScale = 1.0;
                 newTransform = CGAffineTransformTranslate(newTransform, left_tx/scale, ty/scale);
                 
                 self.transform = newTransform;
-
+				
+				dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.4 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+					self.transform = newTransform;
+				});
             } 
         }
     }
