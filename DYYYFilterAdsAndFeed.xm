@@ -258,59 +258,6 @@
 }
 %end
 
-// 提高视频播放画质
-%hook AWEVideoModel
-
-- (AWEURLModel *)playURL {
-    AWEURLModel *originalURL = %orig;
-    
-    BOOL enableHigherQuality = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableVideoHigherQuality"];
-    if (!enableHigherQuality) {
-        return originalURL; 
-    }
-    
-    if (self.bitrateModels && [self.bitrateModels count] > 0) {
-        // 遍历查找最高码率的模型
-        id highestQualityModel = nil;
-        NSInteger highestBitrate = 0;
-        
-        for (id model in self.bitrateModels) {
-            NSInteger bitrate = [[model valueForKey:@"bitrate"] integerValue];
-            if (bitrate > highestBitrate) {
-                highestBitrate = bitrate;
-                highestQualityModel = model;
-            }
-        }
-        
-        if (!highestQualityModel) {
-            highestQualityModel = self.bitrateModels.firstObject;
-        }
-        
-        id playAddrObj = [highestQualityModel valueForKey:@"playAddr"];
-        
-        if (playAddrObj && [playAddrObj isKindOfClass:%c(AWEURLModel)]) {
-            AWEURLModel *highQualityURLModel = (AWEURLModel *)playAddrObj;
-            
-            if (highQualityURLModel.originURLList && highQualityURLModel.originURLList.count > 0) {
-                [originalURL setValue:highQualityURLModel.originURLList forKey:@"originURLList"];
-            }
-        }
-    }
-    
-    return originalURL;
-}
-
-- (AWEURLModel *)playLowBitURL {
-    BOOL enableHigherQuality = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableVideoHigherQuality"];
-    if (enableHigherQuality) {
-        return [self playURL];
-    }
-    
-    return %orig;
-}
-
-%end
-
 %ctor {
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {
 		%init;
