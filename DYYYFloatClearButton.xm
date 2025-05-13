@@ -89,19 +89,23 @@ static void initTargetClassNames(void) {
         @"AWEHPTopBarCTAContainer", @"AWEHPDiscoverFeedEntranceView", @"AWELeftSideBarEntranceView",
         @"DUXBadge", @"AWEBaseElementView", @"AWEElementStackView",
         @"AWEPlayInteractionDescriptionLabel", @"AWEUserNameLabel",
-        @"AWEStoryProgressSlideView", @"AWEStoryProgressContainerView",
         @"ACCEditTagStickerView", @"AWEFeedTemplateAnchorView",
         @"AWESearchFeedTagView", @"AWEPlayInteractionSearchAnchorView",
         @"AFDRecommendToFriendTagView", @"AWELandscapeFeedEntryView",
-        @"AWEFeedAnchorContainerView", @"AFDAIbumFolioView",@"AWENormalModeTabBar"
+        @"AWEFeedAnchorContainerView", @"AFDAIbumFolioView"
     ] mutableCopy];
-    BOOL hideBottomBar = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTimeProgress"];
-    if (hideBottomBar) {
-        [list removeObject:@"AWENormalModeTabBar"];
+    BOOL hideTabBar = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTabBar"];
+    if (hideTabBar) {
+        [list addObject:@"AWENormalModeTabBar"];
     }
 	BOOL hideDanmaku = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideDanmaku"];
 	if (hideDanmaku) {
 		[list addObject:@"AWEVideoPlayDanmakuContainerView"];
+	}
+	BOOL hideSlider = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideSlider"];
+	if (hideSlider) {
+		[list addObject:@"AWEStoryProgressSlideView"];
+		[list addObject:@"AWEStoryProgressContainerView"];
 	}
     targetClassNames = [list copy];
 }
@@ -304,8 +308,8 @@ static void initTargetClassNames(void) {
 			// 如果设置了移除时间进度条，直接显示
 			view.hidden = NO;
 		} else {
-			// 否则恢复透明度
-			view.alpha = 1.0;
+			// 恢复透明度
+    		view.alpha = 1.0; 
 		}
         return;
     }
@@ -352,6 +356,7 @@ static void initTargetClassNames(void) {
 			view.hidden = YES;
 		} else {
 			// 否则设置透明度为 0.0,可拖动
+			view.tag = DYYY_IGNORE_GLOBAL_ALPHA_TAG;
         	view.alpha = 0.0;
 		}
         [self.hiddenViewsList addObject:view];

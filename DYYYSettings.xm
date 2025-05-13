@@ -2343,6 +2343,22 @@ static void showUserAgreementAlert() {
 			      @"cellType" : @6,
 			      @"imageName" : @"ic_eyeslash_outlined_16"}];
 		    [clearButtonItems addObject:enableqingButton1];
+			AWESettingItemModel *hideSliderButton = [self
+			createSettingItem:
+			    @{@"identifier" : @"DYYYHideSlider",
+			      @"title" : @"清屏隐藏滑条",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_eyeslash_outlined_16"}];
+		    [clearButtonItems addObject:hideSliderButton];
+			AWESettingItemModel *hideTabButton = [self
+			createSettingItem:
+			    @{@"identifier" : @"DYYYHideTabBar",
+			      @"title" : @"清屏隐藏底栏",
+			      @"detail" : @"",
+			      @"cellType" : @6,
+			      @"imageName" : @"ic_eyeslash_outlined_16"}];
+		    [clearButtonItems addObject:hideTabButton];
 		    // 获取清屏按钮的当前开关状态
 		    BOOL isEnabled = getUserDefaults(@"DYYYEnableFloatClearButton");
 		    // 更新清屏按钮大小和图标设置项的启用状态
