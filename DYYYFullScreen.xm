@@ -253,9 +253,10 @@ static CGFloat stream_frame_y = 0;
 static CGFloat right_tx = 0;
 static CGFloat left_tx = 0;
 static CGFloat currentScale = 1.0;
-static BOOL leftScaleLocked = NO;
-static CGFloat lockedLeftScale;
+static BOOL leftTransformLocked = NO;
+static CGAffineTransform lockedLeftTransform;
 static BOOL vcTransformLocked = NO;
+static CGAffineTransform lockedVCTransform;
 
 - (void)layoutSubviews {
     %orig;
@@ -289,7 +290,12 @@ static BOOL vcTransformLocked = NO;
 					newTransform = CGAffineTransformTranslate(newTransform, tx / scale, ty / scale);
 
 					self.transform = newTransform;
-				} 
+
+					vcTransformLocked = YES;
+					lockedVCTransform = newTransform;
+				} else {
+					vcTransformLocked = NO;
+				}
 			}
 		}
 	}
@@ -347,11 +353,9 @@ static BOOL vcTransformLocked = NO;
         if (scaleValue.length > 0) {
             CGFloat scale = [scaleValue floatValue];
             
-            // 重置transform以便重新计算
             self.transform = CGAffineTransformIdentity;
             
             if (scale > 0 && scale != 1.0) {
-                // 计算垂直偏移
                 NSArray *subviews = [self.subviews copy];
                 CGFloat ty = 0;
                 
@@ -361,40 +365,27 @@ static BOOL vcTransformLocked = NO;
                     ty += contribution;
                 }
 
-                // 计算左边距调整
                 CGFloat frameWidth = self.frame.size.width;
                 CGFloat left_tx = (frameWidth - frameWidth * scale) / 2 - frameWidth * (1 - scale);
                 
-                // 创建缩放和平移变换
                 CGAffineTransform newTransform = CGAffineTransformMakeScale(scale, scale);
                 newTransform = CGAffineTransformTranslate(newTransform, left_tx/scale, ty/scale);
                 
-                // 应用变换
                 self.transform = newTransform;
                 
-                // 只锁定缩放系数
-                leftScaleLocked = YES;
-                lockedLeftScale = scale;
+                leftTransformLocked = YES;
+                lockedLeftTransform = newTransform;
+
             } else {
-                leftScaleLocked = NO;
+                leftTransformLocked = NO;
             }
         }
     }
 }
 
 - (void)setTransform:(CGAffineTransform)transform {
-    if ([self.accessibilityLabel isEqualToString:@"left"] && leftScaleLocked) {
-        CGFloat a = transform.a;
-        CGFloat d = transform.d;
-        
-        if (fabs(a - 1.0) > 0.01 || fabs(d - 1.0) > 0.01) {
-            CGAffineTransform newTransform = CGAffineTransformMakeScale(lockedLeftScale, lockedLeftScale);
-            newTransform.tx = transform.tx * (lockedLeftScale / a);
-            newTransform.ty = transform.ty * (lockedLeftScale / d);
-            %orig(newTransform);
-        } else {
-            %orig;
-        }
+    if ([self.accessibilityLabel isEqualToString:@"left"] && leftTransformLocked) {
+        %orig(lockedLeftTransform);
     } else {
         %orig;
     }
