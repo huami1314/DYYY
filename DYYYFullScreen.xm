@@ -260,7 +260,18 @@ static CGAffineTransform lockedVCTransform;
 
 - (void)layoutSubviews {
     %orig;
+        if ([self.accessibilityLabel isEqualToString:@"left"] && leftTransformLocked) {
+            CGAffineTransform currentTransform = self.transform;
 
+            CGFloat tx = currentTransform.tx;
+            CGFloat ty = currentTransform.ty;
+
+            CGAffineTransform scaleTransform = CGAffineTransformMakeScale(currentScale, currentScale);
+            scaleTransform.tx = tx;
+            scaleTransform.ty = ty;
+
+            self.transform = scaleTransform;
+        }
 	//处理视频流直播间文案缩放
 	UIResponder *nextResponder = [self nextResponder];
 	if ([nextResponder isKindOfClass:[UIView class]]) {
