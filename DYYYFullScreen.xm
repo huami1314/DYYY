@@ -355,17 +355,16 @@ static CGAffineTransform lockedLeftTransform;
 					ty += contribution;
 				}
 
-				CGFloat frameWidth = self.frame.size.width;
-				CGFloat left_tx = (frameWidth - frameWidth * scale) / 2 - frameWidth * (1 - scale);
+                CGFloat frameWidth = self.frame.size.width;
+                CGFloat left_tx = (frameWidth - frameWidth * scale) / 2 - frameWidth * (1 - scale);
 
-				CGAffineTransform newTransform = CGAffineTransformMakeScale(scale, scale);
-				newTransform = CGAffineTransformTranslate(newTransform, left_tx / scale, ty / scale);
+                CGAffineTransform newTransform = CGAffineTransformMakeScale(scale, scale);
+                newTransform = CGAffineTransformTranslate(newTransform, left_tx / scale, ty / scale);
 
-				CGFloat compensationFactor = 0.111;
-				CGFloat leftCompensation = frameWidth * (1 - scale) * compensationFactor;
-				newTransform = CGAffineTransformTranslate(newTransform, -leftCompensation / scale, 0);
+                CGFloat leftCompensation = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYHorizontalOffset"] floatValue];
+                newTransform = CGAffineTransformTranslate(newTransform, leftCompensation, 0);
 
-				self.transform = newTransform;
+                self.transform = newTransform;
 
 				leftTransformLocked = YES;
 				lockedLeftTransform = newTransform;
