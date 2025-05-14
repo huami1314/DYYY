@@ -47,7 +47,9 @@ static void setUserDefaults(id object, NSString *key) {
 			  @"DYYYEnabshijianjindu" : @[ @"DYYYHideTimeProgress" ],
 			  @"DYYYHideTimeProgress" : @[ @"DYYYEnabshijianjindu" ],
 			  @"DYYYHideLOTAnimationView" : @[ @"DYYYHideFollowPromptView" ],
-			  @"DYYYHideFollowPromptView" : @[ @"DYYYHideLOTAnimationView" ]
+			  @"DYYYHideFollowPromptView" : @[ @"DYYYHideLOTAnimationView" ],
+			  @"DYYYisEnableModern" : @[ @"DYYYisEnableModernLight" ],
+			  @"DYYYisEnableModernLight" : @[ @"DYYYisEnableModern" ]
 		  },
 
 		  // ===== 互斥激活配置 =====

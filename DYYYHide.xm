@@ -1541,25 +1541,6 @@
 }
 %end
 
-// 强制启用新版抖音长按 UI（现代风）
-%hook AWELongPressPanelDataManager
-+ (BOOL)enableModernLongPressPanelConfigWithSceneIdentifier:(id)arg1 {
-	return DYYYGetBool(@"DYYYisEnableModern");
-}
-%end
-
-%hook AWELongPressPanelABSettings
-+ (NSUInteger)modernLongPressPanelStyleMode {
-	return DYYYGetBool(@"DYYYisEnableModern") ? 1 : 0;
-}
-%end
-
-%hook AWEModernLongPressPanelUIConfig
-+ (NSUInteger)modernLongPressPanelStyleMode {
-	return DYYYGetBool(@"DYYYisEnableModern") ? 1 : 0;
-}
-%end
-
 // 聊天视频底部评论框背景透明
 %hook AWEIMFeedBottomQuickEmojiInputBar
 
