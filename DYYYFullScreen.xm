@@ -366,7 +366,7 @@ static CGFloat currentScale = 1.0;
 	}
 }
 
-- (void)arrangedSubviews {
+- (NSArray<__kindof UIView *> *)arrangedSubviews {
 	if ([self.accessibilityLabel isEqualToString:@"left"]) {
 		NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
 
@@ -395,6 +395,8 @@ static CGFloat currentScale = 1.0;
 			}
 		}
 	}
+    NSArray *originalSubviews = %orig;
+    return originalSubviews;
 }
 
 %end
