@@ -14,6 +14,7 @@
 #import "DYYYManager.h"
 
 #import "DYYYConstants.h"
+#import "DYYYToast.h"
 
 %hook AWEPlayInteractionUserAvatarElement
 - (void)onFollowViewClicked:(UITapGestureRecognizer *)gesture {
@@ -1580,7 +1581,7 @@ static CGFloat rightLabelRightMargin = -1;
 		}
 		NSString *descText = [selectdComment content];
 		[[UIPasteboard generalPasteboard] setString:descText];
-		[DYYYManager showToast:@"文案已复制到剪贴板"];
+		[DYYYToast showSuccessToastWithMessage:@"评论已复制"];
 	}
 }
 %end

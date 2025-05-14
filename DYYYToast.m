@@ -202,7 +202,6 @@
 
   return nil;
 }
-
 // 下载成功动画方法
 - (void)showSuccessAnimation:(void (^)(void))completion {
   BOOL isDarkMode = [DYYYManager isDarkMode];
@@ -271,13 +270,13 @@
                   [CABasicAnimation animationWithKeyPath:@"opacity"];
               circleAnimation.fromValue = @0.0;
               circleAnimation.toValue = @1.0;
-              circleAnimation.duration = 0.2;
+              circleAnimation.duration = 0.1; // 从0.2改为0.1
               circleLayer.opacity = 1.0;
               [circleLayer addAnimation:circleAnimation forKey:@"fadeIn"];
 
               dispatch_after(
                   dispatch_time(DISPATCH_TIME_NOW,
-                                (int64_t)(0.2 * NSEC_PER_SEC)),
+                                (int64_t)(0.1 * NSEC_PER_SEC)), // 从0.2改为0.1
                   dispatch_get_main_queue(), ^{
                     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHapticFeedbackEnabled"]) {
                       UINotificationFeedbackGenerator *feedbackGenerator = [[UINotificationFeedbackGenerator alloc] init];
@@ -287,14 +286,14 @@
                         [CABasicAnimation animationWithKeyPath:@"strokeEnd"];
                     checkmarkAnimation.fromValue = @0.0;
                     checkmarkAnimation.toValue = @1.0;
-                    checkmarkAnimation.duration = 0.3;
+                    checkmarkAnimation.duration = 0.15; // 从0.3改为0.15
                     checkmarkAnimation.timingFunction = [CAMediaTimingFunction
                         functionWithName:kCAMediaTimingFunctionEaseOut];
                     checkmarkLayer.strokeEnd = 1.0;
                     [checkmarkLayer addAnimation:checkmarkAnimation
                                           forKey:@"drawCheckmark"];
 
-                    [UIView animateWithDuration:0.2
+                    [UIView animateWithDuration:0.15 // 从0.2改为0.15
                         delay:0.1
                         usingSpringWithDamping:0.6
                         initialSpringVelocity:0.8
@@ -314,7 +313,7 @@
                     dispatch_after(dispatch_time(DISPATCH_TIME_NOW,
                                                  (int64_t)(1.2 * NSEC_PER_SEC)),
                                    dispatch_get_main_queue(), ^{
-                                     [UIView animateWithDuration:0.3
+                                     [UIView animateWithDuration:0.2 // 从0.3改为0.2
                                          animations:^{
                                            self.alpha = 0;
                                          }
@@ -383,11 +382,11 @@
         CABasicAnimation *circleAnimation = [CABasicAnimation animationWithKeyPath:@"opacity"];
         circleAnimation.fromValue = @0.0;
         circleAnimation.toValue = @1.0;
-        circleAnimation.duration = 0.2;
+        circleAnimation.duration = 0.1; // 从0.2改为0.1
         circleLayer.opacity = 1.0;
         [circleLayer addAnimation:circleAnimation forKey:@"fadeIn"];
         
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.2 * NSEC_PER_SEC)),
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), // 从0.2改为0.1
                        dispatch_get_main_queue(), ^{
           if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHapticFeedbackEnabled"]) {
               UINotificationFeedbackGenerator *feedbackGenerator = [[UINotificationFeedbackGenerator alloc] init];
@@ -397,12 +396,12 @@
           CABasicAnimation *crossAnimation = [CABasicAnimation animationWithKeyPath:@"strokeEnd"];
           crossAnimation.fromValue = @0.0;
           crossAnimation.toValue = @1.0;
-          crossAnimation.duration = 0.3;
+          crossAnimation.duration = 0.15; // 从0.3改为0.15
           crossAnimation.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseOut];
           crossLayer.strokeEnd = 1.0;
           [crossLayer addAnimation:crossAnimation forKey:@"drawCross"];
           
-          [UIView animateWithDuration:0.2
+          [UIView animateWithDuration:0.15 // 从0.2改为0.15
                                 delay:0.1
                usingSpringWithDamping:0.6
                 initialSpringVelocity:0.8
@@ -419,7 +418,7 @@
           
           dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.2 * NSEC_PER_SEC)),
                          dispatch_get_main_queue(), ^{
-            [UIView animateWithDuration:0.3
+            [UIView animateWithDuration:0.2 // 从0.3改为0.2
                 animations:^{
                   self.alpha = 0;
                 }
@@ -453,7 +452,7 @@
     
     self.progressLayer.opacity = 0;
     
-    [UIView animateWithDuration:0.3
+    [UIView animateWithDuration:0.2
                      animations:^{
                          self.alpha = 1.0;
                      } completion:^(BOOL finished) {
@@ -497,11 +496,11 @@
     CABasicAnimation *circleAnimation = [CABasicAnimation animationWithKeyPath:@"opacity"];
     circleAnimation.fromValue = @0.0;
     circleAnimation.toValue = @1.0;
-    circleAnimation.duration = 0.2;
+    circleAnimation.duration = 0.1;
     circleLayer.opacity = 1.0;
     [circleLayer addAnimation:circleAnimation forKey:@"fadeIn"];
 
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.2 * NSEC_PER_SEC)),
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)),
                    dispatch_get_main_queue(), ^{
         if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHapticFeedbackEnabled"]) {
             UINotificationFeedbackGenerator *feedbackGenerator = [[UINotificationFeedbackGenerator alloc] init];
@@ -511,12 +510,12 @@
         CABasicAnimation *checkmarkAnimation = [CABasicAnimation animationWithKeyPath:@"strokeEnd"];
         checkmarkAnimation.fromValue = @0.0;
         checkmarkAnimation.toValue = @1.0;
-        checkmarkAnimation.duration = 0.3;
+        checkmarkAnimation.duration = 0.15;
         checkmarkAnimation.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseOut];
         checkmarkLayer.strokeEnd = 1.0;
         [checkmarkLayer addAnimation:checkmarkAnimation forKey:@"drawCheckmark"];
 
-        [UIView animateWithDuration:0.2
+        [UIView animateWithDuration:0.15
                               delay:0.1
              usingSpringWithDamping:0.6
               initialSpringVelocity:0.8
@@ -533,7 +532,7 @@
         
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.2 * NSEC_PER_SEC)),
                        dispatch_get_main_queue(), ^{
-            [UIView animateWithDuration:0.3
+            [UIView animateWithDuration:0.2
                              animations:^{
                 self.alpha = 0;
             }
