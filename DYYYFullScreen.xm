@@ -252,8 +252,7 @@ static CGFloat stream_frame_y = 0;
 static CGFloat right_tx = 0;
 static CGFloat left_tx = 0;
 static CGFloat currentScale = 1.0;
-static BOOL leftTransformLocked = NO;
-static CGAffineTransform lockedLeftTransform;
+
 - (void)layoutSubviews {
 	%orig;
 
@@ -355,31 +354,46 @@ static CGAffineTransform lockedLeftTransform;
 					ty += contribution;
 				}
 
-                CGFloat frameWidth = self.frame.size.width;
-                CGFloat left_tx = (frameWidth - frameWidth * scale) / 2 - frameWidth * (1 - scale);
+				CGFloat frameWidth = self.frame.size.width;
+				CGFloat left_tx = (frameWidth - frameWidth * scale) / 2 - frameWidth * (1 - scale);
 
-                CGAffineTransform newTransform = CGAffineTransformMakeScale(scale, scale);
-                newTransform = CGAffineTransformTranslate(newTransform, left_tx / scale, ty / scale);
+				CGAffineTransform newTransform = CGAffineTransformMakeScale(scale, scale);
+				newTransform = CGAffineTransformTranslate(newTransform, left_tx / scale, ty / scale);
 
-                CGFloat leftCompensation = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYHorizontalOffset"] floatValue];
-                newTransform = CGAffineTransformTranslate(newTransform, leftCompensation, 0);
-
-                self.transform = newTransform;
-
-				leftTransformLocked = YES;
-				lockedLeftTransform = newTransform;
-			} else {
-				leftTransformLocked = NO;
+				self.transform = newTransform;
 			}
 		}
 	}
 }
 
-- (void)setTransform:(CGAffineTransform)transform {
-	if ([self.accessibilityLabel isEqualToString:@"left"] && leftTransformLocked) {
-		%orig(lockedLeftTransform);
-	} else {
-		%orig;
+- (void)arrangedSubviews {
+	if ([self.accessibilityLabel isEqualToString:@"left"]) {
+		NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
+
+		if (scaleValue.length > 0) {
+			CGFloat scale = [scaleValue floatValue];
+
+			self.transform = CGAffineTransformIdentity;
+
+			if (scale > 0 && scale != 1.0) {
+				NSArray *subviews = [self.subviews copy];
+				CGFloat ty = 0;
+
+				for (UIView *view in subviews) {
+					CGFloat viewHeight = view.frame.size.height;
+					CGFloat contribution = (viewHeight - viewHeight * scale) / 2;
+					ty += contribution;
+				}
+
+				CGFloat frameWidth = self.frame.size.width;
+				CGFloat left_tx = (frameWidth - frameWidth * scale) / 2 - frameWidth * (1 - scale);
+
+				CGAffineTransform newTransform = CGAffineTransformMakeScale(scale, scale);
+				newTransform = CGAffineTransformTranslate(newTransform, left_tx / scale, ty / scale);
+
+				self.transform = newTransform;
+			}
+		}
 	}
 }
 
