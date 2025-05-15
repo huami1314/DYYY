@@ -749,6 +749,6 @@ void updateSpeedButtonUI() {
     float defaultSpeed = [defaults floatForKey:@"DYYYDefaultSpeed"];
 
     if ((defaultSpeed > 0 && defaultSpeed != 1) || isFloatSpeedButtonEnabled) {
-        %init(DYYYFloatSpeedGroup);
+        %init;
     }
 }
