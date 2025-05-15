@@ -744,10 +744,17 @@ void updateSpeedButtonUI() {
 %end
 
 %ctor {
-	NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-	isFloatSpeedButtonEnabled = [defaults boolForKey:@"DYYYEnableFloatSpeedButton"];
-
-	if (isFloatSpeedButtonEnabled) {
-		%init;
-	}
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    isFloatSpeedButtonEnabled = [defaults boolForKey:@"DYYYEnableFloatSpeedButton"];
+    
+    float defaultSpeed = [defaults floatForKey:@"DYYYDefaultSpeed"];
+    
+    if (defaultSpeed > 0 && defaultSpeed != 1) {
+        %init;
+        return;
+    }
+    
+    if (isFloatSpeedButtonEnabled) {
+        %init;
+    }
 }
