@@ -134,7 +134,7 @@
     UIGraphicsBeginImageContextWithOptions(size, NO, 0);
     CGContextRef context = UIGraphicsGetCurrentContext();
     CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
-    
+
     // 彩虹色：红、橙、黄、绿、青、蓝、紫
     UIColor *red = [UIColor colorWithRed:1.0 green:0.0 blue:0.0 alpha:1.0];
     UIColor *orange = [UIColor colorWithRed:1.0 green:0.5 blue:0.0 alpha:1.0];
@@ -143,77 +143,88 @@
     UIColor *cyan = [UIColor colorWithRed:0.0 green:1.0 blue:1.0 alpha:1.0];
     UIColor *blue = [UIColor colorWithRed:0.0 green:0.0 blue:1.0 alpha:1.0];
     UIColor *purple = [UIColor colorWithRed:0.5 green:0.0 blue:0.5 alpha:1.0];
-    
+
     NSArray *colorsArray = @[
-      (__bridge id)red.CGColor, 
-      (__bridge id)orange.CGColor,
-      (__bridge id)yellow.CGColor,
-      (__bridge id)green.CGColor,
-      (__bridge id)cyan.CGColor,
-      (__bridge id)blue.CGColor,
+      (__bridge id)red.CGColor, (__bridge id)orange.CGColor,
+      (__bridge id)yellow.CGColor, (__bridge id)green.CGColor,
+      (__bridge id)cyan.CGColor, (__bridge id)blue.CGColor,
       (__bridge id)purple.CGColor
     ];
-    
-    // 创建渐变
-    CGGradientRef gradient = CGGradientCreateWithColors(colorSpace, (__bridge CFArrayRef)colorsArray, NULL);
 
-    CGPoint startPoint = CGPointMake(0, size.height/2);
-    CGPoint endPoint = CGPointMake(size.width, size.height/2);
+    // 创建渐变
+    CGGradientRef gradient = CGGradientCreateWithColors(
+        colorSpace, (__bridge CFArrayRef)colorsArray, NULL);
+
+    CGPoint startPoint = CGPointMake(0, size.height / 2);
+    CGPoint endPoint = CGPointMake(size.width, size.height / 2);
 
     CGContextDrawLinearGradient(context, gradient, startPoint, endPoint, 0);
     UIImage *gradientImage = UIGraphicsGetImageFromCurrentImageContext();
     UIGraphicsEndImageContext();
     CGGradientRelease(gradient);
     CGColorSpaceRelease(colorSpace);
-    
+
     return [UIColor colorWithPatternImage:gradientImage];
   }
-  
+
   // 如果包含半角逗号，则解析两个颜色代码并生成渐变色
   if ([hexString containsString:@","]) {
     NSArray *components = [hexString componentsSeparatedByString:@","];
     if (components.count == 2) {
-      NSString *firstHex = [[components objectAtIndex:0] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
-      NSString *secondHex = [[components objectAtIndex:1] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
-      
+      NSString *firstHex = [[components objectAtIndex:0]
+          stringByTrimmingCharactersInSet:[NSCharacterSet
+                                              whitespaceCharacterSet]];
+      NSString *secondHex = [[components objectAtIndex:1]
+          stringByTrimmingCharactersInSet:[NSCharacterSet
+                                              whitespaceCharacterSet]];
+
       // 分别解析两个颜色
       UIColor *firstColor = [self colorWithHexString:firstHex];
       UIColor *secondColor = [self colorWithHexString:secondHex];
-      
+
       // 使用渐变layer生成图片
       CGSize size = CGSizeMake(400, 100);
       UIGraphicsBeginImageContextWithOptions(size, NO, 0);
       CGContextRef context = UIGraphicsGetCurrentContext();
       CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
-      
+
       // 普通双色渐变效果
-      CGFloat midR = (CGColorGetComponents(firstColor.CGColor)[0] + CGColorGetComponents(secondColor.CGColor)[0]) / 2;
-      CGFloat midG = (CGColorGetComponents(firstColor.CGColor)[1] + CGColorGetComponents(secondColor.CGColor)[1]) / 2;
-      CGFloat midB = (CGColorGetComponents(firstColor.CGColor)[2] + CGColorGetComponents(secondColor.CGColor)[2]) / 2;
-      UIColor *midColor = [UIColor colorWithRed:midR green:midG blue:midB alpha:1.0];
-      
+      CGFloat midR = (CGColorGetComponents(firstColor.CGColor)[0] +
+                      CGColorGetComponents(secondColor.CGColor)[0]) /
+                     2;
+      CGFloat midG = (CGColorGetComponents(firstColor.CGColor)[1] +
+                      CGColorGetComponents(secondColor.CGColor)[1]) /
+                     2;
+      CGFloat midB = (CGColorGetComponents(firstColor.CGColor)[2] +
+                      CGColorGetComponents(secondColor.CGColor)[2]) /
+                     2;
+      UIColor *midColor = [UIColor colorWithRed:midR
+                                          green:midG
+                                           blue:midB
+                                          alpha:1.0];
+
       NSArray *colorsArray = @[
-        (__bridge id)firstColor.CGColor,
-        (__bridge id)midColor.CGColor,
+        (__bridge id)firstColor.CGColor, (__bridge id)midColor.CGColor,
         (__bridge id)secondColor.CGColor
       ];
-      
-      // 创建渐变
-      CGGradientRef gradient = CGGradientCreateWithColors(colorSpace, (__bridge CFArrayRef)colorsArray, NULL);
 
-      CGPoint startPoint = CGPointMake(0, size.height/2);
-      CGPoint endPoint = CGPointMake(size.width, size.height/2);
-      
+      // 创建渐变
+      CGGradientRef gradient = CGGradientCreateWithColors(
+          colorSpace, (__bridge CFArrayRef)colorsArray, NULL);
+
+      CGPoint startPoint = CGPointMake(0, size.height / 2);
+      CGPoint endPoint = CGPointMake(size.width, size.height / 2);
+
       CGContextDrawLinearGradient(context, gradient, startPoint, endPoint, 0);
       UIImage *gradientImage = UIGraphicsGetImageFromCurrentImageContext();
       UIGraphicsEndImageContext();
       CGGradientRelease(gradient);
       CGColorSpaceRelease(colorSpace);
-      
+
       return [UIColor colorWithPatternImage:gradientImage];
     }
   }
-  
+
   // 处理随机颜色的情况
   if ([hexString.lowercaseString isEqualToString:@"random"] ||
       [hexString.lowercaseString isEqualToString:@"#random"]) {
@@ -222,32 +233,38 @@
                             blue:(CGFloat)arc4random_uniform(256) / 255.0
                            alpha:1.0];
   }
-  
+
   // 去掉"#"前缀并转为大写
-  NSString *colorString = [[hexString stringByReplacingOccurrencesOfString:@"#" withString:@""] uppercaseString];
+  NSString *colorString =
+      [[hexString stringByReplacingOccurrencesOfString:@"#"
+                                            withString:@""] uppercaseString];
   CGFloat alpha = 1.0;
   CGFloat red = 0.0;
   CGFloat green = 0.0;
   CGFloat blue = 0.0;
-  
+
   if (colorString.length == 8) {
     // 8位十六进制：AARRGGBB，前两位为透明度
-    NSScanner *scanner = [NSScanner scannerWithString:[colorString substringWithRange:NSMakeRange(0, 2)]];
+    NSScanner *scanner = [NSScanner
+        scannerWithString:[colorString substringWithRange:NSMakeRange(0, 2)]];
     unsigned int alphaValue;
     [scanner scanHexInt:&alphaValue];
     alpha = (CGFloat)alphaValue / 255.0;
-    
-    scanner = [NSScanner scannerWithString:[colorString substringWithRange:NSMakeRange(2, 2)]];
+
+    scanner = [NSScanner
+        scannerWithString:[colorString substringWithRange:NSMakeRange(2, 2)]];
     unsigned int redValue;
     [scanner scanHexInt:&redValue];
     red = (CGFloat)redValue / 255.0;
-    
-    scanner = [NSScanner scannerWithString:[colorString substringWithRange:NSMakeRange(4, 2)]];
+
+    scanner = [NSScanner
+        scannerWithString:[colorString substringWithRange:NSMakeRange(4, 2)]];
     unsigned int greenValue;
     [scanner scanHexInt:&greenValue];
     green = (CGFloat)greenValue / 255.0;
-    
-    scanner = [NSScanner scannerWithString:[colorString substringWithRange:NSMakeRange(6, 2)]];
+
+    scanner = [NSScanner
+        scannerWithString:[colorString substringWithRange:NSMakeRange(6, 2)]];
     unsigned int blueValue;
     [scanner scanHexInt:&blueValue];
     blue = (CGFloat)blueValue / 255.0;
@@ -255,7 +272,7 @@
     // 处理常规6位十六进制：RRGGBB
     NSScanner *scanner = nil;
     unsigned int hexValue = 0;
-    
+
     if (colorString.length == 6) {
       scanner = [NSScanner scannerWithString:colorString];
     } else if (colorString.length == 3) {
@@ -263,17 +280,18 @@
       NSString *r = [colorString substringWithRange:NSMakeRange(0, 1)];
       NSString *g = [colorString substringWithRange:NSMakeRange(1, 1)];
       NSString *b = [colorString substringWithRange:NSMakeRange(2, 1)];
-      colorString = [NSString stringWithFormat:@"%@%@%@%@%@%@", r, r, g, g, b, b];
+      colorString =
+          [NSString stringWithFormat:@"%@%@%@%@%@%@", r, r, g, g, b, b];
       scanner = [NSScanner scannerWithString:colorString];
     }
-    
+
     if (scanner && [scanner scanHexInt:&hexValue]) {
       red = ((hexValue & 0xFF0000) >> 16) / 255.0;
       green = ((hexValue & 0x00FF00) >> 8) / 255.0;
       blue = (hexValue & 0x0000FF) / 255.0;
     }
   }
-  
+
   return [UIColor colorWithRed:red green:green blue:blue alpha:alpha];
 }
 
@@ -862,14 +880,17 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
 // 将HEIC转换为GIF的方法
 + (void)convertHeicToGif:(NSURL *)heicURL
               completion:(void (^)(NSURL *gifURL, BOOL success))completion {
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+  dispatch_async(
+      dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         // 1. 创建ImageSource
-        CGImageSourceRef src = CGImageSourceCreateWithURL((__bridge CFURLRef)heicURL, NULL);
+        CGImageSourceRef src =
+            CGImageSourceCreateWithURL((__bridge CFURLRef)heicURL, NULL);
         if (!src) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                if (completion) completion(nil, NO);
-            });
-            return;
+          dispatch_async(dispatch_get_main_queue(), ^{
+            if (completion)
+              completion(nil, NO);
+          });
+          return;
         }
 
         // 2. 获取帧数
@@ -877,54 +898,66 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
         BOOL isAnimated = (count > 1);
 
         // 3. 生成GIF路径
-        NSString *gifFileName = [[heicURL.lastPathComponent stringByDeletingPathExtension] stringByAppendingPathExtension:@"gif"];
-        NSURL *gifURL = [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:gifFileName]];
+        NSString *gifFileName =
+            [[heicURL.lastPathComponent stringByDeletingPathExtension]
+                stringByAppendingPathExtension:@"gif"];
+        NSURL *gifURL = [NSURL
+            fileURLWithPath:[NSTemporaryDirectory()
+                                stringByAppendingPathComponent:gifFileName]];
 
         // 4. GIF属性
         NSDictionary *gifProperties = @{
-            (__bridge NSString *)kCGImagePropertyGIFDictionary : @{
-                (__bridge NSString *)kCGImagePropertyGIFLoopCount : @0
-            }
+          (__bridge NSString *)kCGImagePropertyGIFDictionary :
+              @{(__bridge NSString *)kCGImagePropertyGIFLoopCount : @0}
         };
 
         // 5. 创建GIF目标
-        CGImageDestinationRef dest = CGImageDestinationCreateWithURL((__bridge CFURLRef)gifURL, kUTTypeGIF, count, NULL);
+        CGImageDestinationRef dest = CGImageDestinationCreateWithURL(
+            (__bridge CFURLRef)gifURL, kUTTypeGIF, count, NULL);
         if (!dest) {
-            CFRelease(src);
-            dispatch_async(dispatch_get_main_queue(), ^{
-                if (completion) completion(nil, NO);
-            });
-            return;
+          CFRelease(src);
+          dispatch_async(dispatch_get_main_queue(), ^{
+            if (completion)
+              completion(nil, NO);
+          });
+          return;
         }
-        CGImageDestinationSetProperties(dest, (__bridge CFDictionaryRef)gifProperties);
+        CGImageDestinationSetProperties(
+            dest, (__bridge CFDictionaryRef)gifProperties);
 
         // 6. 遍历帧并写入GIF
         for (size_t i = 0; i < count; i++) {
-            CGImageRef imgRef = CGImageSourceCreateImageAtIndex(src, i, NULL);
+          CGImageRef imgRef = CGImageSourceCreateImageAtIndex(src, i, NULL);
 
-            // 获取帧延迟
-            float delayTime = 0.1f;
-            CFDictionaryRef properties = CGImageSourceCopyPropertiesAtIndex(src, i, NULL);
-            if (properties) {
-                CFDictionaryRef gifDict = CFDictionaryGetValue(properties, kCGImagePropertyGIFDictionary);
-                if (gifDict) {
-                    CFNumberRef delayNum = CFDictionaryGetValue(gifDict, kCGImagePropertyGIFDelayTime);
-                    if (delayNum) CFNumberGetValue(delayNum, kCFNumberFloatType, &delayTime);
-                }
-                if (delayTime <= 0.01f || delayTime > 10.0f) delayTime = 0.1f;
-                CFRelease(properties);
+          // 获取帧延迟
+          float delayTime = 0.1f;
+          CFDictionaryRef properties =
+              CGImageSourceCopyPropertiesAtIndex(src, i, NULL);
+          if (properties) {
+            CFDictionaryRef gifDict =
+                CFDictionaryGetValue(properties, kCGImagePropertyGIFDictionary);
+            if (gifDict) {
+              CFNumberRef delayNum =
+                  CFDictionaryGetValue(gifDict, kCGImagePropertyGIFDelayTime);
+              if (delayNum)
+                CFNumberGetValue(delayNum, kCFNumberFloatType, &delayTime);
             }
+            if (delayTime <= 0.01f || delayTime > 10.0f)
+              delayTime = 0.1f;
+            CFRelease(properties);
+          }
 
-            NSDictionary *frameProps = @{
-                (__bridge NSString *)kCGImagePropertyGIFDictionary : @{
-                    (__bridge NSString *)kCGImagePropertyGIFDelayTime : @(delayTime)
-                }
-            };
-
-            if (imgRef) {
-                CGImageDestinationAddImage(dest, imgRef, (__bridge CFDictionaryRef)frameProps);
-                CGImageRelease(imgRef);
+          NSDictionary *frameProps = @{
+            (__bridge NSString *)kCGImagePropertyGIFDictionary : @{
+              (__bridge NSString *)kCGImagePropertyGIFDelayTime : @(delayTime)
             }
+          };
+
+          if (imgRef) {
+            CGImageDestinationAddImage(dest, imgRef,
+                                       (__bridge CFDictionaryRef)frameProps);
+            CGImageRelease(imgRef);
+          }
         }
 
         // 7. 完成GIF生成
@@ -933,9 +966,10 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
         CFRelease(src);
 
         dispatch_async(dispatch_get_main_queue(), ^{
-            if (completion) completion(gifURL, success);
+          if (completion)
+            completion(gifURL, success);
         });
-    });
+      });
 }
 
 + (void)downloadLivePhoto:(NSURL *)imageURL
@@ -995,11 +1029,9 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
                              videoURL:(NSURL *)videoURL
                             uniqueKey:(NSString *)uniqueKey
                            completion:(void (^)(void))completion {
-  // 创建临时目录（如果不存在）
+  // 创建临时目录
   NSString *livePhotoPath =
-      [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory,
-                                           NSUserDomainMask, YES)
-              .firstObject stringByAppendingPathComponent:@"LivePhoto"];
+      [NSTemporaryDirectory() stringByAppendingPathComponent:@"LivePhoto"];
 
   NSFileManager *fileManager = [NSFileManager defaultManager];
   if (![fileManager fileExistsAtPath:livePhotoPath]) {
@@ -1026,8 +1058,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
   dispatch_async(dispatch_get_main_queue(), ^{
     // 创建进度视图
     CGRect screenBounds = [UIScreen mainScreen].bounds;
-    DYYYToast *progressView =
-        [[DYYYToast alloc] initWithFrame:screenBounds];
+    DYYYToast *progressView = [[DYYYToast alloc] initWithFrame:screenBounds];
     [progressView show];
 
     // 优化会话配置
@@ -1285,8 +1316,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
   dispatch_async(dispatch_get_main_queue(), ^{
     // 创建进度视图
     CGRect screenBounds = [UIScreen mainScreen].bounds;
-    DYYYToast *progressView =
-        [[DYYYToast alloc] initWithFrame:screenBounds];
+    DYYYToast *progressView = [[DYYYToast alloc] initWithFrame:screenBounds];
 
     // 生成下载ID并保存进度视图
     NSString *downloadID = [NSUUID UUID].UUIDString;
@@ -1294,7 +1324,6 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
                                            forKey:downloadID];
 
     [progressView show];
-
 
     // 保存回调
     [[DYYYManager shared] setCompletionBlock:completion
@@ -1369,7 +1398,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
   [self downloadAllImagesWithProgress:imageURLs
                              progress:nil
                            completion:^(NSInteger successCount,
-                                        NSInteger totalCount) {
+                                        NSInteger totalCount){
                            }];
 }
 
@@ -1389,8 +1418,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
   // 创建自定义批量下载进度条界面
   dispatch_async(dispatch_get_main_queue(), ^{
     CGRect screenBounds = [UIScreen mainScreen].bounds;
-    DYYYToast *progressView =
-        [[DYYYToast alloc] initWithFrame:screenBounds];
+    DYYYToast *progressView = [[DYYYToast alloc] initWithFrame:screenBounds];
     NSString *batchID = [NSUUID UUID].UUIDString;
     [[DYYYManager shared].progressViews setObject:progressView forKey:batchID];
 
@@ -1508,7 +1536,6 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
     if (progressView) {
       float progress = totalCount > 0 ? (float)completedCount / totalCount : 0;
       [progressView setProgress:progress];
-
     }
 
     // 调用进度回调
@@ -1597,8 +1624,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
       // 更新进度记录
       [self.taskProgressMap setObject:@(progress) forKey:downloadIDForTask];
 
-      DYYYToast *progressView =
-          self.progressViews[downloadIDForTask];
+      DYYYToast *progressView = self.progressViews[downloadIDForTask];
       if (progressView) {
         // 确保进度视图存在并且没有被取消
         if (!progressView.isCancelled) {
@@ -1697,8 +1723,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
 
     dispatch_async(dispatch_get_main_queue(), ^{
       // 隐藏进度视图
-      DYYYToast *progressView =
-          self.progressViews[downloadIDForTask];
+      DYYYToast *progressView = self.progressViews[downloadIDForTask];
       BOOL wasCancelled = progressView.isCancelled;
 
       [progressView dismiss];
@@ -1768,8 +1793,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
 
     dispatch_async(dispatch_get_main_queue(), ^{
       // 隐藏进度视图
-      DYYYToast *progressView =
-          self.progressViews[downloadIDForTask];
+      DYYYToast *progressView = self.progressViews[downloadIDForTask];
       [progressView dismiss];
 
       [self.progressViews removeObjectForKey:downloadIDForTask];
@@ -2079,7 +2103,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
   [self downloadAllLivePhotosWithProgress:livePhotos
                                  progress:nil
                                completion:^(NSInteger successCount,
-                                            NSInteger totalCount) {
+                                            NSInteger totalCount){
                                }];
 }
 
@@ -2112,8 +2136,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
   // 创建自定义批量下载进度条界面
   dispatch_async(dispatch_get_main_queue(), ^{
     CGRect screenBounds = [UIScreen mainScreen].bounds;
-    DYYYToast *progressView =
-        [[DYYYToast alloc] initWithFrame:screenBounds];
+    DYYYToast *progressView = [[DYYYToast alloc] initWithFrame:screenBounds];
     [progressView show];
 
     NSString *batchID = [NSUUID UUID].UUIDString;
@@ -2161,29 +2184,29 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
       dispatch_after(
           dispatch_time(DISPATCH_TIME_NOW, index * 0.5 * NSEC_PER_SEC),
           dispatch_get_main_queue(), ^{
-            [self
-                downloadLivePhoto:imageURL
-                         videoURL:videoURL
-                       completion:^{
-                         dispatch_async(dispatch_get_main_queue(), ^{
-                           successCount++;
-                           completedCount++;
+            [self downloadLivePhoto:imageURL
+                           videoURL:videoURL
+                         completion:^{
+                           dispatch_async(dispatch_get_main_queue(), ^{
+                             successCount++;
+                             completedCount++;
 
-                           float progress = (float)completedCount / totalCount;
-                           [progressView setProgress:progress];
+                             float progress =
+                                 (float)completedCount / totalCount;
+                             [progressView setProgress:progress];
 
-                           if (progressBlock) {
-                             progressBlock(completedCount, totalCount);
-                           }
-
-                           if (completedCount >= totalCount) {
-                             [progressView dismiss];
-                             if (completion) {
-                               completion(successCount, totalCount);
+                             if (progressBlock) {
+                               progressBlock(completedCount, totalCount);
                              }
-                           }
-                         });
-                       }];
+
+                             if (completedCount >= totalCount) {
+                               [progressView dismiss];
+                               if (completion) {
+                                 completion(successCount, totalCount);
+                               }
+                             }
+                           });
+                         }];
           });
     }
   });
@@ -2193,212 +2216,243 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
   return [NSClassFromString(@"AWEUIThemeManager") isLightTheme] ? NO : YES;
 }
 
-+ (void)parseAndDownloadVideoWithShareLink:(NSString *)shareLink apiKey:(NSString *)apiKey {
-    if (shareLink.length == 0 || apiKey.length == 0) {
-        [self showToast:@"分享链接或API密钥无效"];
-        return;
-    }
++ (void)parseAndDownloadVideoWithShareLink:(NSString *)shareLink
+                                    apiKey:(NSString *)apiKey {
+  if (shareLink.length == 0 || apiKey.length == 0) {
+    [self showToast:@"分享链接或API密钥无效"];
+    return;
+  }
 
-    NSString *apiUrl = [NSString stringWithFormat:@"%@%@", apiKey, [shareLink stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLQueryAllowedCharacterSet]]];
+  NSString *apiUrl = [NSString
+      stringWithFormat:@"%@%@", apiKey,
+                       [shareLink
+                           stringByAddingPercentEncodingWithAllowedCharacters:
+                               [NSCharacterSet URLQueryAllowedCharacterSet]]];
 
-    NSURL *url = [NSURL URLWithString:apiUrl];
-    NSURLRequest *request = [NSURLRequest requestWithURL:url];
-    NSURLSession *session = [NSURLSession sharedSession];
+  NSURL *url = [NSURL URLWithString:apiUrl];
+  NSURLRequest *request = [NSURLRequest requestWithURL:url];
+  NSURLSession *session = [NSURLSession sharedSession];
 
-    NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request
-                            completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-                              dispatch_async(dispatch_get_main_queue(), ^{
-                            if (error) {
-                                [self showToast:[NSString stringWithFormat:@"接口请求失败: %@", error.localizedDescription]];
-                                return;
-                            }
+  NSURLSessionDataTask *dataTask = [session
+      dataTaskWithRequest:request
+        completionHandler:^(NSData *data, NSURLResponse *response,
+                            NSError *error) {
+          dispatch_async(dispatch_get_main_queue(), ^{
+            if (error) {
+              [self showToast:[NSString
+                                  stringWithFormat:@"接口请求失败: %@",
+                                                   error.localizedDescription]];
+              return;
+            }
 
-                            NSError *jsonError;
-                            NSDictionary *json = [NSJSONSerialization JSONObjectWithData:data options:0 error:&jsonError];
-                            if (jsonError) {
-                                [self showToast:@"解析接口返回数据失败"];
-                                return;
-                            }
+            NSError *jsonError;
+            NSDictionary *json =
+                [NSJSONSerialization JSONObjectWithData:data
+                                                options:0
+                                                  error:&jsonError];
+            if (jsonError) {
+              [self showToast:@"解析接口返回数据失败"];
+              return;
+            }
 
-                            NSInteger code = [json[@"code"] integerValue];
-                            if (code != 0 && code != 200) {
-                                [self showToast:[NSString stringWithFormat:@"接口返回错误: %@", json[@"msg"] ?: @"未知错误"]];
-                                return;
-                            }
+            NSInteger code = [json[@"code"] integerValue];
+            if (code != 0 && code != 200) {
+              [self showToast:[NSString stringWithFormat:@"接口返回错误: %@",
+                                                         json[@"msg"]
+                                                             ?: @"未知错误"]];
+              return;
+            }
 
-                            NSDictionary *dataDict = json[@"data"];
-                            if (!dataDict) {
-                                [self showToast:@"接口返回数据为空"];
-                                return;
-                            }
-                            NSArray *videos = dataDict[@"videos"];
-                            NSArray *images = dataDict[@"images"];
-                            NSArray *videoList = dataDict[@"video_list"];
-                            BOOL hasVideos = [videos isKindOfClass:[NSArray class]] && videos.count > 0;
-                            BOOL hasImages = [images isKindOfClass:[NSArray class]] && images.count > 0;
-                            BOOL hasVideoList = [videoList isKindOfClass:[NSArray class]] && videoList.count > 0;
-                            BOOL shouldShowQualityOptions = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYShowAllVideoQuality"];
+            NSDictionary *dataDict = json[@"data"];
+            if (!dataDict) {
+              [self showToast:@"接口返回数据为空"];
+              return;
+            }
+            NSArray *videos = dataDict[@"videos"];
+            NSArray *images = dataDict[@"images"];
+            NSArray *videoList = dataDict[@"video_list"];
+            BOOL hasVideos =
+                [videos isKindOfClass:[NSArray class]] && videos.count > 0;
+            BOOL hasImages =
+                [images isKindOfClass:[NSArray class]] && images.count > 0;
+            BOOL hasVideoList = [videoList isKindOfClass:[NSArray class]] &&
+                                videoList.count > 0;
+            BOOL shouldShowQualityOptions =
+                [[NSUserDefaults standardUserDefaults]
+                    boolForKey:@"DYYYShowAllVideoQuality"];
 
-                            // 如果启用了显示清晰度选项，并且存在 videoList，则弹出选择面板
-                            if (shouldShowQualityOptions && hasVideoList) {
-                                AWEUserActionSheetView *actionSheet = [[NSClassFromString(@"AWEUserActionSheetView") alloc] init];
-                                NSMutableArray *actions = [NSMutableArray array];
+            // 如果启用了显示清晰度选项，并且存在 videoList，则弹出选择面板
+            if (shouldShowQualityOptions && hasVideoList) {
+              AWEUserActionSheetView *actionSheet =
+                  [[NSClassFromString(@"AWEUserActionSheetView") alloc] init];
+              NSMutableArray *actions = [NSMutableArray array];
 
-                                for (NSDictionary *videoDict in videoList) {
-                                    NSString *url = videoDict[@"url"];
-                                    NSString *level = videoDict[@"level"];
-                                    if (url.length > 0 && level.length > 0) {
-                                        AWEUserSheetAction *qualityAction = [NSClassFromString(@"AWEUserSheetAction")
-                                            actionWithTitle:level
-                                                imgName:nil
-                                                handler:^{
-                                                  NSURL *videoDownloadUrl = [NSURL URLWithString:url];
-                                                  [self downloadMedia:videoDownloadUrl
-                                                        mediaType:MediaTypeVideo
-                                                      completion:^(BOOL success) {
-                                                        if (success) {
-                                                        } else {
-                                                          [self showToast:[NSString stringWithFormat:@"已取消保存 (%@)", level]];
-                                                        }
-                                                      }];
-                                                }];
-                                        [actions addObject:qualityAction];
-                                    }
-                                }
+              for (NSDictionary *videoDict in videoList) {
+                NSString *url = videoDict[@"url"];
+                NSString *level = videoDict[@"level"];
+                if (url.length > 0 && level.length > 0) {
+                  AWEUserSheetAction *qualityAction = [NSClassFromString(
+                      @"AWEUserSheetAction")
+                      actionWithTitle:level
+                              imgName:nil
+                              handler:^{
+                                NSURL *videoDownloadUrl =
+                                    [NSURL URLWithString:url];
+                                [self
+                                    downloadMedia:videoDownloadUrl
+                                        mediaType:MediaTypeVideo
+                                       completion:^(BOOL success) {
+                                         if (success) {
+                                         } else {
+                                           [self showToast:
+                                                     [NSString
+                                                         stringWithFormat:
+                                                             @"已取消保存 (%@)",
+                                                             level]];
+                                         }
+                                       }];
+                              }];
+                  [actions addObject:qualityAction];
+                }
+              }
 
-                                // 附加批量下载选项（如果开启清晰度选项 + 有视频/图片）
-                                if (hasVideos || hasImages) {
-                                    AWEUserSheetAction *batchDownloadAction = [NSClassFromString(@"AWEUserSheetAction")
-                                        actionWithTitle:@"批量下载所有资源"
-                                            imgName:nil
-                                            handler:^{
-                                              [self batchDownloadResources:videos images:images];
-                                            }];
-                                    [actions addObject:batchDownloadAction];
-                                }
+              // 附加批量下载选项（如果开启清晰度选项 + 有视频/图片）
+              if (hasVideos || hasImages) {
+                AWEUserSheetAction *batchDownloadAction =
+                    [NSClassFromString(@"AWEUserSheetAction")
+                        actionWithTitle:@"批量下载所有资源"
+                                imgName:nil
+                                handler:^{
+                                  [self batchDownloadResources:videos
+                                                        images:images];
+                                }];
+                [actions addObject:batchDownloadAction];
+              }
 
-                                if (actions.count > 0) {
-                                    [actionSheet setActions:actions];
-                                    [actionSheet show];
-                                    return;
-                                }
-                            }
+              if (actions.count > 0) {
+                [actionSheet setActions:actions];
+                [actionSheet show];
+                return;
+              }
+            }
 
-                            // 如果未开启清晰度选项，但有 video_list，自动下载第一个清晰度
-                            if (!shouldShowQualityOptions && hasVideoList) {
-                                NSDictionary *firstVideo = videoList.firstObject;
-                                NSString *url = firstVideo[@"url"];
-                                NSString *level = firstVideo[@"level"] ?: @"默认清晰度";
+            // 如果未开启清晰度选项，但有 video_list，自动下载第一个清晰度
+            if (!shouldShowQualityOptions && hasVideoList) {
+              NSDictionary *firstVideo = videoList.firstObject;
+              NSString *url = firstVideo[@"url"];
+              NSString *level = firstVideo[@"level"] ?: @"默认清晰度";
 
-                                if (url.length > 0) {
-                                    NSURL *videoDownloadUrl = [NSURL URLWithString:url];
-                                    [self downloadMedia:videoDownloadUrl
-                                          mediaType:MediaTypeVideo
-                                        completion:^(BOOL success) {
-                                            if (success) {
-                                            } else {
-                                                [self showToast:[NSString stringWithFormat:@"已取消保存 (%@)", level]];
-                                            }
-                                        }];
-                                    return;
-                                }
-                            }
+              if (url.length > 0) {
+                NSURL *videoDownloadUrl = [NSURL URLWithString:url];
+                [self downloadMedia:videoDownloadUrl
+                          mediaType:MediaTypeVideo
+                         completion:^(BOOL success) {
+                           if (success) {
+                           } else {
+                             [self showToast:[NSString stringWithFormat:
+                                                           @"已取消保存 (%@)",
+                                                           level]];
+                           }
+                         }];
+                return;
+              }
+            }
 
-                            [self batchDownloadResources:videos images:images];
-                              });
-                            }];
+            [self batchDownloadResources:videos images:images];
+          });
+        }];
 
-    [dataTask resume];
+  [dataTask resume];
 }
 
 + (void)batchDownloadResources:(NSArray *)videos images:(NSArray *)images {
-    BOOL hasVideos = [videos isKindOfClass:[NSArray class]] && videos.count > 0;
-    BOOL hasImages = [images isKindOfClass:[NSArray class]] && images.count > 0;
+  BOOL hasVideos = [videos isKindOfClass:[NSArray class]] && videos.count > 0;
+  BOOL hasImages = [images isKindOfClass:[NSArray class]] && images.count > 0;
 
-    NSMutableArray<id> *videoFiles = [NSMutableArray arrayWithCapacity:videos.count];
-    NSMutableArray<id> *imageFiles = [NSMutableArray arrayWithCapacity:images.count];
-    for (NSInteger i = 0; i < videos.count; i++)
-        [videoFiles addObject:[NSNull null]];
-    for (NSInteger i = 0; i < images.count; i++)
-        [imageFiles addObject:[NSNull null]];
+  NSMutableArray<id> *videoFiles =
+      [NSMutableArray arrayWithCapacity:videos.count];
+  NSMutableArray<id> *imageFiles =
+      [NSMutableArray arrayWithCapacity:images.count];
+  for (NSInteger i = 0; i < videos.count; i++)
+    [videoFiles addObject:[NSNull null]];
+  for (NSInteger i = 0; i < images.count; i++)
+    [imageFiles addObject:[NSNull null]];
 
-    dispatch_group_t downloadGroup = dispatch_group_create();
-    __block NSInteger totalDownloads = 0;
-    __block NSInteger completedDownloads = 0;
-    __block NSInteger successfulDownloads = 0;
+  dispatch_group_t downloadGroup = dispatch_group_create();
+  __block NSInteger totalDownloads = 0;
+  __block NSInteger completedDownloads = 0;
+  __block NSInteger successfulDownloads = 0;
 
-    if (hasVideos) {
-        totalDownloads += videos.count;
-        for (NSInteger i = 0; i < videos.count; i++) {
-            NSDictionary *videoDict = videos[i];
-            NSString *videoUrl = videoDict[@"url"];
-            if (videoUrl.length == 0) {
-                completedDownloads++;
-                continue;
-            }
-            dispatch_group_enter(downloadGroup);
-            NSURL *videoDownloadUrl = [NSURL URLWithString:videoUrl];
-            [self downloadMediaWithProgress:videoDownloadUrl
-                          mediaType:MediaTypeVideo
-                           progress:nil
-                         completion:^(BOOL success, NSURL *fileURL) {
-                           if (success && fileURL) {
+  if (hasVideos) {
+    totalDownloads += videos.count;
+    for (NSInteger i = 0; i < videos.count; i++) {
+      NSDictionary *videoDict = videos[i];
+      NSString *videoUrl = videoDict[@"url"];
+      if (videoUrl.length == 0) {
+        completedDownloads++;
+        continue;
+      }
+      dispatch_group_enter(downloadGroup);
+      NSURL *videoDownloadUrl = [NSURL URLWithString:videoUrl];
+      [self downloadMediaWithProgress:videoDownloadUrl
+                            mediaType:MediaTypeVideo
+                             progress:nil
+                           completion:^(BOOL success, NSURL *fileURL) {
+                             if (success && fileURL) {
                                @synchronized(videoFiles) {
-                                   videoFiles[i] = fileURL;
+                                 videoFiles[i] = fileURL;
                                }
                                successfulDownloads++;
-                           }
-                           completedDownloads++;
-                           dispatch_group_leave(downloadGroup);
-                         }];
-        }
+                             }
+                             completedDownloads++;
+                             dispatch_group_leave(downloadGroup);
+                           }];
     }
+  }
 
-    if (hasImages) {
-        totalDownloads += images.count;
-        for (NSInteger i = 0; i < images.count; i++) {
-            NSString *imageUrl = images[i];
-            if (imageUrl.length == 0) {
-                completedDownloads++;
-                continue;
-            }
-            dispatch_group_enter(downloadGroup);
-            NSURL *imageDownloadUrl = [NSURL URLWithString:imageUrl];
-            [self downloadMediaWithProgress:imageDownloadUrl
-                          mediaType:MediaTypeImage
-                           progress:nil
-                         completion:^(BOOL success, NSURL *fileURL) {
-                           if (success && fileURL) {
+  if (hasImages) {
+    totalDownloads += images.count;
+    for (NSInteger i = 0; i < images.count; i++) {
+      NSString *imageUrl = images[i];
+      if (imageUrl.length == 0) {
+        completedDownloads++;
+        continue;
+      }
+      dispatch_group_enter(downloadGroup);
+      NSURL *imageDownloadUrl = [NSURL URLWithString:imageUrl];
+      [self downloadMediaWithProgress:imageDownloadUrl
+                            mediaType:MediaTypeImage
+                             progress:nil
+                           completion:^(BOOL success, NSURL *fileURL) {
+                             if (success && fileURL) {
                                @synchronized(imageFiles) {
-                                   imageFiles[i] = fileURL;
+                                 imageFiles[i] = fileURL;
                                }
                                successfulDownloads++;
-                           }
-                           completedDownloads++;
-                           dispatch_group_leave(downloadGroup);
-                         }];
-        }
+                             }
+                             completedDownloads++;
+                             dispatch_group_leave(downloadGroup);
+                           }];
+    }
+  }
+
+  dispatch_group_notify(downloadGroup, dispatch_get_main_queue(), ^{
+    NSInteger videoSuccessCount = 0;
+    for (id file in videoFiles) {
+      if ([file isKindOfClass:[NSURL class]]) {
+        [self saveMedia:(NSURL *)file mediaType:MediaTypeVideo completion:nil];
+        videoSuccessCount++;
+      }
     }
 
-    dispatch_group_notify(downloadGroup, dispatch_get_main_queue(), ^{
-
-      NSInteger videoSuccessCount = 0;
-      for (id file in videoFiles) {
-          if ([file isKindOfClass:[NSURL class]]) {
-              [self saveMedia:(NSURL *)file mediaType:MediaTypeVideo completion:nil];
-              videoSuccessCount++;
-          }
+    NSInteger imageSuccessCount = 0;
+    for (id file in imageFiles) {
+      if ([file isKindOfClass:[NSURL class]]) {
+        [self saveMedia:(NSURL *)file mediaType:MediaTypeImage completion:nil];
+        imageSuccessCount++;
       }
-
-      NSInteger imageSuccessCount = 0;
-      for (id file in imageFiles) {
-          if ([file isKindOfClass:[NSURL class]]) {
-              [self saveMedia:(NSURL *)file mediaType:MediaTypeImage completion:nil];
-              imageSuccessCount++;
-          }
-      }
-
-    });
+    }
+  });
 }
 
 @end

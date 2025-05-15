@@ -277,7 +277,6 @@ static AWESettingBaseViewController *createSubSettingsViewController(NSString *t
 	return settingsVC;
 }
 
-// 创建一个section的辅助方法
 static AWESettingSectionModel *createSection(NSString *title, NSArray *items) {
 	AWESettingSectionModel *section = [[%c(AWESettingSectionModel) alloc] init];
 	section.sectionHeaderTitle = title;
