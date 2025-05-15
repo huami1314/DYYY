@@ -37,7 +37,7 @@ TWEAK_NAME = DYYY
 DYYY_LIBRARY_SEARCH_PATHS = $(THEOS_PROJECT_DIR)/libs
 DYYY_HEADER_SEARCH_PATHS = $(THEOS_PROJECT_DIR)/libs/include
 
-DYYY_FILES = DYYY.xm DYYYFilterAdsAndFeed.xm DYYYFullScreen.xm DYYYHide.xm DYYYDarkMode.xm DYYYFloatClearButton.xm DYYYFloatSpeedButton.xm DYYYSettings.xm DYYYSettingsDependency.xm DYYYABTestHook.xm DYYYLongPressPanel.xm DYYYSaveMedia.xm DYYYDoubleClickMenu.xm DYYYSettingViewController.m DYYYBottomAlertView.m DYYYCustomInputView.m DYYYOptionsSelectionView.m DYYYIconOptionsDialogView.m DYYYAboutDialogView.m DYYYKeywordListView.m DYYYFilterSettingsView.m DYYYConfirmCloseView.m DYYYToast.m DYYYManager.m DYYYUtils.m CityManager.m
+DYYY_FILES = DYYY.xm DYYYFilterAdsAndFeed.xm DYYYFullScreen.xm DYYYHide.xm DYYYDarkMode.xm DYYYFloatClearButton.xm DYYYFloatSpeedButton.xm DYYYSettings.xm DYYYABTestHook.xm DYYYLongPressPanel.xm DYYYSaveMedia.xm DYYYDoubleClickMenu.xm DYYYSettingsHelper.m DYYYSettingViewController.m DYYYBottomAlertView.m DYYYCustomInputView.m DYYYOptionsSelectionView.m DYYYIconOptionsDialogView.m DYYYAboutDialogView.m DYYYKeywordListView.m DYYYFilterSettingsView.m DYYYConfirmCloseView.m DYYYToast.m DYYYManager.m DYYYUtils.m CityManager.m
 DYYY_CFLAGS = -fobjc-arc -w -I$(DYYY_HEADER_SEARCH_PATHS)
 DYYY_LDFLAGS = -L$(DYYY_LIBRARY_SEARCH_PATHS) -lwebp -weak_framework AVFAudio
 DYYY_FRAMEWORKS = CoreAudio
