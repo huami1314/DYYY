@@ -1386,6 +1386,25 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
     }
   }
 
+  NSString *livePhotoPath = [NSTemporaryDirectory() stringByAppendingPathComponent:@"LivePhotoBatch"];
+  NSFileManager *fileManager = [NSFileManager defaultManager];
+  if ([fileManager fileExistsAtPath:livePhotoPath]) {
+    NSError *error = nil;
+    [fileManager removeItemAtPath:livePhotoPath error:&error];
+    if (error) {
+      NSLog(@"清理实况照片临时目录失败: %@", error.localizedDescription);
+    }
+  }
+  
+  NSString *generalLivePhotoPath = [NSTemporaryDirectory() stringByAppendingPathComponent:@"LivePhoto"];
+  if ([fileManager fileExistsAtPath:generalLivePhotoPath]) {
+    NSError *error = nil;
+    [fileManager removeItemAtPath:generalLivePhotoPath error:&error];
+    if (error) {
+      NSLog(@"清理LivePhoto临时目录失败: %@", error.localizedDescription);
+    }
+  }
+
   [[DYYYManager shared].downloadTasks removeAllObjects];
   [[DYYYManager shared].progressViews removeAllObjects];
 }
@@ -1415,24 +1434,19 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
     return;
   }
 
-  // 创建自定义批量下载进度条界面
   dispatch_async(dispatch_get_main_queue(), ^{
     CGRect screenBounds = [UIScreen mainScreen].bounds;
     DYYYToast *progressView = [[DYYYToast alloc] initWithFrame:screenBounds];
     NSString *batchID = [NSUUID UUID].UUIDString;
     [[DYYYManager shared].progressViews setObject:progressView forKey:batchID];
 
-    // 显示进度视图
     [progressView show];
 
-    // 创建下载任务
     __block NSInteger completedCount = 0;
     __block NSInteger successCount = 0;
     NSInteger totalCount = imageURLs.count;
 
-    // 设置取消按钮事件
     progressView.cancelBlock = ^{
-      // 在这里可以添加取消批量下载的逻辑
       [self cancelAllDownloads];
       if (completion) {
         completion(successCount, totalCount);
@@ -1457,11 +1471,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
 
       // 创建单个下载任务ID
       NSString *downloadID = [NSUUID UUID].UUIDString;
-
-      // 关联到批量下载
       [[DYYYManager shared] associateDownload:downloadID withBatchID:batchID];
-
-      // 配置下载会话 - 使用带委托的会话以获取进度更新
       NSURLSessionConfiguration *configuration =
           [NSURLSessionConfiguration defaultSessionConfiguration];
       NSURLSession *session =
@@ -1472,15 +1482,11 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
       // 创建下载任务 - 使用代理方法
       NSURLSessionDownloadTask *downloadTask =
           [session downloadTaskWithURL:url];
-
-      // 存储下载任务
       [[DYYYManager shared].downloadTasks setObject:downloadTask
                                              forKey:downloadID];
       [[DYYYManager shared].taskProgressMap setObject:@0.0 forKey:downloadID];
       [[DYYYManager shared] setMediaType:MediaTypeImage
                            forDownloadID:downloadID];
-
-      // 开始下载
       [downloadTask resume];
     }
   });
@@ -1512,7 +1518,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
   [self.downloadToBatchMap setObject:batchID forKey:downloadID];
 }
 
-// 增加批量下载完成计数并更新进度
+// 批量下载完成计数并更新进度
 - (void)incrementCompletedAndUpdateProgressForBatch:(NSString *)batchID
                                             success:(BOOL)success {
   @synchronized(self) {
@@ -1531,33 +1537,28 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
     NSNumber *totalCountNum = self.batchTotalCountMap[batchID];
     NSInteger totalCount = totalCountNum ? [totalCountNum integerValue] : 0;
 
-    // 更新批量下载进度视图
     DYYYToast *progressView = self.progressViews[batchID];
     if (progressView) {
       float progress = totalCount > 0 ? (float)completedCount / totalCount : 0;
       [progressView setProgress:progress];
     }
 
-    // 调用进度回调
     void (^progressBlock)(NSInteger current, NSInteger total) =
         self.batchProgressBlocks[batchID];
     if (progressBlock) {
       progressBlock(completedCount, totalCount);
     }
 
-    // 如果所有下载都已完成，调用完成回调并清理
     if (completedCount >= totalCount) {
       NSInteger successCount =
           [self.batchSuccessCountMap[batchID] integerValue];
 
-      // 调用完成回调
       void (^completionBlock)(NSInteger successCount, NSInteger totalCount) =
           self.batchCompletionBlocks[batchID];
       if (completionBlock) {
         completionBlock(successCount, totalCount);
       }
 
-      // 移除进度视图
       [progressView dismiss];
       [self.progressViews removeObjectForKey:batchID];
 
@@ -1605,12 +1606,9 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
   // 计算进度
   float progress = (float)totalBytesWritten / totalBytesExpectedToWrite;
 
-  // 在主线程更新UI
   dispatch_async(dispatch_get_main_queue(), ^{
-    // 找到对应的进度视图
     NSString *downloadIDForTask = nil;
 
-    // 遍历找到任务对应的ID
     for (NSString *key in self.downloadTasks.allKeys) {
       NSURLSessionDownloadTask *task = self.downloadTasks[key];
       if (task == downloadTask) {
@@ -1621,12 +1619,10 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
 
     // 如果找到对应的进度视图，更新进度
     if (downloadIDForTask) {
-      // 更新进度记录
       [self.taskProgressMap setObject:@(progress) forKey:downloadIDForTask];
 
       DYYYToast *progressView = self.progressViews[downloadIDForTask];
       if (progressView) {
-        // 确保进度视图存在并且没有被取消
         if (!progressView.isCancelled) {
           [progressView setProgress:progress];
         }
@@ -1635,7 +1631,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
   });
 }
 
-// 添加下载完成的代理方法
+// 下载完成的代理方法
 - (void)URLSession:(NSURLSession *)session
                  downloadTask:(NSURLSessionDownloadTask *)downloadTask
     didFinishDownloadingToURL:(NSURL *)location {
@@ -1874,7 +1870,6 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
                   }];
     }];
   } else {
-    // iOS 14 兼容处理 - 分别保存图片和视频
     dispatch_async(dispatch_get_main_queue(), ^{
       [DYYYManager
           showToast:@"当前iOS版本不支持实况照片，将分别保存图片和视频"];
@@ -2106,110 +2101,446 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
                                             NSInteger totalCount){
                                }];
 }
-
 + (void)downloadAllLivePhotosWithProgress:(NSArray<NSDictionary *> *)livePhotos
-                                 progress:
-                                     (void (^)(NSInteger current,
-                                               NSInteger total))progressBlock
-                               completion:
-                                   (void (^)(NSInteger successCount,
-                                             NSInteger totalCount))completion {
-  if (livePhotos.count == 0) {
-    if (completion) {
-      completion(0, 0);
+                                 progress:(void (^)(NSInteger current, NSInteger total))progressBlock
+                               completion:(void (^)(NSInteger successCount, NSInteger totalCount))completion {
+    if (livePhotos.count == 0) {
+        if (completion) {
+            completion(0, 0);
+        }
+        return;
     }
-    return;
-  }
 
-  // 检查iOS版本
-  BOOL supportsLivePhoto = NO;
-  if (@available(iOS 15.0, *)) {
-    supportsLivePhoto = YES;
-  }
+    // 检查iOS版本是否支持实况照片
+    BOOL supportsLivePhoto = NO;
+    if (@available(iOS 15.0, *)) {
+        supportsLivePhoto = YES;
+    }
 
-  if (!supportsLivePhoto) {
-    dispatch_async(dispatch_get_main_queue(), ^{
-      [DYYYManager showToast:@"当前iOS版本不支持实况照片"];
-    });
-  }
-
-  // 创建自定义批量下载进度条界面
-  dispatch_async(dispatch_get_main_queue(), ^{
-    CGRect screenBounds = [UIScreen mainScreen].bounds;
-    DYYYToast *progressView = [[DYYYToast alloc] initWithFrame:screenBounds];
-    [progressView show];
-
-    NSString *batchID = [NSUUID UUID].UUIDString;
-
-    // 设置取消按钮事件
-    progressView.cancelBlock = ^{
-      [DYYYManager cancelAllDownloads];
-      if (completion) {
-        completion(0, livePhotos.count);
-      }
-    };
-
-    // 创建下载任务
-    __block NSInteger completedCount = 0;
-    __block NSInteger successCount = 0;
-    NSInteger totalCount = livePhotos.count;
-
-    // 为每个实况照片创建下载任务
-    for (NSInteger index = 0; index < livePhotos.count; index++) {
-      NSDictionary *livePhoto = livePhotos[index];
-      NSURL *imageURL = [NSURL URLWithString:livePhoto[@"imageURL"]];
-      NSURL *videoURL = [NSURL URLWithString:livePhoto[@"videoURL"]];
-
-      if (!imageURL || !videoURL) {
+    if (!supportsLivePhoto) {
         dispatch_async(dispatch_get_main_queue(), ^{
-          completedCount++;
-          float progress = (float)completedCount / totalCount;
-          [progressView setProgress:progress];
-
-          if (progressBlock) {
-            progressBlock(completedCount, totalCount);
-          }
-
-          if (completedCount >= totalCount) {
-            [progressView dismiss];
+            [self showToast:@"当前iOS版本不支持实况照片"];
             if (completion) {
-              completion(successCount, totalCount);
+                completion(0, livePhotos.count);
             }
-          }
         });
-        continue;
-      }
-
-      // 延迟启动每个下载，避免同时发起大量网络请求
-      dispatch_after(
-          dispatch_time(DISPATCH_TIME_NOW, index * 0.5 * NSEC_PER_SEC),
-          dispatch_get_main_queue(), ^{
-            [self downloadLivePhoto:imageURL
-                           videoURL:videoURL
-                         completion:^{
-                           dispatch_async(dispatch_get_main_queue(), ^{
-                             successCount++;
-                             completedCount++;
-
-                             float progress =
-                                 (float)completedCount / totalCount;
-                             [progressView setProgress:progress];
-
-                             if (progressBlock) {
-                               progressBlock(completedCount, totalCount);
-                             }
-
-                             if (completedCount >= totalCount) {
-                               [progressView dismiss];
-                               if (completion) {
-                                 completion(successCount, totalCount);
-                               }
-                             }
-                           });
-                         }];
-          });
+        return;
     }
-  });
+
+    // 创建进度显示UI
+    dispatch_async(dispatch_get_main_queue(), ^{
+        CGRect screenBounds = [UIScreen mainScreen].bounds;
+        DYYYToast *progressView = [[DYYYToast alloc] initWithFrame:screenBounds];
+        [progressView show];
+
+        progressView.cancelBlock = ^{
+            [self cancelAllDownloads];
+            if (completion) {
+                completion(0, livePhotos.count);
+            }
+        };
+
+        NSMutableArray<NSDictionary *> *downloadedFiles = [NSMutableArray arrayWithCapacity:livePhotos.count];
+        for (int i = 0; i < livePhotos.count; i++) {
+            [downloadedFiles addObject:@{@"imageURL": livePhotos[i][@"imageURL"], 
+                                        @"videoURL": livePhotos[i][@"videoURL"],
+                                        @"imagePath": [NSNull null],
+                                        @"videoPath": [NSNull null]}];
+        }
+
+        // 进度计算 - 为三个阶段分配权重
+        NSInteger totalSteps = livePhotos.count * 10; // 每个实况照片总共10步(4+4+2)
+        __block NSInteger completedSteps = 0;
+        __block NSInteger phase = 0; // 0:下载图片阶段，1:下载视频阶段，2:合成阶段
+        
+        // 创建临时目录
+        NSString *livePhotoPath = [NSTemporaryDirectory() stringByAppendingPathComponent:@"LivePhotoBatch"];
+        NSFileManager *fileManager = [NSFileManager defaultManager];
+        [fileManager createDirectoryAtPath:livePhotoPath withIntermediateDirectories:YES attributes:nil error:nil];
+
+        // 更新进度的block
+        void (^updateProgress)(NSString *)= ^(NSString *statusText){
+            float progress = (float)completedSteps / totalSteps;
+            
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [progressView setProgress:progress];
+                if (progressBlock) {
+                    progressBlock(completedSteps, totalSteps);
+                }
+            });
+        };
+
+        // 下载完成后的处理
+        void (^finishProcess)(void) = ^{
+            __block NSInteger successCount = 0;
+            
+            // 请求相册权限
+            [PHPhotoLibrary requestAuthorization:^(PHAuthorizationStatus status) {
+                if (status == PHAuthorizationStatusAuthorized) {
+
+                    dispatch_queue_t processQueue = dispatch_queue_create("com.dyyy.livephoto.process", DISPATCH_QUEUE_SERIAL);
+                    dispatch_group_t saveGroup = dispatch_group_create();
+                    
+                    NSInteger validFileCount = 0;
+                    for (NSDictionary *fileInfo in downloadedFiles) {
+                        NSString *imagePath = fileInfo[@"imagePath"];
+                        NSString *videoPath = fileInfo[@"videoPath"];
+                        
+                        if (![imagePath isKindOfClass:[NSNull class]] && 
+                            ![videoPath isKindOfClass:[NSNull class]] &&
+                            [fileManager fileExistsAtPath:imagePath] && 
+                            [fileManager fileExistsAtPath:videoPath]) {
+                            validFileCount++;
+                        }
+                    }
+                    
+                    if (validFileCount == 0) {
+                        dispatch_async(dispatch_get_main_queue(), ^{
+                            [progressView dismiss];
+                            [fileManager removeItemAtPath:livePhotoPath error:nil];
+                            if (completion) {
+                                completion(0, livePhotos.count);
+                            }
+                        });
+                        return;
+                    }
+                    
+                    float progressPerItem = (float)(livePhotos.count * 2) / totalSteps;
+                    __block NSInteger processedCount = 0;
+                    
+                    for (NSDictionary *fileInfo in downloadedFiles) {
+                        NSString *imagePath = fileInfo[@"imagePath"];
+                        NSString *videoPath = fileInfo[@"videoPath"];
+                        
+                        if (![imagePath isKindOfClass:[NSNull class]] && 
+                            ![videoPath isKindOfClass:[NSNull class]] &&
+                            [fileManager fileExistsAtPath:imagePath] && 
+                            [fileManager fileExistsAtPath:videoPath]) {
+                            
+                            dispatch_group_enter(saveGroup);
+                            
+                            dispatch_async(processQueue, ^{
+                                // 生成唯一标识符
+                                NSString *identifier = [NSUUID UUID].UUIDString;
+                                
+                                // 创建每个任务的专属实例变量，避免共享变量冲突
+                                AVAssetReader *localReader = nil;
+                                AVAssetWriter *localWriter = nil;
+                                dispatch_queue_t localQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+                                dispatch_group_t localGroup = dispatch_group_create();
+                                
+                                // 处理照片和元数据
+                                NSString *photoName = [imagePath lastPathComponent];
+                                NSString *photoFile = [[DYYYManager shared] filePathFromDoc:photoName];
+                                [[DYYYManager shared] addMetadataToPhoto:[NSURL fileURLWithPath:imagePath] 
+                                                              outputFile:photoFile 
+                                                             identifier:identifier];
+                                
+                                // 处理视频和元数据
+                                NSString *videoName = [videoPath lastPathComponent];
+                                NSString *videoFile = [[DYYYManager shared] filePathFromDoc:videoName];
+                                
+                                // 使用本地变量而非全局共享变量
+                                [[DYYYManager shared] addMetadataToVideoWithLocalVars:[NSURL fileURLWithPath:videoPath]
+                                                                          outputFile:videoFile
+                                                                         identifier:identifier
+                                                                           reader:&localReader
+                                                                           writer:&localWriter
+                                                                            queue:localQueue
+                                                                            group:localGroup
+                                                                         complete:^(BOOL success, NSString *photoFile, NSString *videoFile, NSError *error) {
+                                    if (success) {
+                                        NSURL *photo = [NSURL fileURLWithPath:photoFile];
+                                        NSURL *video = [NSURL fileURLWithPath:videoFile];
+                                        
+                                        [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
+                                            PHAssetCreationRequest *request = [PHAssetCreationRequest creationRequestForAsset];
+                                            [request addResourceWithType:PHAssetResourceTypePhoto fileURL:photo options:nil];
+                                            [request addResourceWithType:PHAssetResourceTypePairedVideo fileURL:video options:nil];
+                                        } completionHandler:^(BOOL success, NSError *_Nullable error) {
+                                            if (success) {
+                                                successCount++;
+                                            }
+                                            
+                                            NSArray *filesToDelete = @[imagePath, videoPath, photoFile, videoFile];
+                                            for (NSString *path in filesToDelete) {
+                                                [fileManager removeItemAtPath:path error:nil];
+                                            }
+                                            
+                                            // 增加进度步数
+                                            processedCount++;
+                                            completedSteps += 2; // 每完成一个合成任务增加2步
+                                            updateProgress([NSString stringWithFormat:@"已合成 %ld/%ld", (long)processedCount, (long)validFileCount]);
+                                            
+                                            dispatch_group_leave(saveGroup);
+                                        }];
+                                    } else {
+                                        [fileManager removeItemAtPath:imagePath error:nil];
+                                        [fileManager removeItemAtPath:videoPath error:nil];
+                                        if (photoFile) [fileManager removeItemAtPath:photoFile error:nil];
+                                        if (videoFile) [fileManager removeItemAtPath:videoFile error:nil];
+                                        
+                                        // 增加进度步数（即使失败也增加）
+                                        processedCount++;
+                                        completedSteps += 2;
+                                        updateProgress([NSString stringWithFormat:@"已合成 %ld/%ld", (long)processedCount, (long)validFileCount]);
+                                        
+                                        dispatch_group_leave(saveGroup);
+                                    }
+                                }];
+                            });
+                        }
+                    }
+                    
+                    dispatch_group_notify(saveGroup, dispatch_get_main_queue(), ^{
+                        [progressView dismiss];
+                        
+                        [fileManager removeItemAtPath:livePhotoPath error:nil];
+                        
+                        if (completion) {
+                            completion(successCount, livePhotos.count);
+                        }
+                    });
+                } else {
+                    // 没有相册权限
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        [progressView dismiss];
+                        [self showToast:@"没有相册权限，无法保存实况照片"];
+                        
+                        [fileManager removeItemAtPath:livePhotoPath error:nil];
+                        
+                        if (completion) {
+                            completion(0, livePhotos.count);
+                        }
+                    });
+                }
+            }];
+        };
+
+        // 第一阶段：批量下载所有图片
+        dispatch_group_t imageDownloadGroup = dispatch_group_create();
+        updateProgress(@"正在下载图片...");
+        
+        for (NSInteger i = 0; i < livePhotos.count; i++) {
+            NSDictionary *livePhoto = downloadedFiles[i];
+            NSString *imageURLString = livePhoto[@"imageURL"];
+            NSURL *imageURL = [NSURL URLWithString:imageURLString];
+            
+            if (!imageURL) {
+                completedSteps += 4; // 图片下载占4步
+                continue;
+            }
+            
+            dispatch_group_enter(imageDownloadGroup);
+            
+            // 创建文件路径
+            NSString *uniqueID = [NSUUID UUID].UUIDString;
+            NSString *imagePath = [livePhotoPath stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.heic", uniqueID]];
+            
+            // 配置下载会话
+            NSURLSessionConfiguration *configuration = [NSURLSessionConfiguration defaultSessionConfiguration];
+            configuration.timeoutIntervalForRequest = 60.0;
+            NSURLSession *session = [NSURLSession sessionWithConfiguration:configuration];
+            
+            NSURLSessionDataTask *imageTask = [session dataTaskWithURL:imageURL completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+                if (!error && data) {
+                    if ([data writeToFile:imagePath atomically:YES]) {
+                        NSMutableDictionary *updatedInfo = [downloadedFiles[i] mutableCopy];
+                        updatedInfo[@"imagePath"] = imagePath;
+                        downloadedFiles[i] = updatedInfo;
+                    }
+                }
+                
+                completedSteps += 4; // 图片下载占4步
+                updateProgress([NSString stringWithFormat:@"已下载图片 %ld/%ld", (long)(i+1), (long)livePhotos.count]);
+                dispatch_group_leave(imageDownloadGroup);
+            }];
+            
+            [imageTask resume];
+        }
+        
+        // 所有图片下载完成后，开始下载视频
+        dispatch_group_notify(imageDownloadGroup, dispatch_get_main_queue(), ^{
+            phase = 1; // 进入视频下载阶段
+            updateProgress(@"正在下载视频...");
+            
+            dispatch_group_t videoDownloadGroup = dispatch_group_create();
+            
+            for (NSInteger i = 0; i < livePhotos.count; i++) {
+                NSDictionary *fileInfo = downloadedFiles[i];
+                
+                // 只处理图片下载成功的项
+                if ([fileInfo[@"imagePath"] isKindOfClass:[NSNull class]]) {
+                    completedSteps += 4; // 视频下载占4步
+                    continue;
+                }
+                
+                NSString *videoURLString = fileInfo[@"videoURL"];
+                NSURL *videoURL = [NSURL URLWithString:videoURLString];
+                
+                if (!videoURL) {
+                    completedSteps += 4; // 视频下载占4步
+                    continue;
+                }
+                
+                dispatch_group_enter(videoDownloadGroup);
+                
+                // 使用与图片相同的ID但不同的扩展名
+                NSString *imagePath = fileInfo[@"imagePath"];
+                NSString *baseName = [[imagePath lastPathComponent] stringByDeletingPathExtension];
+                NSString *videoPath = [livePhotoPath stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.mp4", baseName]];
+                
+                // 配置下载会话
+                NSURLSessionConfiguration *configuration = [NSURLSessionConfiguration defaultSessionConfiguration];
+                configuration.timeoutIntervalForRequest = 60.0;
+                NSURLSession *session = [NSURLSession sessionWithConfiguration:configuration];
+                
+                NSURLSessionDataTask *videoTask = [session dataTaskWithURL:videoURL completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+                    if (!error && data) {
+                        if ([data writeToFile:videoPath atomically:YES]) {
+                            NSMutableDictionary *updatedInfo = [downloadedFiles[i] mutableCopy];
+                            updatedInfo[@"videoPath"] = videoPath;
+                            downloadedFiles[i] = updatedInfo;
+                        }
+                    }
+                    
+                    completedSteps += 4; // 视频下载占4步
+                    updateProgress([NSString stringWithFormat:@"已下载视频 %ld/%ld", (long)(i+1), (long)livePhotos.count]);
+                    dispatch_group_leave(videoDownloadGroup);
+                }];
+                
+                [videoTask resume];
+            }
+            
+            // 所有视频下载完成后，开始合成实况照片
+            dispatch_group_notify(videoDownloadGroup, dispatch_get_main_queue(), ^{
+                phase = 2; // 进入合成阶段
+                finishProcess();
+            });
+        });
+    });
+}
+
+// 使用本地变量处理视频
+- (void)addMetadataToVideoWithLocalVars:(NSURL *)videoURL
+                             outputFile:(NSString *)outputFile
+                            identifier:(NSString *)identifier
+                                reader:(AVAssetReader **)readerPtr
+                                writer:(AVAssetWriter **)writerPtr
+                                 queue:(dispatch_queue_t)queue
+                                 group:(dispatch_group_t)group
+                              complete:(void (^)(BOOL success, NSString *photoFile, NSString *videoFile, NSError *error))complete {
+    NSError *error = nil;
+    AVAsset *asset = [AVAsset assetWithURL:videoURL];
+    AVAssetReader *reader = [AVAssetReader assetReaderWithAsset:asset error:&error];
+    if (error) {
+        if (complete) complete(NO, nil, nil, error);
+        return;
+    }
+    
+    *readerPtr = reader;
+    
+    NSMutableArray<AVMetadataItem *> *metadata = asset.metadata.mutableCopy;
+    AVMetadataItem *item = [self createContentIdentifierMetadataItem:identifier];
+    [metadata addObject:item];
+    NSURL *videoFileURL = [NSURL fileURLWithPath:outputFile];
+    [self deleteFile:outputFile];
+    
+    AVAssetWriter *writer = [AVAssetWriter assetWriterWithURL:videoFileURL fileType:AVFileTypeQuickTimeMovie error:&error];
+    if (error) {
+        if (complete) complete(NO, nil, nil, error);
+        return;
+    }
+    
+    *writerPtr = writer;
+    [writer setMetadata:metadata];
+    
+    NSArray<AVAssetTrack *> *tracks = [asset tracks];
+    for (AVAssetTrack *track in tracks) {
+        NSDictionary *readerOutputSettings = nil;
+        NSDictionary *writerOuputSettings = nil;
+        if ([track.mediaType isEqualToString:AVMediaTypeAudio]) {
+            readerOutputSettings = @{AVFormatIDKey : @(kAudioFormatLinearPCM)};
+            writerOuputSettings = @{
+                AVFormatIDKey : @(kAudioFormatMPEG4AAC),
+                AVSampleRateKey : @(44100),
+                AVNumberOfChannelsKey : @(2),
+                AVEncoderBitRateKey : @(128000)
+            };
+        }
+        
+        AVAssetReaderTrackOutput *output = [AVAssetReaderTrackOutput assetReaderTrackOutputWithTrack:track outputSettings:readerOutputSettings];
+        AVAssetWriterInput *input = [AVAssetWriterInput assetWriterInputWithMediaType:track.mediaType outputSettings:writerOuputSettings];
+        
+        if ([reader canAddOutput:output] && [writer canAddInput:input]) {
+            [reader addOutput:output];
+            [writer addInput:input];
+        }
+    }
+    
+    AVAssetWriterInput *input = [self createStillImageTimeAssetWriterInput];
+    AVAssetWriterInputMetadataAdaptor *adaptor = [AVAssetWriterInputMetadataAdaptor assetWriterInputMetadataAdaptorWithAssetWriterInput:input];
+    if ([writer canAddInput:input]) {
+        [writer addInput:input];
+    }
+    
+    [writer startWriting];
+    [writer startSessionAtSourceTime:kCMTimeZero];
+    [reader startReading];
+    
+    AVMetadataItem *timedItem = [self createStillImageTimeMetadataItem];
+    CMTimeRange timedRange = CMTimeRangeMake(kCMTimeZero, CMTimeMake(1, 100));
+    AVTimedMetadataGroup *timedMetadataGroup = [[AVTimedMetadataGroup alloc] initWithItems:@[ timedItem ] timeRange:timedRange];
+    [adaptor appendTimedMetadataGroup:timedMetadataGroup];
+    
+    for (NSInteger i = 0; i < reader.outputs.count; ++i) {
+        dispatch_group_enter(group);
+        [self writeTrackWithLocalVars:i reader:reader writer:writer queue:queue group:group];
+    }
+    
+    dispatch_group_notify(group, dispatch_get_main_queue(), ^{
+        [reader cancelReading];
+        [writer finishWritingWithCompletionHandler:^{
+            AVAssetWriterStatus status = writer.status;
+            if (status == AVAssetWriterStatusCompleted) {
+                NSString *photoName = [[videoURL lastPathComponent] stringByDeletingPathExtension];
+                NSString *photoFile = [self filePathFromDoc:[photoName stringByAppendingPathExtension:@"heic"]];
+                if (complete) complete(YES, photoFile, outputFile, nil);
+            } else {
+                if (complete) complete(NO, nil, nil, writer.error);
+            }
+        }];
+    });
+}
+
+// 处理视频曲目的写入
+- (void)writeTrackWithLocalVars:(NSInteger)trackIndex 
+                         reader:(AVAssetReader *)reader
+                         writer:(AVAssetWriter *)writer
+                          queue:(dispatch_queue_t)queue 
+                          group:(dispatch_group_t)group {
+    AVAssetReaderOutput *output = reader.outputs[trackIndex];
+    AVAssetWriterInput *input = writer.inputs[trackIndex];
+
+    [input requestMediaDataWhenReadyOnQueue:queue usingBlock:^{
+        while (input.readyForMoreMediaData) {
+            AVAssetReaderStatus status = reader.status;
+            CMSampleBufferRef buffer = NULL;
+            if ((status == AVAssetReaderStatusReading) && (buffer = [output copyNextSampleBuffer])) {
+                BOOL success = [input appendSampleBuffer:buffer];
+                CFRelease(buffer);
+                if (!success) {
+                    [input markAsFinished];
+                    dispatch_group_leave(group);
+                    return;
+                }
+            } else {
+                [input markAsFinished];
+                dispatch_group_leave(group);
+                return;
+            }
+        }
+    }];
 }
 
 + (BOOL)isDarkMode {
