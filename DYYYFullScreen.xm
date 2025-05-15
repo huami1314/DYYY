@@ -395,8 +395,8 @@ static CGFloat currentScale = 1.0;
 			}
 		}
 	}
-    NSArray *originalSubviews = %orig;
-    return originalSubviews;
+	NSArray *originalSubviews = %orig;
+	return originalSubviews;
 }
 
 %end
@@ -518,13 +518,10 @@ static CGFloat currentScale = 1.0;
 			if ([subview isKindOfClass:generalButtonClass]) {
 				AWENormalModeTabBarGeneralButton *button = (AWENormalModeTabBarGeneralButton *)subview;
 				if ([button.accessibilityLabel isEqualToString:@"首页"] && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHomeRefresh"] && button.status == 2) {
-					if (button.gestureRecognizers && button.gestureRecognizers.count > 0) {
-						button.userInteractionEnabled = NO;
-					}
+					button.userInteractionEnabled = NO;
+
 				} else if ([button.accessibilityLabel isEqualToString:@"首页"] && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHomeRefresh"] && button.status == 1) {
-					if (button.gestureRecognizers && button.gestureRecognizers.count > 0) {
-						button.userInteractionEnabled = YES;
-					}
+					button.userInteractionEnabled = YES;
 				}
 			}
 		}
