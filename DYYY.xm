@@ -474,7 +474,7 @@
 %end
 
 %hook UIView
-//关键方法,误删！
+// 关键方法,误删！
 %new
 - (UIViewController *)firstAvailableUIViewController {
 	UIResponder *responder = [self nextResponder];
@@ -489,60 +489,60 @@
 
 %end
 
-//重写全局透明方法
+// 重写全局透明方法
 %hook AWEPlayInteractionViewController
 
 - (UIView *)view {
-    UIView *originalView = %orig;
+	UIView *originalView = %orig;
 
-    NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
-    if (transparentValue.length > 0) {
-        CGFloat alphaValue = transparentValue.floatValue;
-        if (alphaValue >= 0.0 && alphaValue <= 1.0) {
-            for (UIView *subview in originalView.subviews) {
-                if (subview.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG) {
-                    if (subview.alpha > 0) {
-                        subview.alpha = alphaValue;
-                    }
-                }
-            }
-        }
-    }
+	NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
+	if (transparentValue.length > 0) {
+		CGFloat alphaValue = transparentValue.floatValue;
+		if (alphaValue >= 0.0 && alphaValue <= 1.0) {
+			for (UIView *subview in originalView.subviews) {
+				if (subview.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG) {
+					if (subview.alpha > 0) {
+						subview.alpha = alphaValue;
+					}
+				}
+			}
+		}
+	}
 
-    return originalView;
+	return originalView;
 }
 
 %end
 
-//处理视频流直播文案透明度
+// 处理视频流直播文案透明度
 %hook AWEElementStackView
 
 - (void)setAlpha:(CGFloat)alpha {
-    UIViewController *vc = [self firstAvailableUIViewController];
-    
-    if ([vc isKindOfClass:%c(AWELiveNewPreStreamViewController)] && alpha > 0) {
-        NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
-        if (transparentValue.length > 0) {
-            CGFloat alphaValue = transparentValue.floatValue;
-            if (alphaValue >= 0.0 && alphaValue <= 1.0) {
-                %orig(alphaValue);
-                return;
-            }
-        }
-    }
-    %orig;
+	UIViewController *vc = [self firstAvailableUIViewController];
+
+	if ([vc isKindOfClass:%c(AWELiveNewPreStreamViewController)] && alpha > 0) {
+		NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
+		if (transparentValue.length > 0) {
+			CGFloat alphaValue = transparentValue.floatValue;
+			if (alphaValue >= 0.0 && alphaValue <= 1.0) {
+				%orig(alphaValue);
+				return;
+			}
+		}
+	}
+	%orig;
 }
 
 %new
 - (UIViewController *)firstAvailableUIViewController {
-    UIResponder *responder = [self nextResponder];
-    while (responder != nil) {
-        if ([responder isKindOfClass:[UIViewController class]]) {
-            return (UIViewController *)responder;
-        }
-        responder = [responder nextResponder];
-    }
-    return nil;
+	UIResponder *responder = [self nextResponder];
+	while (responder != nil) {
+		if ([responder isKindOfClass:[UIViewController class]]) {
+			return (UIViewController *)responder;
+		}
+		responder = [responder nextResponder];
+	}
+	return nil;
 }
 
 %end
@@ -576,154 +576,164 @@
 
 // layoutSubviews 保持不变
 - (void)layoutSubviews {
-    %orig;
-    [self applyCustomProgressStyle];
+	%orig;
+	[self applyCustomProgressStyle];
 }
 
 %new
 
 - (void)applyCustomProgressStyle {
-    NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
-    UIView *parentView = self.superview;
+	NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
+	UIView *parentView = self.superview;
 
-    if (!parentView) return;
+	if (!parentView)
+		return;
 
-    if ([scheduleStyle isEqualToString:@"进度条两侧左右"]) {
-        // 尝试获取标签
-        UILabel *leftLabel = [parentView viewWithTag:10001];
-        UILabel *rightLabel = [parentView viewWithTag:10002];
+	if ([scheduleStyle isEqualToString:@"进度条两侧左右"]) {
+		// 尝试获取标签
+		UILabel *leftLabel = [parentView viewWithTag:10001];
+		UILabel *rightLabel = [parentView viewWithTag:10002];
 
-        if (leftLabel && rightLabel) {
-            CGFloat padding = 5.0;
-            CGFloat sliderY = self.frame.origin.y;
-            CGFloat sliderHeight = self.frame.size.height;
-            CGFloat sliderX = leftLabel.frame.origin.x + leftLabel.frame.size.width + padding;
-            CGFloat sliderWidth = rightLabel.frame.origin.x - padding - sliderX;
+		if (leftLabel && rightLabel) {
+			CGFloat padding = 5.0;
+			CGFloat sliderY = self.frame.origin.y;
+			CGFloat sliderHeight = self.frame.size.height;
+			CGFloat sliderX = leftLabel.frame.origin.x + leftLabel.frame.size.width + padding;
+			CGFloat sliderWidth = rightLabel.frame.origin.x - padding - sliderX;
 
-            if (sliderWidth < 0) sliderWidth = 0;
+			if (sliderWidth < 0)
+				sliderWidth = 0;
 
-            self.frame = CGRectMake(sliderX, sliderY, sliderWidth, sliderHeight);
-        } else {
-            CGFloat fallbackWidthPercent = 0.80;
-            CGFloat parentWidth = parentView.bounds.size.width;
-            CGFloat fallbackWidth = parentWidth * fallbackWidthPercent;
-            CGFloat fallbackX = (parentWidth - fallbackWidth) / 2.0;
-            // 使用 self.frame 获取当前 Y 和 Height (通常由 %orig 设置)
-            CGFloat currentY = self.frame.origin.y;
-            CGFloat currentHeight = self.frame.size.height;
-            // 应用回退 frame
-            self.frame = CGRectMake(fallbackX, currentY, fallbackWidth, currentHeight);
-        }
-    } else {
-    }
+			self.frame = CGRectMake(sliderX, sliderY, sliderWidth, sliderHeight);
+		} else {
+			CGFloat fallbackWidthPercent = 0.80;
+			CGFloat parentWidth = parentView.bounds.size.width;
+			CGFloat fallbackWidth = parentWidth * fallbackWidthPercent;
+			CGFloat fallbackX = (parentWidth - fallbackWidth) / 2.0;
+			// 使用 self.frame 获取当前 Y 和 Height (通常由 %orig 设置)
+			CGFloat currentY = self.frame.origin.y;
+			CGFloat currentHeight = self.frame.size.height;
+			// 应用回退 frame
+			self.frame = CGRectMake(fallbackX, currentY, fallbackWidth, currentHeight);
+		}
+	} else {
+	}
 }
 
 - (void)setAlpha:(CGFloat)alpha {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisShowScheduleDisplay"]) {
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideVideoProgress"]) {
-            %orig(0);
-        } else {
-            %orig(1.0);
-        }
-    } else {
-        %orig;
-    }
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisShowScheduleDisplay"]) {
+		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideVideoProgress"]) {
+			%orig(0);
+		} else {
+			%orig(1.0);
+		}
+	} else {
+		%orig;
+	}
 }
 
 static CGFloat leftLabelLeftMargin = -1;
 static CGFloat rightLabelRightMargin = -1;
 
 - (void)setLimitUpperActionArea:(BOOL)arg1 {
-    %orig;
+	%orig;
 
-    NSString *durationFormatted = [self.progressSliderDelegate formatTimeFromSeconds:floor(self.progressSliderDelegate.model.videoDuration / 1000)];
+	NSString *durationFormatted = [self.progressSliderDelegate formatTimeFromSeconds:floor(self.progressSliderDelegate.model.videoDuration / 1000)];
 
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisShowScheduleDisplay"]) {
-        UIView *parentView = self.superview;
-        if (!parentView) return;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisShowScheduleDisplay"]) {
+		UIView *parentView = self.superview;
+		if (!parentView)
+			return;
 
-        [[parentView viewWithTag:10001] removeFromSuperview];
-        [[parentView viewWithTag:10002] removeFromSuperview];
+		[[parentView viewWithTag:10001] removeFromSuperview];
+		[[parentView viewWithTag:10002] removeFromSuperview];
 
-        CGRect sliderOriginalFrameInParent = [self convertRect:self.bounds toView:parentView];
-        CGRect sliderFrame = self.frame;
+		CGRect sliderOriginalFrameInParent = [self convertRect:self.bounds toView:parentView];
+		CGRect sliderFrame = self.frame;
 
-        CGFloat verticalOffset = - 12.5;
-        NSString *offsetValueString = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTimelineVerticalPosition"];
-        if (offsetValueString.length > 0) {
-            CGFloat configOffset = [offsetValueString floatValue];
-            if (configOffset != 0) verticalOffset = configOffset;
-        }
+		CGFloat verticalOffset = -12.5;
+		NSString *offsetValueString = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTimelineVerticalPosition"];
+		if (offsetValueString.length > 0) {
+			CGFloat configOffset = [offsetValueString floatValue];
+			if (configOffset != 0)
+				verticalOffset = configOffset;
+		}
 
-        NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
-        BOOL showRemainingTime = [scheduleStyle isEqualToString:@"进度条右侧剩余"];
-        BOOL showCompleteTime = [scheduleStyle isEqualToString:@"进度条右侧完整"];
-        BOOL showLeftRemainingTime = [scheduleStyle isEqualToString:@"进度条左侧剩余"];
-        BOOL showLeftCompleteTime = [scheduleStyle isEqualToString:@"进度条左侧完整"];
+		NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
+		BOOL showRemainingTime = [scheduleStyle isEqualToString:@"进度条右侧剩余"];
+		BOOL showCompleteTime = [scheduleStyle isEqualToString:@"进度条右侧完整"];
+		BOOL showLeftRemainingTime = [scheduleStyle isEqualToString:@"进度条左侧剩余"];
+		BOOL showLeftCompleteTime = [scheduleStyle isEqualToString:@"进度条左侧完整"];
 
-        NSString *labelColorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYProgressLabelColor"];
-        UIColor *labelColor = [UIColor whiteColor];
-        if (labelColorHex && labelColorHex.length > 0) {
-            SEL colorSelector = NSSelectorFromString(@"colorWithHexString:");
-            Class dyyyManagerClass = NSClassFromString(@"DYYYManager");
-            if (dyyyManagerClass && [dyyyManagerClass respondsToSelector:colorSelector]) {
-                labelColor = [dyyyManagerClass performSelector:colorSelector withObject:labelColorHex];
-            }
-        }
+		NSString *labelColorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYProgressLabelColor"];
+		UIColor *labelColor = [UIColor whiteColor];
+		if (labelColorHex && labelColorHex.length > 0) {
+			SEL colorSelector = NSSelectorFromString(@"colorWithHexString:");
+			Class dyyyManagerClass = NSClassFromString(@"DYYYManager");
+			if (dyyyManagerClass && [dyyyManagerClass respondsToSelector:colorSelector]) {
+				labelColor = [dyyyManagerClass performSelector:colorSelector withObject:labelColorHex];
+			}
+		}
 
-        CGFloat labelYPosition = sliderOriginalFrameInParent.origin.y + verticalOffset;
-        CGFloat labelHeight = 15.0;
-        UIFont *labelFont = [UIFont systemFontOfSize:8];
+		CGFloat labelYPosition = sliderOriginalFrameInParent.origin.y + verticalOffset;
+		CGFloat labelHeight = 15.0;
+		UIFont *labelFont = [UIFont systemFontOfSize:8];
 
-        if (!showRemainingTime && !showCompleteTime) {
-            UILabel *leftLabel = [[UILabel alloc] init];
-            leftLabel.backgroundColor = [UIColor clearColor];
-            leftLabel.textColor = labelColor;
-            leftLabel.font = labelFont;
-            leftLabel.tag = 10001;
-            if (showLeftRemainingTime) leftLabel.text = @"00:00";
-            else if (showLeftCompleteTime) leftLabel.text = [NSString stringWithFormat:@"00:00/%@", durationFormatted];
-            else leftLabel.text = @"00:00";
+		if (!showRemainingTime && !showCompleteTime) {
+			UILabel *leftLabel = [[UILabel alloc] init];
+			leftLabel.backgroundColor = [UIColor clearColor];
+			leftLabel.textColor = labelColor;
+			leftLabel.font = labelFont;
+			leftLabel.tag = 10001;
+			if (showLeftRemainingTime)
+				leftLabel.text = @"00:00";
+			else if (showLeftCompleteTime)
+				leftLabel.text = [NSString stringWithFormat:@"00:00/%@", durationFormatted];
+			else
+				leftLabel.text = @"00:00";
 
-            [leftLabel sizeToFit];
+			[leftLabel sizeToFit];
 
-            if (leftLabelLeftMargin == -1) {
-                leftLabelLeftMargin = sliderFrame.origin.x;
-            }
+			if (leftLabelLeftMargin == -1) {
+				leftLabelLeftMargin = sliderFrame.origin.x;
+			}
 
-            leftLabel.frame = CGRectMake(leftLabelLeftMargin, labelYPosition, leftLabel.frame.size.width, labelHeight);
-            [parentView addSubview:leftLabel];
-        }
+			leftLabel.frame = CGRectMake(leftLabelLeftMargin, labelYPosition, leftLabel.frame.size.width, labelHeight);
+			[parentView addSubview:leftLabel];
+		}
 
-        if (!showLeftRemainingTime && !showLeftCompleteTime) {
-            UILabel *rightLabel = [[UILabel alloc] init];
-            rightLabel.backgroundColor = [UIColor clearColor];
-            rightLabel.textColor = labelColor;
-            rightLabel.font = labelFont;
-            rightLabel.tag = 10002;
-            if (showRemainingTime) rightLabel.text = @"00:00";
-            else if (showCompleteTime) rightLabel.text = [NSString stringWithFormat:@"00:00/%@", durationFormatted];
-            else rightLabel.text = durationFormatted;
+		if (!showLeftRemainingTime && !showLeftCompleteTime) {
+			UILabel *rightLabel = [[UILabel alloc] init];
+			rightLabel.backgroundColor = [UIColor clearColor];
+			rightLabel.textColor = labelColor;
+			rightLabel.font = labelFont;
+			rightLabel.tag = 10002;
+			if (showRemainingTime)
+				rightLabel.text = @"00:00";
+			else if (showCompleteTime)
+				rightLabel.text = [NSString stringWithFormat:@"00:00/%@", durationFormatted];
+			else
+				rightLabel.text = durationFormatted;
 
-            [rightLabel sizeToFit];
+			[rightLabel sizeToFit];
 
-            if (rightLabelRightMargin == -1) {
-                rightLabelRightMargin = sliderFrame.origin.x + sliderFrame.size.width - rightLabel.frame.size.width;
-            }
+			if (rightLabelRightMargin == -1) {
+				rightLabelRightMargin = sliderFrame.origin.x + sliderFrame.size.width - rightLabel.frame.size.width;
+			}
 
-            rightLabel.frame = CGRectMake(rightLabelRightMargin, labelYPosition, rightLabel.frame.size.width, labelHeight);
-            [parentView addSubview:rightLabel];
-        }
+			rightLabel.frame = CGRectMake(rightLabelRightMargin, labelYPosition, rightLabel.frame.size.width, labelHeight);
+			[parentView addSubview:rightLabel];
+		}
 
-        [self setNeedsLayout];
-    } else {
-        UIView *parentView = self.superview;
-        if (parentView) {
-            [[parentView viewWithTag:10001] removeFromSuperview];
-            [[parentView viewWithTag:10002] removeFromSuperview];
-        }
-        [self setNeedsLayout];
-    }
+		[self setNeedsLayout];
+	} else {
+		UIView *parentView = self.superview;
+		if (parentView) {
+			[[parentView viewWithTag:10001] removeFromSuperview];
+			[[parentView viewWithTag:10002] removeFromSuperview];
+		}
+		[self setNeedsLayout];
+	}
 }
 
 %end
@@ -732,86 +742,101 @@ static CGFloat rightLabelRightMargin = -1;
 
 %new
 - (NSString *)formatTimeFromSeconds:(CGFloat)seconds {
-    NSInteger hours = (NSInteger)seconds / 3600;
-    NSInteger minutes = ((NSInteger)seconds % 3600) / 60;
-    NSInteger secs = (NSInteger)seconds % 60;
+	NSInteger hours = (NSInteger)seconds / 3600;
+	NSInteger minutes = ((NSInteger)seconds % 3600) / 60;
+	NSInteger secs = (NSInteger)seconds % 60;
 
-    if (hours > 0) {
-        return [NSString stringWithFormat:@"%02ld:%02ld:%02ld", (long)hours, (long)minutes, (long)secs];
-    } else {
-        return [NSString stringWithFormat:@"%02ld:%02ld", (long)minutes, (long)secs];
-    }
+	if (hours > 0) {
+		return [NSString stringWithFormat:@"%02ld:%02ld:%02ld", (long)hours, (long)minutes, (long)secs];
+	} else {
+		return [NSString stringWithFormat:@"%02ld:%02ld", (long)minutes, (long)secs];
+	}
 }
 
 - (void)updateProgressSliderWithTime:(CGFloat)arg1 totalDuration:(CGFloat)arg2 {
-    %orig;
+	%orig;
 
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisShowScheduleDisplay"]) {
-        AWEFeedProgressSlider *progressSlider = self.progressSlider;
-        UIView *parentView = progressSlider.superview;
-        if (!parentView) return;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisShowScheduleDisplay"]) {
+		AWEFeedProgressSlider *progressSlider = self.progressSlider;
+		UIView *parentView = progressSlider.superview;
+		if (!parentView)
+			return;
 
-        UILabel *leftLabel = [parentView viewWithTag:10001];
-        UILabel *rightLabel = [parentView viewWithTag:10002];
+		UILabel *leftLabel = [parentView viewWithTag:10001];
+		UILabel *rightLabel = [parentView viewWithTag:10002];
 
-        NSString *labelColorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYProgressLabelColor"];
-        UIColor *labelColor = [UIColor whiteColor];
-        if (labelColorHex && labelColorHex.length > 0) {
-             SEL colorSelector = NSSelectorFromString(@"colorWithHexString:");
-             Class dyyyManagerClass = NSClassFromString(@"DYYYManager");
-             if (dyyyManagerClass && [dyyyManagerClass respondsToSelector:colorSelector]) {
-                 labelColor = [dyyyManagerClass performSelector:colorSelector withObject:labelColorHex];
-             }
-         }
-        NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
-        BOOL showRemainingTime = [scheduleStyle isEqualToString:@"进度条右侧剩余"];
-        BOOL showCompleteTime = [scheduleStyle isEqualToString:@"进度条右侧完整"];
-        BOOL showLeftRemainingTime = [scheduleStyle isEqualToString:@"进度条左侧剩余"];
-        BOOL showLeftCompleteTime = [scheduleStyle isEqualToString:@"进度条左侧完整"];
-        
-        // 更新左标签
-        if (arg1 >= 0 && leftLabel) {
-            NSString *newLeftText = @"";
-             if (showLeftRemainingTime) { CGFloat remainingTime = arg2 - arg1; if (remainingTime < 0) remainingTime = 0; newLeftText = [self formatTimeFromSeconds:remainingTime]; }
-             else if (showLeftCompleteTime) { newLeftText = [NSString stringWithFormat:@"%@/%@", [self formatTimeFromSeconds:arg1], [self formatTimeFromSeconds:arg2]]; }
-             else { newLeftText = [self formatTimeFromSeconds:arg1]; }
+		NSString *labelColorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYProgressLabelColor"];
+		UIColor *labelColor = [UIColor whiteColor];
+		if (labelColorHex && labelColorHex.length > 0) {
+			SEL colorSelector = NSSelectorFromString(@"colorWithHexString:");
+			Class dyyyManagerClass = NSClassFromString(@"DYYYManager");
+			if (dyyyManagerClass && [dyyyManagerClass respondsToSelector:colorSelector]) {
+				labelColor = [dyyyManagerClass performSelector:colorSelector withObject:labelColorHex];
+			}
+		}
+		NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
+		BOOL showRemainingTime = [scheduleStyle isEqualToString:@"进度条右侧剩余"];
+		BOOL showCompleteTime = [scheduleStyle isEqualToString:@"进度条右侧完整"];
+		BOOL showLeftRemainingTime = [scheduleStyle isEqualToString:@"进度条左侧剩余"];
+		BOOL showLeftCompleteTime = [scheduleStyle isEqualToString:@"进度条左侧完整"];
 
-            if (![leftLabel.text isEqualToString:newLeftText]) {
-                leftLabel.text = newLeftText;
-                [leftLabel sizeToFit];
-                CGRect leftFrame = leftLabel.frame;
-                leftFrame.size.height = 15.0;
-                leftLabel.frame = leftFrame;
-            }
-            leftLabel.textColor = labelColor;
-        }
+		// 更新左标签
+		if (arg1 >= 0 && leftLabel) {
+			NSString *newLeftText = @"";
+			if (showLeftRemainingTime) {
+				CGFloat remainingTime = arg2 - arg1;
+				if (remainingTime < 0)
+					remainingTime = 0;
+				newLeftText = [self formatTimeFromSeconds:remainingTime];
+			} else if (showLeftCompleteTime) {
+				newLeftText = [NSString stringWithFormat:@"%@/%@", [self formatTimeFromSeconds:arg1], [self formatTimeFromSeconds:arg2]];
+			} else {
+				newLeftText = [self formatTimeFromSeconds:arg1];
+			}
 
-        // 更新右标签
-        if (arg2 > 0 && rightLabel) {
-            NSString *newRightText = @"";
-            if (showRemainingTime) { CGFloat remainingTime = arg2 - arg1; if (remainingTime < 0) remainingTime = 0; newRightText = [self formatTimeFromSeconds:remainingTime]; }
-            else if (showCompleteTime) { newRightText = [NSString stringWithFormat:@"%@/%@", [self formatTimeFromSeconds:arg1], [self formatTimeFromSeconds:arg2]]; }
-            else { newRightText = [self formatTimeFromSeconds:arg2]; }
+			if (![leftLabel.text isEqualToString:newLeftText]) {
+				leftLabel.text = newLeftText;
+				[leftLabel sizeToFit];
+				CGRect leftFrame = leftLabel.frame;
+				leftFrame.size.height = 15.0;
+				leftLabel.frame = leftFrame;
+			}
+			leftLabel.textColor = labelColor;
+		}
 
-            if (![rightLabel.text isEqualToString:newRightText]) {
-                rightLabel.text = newRightText;
-                [rightLabel sizeToFit];
-                CGRect rightFrame = rightLabel.frame;
-                rightFrame.size.height = 15.0;
-                rightLabel.frame = rightFrame;
-            }
-            rightLabel.textColor = labelColor;
-        }
-    }
+		// 更新右标签
+		if (arg2 > 0 && rightLabel) {
+			NSString *newRightText = @"";
+			if (showRemainingTime) {
+				CGFloat remainingTime = arg2 - arg1;
+				if (remainingTime < 0)
+					remainingTime = 0;
+				newRightText = [self formatTimeFromSeconds:remainingTime];
+			} else if (showCompleteTime) {
+				newRightText = [NSString stringWithFormat:@"%@/%@", [self formatTimeFromSeconds:arg1], [self formatTimeFromSeconds:arg2]];
+			} else {
+				newRightText = [self formatTimeFromSeconds:arg2];
+			}
+
+			if (![rightLabel.text isEqualToString:newRightText]) {
+				rightLabel.text = newRightText;
+				[rightLabel sizeToFit];
+				CGRect rightFrame = rightLabel.frame;
+				rightFrame.size.height = 15.0;
+				rightLabel.frame = rightFrame;
+			}
+			rightLabel.textColor = labelColor;
+		}
+	}
 }
 
 - (void)setHidden:(BOOL)hidden {
-    %orig;
-    BOOL hideVideoProgress = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideVideoProgress"];
-    BOOL showScheduleDisplay = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisShowScheduleDisplay"];
-    if (hideVideoProgress && showScheduleDisplay && !hidden) {
-        self.alpha = 0;
-    }
+	%orig;
+	BOOL hideVideoProgress = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideVideoProgress"];
+	BOOL showScheduleDisplay = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisShowScheduleDisplay"];
+	if (hideVideoProgress && showScheduleDisplay && !hidden) {
+		self.alpha = 0;
+	}
 }
 
 %end
@@ -917,145 +942,146 @@ static CGFloat rightLabelRightMargin = -1;
 
 %hook AWEPlayInteractionTimestampElement
 - (id)timestampLabel {
-    UILabel *label = %orig;
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableArea"]) {
-        NSString *text = label.text;
-        NSString *cityCode = self.model.cityCode;
+	UILabel *label = %orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableArea"]) {
+		NSString *text = label.text;
+		NSString *cityCode = self.model.cityCode;
 
-        if (cityCode.length > 0) {
-            NSString *cityName = [CityManager.sharedInstance getCityNameWithCode:cityCode];
-            NSString *provinceName = [CityManager.sharedInstance getProvinceNameWithCode:cityCode];
-            // 使用 GeoNames API
-            if (!cityName || cityName.length == 0) {
-                NSString *cacheKey = cityCode;
+		if (cityCode.length > 0) {
+			NSString *cityName = [CityManager.sharedInstance getCityNameWithCode:cityCode];
+			NSString *provinceName = [CityManager.sharedInstance getProvinceNameWithCode:cityCode];
+			// 使用 GeoNames API
+			if (!cityName || cityName.length == 0) {
+				NSString *cacheKey = cityCode;
 
-                static NSCache *geoNamesCache = nil;
-                static dispatch_once_t onceToken;
-                dispatch_once(&onceToken, ^{
-                  geoNamesCache = [[NSCache alloc] init];
-                  geoNamesCache.name = @"com.dyyy.geonames.cache";
-                  geoNamesCache.countLimit = 1000;
-                });
+				static NSCache *geoNamesCache = nil;
+				static dispatch_once_t onceToken;
+				dispatch_once(&onceToken, ^{
+				  geoNamesCache = [[NSCache alloc] init];
+				  geoNamesCache.name = @"com.dyyy.geonames.cache";
+				  geoNamesCache.countLimit = 1000;
+				});
 
-                NSDictionary *cachedData = [geoNamesCache objectForKey:cacheKey];
+				NSDictionary *cachedData = [geoNamesCache objectForKey:cacheKey];
 
-                if (!cachedData) {
-                    NSString *cachesDir = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) firstObject];
-                    NSString *geoNamesCacheDir = [cachesDir stringByAppendingPathComponent:@"DYYYGeoNamesCache"];
+				if (!cachedData) {
+					NSString *cachesDir = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) firstObject];
+					NSString *geoNamesCacheDir = [cachesDir stringByAppendingPathComponent:@"DYYYGeoNamesCache"];
 
-                    NSFileManager *fileManager = [NSFileManager defaultManager];
-                    if (![fileManager fileExistsAtPath:geoNamesCacheDir]) {
-                        [fileManager createDirectoryAtPath:geoNamesCacheDir withIntermediateDirectories:YES attributes:nil error:nil];
-                    }
+					NSFileManager *fileManager = [NSFileManager defaultManager];
+					if (![fileManager fileExistsAtPath:geoNamesCacheDir]) {
+						[fileManager createDirectoryAtPath:geoNamesCacheDir withIntermediateDirectories:YES attributes:nil error:nil];
+					}
 
-                    NSString *cacheFilePath = [geoNamesCacheDir stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.plist", cacheKey]];
+					NSString *cacheFilePath = [geoNamesCacheDir stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.plist", cacheKey]];
 
-                    if ([fileManager fileExistsAtPath:cacheFilePath]) {
-                        cachedData = [NSDictionary dictionaryWithContentsOfFile:cacheFilePath];
-                        if (cachedData) {
-                            [geoNamesCache setObject:cachedData forKey:cacheKey];
-                        }
-                    }
-                }
+					if ([fileManager fileExistsAtPath:cacheFilePath]) {
+						cachedData = [NSDictionary dictionaryWithContentsOfFile:cacheFilePath];
+						if (cachedData) {
+							[geoNamesCache setObject:cachedData forKey:cacheKey];
+						}
+					}
+				}
 
-                if (cachedData) {
-                    NSString *countryName = cachedData[@"countryName"];
-                    NSString *adminName1 = cachedData[@"adminName1"];
-                    NSString *localName = cachedData[@"name"];
-                    NSString *displayLocation = @"未知";
+				if (cachedData) {
+					NSString *countryName = cachedData[@"countryName"];
+					NSString *adminName1 = cachedData[@"adminName1"];
+					NSString *localName = cachedData[@"name"];
+					NSString *displayLocation = @"未知";
 
-                    if (countryName.length > 0) {
-                        if (adminName1.length > 0 && localName.length > 0 && ![countryName isEqualToString:@"中国"] && ![countryName isEqualToString:localName]) {
-                            // 国外位置：国家 + 州/省 + 地点
-                            displayLocation = [NSString stringWithFormat:@"%@ %@ %@", countryName, adminName1, localName];
-                        } else if (localName.length > 0 && ![countryName isEqualToString:localName]) {
-                            // 只有国家和地点名
-                            displayLocation = [NSString stringWithFormat:@"%@ %@", countryName, localName];
-                        } else {
-                            // 只有国家名
-                            displayLocation = countryName;
-                        }
-                    } else if (localName.length > 0) {
-                        displayLocation = localName;
-                    }
+					if (countryName.length > 0) {
+						if (adminName1.length > 0 && localName.length > 0 && ![countryName isEqualToString:@"中国"] && ![countryName isEqualToString:localName]) {
+							// 国外位置：国家 + 州/省 + 地点
+							displayLocation = [NSString stringWithFormat:@"%@ %@ %@", countryName, adminName1, localName];
+						} else if (localName.length > 0 && ![countryName isEqualToString:localName]) {
+							// 只有国家和地点名
+							displayLocation = [NSString stringWithFormat:@"%@ %@", countryName, localName];
+						} else {
+							// 只有国家名
+							displayLocation = countryName;
+						}
+					} else if (localName.length > 0) {
+						displayLocation = localName;
+					}
 
-                    dispatch_async(dispatch_get_main_queue(), ^{
-                      NSString *currentText = label.text ?: @"";
+					dispatch_async(dispatch_get_main_queue(), ^{
+					  NSString *currentText = label.text ?: @"";
 
-                      if ([currentText containsString:@"IP属地："]) {
-                          NSRange range = [currentText rangeOfString:@"IP属地："];
-                          if (range.location != NSNotFound) {
-                              NSString *baseText = [currentText substringToIndex:range.location];
-                              if (![currentText containsString:displayLocation]) {
-                                  label.text = [NSString stringWithFormat:@"%@IP属地：%@", baseText, displayLocation];
-                              }
-                          }
-                      } else {
-                          NSString *baseText = label.text ?: @"";
-                          if (baseText.length > 0) {
-                              label.text = [NSString stringWithFormat:@"%@  IP属地：%@", baseText, displayLocation];
-                          }
-                      }
-                    });
-                } else {
-                    [CityManager fetchLocationWithGeonameId:cityCode
-                                  completionHandler:^(NSDictionary *locationInfo, NSError *error) {
-                                if (locationInfo) {
-                                    NSString *countryName = locationInfo[@"countryName"];
-                                    NSString *adminName1 = locationInfo[@"adminName1"]; // 州/省级名称
-                                    NSString *localName = locationInfo[@"name"];	    // 当前地点名称
-                                    NSString *displayLocation = @"未知";
+					  if ([currentText containsString:@"IP属地："]) {
+						  NSRange range = [currentText rangeOfString:@"IP属地："];
+						  if (range.location != NSNotFound) {
+							  NSString *baseText = [currentText substringToIndex:range.location];
+							  if (![currentText containsString:displayLocation]) {
+								  label.text = [NSString stringWithFormat:@"%@IP属地：%@", baseText, displayLocation];
+							  }
+						  }
+					  } else {
+						  NSString *baseText = label.text ?: @"";
+						  if (baseText.length > 0) {
+							  label.text = [NSString stringWithFormat:@"%@  IP属地：%@", baseText, displayLocation];
+						  }
+					  }
+					});
+				} else {
+					[CityManager
+					    fetchLocationWithGeonameId:cityCode
+						     completionHandler:^(NSDictionary *locationInfo, NSError *error) {
+						       if (locationInfo) {
+							       NSString *countryName = locationInfo[@"countryName"];
+							       NSString *adminName1 = locationInfo[@"adminName1"]; // 州/省级名称
+							       NSString *localName = locationInfo[@"name"];	   // 当前地点名称
+							       NSString *displayLocation = @"未知";
 
-                                    // 根据返回数据构建位置显示文本
-                                    if (countryName.length > 0) {
-                                        if (adminName1.length > 0 && localName.length > 0 && ![countryName isEqualToString:@"中国"] &&
-                                            ![countryName isEqualToString:localName]) {
-                                            // 国外位置：国家 + 州/省 + 地点
-                                            displayLocation = [NSString stringWithFormat:@"%@ %@ %@", countryName, adminName1, localName];
-                                        } else if (localName.length > 0 && ![countryName isEqualToString:localName]) {
-                                            // 只有国家和地点名
-                                            displayLocation = [NSString stringWithFormat:@"%@ %@", countryName, localName];
-                                        } else {
-                                            // 只有国家名
-                                            displayLocation = countryName;
-                                        }
-                                    } else if (localName.length > 0) {
-                                        displayLocation = localName;
-                                    }
+							       // 根据返回数据构建位置显示文本
+							       if (countryName.length > 0) {
+								       if (adminName1.length > 0 && localName.length > 0 && ![countryName isEqualToString:@"中国"] &&
+									   ![countryName isEqualToString:localName]) {
+									       // 国外位置：国家 + 州/省 + 地点
+									       displayLocation = [NSString stringWithFormat:@"%@ %@ %@", countryName, adminName1, localName];
+								       } else if (localName.length > 0 && ![countryName isEqualToString:localName]) {
+									       // 只有国家和地点名
+									       displayLocation = [NSString stringWithFormat:@"%@ %@", countryName, localName];
+								       } else {
+									       // 只有国家名
+									       displayLocation = countryName;
+								       }
+							       } else if (localName.length > 0) {
+								       displayLocation = localName;
+							       }
 
-                                    // 修改：仅当位置不为"未知"时才缓存
-                                    if (![displayLocation isEqualToString:@"未知"]) {
-                                        [geoNamesCache setObject:locationInfo forKey:cacheKey];
+							       // 修改：仅当位置不为"未知"时才缓存
+							       if (![displayLocation isEqualToString:@"未知"]) {
+								       [geoNamesCache setObject:locationInfo forKey:cacheKey];
 
-                                        NSString *cachesDir = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) firstObject];
-                                        NSString *geoNamesCacheDir = [cachesDir stringByAppendingPathComponent:@"DYYYGeoNamesCache"];
-                                        NSString *cacheFilePath = [geoNamesCacheDir stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.plist", cacheKey]];
+								       NSString *cachesDir = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) firstObject];
+								       NSString *geoNamesCacheDir = [cachesDir stringByAppendingPathComponent:@"DYYYGeoNamesCache"];
+								       NSString *cacheFilePath = [geoNamesCacheDir stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.plist", cacheKey]];
 
-                                        [locationInfo writeToFile:cacheFilePath atomically:YES];
-                                    }
+								       [locationInfo writeToFile:cacheFilePath atomically:YES];
+							       }
 
-                                    dispatch_async(dispatch_get_main_queue(), ^{
-                                      NSString *currentText = label.text ?: @"";
+							       dispatch_async(dispatch_get_main_queue(), ^{
+								 NSString *currentText = label.text ?: @"";
 
-                                      if ([currentText containsString:@"IP属地："]) {
-                                          NSRange range = [currentText rangeOfString:@"IP属地："];
-                                          if (range.location != NSNotFound) {
-                                              NSString *baseText = [currentText substringToIndex:range.location];
-                                              if (![currentText containsString:displayLocation]) {
-                                                  label.text = [NSString stringWithFormat:@"%@IP属地：%@", baseText, displayLocation];
-                                              }
-                                          }
-                                      } else {
-                                          NSString *baseText = label.text ?: @"";
-                                          if (baseText.length > 0) {
-                                              label.text = [NSString stringWithFormat:@"%@  IP属地：%@", baseText, displayLocation];
-                                          }
-                                      }
-                                    });
-                                }
-                                  }];
-                }
-            } else if (![text containsString:cityName]) {
+								 if ([currentText containsString:@"IP属地："]) {
+									 NSRange range = [currentText rangeOfString:@"IP属地："];
+									 if (range.location != NSNotFound) {
+										 NSString *baseText = [currentText substringToIndex:range.location];
+										 if (![currentText containsString:displayLocation]) {
+											 label.text = [NSString stringWithFormat:@"%@IP属地：%@", baseText, displayLocation];
+										 }
+									 }
+								 } else {
+									 NSString *baseText = label.text ?: @"";
+									 if (baseText.length > 0) {
+										 label.text = [NSString stringWithFormat:@"%@  IP属地：%@", baseText, displayLocation];
+									 }
+								 }
+							       });
+						       }
+						     }];
+				}
+			} else if (![text containsString:cityName]) {
 				if (!self.model.ipAttribution) {
 					BOOL isDirectCity = [provinceName isEqualToString:cityName] ||
 							    ([cityCode hasPrefix:@"11"] || [cityCode hasPrefix:@"12"] || [cityCode hasPrefix:@"31"] || [cityCode hasPrefix:@"50"]);
@@ -1653,35 +1679,35 @@ static CGFloat rightLabelRightMargin = -1;
 // 强制启用新版抖音长按 UI（现代风）
 %hook AWELongPressPanelDataManager
 + (BOOL)enableModernLongPressPanelConfigWithSceneIdentifier:(id)arg1 {
-    return DYYYGetBool(@"DYYYisEnableModern") || DYYYGetBool(@"DYYYisEnableModernLight") || DYYYGetBool(@"DYYYModernPanelFollowSystem");
+	return DYYYGetBool(@"DYYYisEnableModern") || DYYYGetBool(@"DYYYisEnableModernLight") || DYYYGetBool(@"DYYYModernPanelFollowSystem");
 }
 %end
 
 %hook AWELongPressPanelABSettings
 + (NSUInteger)modernLongPressPanelStyleMode {
-    if (DYYYGetBool(@"DYYYModernPanelFollowSystem")) {
-        BOOL isDarkMode = [DYYYManager isDarkMode];
-        return isDarkMode ? 1 : 2;
-    } else if (DYYYGetBool(@"DYYYisEnableModernLight")) {
-        return 2;
-    } else if (DYYYGetBool(@"DYYYisEnableModern")) {
-        return 1;
-    }
-    return 0;
+	if (DYYYGetBool(@"DYYYModernPanelFollowSystem")) {
+		BOOL isDarkMode = [DYYYManager isDarkMode];
+		return isDarkMode ? 1 : 2;
+	} else if (DYYYGetBool(@"DYYYisEnableModernLight")) {
+		return 2;
+	} else if (DYYYGetBool(@"DYYYisEnableModern")) {
+		return 1;
+	}
+	return 0;
 }
 %end
 
 %hook AWEModernLongPressPanelUIConfig
 + (NSUInteger)modernLongPressPanelStyleMode {
-    if (DYYYGetBool(@"DYYYModernPanelFollowSystem")) {
-        BOOL isDarkMode = [DYYYManager isDarkMode];
-        return isDarkMode ? 1 : 2;
-    } else if (DYYYGetBool(@"DYYYisEnableModernLight")) {
-        return 2;
-    } else if (DYYYGetBool(@"DYYYisEnableModern")) {
-        return 1;
-    }
-    return 0;
+	if (DYYYGetBool(@"DYYYModernPanelFollowSystem")) {
+		BOOL isDarkMode = [DYYYManager isDarkMode];
+		return isDarkMode ? 1 : 2;
+	} else if (DYYYGetBool(@"DYYYisEnableModernLight")) {
+		return 2;
+	} else if (DYYYGetBool(@"DYYYisEnableModern")) {
+		return 1;
+	}
+	return 0;
 }
 %end
 

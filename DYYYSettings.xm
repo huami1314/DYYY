@@ -306,7 +306,7 @@ static void showUserAgreementAlert() {
 	    }];
 }
 
-static void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
+void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	AWESettingBaseViewController *settingsVC = [[%c(AWESettingBaseViewController) alloc] init];
 	if (!hasAgreed) {
 		[DYYYSettingsHelper showAboutDialog:@"用户协议"
@@ -2691,24 +2691,6 @@ static void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	[rootVC.navigationController pushViewController:(UIViewController *)settingsVC animated:YES];
 }
 
-static BOOL handleDYYYSchemeURL(NSURL *url, UIViewController *presenter) {
-	if (!url)
-		return NO;
-
-	NSString *scheme = [url scheme];
-	if (![scheme isEqualToString:@"dyyy"])
-		return NO;
-
-	NSString *host = [url host];
-	if ([host isEqualToString:@"settings"]) {
-		BOOL hasAgreed = [DYYYSettingsHelper getUserDefaults:@"DYYYUserAgreementAccepted"];
-		showDYYYSettingsVC(presenter, hasAgreed);
-		return YES;
-	}
-
-	return NO;
-}
-
 %hook AWESettingsViewModel
 - (NSArray *)sectionDataArray {
 	NSArray *originalSections = %orig;
@@ -2747,20 +2729,4 @@ static BOOL handleDYYYSchemeURL(NSURL *url, UIViewController *presenter) {
 	return originalSections;
 }
 
-%end
-
-%hook AWEAppDelegate
-- (BOOL)application:(UIApplication *)app openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey, id> *)options {
-	if (url && [[url scheme] isEqualToString:@"dyyy"]) {
-		if ([[url host] isEqualToString:@"settings"]) {
-			UIViewController *topViewController = topView();
-			if (topViewController) {
-				BOOL hasAgreed = [DYYYSettingsHelper getUserDefaults:@"DYYYUserAgreementAccepted"];
-				showDYYYSettingsVC(topViewController, hasAgreed);
-				return YES;
-			}
-		}
-	}
-	return %orig;
-}
 %end
