@@ -405,7 +405,7 @@
               [self setUserDefaults:@(isSwitchOn) forKey:strongItem.identifier];
 
               if ([strongItem.identifier isEqualToString:@"DYYYForceDownloadEmotion"] && isSwitchOn) {
-                  [self showAboutDialog:@"防蠢提示" message:@"这里指的是长按整条评论而非表情图片" onConfirm:nil];
+                  [self showAboutDialog:@"防蠢提示" message:@"这里指的是长按整条评论而非表情图片\n" onConfirm:nil];
               }
               [self handleConflictsAndDependenciesForSetting:strongItem.identifier isEnabled:isSwitchOn];
           }

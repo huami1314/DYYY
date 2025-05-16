@@ -28,7 +28,7 @@
         CGFloat maxTextHeight = 280; 
         CGFloat titleHeight = 44; 
         CGFloat buttonHeight = 58; 
-        CGFloat buttonPadding = 18;
+        CGFloat buttonPadding = 28;
         CGFloat actualTextHeight = MIN(textHeight, maxTextHeight);
         CGFloat contentHeight = titleHeight + actualTextHeight + buttonHeight + buttonPadding;
         BOOL needsScrolling = textHeight > maxTextHeight;
