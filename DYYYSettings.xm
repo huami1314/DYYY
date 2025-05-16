@@ -2693,40 +2693,44 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 
 %hook AWESettingsViewModel
 - (NSArray *)sectionDataArray {
-	NSArray *originalSections = %orig;
-	BOOL sectionExists = NO;
-	for (AWESettingSectionModel *section in originalSections) {
-		if ([section.sectionHeaderTitle isEqualToString:DYYY_NAME]) {
-			sectionExists = YES;
-			break;
-		}
-	}
-	if (self.traceEnterFrom && !sectionExists) {
+    NSArray *originalSections = %orig;
+    BOOL sectionExists = NO;
+    for (AWESettingSectionModel *section in originalSections) {
+        if ([section.sectionHeaderTitle isEqualToString:DYYY_NAME]) {
+            sectionExists = YES;
+            break;
+        }
+    }
 
-		AWESettingItemModel *dyyyItem = [[%c(AWESettingItemModel) alloc] init];
-		dyyyItem.identifier = DYYY_NAME;
-		dyyyItem.title = DYYY_NAME;
-		dyyyItem.detail = DYYY_VERSION;
-		dyyyItem.type = 0;
-		dyyyItem.svgIconImageName = @"ic_sapling_outlined";
-		dyyyItem.cellType = 26;
-		dyyyItem.colorStyle = 2;
-		dyyyItem.isEnable = YES;
-		dyyyItem.cellTappedBlock = ^{
-		  UIViewController *rootVC = self.controllerDelegate;
-		  BOOL hasAgreed = [DYYYSettingsHelper getUserDefaults:@"DYYYUserAgreementAccepted"];
-		  showDYYYSettingsVC(rootVC, hasAgreed);
-		};
-		AWESettingSectionModel *newSection = [[%c(AWESettingSectionModel) alloc] init];
-		newSection.itemArray = @[ dyyyItem ];
-		newSection.type = 0;
-		newSection.sectionHeaderHeight = 40;
-		newSection.sectionHeaderTitle = @"DYYY";
-		NSMutableArray *newSections = [NSMutableArray arrayWithArray:originalSections];
-		[newSections insertObject:newSection atIndex:0];
-		return newSections;
-	}
-	return originalSections;
+    BOOL isMainSettingsPage = originalSections.count >= 1 && 
+                            [[originalSections[0] sectionHeaderTitle] isEqualToString:@"账号"];
+    
+    if (isMainSettingsPage && !sectionExists) {
+        AWESettingItemModel *dyyyItem = [[%c(AWESettingItemModel) alloc] init];
+        dyyyItem.identifier = DYYY_NAME;
+        dyyyItem.title = DYYY_NAME;
+        dyyyItem.detail = DYYY_VERSION;
+        dyyyItem.type = 0;
+        dyyyItem.svgIconImageName = @"ic_sapling_outlined";
+        dyyyItem.cellType = 26;
+        dyyyItem.colorStyle = 2;
+        dyyyItem.isEnable = YES;
+        dyyyItem.cellTappedBlock = ^{
+          UIViewController *rootVC = self.controllerDelegate;
+          BOOL hasAgreed = [DYYYSettingsHelper getUserDefaults:@"DYYYUserAgreementAccepted"];
+          showDYYYSettingsVC(rootVC, hasAgreed);
+        };
+        
+        AWESettingSectionModel *newSection = [[%c(AWESettingSectionModel) alloc] init];
+        newSection.itemArray = @[ dyyyItem ];
+        newSection.type = 0;
+        newSection.sectionHeaderHeight = 40;
+        newSection.sectionHeaderTitle = @"DYYY";
+        
+        NSMutableArray *newSections = [NSMutableArray arrayWithArray:originalSections];
+        [newSections insertObject:newSection atIndex:0];
+        return newSections;
+    }
+    return originalSections;
 }
-
 %end
