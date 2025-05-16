@@ -603,10 +603,20 @@ static CGFloat currentScale = 1.0;
 
 - (void)layoutSubviews {
 	%orig;
-	for (UIView *subview in [self subviews]) {
-		if ([subview class] == [UIView class]) {
-			subview.hidden = YES;
-			break;
+	UIViewController *parentVC = nil;
+	if ([self respondsToSelector:@selector(viewController)]) {
+		id viewController = [self performSelector:@selector(viewController)];
+		if ([viewController respondsToSelector:@selector(parentViewController)]) {
+			parentVC = [viewController parentViewController];
+		}
+	}
+	
+	if (parentVC && [parentVC isKindOfClass:%c(AWEAwemeDetailTableViewController)]) {
+		for (UIView *subview in [self subviews]) {
+			if ([subview class] == [UIView class]) {
+				subview.hidden = YES;
+				break;
+			}
 		}
 	}
 }
