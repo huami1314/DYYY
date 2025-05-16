@@ -1883,10 +1883,10 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
               complete:(void (^)(BOOL success, NSString *photoFile,
                                  NSString *videoFile, NSError *error))complete {
   NSString *photoName = [photoURL lastPathComponent];
-  NSString *photoFile = [self filePathFromDoc:photoName];
+  NSString *photoFile = [self filePathFromTmp:photoName];
   [self addMetadataToPhoto:photoURL outputFile:photoFile identifier:identifier];
   NSString *videoName = [videoURL lastPathComponent];
-  NSString *videoFile = [self filePathFromDoc:videoName];
+  NSString *videoFile = [self filePathFromTmp:videoName];
   [self addMetadataToVideo:videoURL outputFile:videoFile identifier:identifier];
   if (!DYYYManager.shared->group)
     return;
@@ -2076,10 +2076,9 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
   item.dataType = (NSString *)kCMMetadataBaseDataType_SInt8;
   return item;
 }
-- (NSString *)filePathFromDoc:(NSString *)filename {
-  NSString *docPath = [NSSearchPathForDirectoriesInDomains(
-      NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
-  NSString *filePath = [docPath stringByAppendingPathComponent:filename];
+- (NSString *)filePathFromTmp:(NSString *)filename {
+  NSString *tempPath = NSTemporaryDirectory();
+  NSString *filePath = [tempPath stringByAppendingPathComponent:filename];
   return filePath;
 }
 
@@ -2231,14 +2230,14 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
                                 
                                 // 处理照片和元数据
                                 NSString *photoName = [imagePath lastPathComponent];
-                                NSString *photoFile = [[DYYYManager shared] filePathFromDoc:photoName];
+                                NSString *photoFile = [[DYYYManager shared] filePathFromTmp:photoName];
                                 [[DYYYManager shared] addMetadataToPhoto:[NSURL fileURLWithPath:imagePath] 
                                                               outputFile:photoFile 
                                                              identifier:identifier];
                                 
                                 // 处理视频和元数据
                                 NSString *videoName = [videoPath lastPathComponent];
-                                NSString *videoFile = [[DYYYManager shared] filePathFromDoc:videoName];
+                                NSString *videoFile = [[DYYYManager shared] filePathFromTmp:videoName];
                                 
                                 // 使用本地变量而非全局共享变量
                                 [[DYYYManager shared] addMetadataToVideoWithLocalVars:[NSURL fileURLWithPath:videoPath]
@@ -2504,7 +2503,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
             AVAssetWriterStatus status = writer.status;
             if (status == AVAssetWriterStatusCompleted) {
                 NSString *photoName = [[videoURL lastPathComponent] stringByDeletingPathExtension];
-                NSString *photoFile = [self filePathFromDoc:[photoName stringByAppendingPathExtension:@"heic"]];
+                NSString *photoFile = [self filePathFromTmp:[photoName stringByAppendingPathExtension:@"heic"]];
                 if (complete) complete(YES, photoFile, outputFile, nil);
             } else {
                 if (complete) complete(NO, nil, nil, writer.error);
