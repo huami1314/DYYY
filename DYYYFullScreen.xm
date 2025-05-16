@@ -590,6 +590,37 @@ static CGFloat currentScale = 1.0;
 
 %end
 
+%hook AWEAwemeDetailTableView
+
+- (void)setFrame:(CGRect)frame {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+		frame.size.height += 83;
+	}
+    %orig(frame);
+}
+
+%end
+
+%hook AWECommentInputViewController
+- (void)viewWillAppear:(BOOL)animated {
+    %orig;
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+        if (self.parentViewController && [self.parentViewController isKindOfClass:%c(AWEAwemeDetailTableViewController)]) {
+            self.view.hidden = YES;
+        }
+    }
+}
+
+- (void)viewDidAppear:(BOOL)animated {
+    %orig;
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+        if (self.parentViewController && [self.parentViewController isKindOfClass:%c(AWEAwemeDetailTableViewController)]) {
+            [self.view removeFromSuperview];
+        }
+    }
+}
+%end
+
 %ctor {
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {
 		%init;
