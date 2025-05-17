@@ -214,6 +214,9 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 			if (frame.size.height == parentHeight - 83) {
 				frame.size.height = parentHeight;
 				contentView.frame = frame;
+			} else if (frame.size.height == parentHeight - 166) {
+				frame.size.height = parentHeight - 83;
+				contentView.frame = frame;
 			}
 		}
 	}
@@ -591,10 +594,10 @@ static CGFloat currentScale = 1.0;
 %hook AWEAwemeDetailTableView
 
 - (void)setFrame:(CGRect)frame {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
 		frame.size.height += 83;
 	}
-    %orig(frame);
+	%orig(frame);
 }
 
 %end
@@ -610,7 +613,7 @@ static CGFloat currentScale = 1.0;
 			parentVC = [viewController parentViewController];
 		}
 	}
-	
+
 	if (parentVC && [parentVC isKindOfClass:%c(AWEAwemeDetailTableViewController)]) {
 		for (UIView *subview in [self subviews]) {
 			if ([subview class] == [UIView class]) {
@@ -627,10 +630,8 @@ static CGFloat currentScale = 1.0;
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {
 		static dispatch_once_t onceToken;
 		dispatch_once(&onceToken, ^{
-			Class wSwiftImpl = objc_getClass("AWECommentInputViewSwiftImpl.CommentInputContainerView");
-			%init(
-				CommentInputContainerView = wSwiftImpl
-			);
+		  Class wSwiftImpl = objc_getClass("AWECommentInputViewSwiftImpl.CommentInputContainerView");
+		  %init(CommentInputContainerView = wSwiftImpl);
 		});
 	}
 }
