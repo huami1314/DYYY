@@ -1645,6 +1645,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	enhanceSettingItem.isEnable = YES;
 	enhanceSettingItem.cellTappedBlock = ^{
 	  // 创建增强设置二级界面的设置项
+	  NSMutableDictionary *cellTapHandlers = [NSMutableDictionary dictionary];
 
 	  // 【长按面板设置】分类
 	  NSMutableArray<AWESettingItemModel *> *longPressItems = [NSMutableArray array];
