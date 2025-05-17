@@ -2,31 +2,17 @@
 #import "DYYYManager.h"
 #import <UIKit/UIKit.h>
 #import <objc/runtime.h>
+#import "DYYYFloatSpeedButton.h"
 
 @class AWEFeedCellViewController;
 @class AWEDPlayerFeedPlayerViewController;
-// 声明悬浮按钮类
-@interface FloatingSpeedButton : UIButton
-@property(nonatomic, assign) CGPoint lastLocation;
-@property(nonatomic, weak) AWEPlayInteractionViewController *interactionController;
-@property(nonatomic, assign) BOOL isLocked;
-@property(nonatomic, strong) NSTimer *firstStageTimer;
-@property(nonatomic, assign) BOOL justToggledLock;	// 添加锁定状态切换标记
-@property(nonatomic, assign) BOOL originalLockState;	// 保存原始锁定状态
-@property(nonatomic, assign) BOOL isResponding;		// 新增属性跟踪按钮响应状态
-@property(nonatomic, strong) NSTimer *statusCheckTimer; // 状态检查定时器
-- (void)saveButtonPosition;
-- (void)loadSavedPosition;
-- (void)resetButtonState;
-- (void)toggleLockState;
-@end
 
 @implementation FloatingSpeedButton
 
 - (instancetype)initWithFrame:(CGRect)frame {
 	self = [super initWithFrame:frame];
 	if (self) {
-		self.accessibilityLabel = @"speedSwitchButton";
+		self.accessibilityLabel = @"DYYYSpeedSwitchButton";
 		self.backgroundColor = [UIColor colorWithWhite:0.0 alpha:0.1];
 		self.layer.cornerRadius = frame.size.width / 2;
 		self.layer.masksToBounds = YES;
@@ -310,6 +296,8 @@ static BOOL showSpeedX = NO;
 // 添加按钮大小变量
 static CGFloat speedButtonSize = 32.0;
 static BOOL isFloatSpeedButtonEnabled = NO;
+// 添加一个静态变量来跟踪按钮是否被强制隐藏
+static BOOL isForceHidden = NO;
 
 // 添加对评论控制器的 hook
 %hook AWECommentContainerViewController
@@ -503,7 +491,7 @@ void updateSpeedButtonUI() {
 	if (speed != 1.0) {
 		[currentFeedVideoController adjustPlaybackSpeed:speed];
 	}
-	updateSpeedButtonUI();
+
 	%orig(arg0);
 }
 
@@ -583,18 +571,18 @@ void updateSpeedButtonUI() {
 		[speedButton loadSavedPosition];
 	}
 
-	// 只在评论不可见时才显示按钮
+	// 只在评论不可见且未强制隐藏时才显示按钮
 	if (speedButton) {
-		speedButton.hidden = isCommentViewVisible;
+		speedButton.hidden = isCommentViewVisible || isForceHidden;
 	}
 }
 
 - (void)viewWillAppear:(BOOL)animated {
 	%orig;
-	// 视图出现时检查评论状态
+	// 视图出现时检查评论状态和强制隐藏状态
 	if (speedButton) {
 		dispatch_async(dispatch_get_main_queue(), ^{
-		  speedButton.hidden = isCommentViewVisible;
+		  speedButton.hidden = isCommentViewVisible || isForceHidden;
 		});
 	}
 }
@@ -732,16 +720,48 @@ void updateSpeedButtonUI() {
 	if (!isFloatSpeedButtonEnabled)
 		return;
 
-	// 当窗口变为key window时，根据评论状态决定按钮显示
+	// 当窗口变为key window时，根据评论状态和强制隐藏状态决定按钮显示
 	if (speedButton && ![speedButton isDescendantOfView:self]) {
 		dispatch_async(dispatch_get_main_queue(), ^{
 		  [self addSubview:speedButton];
 		  [speedButton loadSavedPosition];
-		  speedButton.hidden = isCommentViewVisible;
+		  speedButton.hidden = isCommentViewVisible || isForceHidden;
 		});
 	}
 }
 %end
+
+FloatingSpeedButton *getSpeedButton(void) {
+    return speedButton;
+}
+
+void showSpeedButton(void) {
+    isForceHidden = NO; // 重置强制隐藏标记
+    if (speedButton) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            speedButton.hidden = isCommentViewVisible; // 只考虑评论状态
+        });
+    }
+}
+
+void hideSpeedButton(void) {
+    isForceHidden = YES; // 设置强制隐藏标记
+    if (speedButton) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            speedButton.hidden = YES;
+        });
+    }
+}
+
+void toggleSpeedButtonVisibility(void) {
+    if (speedButton) {
+        if (speedButton.hidden) {
+            showSpeedButton(); // 使用showSpeedButton来显示以确保重置强制隐藏标记
+        } else {
+            hideSpeedButton(); // 使用hideSpeedButton来隐藏以确保设置强制隐藏标记
+        }
+    }
+}
 
 %ctor {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];

@@ -8,6 +8,7 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 #import <signal.h>
+#import "DYYYFloatSpeedButton.h"
 // 添加变量跟踪是否在目标视图控制器中
 static BOOL isInPlayInteractionVC = NO;
 // 添加变量跟踪评论界面是否可见
@@ -107,10 +108,7 @@ static void initTargetClassNames(void) {
 		[list addObject:@"AWEStoryProgressSlideView"];
 		[list addObject:@"AWEStoryProgressContainerView"];
 	}
-	BOOL hideSpeed = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideSpeed"];
-	if (hideSpeed) {
-		[list addObject:@"FloatingSpeedButton"];
-	}
+
     targetClassNames = [list copy];
 }
 @implementation HideUIButton
@@ -280,6 +278,7 @@ static void initTargetClassNames(void) {
 		[[NSUserDefaults standardUserDefaults] synchronize];
 	}
 }
+
 - (void)handleTap {
     if (isAppInTransition)
         return;
@@ -288,6 +287,12 @@ static void initTargetClassNames(void) {
         [self hideUIElements];
         self.isElementsHidden = YES;
         self.selected = YES;
+        
+        // 如果设置了隐藏倍速按钮，则在清屏时隐藏它
+        BOOL hideSpeed = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideSpeed"];
+        if (hideSpeed) {
+            hideSpeedButton();
+        }
     } else {
         forceResetAllUIElements();
         // 还原 AWEPlayInteractionProgressContainerView 视图
@@ -295,6 +300,12 @@ static void initTargetClassNames(void) {
         self.isElementsHidden = NO;
         [self.hiddenViewsList removeAllObjects];
         self.selected = NO;
+        
+        // 如果设置了隐藏倍速按钮，则在恢复UI时显示它
+        BOOL hideSpeed = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideSpeed"];
+        if (hideSpeed) {
+            showSpeedButton();
+        }
     }
 }
 
@@ -395,10 +406,16 @@ static void initTargetClassNames(void) {
 	}
 }
 - (void)safeResetState {
-	forceResetAllUIElements();
-	self.isElementsHidden = NO;
-	[self.hiddenViewsList removeAllObjects];
-	self.selected = NO;
+    forceResetAllUIElements();
+    self.isElementsHidden = NO;
+    [self.hiddenViewsList removeAllObjects];
+    self.selected = NO;
+    
+    // 恢复倍速按钮的显示
+    BOOL hideSpeed = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideSpeed"];
+    if (hideSpeed) {
+        showSpeedButton();
+    }
 }
 - (void)dealloc {
 	[self.checkTimer invalidate];
