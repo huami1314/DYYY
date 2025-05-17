@@ -24,7 +24,7 @@
 - (void)layoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentInputBackground"]) {
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideComment"]) {
 		[self removeFromSuperview];
 		return;
 	}
