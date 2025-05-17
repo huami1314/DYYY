@@ -2543,7 +2543,11 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
 }
 
 + (BOOL)isDarkMode {
-  return [NSClassFromString(@"AWEUIThemeManager") isLightTheme] ? NO : YES;
+  Class themeManagerClass = NSClassFromString(@"AWEUIThemeManager");
+  if (!themeManagerClass) {
+    return NO;
+  }
+  return [themeManagerClass isLightTheme] ? NO : YES;
 }
 
 + (void)parseAndDownloadVideoWithShareLink:(NSString *)shareLink
