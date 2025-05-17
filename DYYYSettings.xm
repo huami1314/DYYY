@@ -1729,6 +1729,16 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_hamburgernut_outlined_20"},
+		  @{@"identifier" : @"DYYYisEnableSheetBlur",
+			@"title" : @"保存面板玻璃效果",
+			@"detail" : @"",
+			@"cellType" : @6,
+			@"imageName" : @"ic_list_outlined"},
+		  @{@"identifier" : @"DYYYSheetBlurTransparent",
+			@"title" : @"面板毛玻璃透明度",
+			@"detail" : @"0-1小数",
+			@"cellType" : @26,
+			@"imageName" : @"ic_eye_outlined_20"},
 		  @{@"identifier" : @"DYYYCommentLivePhotoNotWaterMark",
 		    @"title" : @"移除评论实况水印",
 		    @"detail" : @"",
@@ -1748,7 +1758,13 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"title" : @"保存预览页表情包",
 		    @"detail" : @"",
 		    @"cellType" : @6,
-		    @"imageName" : @"ic_emoji_outlined"}
+		    @"imageName" : @"ic_emoji_outlined"},
+		  @{@"identifier" : @"DYYYHapticFeedbackEnabled",
+			@"title" : @"下载完成震动反馈",
+			@"detail" : @"",
+			@"cellType" : @6,
+			@"imageName" : @"ic_gearsimplify_outlined_20"
+			}
 	  ];
 
 	  for (NSDictionary *dict in downloadSettings) {
@@ -2073,11 +2089,6 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 			    [doubleTapItems addObject:enableDoubleTapMenu];
 
 			    NSArray *doubleTapFunctions = @[
-				    @{@"identifier" : @"DYYYisEnableSheetBlur",
-				      @"title" : @"菜单玻璃效果",
-				      @"detail" : @"",
-				      @"cellType" : @6,
-				      @"imageName" : @"ic_list_outlined"},
 				    @{@"identifier" : @"DYYYDoubleTapDownload",
 				      @"title" : @"保存视频/图片",
 				      @"detail" : @"",
