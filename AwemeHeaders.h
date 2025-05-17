@@ -929,7 +929,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface IESLiveAudienceViewController : UIView
 - (BOOL)prefersStatusBarHidden;
 @end
-@interface AWEAwemeDetailCellViewController : UIView
+@interface AWEAwemeDetailTableViewController : UIView
 - (BOOL)prefersStatusBarHidden;
 @end
 

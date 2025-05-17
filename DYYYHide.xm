@@ -840,7 +840,7 @@
 %end
 
 // 主页状态栏
-%hook AWEAwemeDetailCellViewController
+%hook AWEAwemeDetailTableViewController
 - (BOOL)prefersStatusBarHidden {
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHideStatusbar"]) {
 		return YES;
