@@ -1645,6 +1645,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	enhanceSettingItem.isEnable = YES;
 	enhanceSettingItem.cellTappedBlock = ^{
 	  // 创建增强设置二级界面的设置项
+	  NSMutableDictionary *cellTapHandlers = [NSMutableDictionary dictionary];
 
 	  // 【长按面板设置】分类
 	  NSMutableArray<AWESettingItemModel *> *longPressItems = [NSMutableArray array];
@@ -1768,7 +1769,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	  ];
 
 	  for (NSDictionary *dict in downloadSettings) {
-		  AWESettingItemModel *item = [DYYYSettingsHelper createSettingItem:dict];
+		  AWESettingItemModel *item = [DYYYSettingsHelper createSettingItem:dict cellTapHandlers:cellTapHandlers];
 
 		  // 特殊处理接口解析保存媒体选项
 		  if ([item.identifier isEqualToString:@"DYYYInterfaceDownload"]) {
@@ -1793,7 +1794,6 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 							  onCancel:nil];
 			  };
 		  }
-
 		  [downloadItems addObject:item];
 	  }
 
