@@ -1768,7 +1768,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	  ];
 
 	  for (NSDictionary *dict in downloadSettings) {
-		  AWESettingItemModel *item = [DYYYSettingsHelper createSettingItem:dict];
+		  AWESettingItemModel *item = [DYYYSettingsHelper createSettingItem:dict cellTapHandlers:cellTapHandlers];
 
 		  // 特殊处理接口解析保存媒体选项
 		  if ([item.identifier isEqualToString:@"DYYYInterfaceDownload"]) {
@@ -1793,7 +1793,6 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 							  onCancel:nil];
 			  };
 		  }
-		  AWESettingItemModel *item = [DYYYSettingsHelper createSettingItem:dict cellTapHandlers:cellTapHandlers];
 		  [downloadItems addObject:item];
 	  }
 
