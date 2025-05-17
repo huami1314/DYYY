@@ -1793,7 +1793,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 							  onCancel:nil];
 			  };
 		  }
-
+		  AWESettingItemModel *item = [DYYYSettingsHelper createSettingItem:dict cellTapHandlers:cellTapHandlers];
 		  [downloadItems addObject:item];
 	  }
 
