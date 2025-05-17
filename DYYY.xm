@@ -902,80 +902,6 @@ static CGFloat rightLabelRightMargin = -1;
 }
 %end
 
-%hook AWEFeedGuideManager
-
-- (bool)enableAutoplay {
-	BOOL featureEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableAutoPlay"];
-	if (!featureEnabled) {
-		return %orig;
-	}
-	return YES;
-}
-
-%end
-
-// 修复自动播放造成 tab 常显示的问题(这样写不太好)
-%hook UIViewController
-
-- (void)viewDidAppear:(BOOL)animated {
-    %orig;
-    if ([self isKindOfClass:%c(AWESearchViewController)]) {
-        UITabBarController *tabBarController = self.tabBarController;
-        if ([tabBarController isKindOfClass:%c(AWENormalModeTabBarController)]) {
-            tabBarController.tabBar.hidden = YES;
-        }
-    }
-}
-
-- (void)viewDidDisappear:(BOOL)animated {
-    %orig;
-    if ([self isKindOfClass:%c(AWESearchViewController)]) {
-        UITabBarController *tabBarController = self.tabBarController;
-        if ([tabBarController isKindOfClass:%c(AWENormalModeTabBarController)]) {
-            tabBarController.tabBar.hidden = NO;
-        }
-    }
-}
-
-%end
-
-%hook AWEFeedIPhoneAutoPlayManager
-
-- (BOOL)isAutoPlayOpen {
-	BOOL r = %orig;
-
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableAutoPlay"]) {
-		return YES;
-	}
-	return r;
-}
-
-%end
-
-%hook AWEFeedModuleService
-
-- (BOOL)getFeedIphoneAutoPlayState {
-	BOOL r = %orig;
-
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableAutoPlay"]) {
-		return YES;
-	}
-	return %orig;
-}
-%end
-
-%hook AWEFeedIPhoneAutoPlayManager
-
-- (BOOL)getFeedIphoneAutoPlayState {
-	BOOL r = %orig;
-
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableAutoPlay"]) {
-		return YES;
-	}
-	return %orig;
-}
-%end
-
 %hook AWEPlayInteractionTimestampElement
 - (id)timestampLabel {
 	UILabel *label = %orig;
@@ -1957,9 +1883,77 @@ static CGFloat rightLabelRightMargin = -1;
 
 %end
 
+
+%group AutoPlay
+
+%hook UIViewController
+
+- (void)viewDidAppear:(BOOL)animated {
+	%orig;
+	if ([self isKindOfClass:%c(AWESearchViewController)]) {
+		UITabBarController *tabBarController = self.tabBarController;
+		if ([tabBarController isKindOfClass:%c(AWENormalModeTabBarController)]) {
+			tabBarController.tabBar.hidden = YES;
+		}
+	}
+}
+
+- (void)viewDidDisappear:(BOOL)animated {
+	%orig;
+	if ([self isKindOfClass:%c(AWESearchViewController)]) {
+		UITabBarController *tabBarController = self.tabBarController;
+		if ([tabBarController isKindOfClass:%c(AWENormalModeTabBarController)]) {
+			tabBarController.tabBar.hidden = NO;
+		}
+	}
+}
+
+%end
+
+%hook AWEFeedGuideManager
+
+- (bool)enableAutoplay {
+	BOOL featureEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableAutoPlay"];
+	if (!featureEnabled) {
+		return %orig;
+	}
+	return YES;
+}
+
+%end
+
+%hook AWEFeedIPhoneAutoPlayManager
+
+- (BOOL)isAutoPlayOpen {
+	return YES;
+}
+
+%end
+
+%hook AWEFeedModuleService
+
+- (BOOL)getFeedIphoneAutoPlayState {
+	return YES;
+}
+%end
+
+%hook AWEFeedIPhoneAutoPlayManager
+
+- (BOOL)getFeedIphoneAutoPlayState {
+	BOOL r = %orig;
+	return YES;
+}
+%end
+
+%end
+
 %ctor {
 	%init(DYYYSettingsGesture);
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {
 		%init;
+		BOOL isAutoPlayEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableAutoPlay"];
+		if (isAutoPlayEnabled) {
+			%init(AutoPlay);
+		}
 	}
 }

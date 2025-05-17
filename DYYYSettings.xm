@@ -2059,7 +2059,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"title" : @"视频降噪人声增强",
 		    @"detail" : @"",
 		    @"cellType" : @6,
-		    @"imageName" : @"ic_threestars_filled_16"},
+		    @"imageName" : @"ic_usercheckmark_outlined"},
 		  @{@"identifier" : @"DYYYEnableDoubleOpenAlertController",
 		    @"title" : @"启用双击打开菜单",
 		    @"detail" : @"",
