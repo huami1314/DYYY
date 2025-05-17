@@ -644,6 +644,13 @@
 			return;
 		}
 	}
+	
+	if ([accessibilityLabel isEqualToString:@"返回"]) {
+		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideBack"]) {
+			[self removeFromSuperview];
+			return;
+		}
+	}
 }
 
 %end
