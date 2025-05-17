@@ -20,6 +20,17 @@
 }
 %end
 
+%hook AWECommentInputBackgroundView
+- (void)layoutSubviews {
+	%orig;
+
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentInputBackground"]) {
+		[self removeFromSuperview];
+		return;
+	}
+}
+%end
+
 // 隐藏头像加号和透明
 %hook LOTAnimationView
 - (void)layoutSubviews {
