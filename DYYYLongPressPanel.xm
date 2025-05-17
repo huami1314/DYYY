@@ -1523,9 +1523,79 @@
 }
 %end
 
-// 初始化钩子
 %ctor {
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {
         %init;
+    }
+}
+
+%group DYYYFilterSetterGroup
+
+%hook HOOK_TARGET_OWNER_CLASS
+
+- (void)setModelsArray:(id)arg1 {
+    if (![arg1 isKindOfClass:[NSArray class]]) {
+        %orig(arg1);
+        return;
+    }
+
+    NSArray *inputArray = (NSArray *)arg1;
+    NSMutableArray *filteredArray = nil;
+
+    for (id item in inputArray) {
+        NSString *className = NSStringFromClass([item class]);
+
+        BOOL shouldFilter =
+   ([className isEqualToString:@"AWECommentIMSwiftImpl.CommentLongPressPanelForwardElement"] &&
+             [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentLongPressDaily"]) ||
+
+            ([className isEqualToString:@"AWECommentLongPressPanelSwiftImpl.CommentLongPressPanelCopyElement"] &&
+             [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentLongPressCopy"]) ||
+
+            ([className isEqualToString:@"AWECommentLongPressPanelSwiftImpl.CommentLongPressPanelSaveImageElement"] &&
+             [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentLongPressSaveImage"]) ||
+
+            ([className isEqualToString:@"AWECommentLongPressPanelSwiftImpl.CommentLongPressPanelReportElement"] &&
+             [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentLongPressReport"]) ||
+
+            ([className isEqualToString:@"AWECommentStudioSwiftImpl.CommentLongPressPanelVideoReplyElement"] &&
+             [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentLongPressVideoReply"]) ||
+
+            ([className isEqualToString:@"AWECommentSearchSwiftImpl.CommentLongPressPanelPictureSearchElement"] &&
+             [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentLongPressPictureSearch"]) ||
+
+            ([className isEqualToString:@"AWECommentSearchSwiftImpl.CommentLongPressPanelSearchElement"] &&
+             [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentLongPressSearch"]);
+
+        if (shouldFilter) {
+            if (!filteredArray) {
+                filteredArray = [NSMutableArray arrayWithCapacity:inputArray.count];
+                for (id keepItem in inputArray) {
+                    if (keepItem == item) break;
+                    [filteredArray addObject:keepItem];
+                }
+            }
+            continue;
+        }
+
+        if (filteredArray) {
+            [filteredArray addObject:item];
+        }
+    }
+
+    if (filteredArray) {
+        %orig([filteredArray copy]);
+    } else {
+        %orig(arg1);
+    }
+}
+
+%end
+%end
+
+%ctor {
+    Class ownerClass = objc_getClass("AWECommentLongPressPanelSwiftImpl.CommentLongPressPanelNormalSectionViewModel");
+    if (ownerClass) {
+        %init(DYYYFilterSetterGroup, HOOK_TARGET_OWNER_CLASS = ownerClass);
     }
 }

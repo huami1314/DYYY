@@ -1416,6 +1416,50 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		  AWESettingItemModel *item = [DYYYSettingsHelper createSettingItem:dict];
 		  [modernpanels addObject:item];
 	  }
+
+	  // 【长按评论分类】
+	  NSMutableArray<AWESettingItemModel *> *commentpanel = [NSMutableArray array];
+	  NSArray *commentpanelSettings = @[
+		  @{@"identifier" : @"DYYYHideCommentLongPressCopy",
+		    @"title" : @"隐藏评论复制",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_eyeslash_outlined_16"},
+		  @{@"identifier" : @"DYYYHideCommentLongPressSaveImage",
+		    @"title" : @"隐藏评论保存",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_eyeslash_outlined_16"},
+		  @{@"identifier" : @"DYYYHideCommentLongPressReport",
+		    @"title" : @"隐藏评论举报",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_eyeslash_outlined_16"},
+		  @{@"identifier" : @"DYYYHideCommentLongPressSearch",
+		    @"title" : @"隐藏评论搜索",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_eyeslash_outlined_16"},
+		  @{@"identifier" : @"DYYYHideCommentLongPressDaily",
+		    @"title" : @"隐藏评论转发日常",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_eyeslash_outlined_16"},
+		  @{@"identifier" : @"DYYYHideCommentLongPressVideoReply",
+		    @"title" : @"隐藏评论视频回复",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_eyeslash_outlined_16"},
+		  @{@"identifier" : @"DYYYHideCommentLongPressPictureSearch",
+		    @"title" : @"隐藏评论识别图片",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_eyeslash_outlined_16"}
+	  ];
+	  for (NSDictionary *dict in commentpanelSettings) {
+		  AWESettingItemModel *item = [DYYYSettingsHelper createSettingItem:dict];
+		  [commentpanel addObject:item];
+	  }
 	  // 创建并组织所有section
 	  NSMutableArray *sections = [NSMutableArray array];
 	  [sections addObject:createSection(@"主界面元素", mainUiItems)];
@@ -1425,7 +1469,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	  [sections addObject:createSection(@"提示与位置信息", infoItems)];
 	  [sections addObject:createSection(@"直播间界面", livestreamItems)];
 	  [sections addObject:createSection(@"隐藏面板功能", modernpanels)];
-
+	  [sections addObject:createSection(@"隐藏长按评论功能", commentpanel)];
 	  // 创建并推入二级设置页面
 	  AWESettingBaseViewController *subVC = createSubSettingsViewController(@"隐藏设置", sections);
 	  [rootVC.navigationController pushViewController:(UIViewController *)subVC animated:YES];
@@ -2693,44 +2737,43 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 
 %hook AWESettingsViewModel
 - (NSArray *)sectionDataArray {
-    NSArray *originalSections = %orig;
-    BOOL sectionExists = NO;
-    for (AWESettingSectionModel *section in originalSections) {
-        if ([section.sectionHeaderTitle isEqualToString:DYYY_NAME]) {
-            sectionExists = YES;
-            break;
-        }
-    }
+	NSArray *originalSections = %orig;
+	BOOL sectionExists = NO;
+	for (AWESettingSectionModel *section in originalSections) {
+		if ([section.sectionHeaderTitle isEqualToString:DYYY_NAME]) {
+			sectionExists = YES;
+			break;
+		}
+	}
 
-    BOOL isMainSettingsPage = originalSections.count >= 1 && 
-                            [[originalSections[0] sectionHeaderTitle] isEqualToString:@"账号"];
-    
-    if (isMainSettingsPage && !sectionExists) {
-        AWESettingItemModel *dyyyItem = [[%c(AWESettingItemModel) alloc] init];
-        dyyyItem.identifier = DYYY_NAME;
-        dyyyItem.title = DYYY_NAME;
-        dyyyItem.detail = DYYY_VERSION;
-        dyyyItem.type = 0;
-        dyyyItem.svgIconImageName = @"ic_sapling_outlined";
-        dyyyItem.cellType = 26;
-        dyyyItem.colorStyle = 2;
-        dyyyItem.isEnable = YES;
-        dyyyItem.cellTappedBlock = ^{
-          UIViewController *rootVC = self.controllerDelegate;
-          BOOL hasAgreed = [DYYYSettingsHelper getUserDefaults:@"DYYYUserAgreementAccepted"];
-          showDYYYSettingsVC(rootVC, hasAgreed);
-        };
-        
-        AWESettingSectionModel *newSection = [[%c(AWESettingSectionModel) alloc] init];
-        newSection.itemArray = @[ dyyyItem ];
-        newSection.type = 0;
-        newSection.sectionHeaderHeight = 40;
-        newSection.sectionHeaderTitle = @"DYYY";
-        
-        NSMutableArray *newSections = [NSMutableArray arrayWithArray:originalSections];
-        [newSections insertObject:newSection atIndex:0];
-        return newSections;
-    }
-    return originalSections;
+	BOOL isMainSettingsPage = originalSections.count >= 1 && [[originalSections[0] sectionHeaderTitle] isEqualToString:@"账号"];
+
+	if (isMainSettingsPage && !sectionExists) {
+		AWESettingItemModel *dyyyItem = [[%c(AWESettingItemModel) alloc] init];
+		dyyyItem.identifier = DYYY_NAME;
+		dyyyItem.title = DYYY_NAME;
+		dyyyItem.detail = DYYY_VERSION;
+		dyyyItem.type = 0;
+		dyyyItem.svgIconImageName = @"ic_sapling_outlined";
+		dyyyItem.cellType = 26;
+		dyyyItem.colorStyle = 2;
+		dyyyItem.isEnable = YES;
+		dyyyItem.cellTappedBlock = ^{
+		  UIViewController *rootVC = self.controllerDelegate;
+		  BOOL hasAgreed = [DYYYSettingsHelper getUserDefaults:@"DYYYUserAgreementAccepted"];
+		  showDYYYSettingsVC(rootVC, hasAgreed);
+		};
+
+		AWESettingSectionModel *newSection = [[%c(AWESettingSectionModel) alloc] init];
+		newSection.itemArray = @[ dyyyItem ];
+		newSection.type = 0;
+		newSection.sectionHeaderHeight = 40;
+		newSection.sectionHeaderTitle = @"DYYY";
+
+		NSMutableArray *newSections = [NSMutableArray arrayWithArray:originalSections];
+		[newSections insertObject:newSection atIndex:0];
+		return newSections;
+	}
+	return originalSections;
 }
 %end
