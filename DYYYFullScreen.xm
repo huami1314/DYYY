@@ -348,7 +348,7 @@ static CGFloat currentScale = 1.0;
 			}
 		}
 	}
-	// 左侧元素的处理逻辑（仅当未锁定时执行）
+	// 左侧元素的处理逻辑
 	else if ([self.accessibilityLabel isEqualToString:@"left"]) {
 		NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
 

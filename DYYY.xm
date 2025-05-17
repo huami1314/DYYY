@@ -1711,6 +1711,19 @@ static CGFloat rightLabelRightMargin = -1;
 }
 %end
 
+// 禁用个人资料自动进入橱窗
+%hook AWEUserDetailViewControllerV2
+
+- (void)viewWillLayoutSubviews {
+    %orig;
+    
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDefaultEnterWorks"]) {
+        [self setProfileShowTab:0];
+    }
+}
+
+%end
+
 %ctor {
 	%init(DYYYSettingsGesture);
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {

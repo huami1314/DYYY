@@ -979,3 +979,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (NSArray *)getQualities;
 - (void)setResolutionWithIndex:(NSInteger)index isManual:(BOOL)manual beginChange:(void (^)(void))beginChangeBlock completion:(void (^)(void))completionBlock;
 @end
+
+@interface AWEUserDetailViewControllerV2 : UIViewController
+- (void)setProfileShowTab:(NSInteger)tab;
+@end
