@@ -903,6 +903,17 @@ static CGFloat rightLabelRightMargin = -1;
 }
 %end
 
+%hook AWEFeedGuideManager
+
+ - (bool)enableAutoplay {
+ 	BOOL featureEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableAutoPlay"];
+ 	if (!featureEnabled) {
+ 		return %orig;
+ 	}
+ 	return YES;
+ }
+ %end
+
 %hook AWEFeedIPhoneAutoPlayManager
 
 - (BOOL)isAutoPlayOpen {
