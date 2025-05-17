@@ -107,6 +107,10 @@ static void initTargetClassNames(void) {
 		[list addObject:@"AWEStoryProgressSlideView"];
 		[list addObject:@"AWEStoryProgressContainerView"];
 	}
+	BOOL hideSpeed = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideSpeed"];
+	if (hideSpeed) {
+		[list addObject:@"FloatingSpeedButton"];
+	}
     targetClassNames = [list copy];
 }
 @implementation HideUIButton

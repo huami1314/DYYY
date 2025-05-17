@@ -20,6 +20,17 @@
 }
 %end
 
+%hook AWECommentInputBackgroundView
+- (void)layoutSubviews {
+	%orig;
+
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideComment"]) {
+		[self removeFromSuperview];
+		return;
+	}
+}
+%end
+
 // 隐藏头像加号和透明
 %hook LOTAnimationView
 - (void)layoutSubviews {
@@ -633,6 +644,13 @@
 			return;
 		}
 	}
+	
+	if ([accessibilityLabel isEqualToString:@"返回"]) {
+		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideBack"]) {
+			[self removeFromSuperview];
+			return;
+		}
+	}
 }
 
 %end
@@ -808,6 +826,21 @@
 
 // 直播状态栏
 %hook IESLiveAudienceViewController
+- (BOOL)prefersStatusBarHidden {
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHideStatusbar"]) {
+		return YES;
+	} else {
+		if (class_getInstanceMethod([self class], @selector(prefersStatusBarHidden)) !=
+		    class_getInstanceMethod([%c(IESLiveAudienceViewController) class], @selector(prefersStatusBarHidden))) {
+			return %orig;
+		}
+		return NO;
+	}
+}
+%end
+
+// 主页状态栏
+%hook AWEAwemeDetailTableViewController
 - (BOOL)prefersStatusBarHidden {
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHideStatusbar"]) {
 		return YES;

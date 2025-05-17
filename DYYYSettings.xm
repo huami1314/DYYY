@@ -886,6 +886,11 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_eyeslash_outlined_16"},
+	      @{@"identifier" : @"DYYYHideComment",
+		    @"title" : @"隐藏底栏评论",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_eyeslash_outlined_16"},
 		  @{@"identifier" : @"DYYYHideTopBarBadge",
 		    @"title" : @"隐藏顶栏红点",
 		    @"detail" : @"",
@@ -983,6 +988,11 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"imageName" : @"ic_eyeslash_outlined_16"},
 		  @{@"identifier" : @"DYYYisHiddenLeftSideBar",
 		    @"title" : @"隐藏左侧边栏",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_eyeslash_outlined_16"},
+		  @{@"identifier" : @"DYYYHideBack",
+		    @"title" : @"隐藏返回按钮",
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_eyeslash_outlined_16"},
@@ -2348,6 +2358,14 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_eyeslash_outlined_16"}];
 	  [clearButtonItems addObject:hideTabButton];
+	  AWESettingItemModel *hideSpeedButton = [DYYYSettingsHelper
+	      createSettingItem:
+		  @{@"identifier" : @"DYYYHideSpeed",
+		    @"title" : @"清屏隐藏倍速",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_eyeslash_outlined_16"}];
+	  [clearButtonItems addObject:hideSpeedButton];
 	  // 获取清屏按钮的当前开关状态
 	  BOOL isEnabled = [DYYYSettingsHelper getUserDefaults:@"DYYYEnableFloatClearButton"];
 	  clearButtonSizeItem.isEnable = isEnabled;
