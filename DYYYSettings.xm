@@ -799,7 +799,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"detail" : @"不填默认",
 		    @"cellType" : @26,
 		    @"imageName" : @"ic_msg_outlined_20"},
-		  @{@"identifier" : @"DYYYDYYYSettingsHelperTitle",
+		  @{@"identifier" : @"DYYYSelfTitle",
 		    @"title" : @"设置我的标题",
 		    @"detail" : @"不填默认",
 		    @"cellType" : @26,
