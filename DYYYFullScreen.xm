@@ -161,6 +161,17 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 		return;
 	}
 
+	UIViewController *viewController = [self firstAvailableUIViewController];
+	if ([viewController isKindOfClass:%c(AWEMixVideoPanelDetailTableViewController)] && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+		self.backgroundColor = [UIColor clearColor];
+
+		for (UIView *subview in self.subviews) {
+			if ([subview isKindOfClass:[UIView class]]) {
+				subview.backgroundColor = [UIColor clearColor];
+			}
+		}
+	}
+
 	UIViewController *vc = [self firstAvailableUIViewController];
 	if ([vc isKindOfClass:%c(AWEAwemePlayVideoViewController)] || [vc isKindOfClass:%c(AWEDPlayerFeedPlayerViewController)]) {
 
@@ -615,6 +626,17 @@ static CGFloat currentScale = 1.0;
 		}
 	}
 	%orig(frame);
+}
+
+%end
+
+%hook AWEMixVideoPanelMoreView
+
+- (void)setFrame:(CGRect)frame {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+        frame.origin.y -= 83;
+    }
+    %orig(frame);
 }
 
 %end

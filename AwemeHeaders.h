@@ -1000,3 +1000,6 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWEFeedVideoControlView : UIView
 - (void)handleVideoQualityLongPress:(UILongPressGestureRecognizer *)gesture;
 @end
+
+@interface AWEMixVideoPanelMoreView : UIView
+@end
