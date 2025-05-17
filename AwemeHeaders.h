@@ -19,17 +19,17 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 @interface AWEURLModel : NSObject
-@property (nonatomic, copy) NSArray *originURLList;
-@property (nonatomic, assign) NSInteger imageWidth;
-@property (nonatomic, assign) NSInteger imageHeight;
-@property (nonatomic, copy) NSString *URLKey;
+@property(nonatomic, copy) NSArray *originURLList;
+@property(nonatomic, assign) NSInteger imageWidth;
+@property(nonatomic, assign) NSInteger imageHeight;
+@property(nonatomic, copy) NSString *URLKey;
 - (NSArray *)originURLList;
 - (id)URI;
 - (NSURL *)getDYYYSrcURLDownload;
 @end
 
 @interface AWEVideoModel : NSObject
-@property (nonatomic, strong) AWEURLModel *playLowBitURL;
+@property(nonatomic, strong) AWEURLModel *playLowBitURL;
 @property(retain, nonatomic) AWEURLModel *playURL;
 @property(copy, nonatomic) NSArray *manualBitrateModels;
 @property(copy, nonatomic) NSArray *bitrateModels;
@@ -926,8 +926,10 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWEFeedRootViewController : UIViewController
 - (BOOL)prefersStatusBarHidden;
 @end
-
 @interface IESLiveAudienceViewController : UIView
+- (BOOL)prefersStatusBarHidden;
+@end
+@interface AWEAwemeDetailCellViewController : UIView
 - (BOOL)prefersStatusBarHidden;
 @end
 
