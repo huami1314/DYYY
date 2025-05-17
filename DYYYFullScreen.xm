@@ -193,8 +193,20 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 	%orig;
 
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+		NSString *currentReferString = self.referString;
 		CGRect frame = self.view.frame;
-		frame.size.height = self.view.superview.frame.size.height - 83;
+
+		// 根据referString来决定是否减去83点
+		if ([currentReferString isEqualToString:@"general_search"]) {
+			frame.size.height = self.view.superview.frame.size.height;
+		} else if ([currentReferString isEqualToString:@"chat"] || currentReferString == nil) {
+			frame.size.height = self.view.superview.frame.size.height;
+		} else if ([currentReferString isEqualToString:@"others_homepage"] || currentReferString == nil) {
+			frame.size.height = self.view.superview.frame.size.height - 83;
+		} else {
+			frame.size.height = self.view.superview.frame.size.height - 83;
+		}
+
 		self.view.frame = frame;
 	}
 }
@@ -595,7 +607,12 @@ static CGFloat currentScale = 1.0;
 
 - (void)setFrame:(CGRect)frame {
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-		frame.size.height += 83;
+		CGFloat screenHeight = [UIScreen mainScreen].bounds.size.height;
+
+		CGFloat remainder = fmod(frame.size.height, screenHeight);
+		if (remainder != 0) {
+			frame.size.height += (screenHeight - remainder);
+		}
 	}
 	%orig(frame);
 }
@@ -614,7 +631,7 @@ static CGFloat currentScale = 1.0;
 		}
 	}
 
-	if (parentVC && [parentVC isKindOfClass:%c(AWEAwemeDetailTableViewController)]) {
+	if (parentVC && ([parentVC isKindOfClass:%c(AWEAwemeDetailTableViewController)] || [parentVC isKindOfClass:%c(AWEAwemeDetailCellViewController)])) {
 		for (UIView *subview in [self subviews]) {
 			if ([subview class] == [UIView class]) {
 				subview.hidden = YES;
