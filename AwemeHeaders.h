@@ -1013,3 +1013,8 @@ typedef NS_ENUM(NSInteger, MediaType) {
 
 @interface AWENormalModeTabBarFeedView : UIView
 @end
+
+@interface AWENormalModeTabBarController : UIViewController
+@property (nonatomic, strong) AWENormalModeTabBar *awe_tabBar;
+- (void)handleApplicationWillEnterForeground:(NSNotification *)notification;
+@end

@@ -1910,6 +1910,39 @@ static CGFloat rightLabelRightMargin = -1;
 
 %end
 
+%hook AWENormalModeTabBarController
+
+- (void)viewDidLoad {
+    %orig;
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self 
+                                             selector:@selector(handleApplicationWillEnterForeground:) 
+                                                 name:UIApplicationWillEnterForegroundNotification 
+                                               object:nil];
+}
+
+%new
+- (void)handleApplicationWillEnterForeground:(NSNotification *)notification {
+    UIViewController *topVC = topVC;
+    if ([topVC isKindOfClass:%c(UINavigationController)]) {
+        UINavigationController *navVC = (UINavigationController *)topVC;
+        topVC = navVC.topViewController;
+    }
+    
+    if ([topVC isKindOfClass:%c(AWESearchViewController)] || 
+        [topVC isKindOfClass:%c(IESLiveInnerFeedViewController)] || 
+        [topVC isKindOfClass:%c(AWEAwemeDetailTableViewController)]) {
+        self.awe_tabBar.hidden = YES;
+    }
+}
+
+- (void)dealloc {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+    %orig;
+}
+
+%end
+
 %hook AWEFeedGuideManager
 
 - (bool)enableAutoplay {
