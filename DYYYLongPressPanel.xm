@@ -1509,6 +1509,21 @@
 %end
 
 // 隐藏评论分享功能
+
+%hook AWEIMCommentShareUserHorizontalCollectionViewCell
+
+- (void)layoutSubviews {
+    %orig;
+    
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentShareToFriends"]) {
+        self.hidden = YES;
+    } else {
+        self.hidden = NO;
+    }
+}
+
+%end
+
 %hook AWEIMCommentShareUserHorizontalSectionController
 
 - (CGSize)sizeForItemAtIndex:(NSInteger)index model:(id)model collectionViewSize:(CGSize)size {
