@@ -980,10 +980,6 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (void)setResolutionWithIndex:(NSInteger)index isManual:(BOOL)manual beginChange:(void (^)(void))beginChangeBlock completion:(void (^)(void))completionBlock;
 @end
 
-@interface AWEUserDetailViewControllerV2 : UIViewController
-- (void)setProfileShowTab:(NSInteger)tab;
-@end
-
 // 视频播放控制处理器
 @interface AWEPlayerPlayControlHandler : NSObject
 @property (nonatomic, strong) AVAudioUnitEQ *audioEQ;

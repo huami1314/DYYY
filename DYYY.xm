@@ -1674,13 +1674,13 @@ static CGFloat rightLabelRightMargin = -1;
 %end
 
 // 禁用个人资料自动进入橱窗
-%hook AWEUserDetailViewControllerV2
+%hook AWEUserTabListModel
 
-- (void)viewWillLayoutSubviews {
-	%orig;
-
+- (NSInteger)profileLandingTab {
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDefaultEnterWorks"]) {
-		[self setProfileShowTab:0];
+		return 0;
+	} else {
+		return %orig;
 	}
 }
 
@@ -1883,19 +1883,18 @@ static CGFloat rightLabelRightMargin = -1;
 
 %end
 
-
 %group AutoPlay
 
 %hook UIViewController
 
 - (void)viewDidAppear:(BOOL)animated {
-    %orig;
-    if ([self isKindOfClass:%c(AWESearchViewController)] || [self isKindOfClass:%c(IESLiveInnerFeedViewController)]) {
-        UITabBarController *tabBarController = self.tabBarController;
-        if ([tabBarController isKindOfClass:%c(AWENormalModeTabBarController)]) {
-            tabBarController.tabBar.hidden = YES;
-        }
-    }
+	%orig;
+	if ([self isKindOfClass:%c(AWESearchViewController)] || [self isKindOfClass:%c(IESLiveInnerFeedViewController)]) {
+		UITabBarController *tabBarController = self.tabBarController;
+		if ([tabBarController isKindOfClass:%c(AWENormalModeTabBarController)]) {
+			tabBarController.tabBar.hidden = YES;
+		}
+	}
 }
 
 %end
