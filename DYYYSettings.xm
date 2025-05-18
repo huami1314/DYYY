@@ -311,6 +311,17 @@ static void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed);
 }
 %end
 %hook AWELeftSideBarWeatherView
+- (void)didMoveToSuperview {
+    %orig;
+    
+    // 在视图添加到父视图后下移10点
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        CGRect frame = self.frame;
+        frame.origin.y += 10;
+        self.frame = frame;
+    });
+}
+
 - (void)layoutSubviews {
     %orig;
     
@@ -346,7 +357,7 @@ static void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed);
 - (UITapGestureRecognizer *)tapGestureForSubview:(UIView *)subview {
     // 为每个子视图创建唯一的手势识别器
     UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(openDYYYSettings)];
-    // 设置关联对象，防止内存泄漏
+
     objc_setAssociatedObject(subview, "DYYYTapGesture", tapGesture, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     return tapGesture;
 }
