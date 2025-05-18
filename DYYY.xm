@@ -1889,23 +1889,13 @@ static CGFloat rightLabelRightMargin = -1;
 %hook UIViewController
 
 - (void)viewDidAppear:(BOOL)animated {
-	%orig;
-	if ([self isKindOfClass:%c(AWESearchViewController)]) {
-		UITabBarController *tabBarController = self.tabBarController;
-		if ([tabBarController isKindOfClass:%c(AWENormalModeTabBarController)]) {
-			tabBarController.tabBar.hidden = YES;
-		}
-	}
-}
-
-- (void)viewDidDisappear:(BOOL)animated {
-	%orig;
-	if ([self isKindOfClass:%c(AWESearchViewController)]) {
-		UITabBarController *tabBarController = self.tabBarController;
-		if ([tabBarController isKindOfClass:%c(AWENormalModeTabBarController)]) {
-			tabBarController.tabBar.hidden = NO;
-		}
-	}
+    %orig;
+    if ([self isKindOfClass:%c(AWESearchViewController)] || [self isKindOfClass:%c(IESLiveInnerFeedViewController)]) {
+        UITabBarController *tabBarController = self.tabBarController;
+        if ([tabBarController isKindOfClass:%c(AWENormalModeTabBarController)]) {
+            tabBarController.tabBar.hidden = YES;
+        }
+    }
 }
 
 %end
