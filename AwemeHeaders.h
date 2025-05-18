@@ -1008,5 +1008,8 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (void)configCell:(id)cell index:(NSInteger)index model:(id)model;
 @end
 
+@interface AWEIMCommentShareUserHorizontalCollectionViewCell : UIView
+@end
+
 @interface AWENormalModeTabBarFeedView : UIView
 @end
