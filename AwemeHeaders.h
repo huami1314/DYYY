@@ -1014,6 +1014,11 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWENormalModeTabBarFeedView : UIView
 @end
 
+@interface AWENormalModeTabBarController : UIViewController
+@property (nonatomic, strong) AWENormalModeTabBar *awe_tabBar;
+- (void)handleApplicationWillEnterForeground:(NSNotification *)notification;
+@end
+
 @interface AWELeftSideBarWeatherLabel : UILabel
 @property(nonatomic, assign) BOOL userInteractionEnabled;
 @property(nonatomic, strong) UIColor *textColor;
