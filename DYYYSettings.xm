@@ -251,6 +251,131 @@ static void *kViewModelKey = &kViewModelKey;
 }
 %end
 
+static void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed);
+%hook AWELeftSideBarWeatherLabel
+- (id)initWithFrame:(CGRect)frame {
+    id orig = %orig;
+    
+    // 启用用户交互
+    self.userInteractionEnabled = YES;
+    
+    // 添加点击手势
+    UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(openDYYYSettings)];
+    [self addGestureRecognizer:tapGesture];
+    
+    return orig;
+}
+// 重写drawTextInRect方法
+- (void)drawTextInRect:(CGRect)rect {
+
+    CGContextRef context = UIGraphicsGetCurrentContext();
+    CGContextSaveGState(context);
+    
+    // 清除原有内容
+    CGContextClearRect(context, rect);
+    
+    // 设置文本属性
+    UIFont *smallFont = [UIFont systemFontOfSize:12.0];
+    NSDictionary *attributes = @{
+        NSFontAttributeName: smallFont,
+        NSForegroundColorAttributeName: self.textColor
+    };
+    
+    [@"DYYY" drawInRect:rect withAttributes:attributes];
+    
+    CGContextRestoreGState(context);
+}
+%new
+- (void)openDYYYSettings {
+    // 获取当前视图控制器
+    UIViewController *currentVC = nil;
+    UIResponder *responder = self;
+    while (responder) {
+        if ([responder isKindOfClass:[UIViewController class]]) {
+            currentVC = (UIViewController *)responder;
+            break;
+        }
+        responder = [responder nextResponder];
+    }
+    
+    if (!currentVC || ![currentVC isKindOfClass:%c(AWELeftSideBarViewController)]) {
+        return;
+    }
+    
+    AWELeftSideBarViewController *sidebarVC = (AWELeftSideBarViewController *)currentVC;
+    
+    // 检查用户是否已同意协议
+    BOOL hasAgreed = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"];
+    
+    showDYYYSettingsVC(sidebarVC, hasAgreed);
+}
+%end
+%hook AWELeftSideBarWeatherView
+- (void)layoutSubviews {
+    %orig;
+    
+    self.userInteractionEnabled = YES;
+    
+    if (![self.gestureRecognizers containsObject:[self tapGestureForDYYY]]) {
+        [self addGestureRecognizer:[self tapGestureForDYYY]];
+    }
+    
+    for (UIView *subview in self.subviews) {
+        // 启用子视图交互并添加手势
+        subview.userInteractionEnabled = YES;
+        if (![subview.gestureRecognizers containsObject:[self tapGestureForSubview:subview]]) {
+            [subview addGestureRecognizer:[self tapGestureForSubview:subview]];
+        }
+        
+        for (UIView *childView in subview.subviews) {
+            if (![childView isKindOfClass:%c(AWELeftSideBarWeatherLabel)]) {
+                [childView removeFromSuperview];
+            }
+        }
+    }
+}
+%new
+- (UITapGestureRecognizer *)tapGestureForDYYY {
+    static UITapGestureRecognizer *tapGesture = nil;
+    if (!tapGesture) {
+        tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(openDYYYSettings)];
+    }
+    return tapGesture;
+}
+%new
+- (UITapGestureRecognizer *)tapGestureForSubview:(UIView *)subview {
+    // 为每个子视图创建唯一的手势识别器
+    UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(openDYYYSettings)];
+    // 设置关联对象，防止内存泄漏
+    objc_setAssociatedObject(subview, "DYYYTapGesture", tapGesture, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    return tapGesture;
+}
+%new
+- (void)openDYYYSettings {
+    // 获取当前视图控制器
+    UIViewController *currentVC = nil;
+    UIResponder *responder = self;
+    while (responder) {
+        if ([responder isKindOfClass:[UIViewController class]]) {
+            currentVC = (UIViewController *)responder;
+            break;
+        }
+        responder = [responder nextResponder];
+    }
+    
+    if (!currentVC || ![currentVC isKindOfClass:%c(AWELeftSideBarViewController)]) {
+        return;
+    }
+    
+    AWELeftSideBarViewController *sidebarVC = (AWELeftSideBarViewController *)currentVC;
+    
+    // 检查用户是否已同意协议
+    BOOL hasAgreed = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"];
+    
+    showDYYYSettingsVC(sidebarVC, hasAgreed);
+}
+%end
+
 static AWESettingBaseViewController *createSubSettingsViewController(NSString *title, NSArray *sectionsArray) {
 	AWESettingBaseViewController *settingsVC = [[%c(AWESettingBaseViewController) alloc] init];
 
