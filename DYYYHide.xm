@@ -677,6 +677,8 @@
 	}
 }
 
+%end
+
 %hook ACCGestureResponsibleStickerView
 - (void)layoutSubviews {
 	%orig;
