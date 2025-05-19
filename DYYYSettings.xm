@@ -2179,7 +2179,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	  // 【交互增强】分类
 	  NSMutableArray<AWESettingItemModel *> *interactionItems = [NSMutableArray array];
 	  NSArray *interactionSettings = @[
-		  {@"identifier" : @"DYYYentrance",
+		  @{@"identifier" : @"DYYYentrance",
 		    @"title" : @"左侧边栏快捷入口",
 		    @"detail" : @"",
 		    @"cellType" : @6,
