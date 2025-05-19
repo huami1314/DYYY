@@ -655,17 +655,18 @@
 
 %end
 
-%hook AWEIMFeedVideoQuickReplayInputView
-- (void)layoutSubviews {
-	%orig;
+%hook AWEIMFeedVideoQuickReplayInputViewController
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideReply"]) {
-		[self removeFromSuperview];
-		return;
-	}
+- (void)viewDidLayoutSubviews {
+    %orig;
+
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideReply"]) {
+        [self.view removeFromSuperview];
+    }
 }
 
 %end
+
 
 %hook AWEHPSearchBubbleEntranceView
 - (void)layoutSubviews {

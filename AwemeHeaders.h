@@ -166,7 +166,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWELandscapeFeedEntryView : UIView
 @end
 
-@interface AWEIMFeedVideoQuickReplayInputView : UIView
+@interface AWEIMFeedVideoQuickReplayInputViewController : UIViewController
 @end
 
 @interface AWEHPSearchBubbleEntranceView : UIView
