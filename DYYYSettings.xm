@@ -392,36 +392,42 @@ static void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed);
 
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYentrance"]) {
 
-        UIViewController *rootVC = nil;
-        UIResponder *resp       = self;
+        UIViewController *feedVC = nil;
+        UIResponder      *resp   = self;
+        Class feedCls            = %c(AWEFeedContainerViewController);
+
         while (resp) {
-            if ([resp isKindOfClass:[UIViewController class]]) {
-                rootVC = (UIViewController *)resp;
+            if ([resp isKindOfClass:feedCls]) {
+                feedVC = (UIViewController *)resp;
                 break;
             }
             resp = [resp nextResponder];
         }
 
-        if (!rootVC) {
-            UIWindow *keyWin = UIApplication.sharedApplication.keyWindow;
-            rootVC = keyWin.rootViewController;
-            while (rootVC.presentedViewController) {
-                rootVC = rootVC.presentedViewController;
+        if (!feedVC) {
+            UIViewController *root =
+                UIApplication.sharedApplication.keyWindow.rootViewController;
+            while (root) {
+                if ([root isKindOfClass:feedCls]) {
+                    feedVC = root;
+                    break;
+                }
+                root = root.presentedViewController;
             }
         }
 
-        if (rootVC) {
-            BOOL hasAgreed =
-                [[NSUserDefaults standardUserDefaults] boolForKey:
-                    @"DYYYUserAgreementAccepted"];
-            showDYYYSettingsVC(rootVC, hasAgreed);
+        if (feedVC) {
+            BOOL hasAgreed = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"];
+            showDYYYSettingsVC(feedVC, hasAgreed);
+            return;
         }
-
-    } else {
-        %orig;
     }
+
+    %orig;
 }
+
 %end
+
 
 static AWESettingBaseViewController *createSubSettingsViewController(NSString *title, NSArray *sectionsArray) {
 	AWESettingBaseViewController *settingsVC = [[%c(AWESettingBaseViewController) alloc] init];
