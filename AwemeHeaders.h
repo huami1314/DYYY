@@ -1038,3 +1038,5 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 @interface AWELeftSideBarViewController : UIViewController
 @end
+@interface AWEFeedContainerViewController : UIViewController
+@end
