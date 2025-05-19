@@ -388,31 +388,39 @@ static void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed);
 %end
 
 %hook AWELeftSideBarEntranceView
-
 - (void)leftSideBarEntranceViewTapped:(UITapGestureRecognizer *)gesture {
 
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYentrance"]) {
 
-        UIViewController *currentVC = nil;
-        UIResponder *responder = self;
-        while (responder) {
-            if ([responder isKindOfClass:[UIViewController class]]) {
-                currentVC = (UIViewController *)responder;
+        UIViewController *rootVC = nil;
+        UIResponder *resp       = self;
+        while (resp) {
+            if ([resp isKindOfClass:[UIViewController class]]) {
+                rootVC = (UIViewController *)resp;
                 break;
             }
-            responder = [responder nextResponder];
+            resp = [resp nextResponder];
         }
 
-        if (currentVC && [currentVC isKindOfClass:%c(AWELeftSideBarViewController)]) {
-            BOOL hasAgreed = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"];
-            showDYYYSettingsVC((AWELeftSideBarViewController *)currentVC, hasAgreed);
+        if (!rootVC) {
+            UIWindow *keyWin = UIApplication.sharedApplication.keyWindow;
+            rootVC = keyWin.rootViewController;
+            while (rootVC.presentedViewController) {
+                rootVC = rootVC.presentedViewController;
+            }
+        }
+
+        if (rootVC) {
+            BOOL hasAgreed =
+                [[NSUserDefaults standardUserDefaults] boolForKey:
+                    @"DYYYUserAgreementAccepted"];
+            showDYYYSettingsVC(rootVC, hasAgreed);
         }
 
     } else {
         %orig;
     }
 }
-
 %end
 
 static AWESettingBaseViewController *createSubSettingsViewController(NSString *title, NSArray *sectionsArray) {
