@@ -655,6 +655,28 @@
 
 %end
 
+%hook AWEIMFeedVideoQuickReplayInputView
+- (void)layoutSubviews {
+	%orig;
+
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideReply"]) {
+		[self removeFromSuperview];
+		return;
+	}
+}
+
+%end
+
+%hook AWEHPSearchBubbleEntranceView
+- (void)layoutSubviews {
+	%orig;
+
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideSearchBubble"]) {
+		[self removeFromSuperview];
+		return;
+	}
+}
+
 %hook ACCGestureResponsibleStickerView
 - (void)layoutSubviews {
 	%orig;

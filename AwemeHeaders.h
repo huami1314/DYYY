@@ -166,6 +166,12 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWELandscapeFeedEntryView : UIView
 @end
 
+@interface AWEIMFeedVideoQuickReplayInputView : UIView
+@end
+
+@interface AWEHPSearchBubbleEntranceView : UIView
+@end
+
 @interface AWEPlayInteractionViewController : UIViewController
 @property(nonatomic, strong) UIView *view;
 @property(nonatomic, strong) NSString *referString;
@@ -982,9 +988,9 @@ typedef NS_ENUM(NSInteger, MediaType) {
 
 // 视频播放控制处理器
 @interface AWEPlayerPlayControlHandler : NSObject
-@property (nonatomic, strong) AVAudioUnitEQ *audioEQ;
-@property (nonatomic, strong) AVAudioUnitReverb *reverb;
-@property (nonatomic, assign) BOOL noiseFilterEnabled;
+@property(nonatomic, strong) AVAudioUnitEQ *audioEQ;
+@property(nonatomic, strong) AVAudioUnitReverb *reverb;
+@property(nonatomic, assign) BOOL noiseFilterEnabled;
 - (void)setupNoiseFilter;
 - (void)addNoiseFilterButton;
 - (void)toggleNoiseFilter;
@@ -1001,7 +1007,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 @interface AWESearchViewController : UIViewController
-@property (nonatomic, strong) UITabBarController *tabBarController;
+@property(nonatomic, strong) UITabBarController *tabBarController;
 @end
 
 @interface AWEIMCommentShareUserHorizontalSectionController : UIViewController
@@ -1015,7 +1021,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 @interface AWENormalModeTabBarController : UIViewController
-@property (nonatomic, strong) AWENormalModeTabBar *awe_tabBar;
+@property(nonatomic, strong) AWENormalModeTabBar *awe_tabBar;
 - (void)handleApplicationWillEnterForeground:(NSNotification *)notification;
 @end
 
