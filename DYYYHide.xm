@@ -655,6 +655,31 @@
 
 %end
 
+%hook AWEIMFeedVideoQuickReplayInputViewController
+
+- (void)viewDidLayoutSubviews {
+    %orig;
+
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideReply"]) {
+        [self.view removeFromSuperview];
+    }
+}
+
+%end
+
+
+%hook AWEHPSearchBubbleEntranceView
+- (void)layoutSubviews {
+	%orig;
+
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideSearchBubble"]) {
+		[self removeFromSuperview];
+		return;
+	}
+}
+
+%end
+
 %hook ACCGestureResponsibleStickerView
 - (void)layoutSubviews {
 	%orig;
@@ -1609,6 +1634,21 @@
 	}
 }
 
+%end
+
+// 隐藏双栏入口
+%hook AWENormalModeTabBarFeedView
+- (void)layoutSubviews {
+    %orig;
+    
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideDoubleColumnEntry"]) {
+        for (UIView *subview in self.subviews) {
+            if (![subview isKindOfClass:[UILabel class]]) {
+                subview.hidden = YES;
+            }
+        }
+    }
+}
 %end
 
 // 移除极速版我的片面红包横幅

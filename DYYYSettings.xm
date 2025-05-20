@@ -251,6 +251,184 @@ static void *kViewModelKey = &kViewModelKey;
 }
 %end
 
+static void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed);
+%hook AWELeftSideBarWeatherLabel
+- (id)initWithFrame:(CGRect)frame {
+    id orig = %orig;
+    
+    // 启用用户交互
+    self.userInteractionEnabled = YES;
+    
+    // 添加点击手势
+    UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(openDYYYSettings)];
+    [self addGestureRecognizer:tapGesture];
+    
+    return orig;
+}
+// 重写drawTextInRect方法
+- (void)drawTextInRect:(CGRect)rect {
+
+    CGContextRef context = UIGraphicsGetCurrentContext();
+    CGContextSaveGState(context);
+    
+    // 清除原有内容
+    CGContextClearRect(context, rect);
+    
+    // 设置文本属性
+    UIFont *smallFont = [UIFont systemFontOfSize:12.0];
+    NSDictionary *attributes = @{
+        NSFontAttributeName: smallFont,
+        NSForegroundColorAttributeName: self.textColor
+    };
+    
+    [@"DYYY" drawInRect:rect withAttributes:attributes];
+    
+    CGContextRestoreGState(context);
+}
+%new
+- (void)openDYYYSettings {
+    // 获取当前视图控制器
+    UIViewController *currentVC = nil;
+    UIResponder *responder = self;
+    while (responder) {
+        if ([responder isKindOfClass:[UIViewController class]]) {
+            currentVC = (UIViewController *)responder;
+            break;
+        }
+        responder = [responder nextResponder];
+    }
+    
+    if (!currentVC || ![currentVC isKindOfClass:%c(AWELeftSideBarViewController)]) {
+        return;
+    }
+    
+    AWELeftSideBarViewController *sidebarVC = (AWELeftSideBarViewController *)currentVC;
+    
+    // 检查用户是否已同意协议
+    BOOL hasAgreed = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"];
+    
+    showDYYYSettingsVC(sidebarVC, hasAgreed);
+}
+%end
+%hook AWELeftSideBarWeatherView
+- (void)didMoveToSuperview {
+    %orig;
+    
+    // 在视图添加到父视图后下移10点
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        CGRect frame = self.frame;
+        frame.origin.y += 10;
+        self.frame = frame;
+    });
+}
+
+- (void)layoutSubviews {
+    %orig;
+    
+    self.userInteractionEnabled = YES;
+    
+    if (![self.gestureRecognizers containsObject:[self tapGestureForDYYY]]) {
+        [self addGestureRecognizer:[self tapGestureForDYYY]];
+    }
+    
+    for (UIView *subview in self.subviews) {
+        // 启用子视图交互并添加手势
+        subview.userInteractionEnabled = YES;
+        if (![subview.gestureRecognizers containsObject:[self tapGestureForSubview:subview]]) {
+            [subview addGestureRecognizer:[self tapGestureForSubview:subview]];
+        }
+        
+        for (UIView *childView in subview.subviews) {
+            if (![childView isKindOfClass:%c(AWELeftSideBarWeatherLabel)]) {
+                [childView removeFromSuperview];
+            }
+        }
+    }
+}
+%new
+- (UITapGestureRecognizer *)tapGestureForDYYY {
+    static UITapGestureRecognizer *tapGesture = nil;
+    if (!tapGesture) {
+        tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(openDYYYSettings)];
+    }
+    return tapGesture;
+}
+%new
+- (UITapGestureRecognizer *)tapGestureForSubview:(UIView *)subview {
+    // 为每个子视图创建唯一的手势识别器
+    UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(openDYYYSettings)];
+
+    objc_setAssociatedObject(subview, "DYYYTapGesture", tapGesture, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    return tapGesture;
+}
+%new
+- (void)openDYYYSettings {
+    // 获取当前视图控制器
+    UIViewController *currentVC = nil;
+    UIResponder *responder = self;
+    while (responder) {
+        if ([responder isKindOfClass:[UIViewController class]]) {
+            currentVC = (UIViewController *)responder;
+            break;
+        }
+        responder = [responder nextResponder];
+    }
+    
+    if (!currentVC || ![currentVC isKindOfClass:%c(AWELeftSideBarViewController)]) {
+        return;
+    }
+    
+    AWELeftSideBarViewController *sidebarVC = (AWELeftSideBarViewController *)currentVC;
+    
+    // 检查用户是否已同意协议
+    BOOL hasAgreed = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"];
+    
+    showDYYYSettingsVC(sidebarVC, hasAgreed);
+}
+%end
+
+%hook AWELeftSideBarEntranceView
+- (void)leftSideBarEntranceViewTapped:(UITapGestureRecognizer *)gesture {
+
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYentrance"]) {
+
+        UIViewController *feedVC = nil;
+        UIResponder      *resp   = self;
+        Class feedCls            = %c(AWEFeedContainerViewController);
+
+        while (resp) {
+            if ([resp isKindOfClass:feedCls]) {
+                feedVC = (UIViewController *)resp;
+                break;
+            }
+            resp = [resp nextResponder];
+        }
+
+        if (!feedVC) {
+            UIViewController *root =
+                UIApplication.sharedApplication.keyWindow.rootViewController;
+            while (root) {
+                if ([root isKindOfClass:feedCls]) {
+                    feedVC = root;
+                    break;
+                }
+                root = root.presentedViewController;
+            }
+        }
+
+        if (feedVC) {
+            BOOL hasAgreed = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"];
+            showDYYYSettingsVC(feedVC, hasAgreed);
+            return;
+        }
+    }
+
+    %orig;
+}
+
+%end
+
+
 static AWESettingBaseViewController *createSubSettingsViewController(NSString *title, NSArray *sectionsArray) {
 	AWESettingBaseViewController *settingsVC = [[%c(AWESettingBaseViewController) alloc] init];
 
@@ -553,6 +731,11 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"imageName" : @"ic_circletop_outlined"},
 		  @{@"identifier" : @"DYYYEnableLiveHighestQuality",
 		    @"title" : @"直播默认最高画质",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_video_outlined_20"},
+		  @{@"identifier" : @"DYYYEnableVideoHighestQuality",
+		    @"title" : @"视频默认最高画质",
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_video_outlined_20"},
@@ -861,6 +1044,11 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_eyeslash_outlined_16"},
+		  @{@"identifier" : @"DYYYHideDoubleColumnEntry",
+		    @"title" : @"隐藏双列箭头",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_eyeslash_outlined_16"},
 		  @{@"identifier" : @"DYYYHideShopButton",
 		    @"title" : @"隐藏底栏商城",
 		    @"detail" : @"",
@@ -1085,6 +1273,11 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_eyeslash_outlined_16"},
+		  @{@"identifier" : @"DYYYHideSearchBubble",
+		    @"title" : @"隐藏弹出热搜",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_eyeslash_outlined_16"},
 		  @{@"identifier" : @"DYYYHideSearchSame",
 		    @"title" : @"隐藏搜索同款",
 		    @"detail" : @"",
@@ -1259,6 +1452,11 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"title" : @"隐藏输入扫码",
 		    @"detail" : @"",
 		    @"cellType" : @6,
+		    @"imageName" : @"ic_eyeslash_outlined_16"},
+		  @{@"identifier" : @"DYYYHideReply",
+		    @"title" : @"隐藏私信回复",
+		    @"detail" : @"",
+		    @"cellType" : @6,
 		    @"imageName" : @"ic_eyeslash_outlined_16"}
 	  ];
 
@@ -1430,6 +1628,11 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	  // 【长按评论分类】
 	  NSMutableArray<AWESettingItemModel *> *commentpanel = [NSMutableArray array];
 	  NSArray *commentpanelSettings = @[
+		  @{@"identifier" : @"DYYYHideCommentShareToFriends",
+		    @"title" : @"隐藏评论分享",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_eyeslash_outlined_16"},
 		  @{@"identifier" : @"DYYYHideCommentLongPressCopy",
 		    @"title" : @"隐藏评论复制",
 		    @"detail" : @"",
@@ -1640,6 +1843,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	enhanceSettingItem.isEnable = YES;
 	enhanceSettingItem.cellTappedBlock = ^{
 	  // 创建增强设置二级界面的设置项
+	  NSMutableDictionary *cellTapHandlers = [NSMutableDictionary dictionary];
 
 	  // 【长按面板设置】分类
 	  NSMutableArray<AWESettingItemModel *> *longPressItems = [NSMutableArray array];
@@ -1670,7 +1874,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_boxarrowdown_outlined"},
 		  @{@"identifier" : @"DYYYLongPressCreateVideo",
-		    @"title" : @"长按面板生成视频",
+		    @"title" : @"长按面板制作视频",
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_videosearch_outlined_20"},
@@ -1724,6 +1928,16 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_hamburgernut_outlined_20"},
+		  @{@"identifier" : @"DYYYisEnableSheetBlur",
+			@"title" : @"保存面板玻璃效果",
+			@"detail" : @"",
+			@"cellType" : @6,
+			@"imageName" : @"ic_list_outlined"},
+		  @{@"identifier" : @"DYYYSheetBlurTransparent",
+			@"title" : @"面板毛玻璃透明度",
+			@"detail" : @"0-1小数",
+			@"cellType" : @26,
+			@"imageName" : @"ic_eye_outlined_20"},
 		  @{@"identifier" : @"DYYYCommentLivePhotoNotWaterMark",
 		    @"title" : @"移除评论实况水印",
 		    @"detail" : @"",
@@ -1743,11 +1957,17 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"title" : @"保存预览页表情包",
 		    @"detail" : @"",
 		    @"cellType" : @6,
-		    @"imageName" : @"ic_emoji_outlined"}
+		    @"imageName" : @"ic_emoji_outlined"},
+		  @{@"identifier" : @"DYYYHapticFeedbackEnabled",
+			@"title" : @"下载完成震动反馈",
+			@"detail" : @"",
+			@"cellType" : @6,
+			@"imageName" : @"ic_gearsimplify_outlined_20"
+			}
 	  ];
 
 	  for (NSDictionary *dict in downloadSettings) {
-		  AWESettingItemModel *item = [DYYYSettingsHelper createSettingItem:dict];
+		  AWESettingItemModel *item = [DYYYSettingsHelper createSettingItem:dict cellTapHandlers:cellTapHandlers];
 
 		  // 特殊处理接口解析保存媒体选项
 		  if ([item.identifier isEqualToString:@"DYYYInterfaceDownload"]) {
@@ -1772,7 +1992,6 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 							  onCancel:nil];
 			  };
 		  }
-
 		  [downloadItems addObject:item];
 	  }
 
@@ -1984,6 +2203,11 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	  // 【交互增强】分类
 	  NSMutableArray<AWESettingItemModel *> *interactionItems = [NSMutableArray array];
 	  NSArray *interactionSettings = @[
+		  @{@"identifier" : @"DYYYentrance",
+		    @"title" : @"左侧边栏快捷入口",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_gearsimplify_outlined_20"},
 		  @{@"identifier" : @"DYYYCommentCopyText",
 		    @"title" : @"长按评论复制文案",
 		    @"detail" : @"",
@@ -2034,6 +2258,11 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_playsquarestack_outlined_20"},
+		  @{@"identifier" : @"DYYYEnableNoiseFilter",
+		    @"title" : @"视频降噪人声增强",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_usercheckmark_outlined"},
 		  @{@"identifier" : @"DYYYEnableDoubleOpenAlertController",
 		    @"title" : @"启用双击打开菜单",
 		    @"detail" : @"",
@@ -2063,11 +2292,6 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 			    [doubleTapItems addObject:enableDoubleTapMenu];
 
 			    NSArray *doubleTapFunctions = @[
-				    @{@"identifier" : @"DYYYisEnableSheetBlur",
-				      @"title" : @"菜单玻璃效果",
-				      @"detail" : @"",
-				      @"cellType" : @6,
-				      @"imageName" : @"ic_list_outlined"},
 				    @{@"identifier" : @"DYYYDoubleTapDownload",
 				      @"title" : @"保存视频/图片",
 				      @"detail" : @"",
@@ -2084,6 +2308,11 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 				      @"detail" : @"",
 				      @"cellType" : @6,
 				      @"imageName" : @"ic_cloudarrowdown_outlined_20"},
+					@{@"identifier" : @"DYYYDoubleCreateVideo",
+				      @"title" : @"制作视频",
+				      @"detail" : @"",
+				      @"cellType" : @6,
+				      @"imageName" : @"ic_videosearch_outlined_20"},
 				    @{@"identifier" : @"DYYYDoubleTapCopyDesc",
 				      @"title" : @"复制文案",
 				      @"detail" : @"",

@@ -75,7 +75,7 @@
 						      NSURL *url = [NSURL URLWithString:currentImageModel.urlList.firstObject];
 						      [DYYYManager downloadMedia:url
 								       mediaType:MediaTypeImage
-								      completion:^(BOOL success) {
+								      completion:^(BOOL success){
 								      }];
 					      }
 				      } else {
@@ -84,7 +84,7 @@
 						      NSURL *url = [NSURL URLWithString:videoModel.h264URL.originURLList.firstObject];
 						      [DYYYManager downloadMedia:url
 								       mediaType:MediaTypeVideo
-								      completion:^(BOOL success) {
+								      completion:^(BOOL success){
 								      }];
 					      }
 				      }
@@ -102,7 +102,7 @@
 						      NSURL *coverURL = [NSURL URLWithString:videoModel.coverURL.originURLList.firstObject];
 						      [DYYYManager downloadMedia:coverURL
 								       mediaType:MediaTypeImage
-								      completion:^(BOOL success) {
+								      completion:^(BOOL success){
 								      }];
 					      }
 					    }];
@@ -161,6 +161,73 @@
 			}
 		}
 
+		// 添加制作视频功能
+		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDoubleCreateVideo"] || ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleCreateVideo"]) {
+			// 仅对图集且包含多张图片的内容显示此选项
+			if (isImageContent && awemeModel.albumImages.count > 1) {
+				AWEUserSheetAction *createVideoAction = [NSClassFromString(@"AWEUserSheetAction")
+				    actionWithTitle:@"制作视频"
+					    imgName:nil
+					    handler:^{
+					      // 收集普通图片URL
+					      NSMutableArray *imageURLs = [NSMutableArray array];
+					      // 收集实况照片信息（图片URL+视频URL）
+					      NSMutableArray *livePhotos = [NSMutableArray array];
+
+					      // 获取背景音乐URL
+					      NSString *bgmURL = nil;
+					      if (musicModel && musicModel.playURL && musicModel.playURL.originURLList.count > 0) {
+						      bgmURL = musicModel.playURL.originURLList.firstObject;
+					      }
+
+					      // 处理所有图片和实况
+					      for (AWEImageAlbumImageModel *imageModel in awemeModel.albumImages) {
+						      if (imageModel.urlList.count > 0) {
+							      // 查找非.image后缀的URL
+							      NSString *bestURL = nil;
+							      for (NSString *urlString in imageModel.urlList) {
+								      NSURL *url = [NSURL URLWithString:urlString];
+								      NSString *pathExtension = [url.path.lowercaseString pathExtension];
+								      if (![pathExtension isEqualToString:@"image"]) {
+									      bestURL = urlString;
+									      break;
+								      }
+							      }
+
+							      if (!bestURL && imageModel.urlList.count > 0) {
+								      bestURL = imageModel.urlList.firstObject;
+							      }
+
+							      // 如果是实况照片，需要收集图片和视频URL
+							      if (imageModel.clipVideo != nil) {
+								      NSURL *videoURL = [imageModel.clipVideo.playURL getDYYYSrcURLDownload];
+								      if (videoURL) {
+									      [livePhotos addObject:@{@"imageURL" : bestURL, @"videoURL" : videoURL.absoluteString}];
+								      }
+							      } else {
+								      // 普通图片
+								      [imageURLs addObject:bestURL];
+							      }
+						      }
+					      }
+
+					      // 调用视频创建API
+					      [DYYYManager createVideoFromMedia:imageURLs
+						  livePhotos:livePhotos
+						  bgmURL:bgmURL
+						  progress:^(NSInteger current, NSInteger total, NSString *status) {
+						  }
+						  completion:^(BOOL success, NSString *message) {
+						    if (success) {
+						    } else {
+							    [DYYYManager showToast:[NSString stringWithFormat:@"视频制作失败: %@", message]];
+						    }
+						  }];
+					    }];
+				[actions addObject:createVideoAction];
+			}
+		}
+
 		// 添加复制文案选项
 		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDoubleTapCopyDesc"] || ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleTapCopyDesc"]) {
 
@@ -170,7 +237,6 @@
 														 NSString *descText = [awemeModel valueForKey:@"descriptionString"];
 														 [[UIPasteboard generalPasteboard] setString:descText];
 														 [DYYYToast showSuccessToastWithMessage:@"文案已复制"];
-
 													       }];
 			[actions addObject:copyTextAction];
 		}

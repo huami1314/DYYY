@@ -518,30 +518,30 @@
 %hook AWEElementStackView
 
 - (void)layoutSubviews {
-    %orig;
+	%orig;
 
-    UIViewController *vc = [self firstAvailableUIViewController];
-    if ([vc isKindOfClass:%c(AWELiveNewPreStreamViewController)]) {
-        NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
-        if (transparentValue.length > 0) {
-            CGFloat alphaValue = transparentValue.floatValue;
-            if (alphaValue >= 0.0 && alphaValue <= 1.0) {
-                self.alpha = alphaValue;
-            }
-        }
-    }
+	UIViewController *vc = [self firstAvailableUIViewController];
+	if ([vc isKindOfClass:%c(AWELiveNewPreStreamViewController)]) {
+		NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
+		if (transparentValue.length > 0) {
+			CGFloat alphaValue = transparentValue.floatValue;
+			if (alphaValue >= 0.0 && alphaValue <= 1.0) {
+				self.alpha = alphaValue;
+			}
+		}
+	}
 }
 
 %new
 - (UIViewController *)firstAvailableUIViewController {
-    UIResponder *responder = [self nextResponder];
-    while (responder != nil) {
-        if ([responder isKindOfClass:[UIViewController class]]) {
-            return (UIViewController *)responder;
-        }
-        responder = [responder nextResponder];
-    }
-    return nil;
+	UIResponder *responder = [self nextResponder];
+	while (responder != nil) {
+		if ([responder isKindOfClass:[UIViewController class]]) {
+			return (UIViewController *)responder;
+		}
+		responder = [responder nextResponder];
+	}
+	return nil;
 }
 
 %end
@@ -899,43 +899,6 @@ static CGFloat rightLabelRightMargin = -1;
 			}
 		}
 	}
-}
-%end
-
-%hook AWEFeedIPhoneAutoPlayManager
-
-- (BOOL)isAutoPlayOpen {
-	BOOL r = %orig;
-
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableAutoPlay"]) {
-		return YES;
-	}
-	return r;
-}
-
-%end
-
-%hook AWEFeedModuleService
-
-- (BOOL)getFeedIphoneAutoPlayState {
-	BOOL r = %orig;
-
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableAutoPlay"]) {
-		return YES;
-	}
-	return %orig;
-}
-%end
-
-%hook AWEFeedIPhoneAutoPlayManager
-
-- (BOOL)getFeedIphoneAutoPlayState {
-	BOOL r = %orig;
-
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableAutoPlay"]) {
-		return YES;
-	}
-	return %orig;
 }
 %end
 
@@ -1711,15 +1674,309 @@ static CGFloat rightLabelRightMargin = -1;
 %end
 
 // 禁用个人资料自动进入橱窗
-%hook AWEUserDetailViewControllerV2
+%hook AWEUserTabListModel
 
-- (void)viewWillLayoutSubviews {
+- (NSInteger)profileLandingTab {
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDefaultEnterWorks"]) {
+		return 0;
+	} else {
+		return %orig;
+	}
+}
+
+%end
+
+%hook AWEPlayerPlayControlHandler
+
+%property(nonatomic, strong) AVAudioUnitEQ *audioEQ;
+%property(nonatomic, strong) AVAudioUnitReverb *reverb;
+%property(nonatomic, assign) BOOL noiseFilterEnabled;
+
+- (void)setupAVPlayerItem:(AVPlayerItem *)item {
+	%orig;
+
+	BOOL enableHighestQuality = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableVideoHighestQuality"];
+	if (enableHighestQuality && item) {
+		// 内联 tryUpgradeToHighDefinition 的实现
+		// 尝试获取当前视频的所有清晰度选项
+		id videoModel = [self valueForKey:@"videoModel"];
+		if (!videoModel)
+			return;
+
+		// 获取视频URL模型
+		AWEURLModel *urlModel = [videoModel valueForKey:@"videoURLModel"];
+		if (!urlModel || !urlModel.originURLList || urlModel.originURLList.count == 0)
+			return;
+
+		// 选择最高清晰度URL
+		NSURL *bestURL = [urlModel getDYYYSrcURLDownload];
+		if (!bestURL)
+			return;
+
+		// 内联 reloadVideoWithURL 的实现
+		// 获取播放器对象并进行类型检查
+		id playerObject = [self valueForKey:@"player"];
+		if (!playerObject || ![playerObject isKindOfClass:[AVPlayer class]]) {
+			return;
+		}
+
+		AVPlayer *player = (AVPlayer *)playerObject;
+		AVPlayerItem *currentItem = player.currentItem;
+		if (!currentItem)
+			return;
+
+		// 创建新的AVPlayerItem并替换
+		AVPlayerItem *newItem = [AVPlayerItem playerItemWithURL:bestURL];
+		if (!newItem)
+			return;
+
+		// 保存当前播放位置
+		CMTime currentTime = currentItem.currentTime;
+
+		// 替换播放项
+		[player replaceCurrentItemWithPlayerItem:newItem];
+
+		// 恢复播放位置
+		[newItem seekToTime:currentTime toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero];
+	}
+}
+
+%new
+- (void)setupNoiseFilter {
+	AVPlayer *player = [self valueForKey:@"player"];
+	if (!player)
+		return;
+
+	// 如果已启用过滤器，直接返回
+	if (self.noiseFilterEnabled)
+		return;
+
+	// 获取音频节点配置
+	AVAudioSession *session = [AVAudioSession sharedInstance];
+	NSError *error = nil;
+
+	// 设置音频会话类型
+	[session setCategory:AVAudioSessionCategoryPlayback error:&error];
+	if (error) {
+		NSLog(@"设置音频会话类型失败: %@", error);
+		return;
+	}
+
+	// 初始化音频节点
+	if (!self.audioEQ) {
+		// 创建EQ单元处理器
+		AVAudioUnitEQ *eq = [[AVAudioUnitEQ alloc] initWithNumberOfBands:10];
+
+		// 设置EQ音频处理参数
+		AVAudioUnitEQFilterParameters *lowPassFilter = [eq.bands objectAtIndex:0];
+		lowPassFilter.filterType = AVAudioUnitEQFilterTypeLowPass;
+		lowPassFilter.frequency = 5000.0; // 设置低通滤波器频率，过滤高频噪音
+		lowPassFilter.bypass = NO;
+		lowPassFilter.gain = 0.0;
+
+		AVAudioUnitEQFilterParameters *highPassFilter = [eq.bands objectAtIndex:1];
+		highPassFilter.filterType = AVAudioUnitEQFilterTypeHighPass;
+		highPassFilter.frequency = 85.0; // 设置高通滤波器频率，去除低频噪音
+		highPassFilter.bypass = NO;
+		highPassFilter.gain = 0.0;
+
+		// 增强人声频段
+		for (int i = 2; i < 7; i++) {
+			AVAudioUnitEQFilterParameters *band = [eq.bands objectAtIndex:i];
+			band.filterType = AVAudioUnitEQFilterTypeParametric;
+			band.frequency = 500.0 + (i - 2) * 500.0; // 人声主要集中在500Hz-3000Hz
+			band.bandwidth = 100.0;
+			band.gain = 3.0; // 增强人声
+			band.bypass = NO;
+		}
+
+		self.audioEQ = eq;
+	}
+
+	if (!self.reverb) {
+		// 创建混响单元处理器
+		AVAudioUnitReverb *reverb = [[AVAudioUnitReverb alloc] init];
+		reverb.wetDryMix = 10.0; // 混响量很小，只是为了增加一点空间感
+		self.reverb = reverb;
+	}
+
+	// 添加控制按钮
+	[self addNoiseFilterButton];
+
+	self.noiseFilterEnabled = YES;
+}
+
+%new
+- (void)addNoiseFilterButton {
+	UIViewController *parentVC = nil;
+
+	// 使用id类型避免类型转换问题
+	id currentResponder = self;
+	while ((currentResponder = [currentResponder nextResponder])) {
+		if ([currentResponder isKindOfClass:[UIViewController class]]) {
+			parentVC = (UIViewController *)currentResponder;
+			break;
+		}
+	}
+
+	if (!parentVC || !parentVC.view)
+		return;
+
+	// 检查按钮是否已存在
+	if ([parentVC.view viewWithTag:9876])
+		return;
+
+	UIButton *filterButton = [UIButton buttonWithType:UIButtonTypeCustom];
+	filterButton.frame = CGRectMake(parentVC.view.frame.size.width - 90, 160, 70, 30);
+	filterButton.backgroundColor = [UIColor colorWithWhite:0.0 alpha:0.6];
+	filterButton.layer.cornerRadius = 15;
+	[filterButton setTitle:@"降噪" forState:UIControlStateNormal];
+	[filterButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+	filterButton.titleLabel.font = [UIFont systemFontOfSize:13];
+	[filterButton addTarget:self action:@selector(toggleNoiseFilter) forControlEvents:UIControlEventTouchUpInside];
+	filterButton.tag = 9876;
+
+	[parentVC.view addSubview:filterButton];
+}
+
+%new
+- (void)toggleNoiseFilter {
+	AVPlayer *player = [self valueForKey:@"player"];
+	if (!player)
+		return;
+
+	// 切换噪声过滤状态
+	BOOL isActive = ![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYNoiseFilterActive"];
+	[[NSUserDefaults standardUserDefaults] setBool:isActive forKey:@"DYYYNoiseFilterActive"];
+
+	// 保存当前播放位置
+	CMTime currentTime = player.currentTime;
+
+	// 应用或移除音频处理
+	if (isActive) {
+		// 应用音频增强
+		AVMutableAudioMix *audioMix = [AVMutableAudioMix audioMix];
+		AVMutableAudioMixInputParameters *inputParams = [AVMutableAudioMixInputParameters audioMixInputParametersWithTrack:player.currentItem.asset.tracks.firstObject];
+		// 改为简单设置音量保持原始值
+		inputParams.audioTimePitchAlgorithm = AVAudioTimePitchAlgorithmSpectral;
+
+		audioMix.inputParameters = @[ inputParams ];
+		player.currentItem.audioMix = audioMix;
+
+		[DYYYManager showToast:@"已启用噪音过滤"];
+	} else {
+		player.currentItem.audioMix = nil;
+		[DYYYManager showToast:@"已关闭噪音过滤"];
+	}
+
+	// 恢复播放位置
+	[player seekToTime:currentTime toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero];
+}
+
+- (void)play {
+	%orig;
+
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableNoiseFilter"]) {
+		[self setupNoiseFilter];
+	}
+}
+
+%end
+
+%group AutoPlay
+
+%hook DUXToast
+
++ (void)showText:(NSString *)text {
+    if (text && [text isEqualToString:@"已取消自动翻页"]) {
+        return;
+    }
+    %orig;
+}
+
+%end
+
+%hook UIViewController
+
+- (void)viewDidAppear:(BOOL)animated {
+	%orig;
+	if ([self isKindOfClass:%c(AWESearchViewController)] || [self isKindOfClass:%c(IESLiveInnerFeedViewController)] || [self isKindOfClass:%c(AWEAwemeDetailTableViewController)]) {
+		UITabBarController *tabBarController = self.tabBarController;
+		if ([tabBarController isKindOfClass:%c(AWENormalModeTabBarController)]) {
+			tabBarController.tabBar.hidden = YES;
+		}
+	}
+}
+
+%end
+
+%hook AWENormalModeTabBarController
+
+- (void)viewDidLoad {
     %orig;
     
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDefaultEnterWorks"]) {
-        [self setProfileShowTab:0];
+    [[NSNotificationCenter defaultCenter] addObserver:self 
+                                             selector:@selector(handleApplicationWillEnterForeground:) 
+                                                 name:UIApplicationWillEnterForegroundNotification 
+                                               object:nil];
+}
+
+%new
+- (void)handleApplicationWillEnterForeground:(NSNotification *)notification {
+    UIViewController *topVC = topVC;
+    if ([topVC isKindOfClass:%c(UINavigationController)]) {
+        UINavigationController *navVC = (UINavigationController *)topVC;
+        topVC = navVC.topViewController;
+    }
+    
+    if ([topVC isKindOfClass:%c(AWESearchViewController)] || 
+        [topVC isKindOfClass:%c(IESLiveInnerFeedViewController)] || 
+        [topVC isKindOfClass:%c(AWEAwemeDetailTableViewController)]) {
+        self.awe_tabBar.hidden = YES;
     }
 }
+
+- (void)dealloc {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+    %orig;
+}
+
+%end
+
+%hook AWEFeedGuideManager
+
+- (bool)enableAutoplay {
+	BOOL featureEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableAutoPlay"];
+	if (!featureEnabled) {
+		return %orig;
+	}
+	return YES;
+}
+
+%end
+
+%hook AWEFeedIPhoneAutoPlayManager
+
+- (BOOL)isAutoPlayOpen {
+	return YES;
+}
+
+%end
+
+%hook AWEFeedModuleService
+
+- (BOOL)getFeedIphoneAutoPlayState {
+	return YES;
+}
+%end
+
+%hook AWEFeedIPhoneAutoPlayManager
+
+- (BOOL)getFeedIphoneAutoPlayState {
+	BOOL r = %orig;
+	return YES;
+}
+%end
 
 %end
 
@@ -1727,5 +1984,9 @@ static CGFloat rightLabelRightMargin = -1;
 	%init(DYYYSettingsGesture);
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {
 		%init;
+		BOOL isAutoPlayEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableAutoPlay"];
+		if (isAutoPlayEnabled) {
+			%init(AutoPlay);
+		}
 	}
 }
