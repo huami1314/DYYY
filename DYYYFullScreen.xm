@@ -332,7 +332,9 @@ static CGFloat currentScale = 1.0;
             position = @"right";
         } else if ([label isEqualToString:@"left"]) {
             position = @"left";
-        }
+        } else if ([label isEqualToString:@"bottom"]){
+	    position = @"bottom";
+	}
     } else {
         CGFloat centerX = self.center.x;
         CGFloat screenCenterX = [UIScreen mainScreen].bounds.size.width / 2.0;
@@ -341,7 +343,7 @@ static CGFloat currentScale = 1.0;
         } else if (centerX > screenCenterX + 5) {
             position = @"right";
         } else {
-            position = @"center";
+            position = @"bottom";
         }
     }
 
