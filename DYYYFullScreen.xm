@@ -274,6 +274,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 %end
 
 %hook AWEElementStackView
+
 static CGFloat stream_frame_y = 0;
 static CGFloat right_tx = 0;
 static CGFloat left_tx = 0;
@@ -282,128 +283,134 @@ static CGFloat currentScale = 1.0;
 - (void)layoutSubviews {
     %orig;
 
+    // 获取缩放比例
+    NSString *nicknameScaleStr = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
+    CGFloat nicknameScale = nicknameScaleStr.length > 0 ? [nicknameScaleStr floatValue] : 1.0;
+
+    NSString *elementScaleStr = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYElementScale"];
+    CGFloat elementScale = elementScaleStr.length > 0 ? [elementScaleStr floatValue] : 1.0;
+
+    // 判断视图属于哪个VC
     UIResponder *nextResponder = [self nextResponder];
-    UIViewController *viewController = nil;
     if ([nextResponder isKindOfClass:[UIView class]]) {
         UIView *parentView = (UIView *)nextResponder;
-        viewController = [parentView firstAvailableUIViewController];
-    }
+        UIViewController *viewController = [parentView firstAvailableUIViewController];
 
-    if ([viewController isKindOfClass:%c(AWELiveNewPreStreamViewController)]) {
-        // 缩放直播文案
-        NSString *vcScaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
-        if (vcScaleValue.length > 0) {
-            CGFloat scale = [vcScaleValue floatValue];
-            self.transform = CGAffineTransformIdentity;
+        if ([viewController isKindOfClass:%c(AWELiveNewPreStreamViewController)]) {
 
-            if (scale > 0 && scale != 1.0) {
-                NSArray *subviews = [self.subviews copy];
+            // 直播间整体文案缩放
+            if (nicknameScale > 0 && nicknameScale != 1.0) {
+                self.transform = CGAffineTransformIdentity;
                 CGFloat ty = 0;
-
-                for (UIView *view in subviews) {
+                for (UIView *view in [self.subviews copy]) {
                     CGFloat viewHeight = view.frame.size.height;
-                    CGFloat contribution = (viewHeight - viewHeight * scale) / 2;
-                    ty += contribution;
+                    ty += (viewHeight - viewHeight * nicknameScale) / 2;
                 }
-
                 CGFloat frameWidth = self.frame.size.width;
-                CGFloat tx = (frameWidth - frameWidth * scale) / 2 - frameWidth * (1 - scale);
-
-                CGAffineTransform newTransform = CGAffineTransformMakeScale(scale, scale);
-                newTransform = CGAffineTransformTranslate(newTransform, tx / scale, ty / scale);
-
+                CGFloat tx = (frameWidth - frameWidth * nicknameScale) / 2 - frameWidth * (1 - nicknameScale);
+                CGAffineTransform newTransform = CGAffineTransformMakeScale(nicknameScale, nicknameScale);
+                newTransform = CGAffineTransformTranslate(newTransform, tx / nicknameScale, ty / nicknameScale);
                 self.transform = newTransform;
             }
-        }
 
-        // 启用全屏缩进
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-            CGRect frame = self.frame;
-            frame.origin.y -= 83;
-            stream_frame_y = frame.origin.y;
-            self.frame = frame;
+            // 全屏处理
+            if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+                CGRect frame = self.frame;
+                frame.origin.y -= 83;
+                stream_frame_y = frame.origin.y;
+                self.frame = frame;
+            }
         }
     }
 
-    // 控制器为 AWEPlayInteractionViewController 时的处理逻辑
-    if ([viewController isKindOfClass:%c(AWEPlayInteractionViewController)]) {
-        CGFloat midX = [UIScreen mainScreen].bounds.size.width / 2.0;
-        BOOL isLeft = self.frame.origin.x < midX;
+    // 侧边元素处理
+    NSString *label = self.accessibilityLabel;
+    NSString *position = nil;
 
-        NSString *scaleKey = isLeft ? @"DYYYNicknameScale" : @"DYYYElementScale";
-        NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:scaleKey];
-        if (scaleValue.length > 0) {
-            CGFloat scale = [scaleValue floatValue];
-            self.transform = CGAffineTransformIdentity;
-
-            if (scale > 0 && scale != 1.0) {
-                CGFloat ty = 0;
-                for (UIView *view in self.subviews) {
-                    CGFloat viewHeight = view.frame.size.height;
-                    CGFloat contribution = (viewHeight - viewHeight * scale) / 2;
-                    ty += contribution;
-                }
-
-                CGFloat frameWidth = self.frame.size.width;
-                CGFloat tx = isLeft
-                    ? (frameWidth - frameWidth * scale) / 2 - frameWidth * (1 - scale)
-                    : (frameWidth - frameWidth * scale) / 2;
-
-                CGAffineTransform newTransform = CGAffineTransformMakeScale(scale, scale);
-                newTransform = CGAffineTransformTranslate(newTransform, tx / scale, ty / scale);
-                self.transform = newTransform;
-
-                if (!isLeft) currentScale = scale;
-            }
+    if (label != nil) {
+        if ([label isEqualToString:@"right"]) {
+            position = @"right";
+        } else if ([label isEqualToString:@"left"]) {
+            position = @"left";
+        } else if ([label isEqualToString:@"bottom"]){
+	    position = @"bottom";
+	}
+    } else {
+        CGFloat centerX = self.center.x;
+        CGFloat screenCenterX = [UIScreen mainScreen].bounds.size.width / 2.0;
+        if (centerX < screenCenterX - 5) {
+            position = @"left";
+        } else if (centerX > screenCenterX + 5) {
+            position = @"right";
+        } else {
+            position = @"bottom";
         }
+    }
+
+    // 根据推断位置进行变换
+    if ([position isEqualToString:@"right"] && elementScale > 0 && elementScale != 1.0) {
+        self.transform = CGAffineTransformIdentity;
+        CGFloat ty = 0;
+        for (UIView *view in self.subviews) {
+            CGFloat viewHeight = view.frame.size.height;
+            ty += (viewHeight - viewHeight * elementScale) / 2;
+        }
+        CGFloat frameWidth = self.frame.size.width;
+        right_tx = (frameWidth - frameWidth * elementScale) / 2;
+        self.transform = CGAffineTransformMake(elementScale, 0, 0, elementScale, right_tx, ty);
+    } else if ([position isEqualToString:@"left"] && nicknameScale > 0 && nicknameScale != 1.0) {
+        self.transform = CGAffineTransformIdentity;
+        CGFloat ty = 0;
+        for (UIView *view in [self.subviews copy]) {
+            CGFloat viewHeight = view.frame.size.height;
+            ty += (viewHeight - viewHeight * nicknameScale) / 2;
+        }
+        CGFloat frameWidth = self.frame.size.width;
+        left_tx = (frameWidth - frameWidth * nicknameScale) / 2 - frameWidth * (1 - nicknameScale);
+        CGAffineTransform newTransform = CGAffineTransformMakeScale(nicknameScale, nicknameScale);
+        newTransform = CGAffineTransformTranslate(newTransform, left_tx / nicknameScale, ty / nicknameScale);
+        self.transform = newTransform;
     }
 }
 
-
 - (NSArray<__kindof UIView *> *)arrangedSubviews {
-    UIResponder *nextResponder = [self nextResponder];
-    UIViewController *viewController = nil;
-    if ([nextResponder isKindOfClass:[UIView class]]) {
-        UIView *parentView = (UIView *)nextResponder;
-        viewController = [parentView firstAvailableUIViewController];
+    NSString *label = self.accessibilityLabel;
+    BOOL isLeft = NO;
+
+    if (label != nil && [label isEqualToString:@"left"]) {
+        isLeft = YES;
+    } else if (label == nil) {
+        CGFloat centerX = self.center.x;
+        CGFloat screenCenterX = [UIScreen mainScreen].bounds.size.width / 2.0;
+        if (centerX < screenCenterX - 5) {
+            isLeft = YES;
+        }
     }
 
-    if ([viewController isKindOfClass:%c(AWEPlayInteractionViewController)]) {
-        CGFloat midX = [UIScreen mainScreen].bounds.size.width / 2.0;
-        BOOL isLeft = self.frame.origin.x < midX;
-
-        if (isLeft) {
-            NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
-            if (scaleValue.length > 0) {
-                CGFloat scale = [scaleValue floatValue];
+    if (isLeft) {
+        NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
+        if (scaleValue.length > 0) {
+            CGFloat scale = [scaleValue floatValue];
+            if (scale > 0 && scale != 1.0) {
                 self.transform = CGAffineTransformIdentity;
-
-                if (scale > 0 && scale != 1.0) {
-                    NSArray *subviews = [self.subviews copy];
-                    CGFloat ty = 0;
-
-                    for (UIView *view in subviews) {
-                        CGFloat viewHeight = view.frame.size.height;
-                        CGFloat contribution = (viewHeight - viewHeight * scale) / 2;
-                        ty += contribution;
-                    }
-
-                    CGFloat frameWidth = self.frame.size.width;
-                    CGFloat tx = (frameWidth - frameWidth * scale) / 2 - frameWidth * (1 - scale);
-
-                    CGAffineTransform newTransform = CGAffineTransformMakeScale(scale, scale);
-                    newTransform = CGAffineTransformTranslate(newTransform, tx / scale, ty / scale);
-
-                    self.transform = newTransform;
+                CGFloat ty = 0;
+                for (UIView *view in [self.subviews copy]) {
+                    CGFloat viewHeight = view.frame.size.height;
+                    ty += (viewHeight - viewHeight * scale) / 2;
                 }
+                CGFloat frameWidth = self.frame.size.width;
+                CGFloat tx = (frameWidth - frameWidth * scale) / 2 - frameWidth * (1 - scale);
+                CGAffineTransform newTransform = CGAffineTransformMakeScale(scale, scale);
+                newTransform = CGAffineTransformTranslate(newTransform, tx / scale, ty / scale);
+                self.transform = newTransform;
             }
         }
     }
 
     return %orig;
 }
-%end
 
+%end
 
 %hook AWEStoryContainerCollectionView
 - (void)layoutSubviews {
