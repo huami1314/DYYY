@@ -1,5 +1,14 @@
 #import "AwemeHeaders.h"
 
+%hook AWEFeedTabJumpGuideView
+
+- (void)layoutSubviews {
+    %orig;
+    [self removeFromSuperview];
+}
+
+%end
+
 %hook AWEFeedLiveMarkView
 - (void)setHidden:(BOOL)hidden {
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAvatarButton"]) {
