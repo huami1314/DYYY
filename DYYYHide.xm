@@ -1,15 +1,5 @@
 #import "AwemeHeaders.h"
 
-%hook UIView
-- (void)layoutSubviews {
-	%orig;
-
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideDiscover"] && [self.accessibilityLabel isEqualToString:@"搜索"]) {
-		[self removeFromSuperview];
-	}
-}
-%end
-
 %hook AWEFeedLiveMarkView
 - (void)setHidden:(BOOL)hidden {
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAvatarButton"]) {
@@ -1675,6 +1665,18 @@
 
 - (id)init {
 	return nil;
+}
+%end
+
+%hook UIView
+- (void)layoutSubviews {
+    %orig;
+    
+    if (self.accessibilityLabel && [self.accessibilityLabel isEqualToString:@"搜索"]) {
+
+        self.hidden = YES;
+
+    }
 }
 %end
 
