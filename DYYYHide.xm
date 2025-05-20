@@ -647,7 +647,10 @@
 	
 	if ([accessibilityLabel isEqualToString:@"返回"]) {
 		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideBack"]) {
-			[self removeFromSuperview];
+			UIView *parent = self.superview;
+			if ([parent isKindOfClass:%c(AWEBaseElementView)]) {
+				[self removeFromSuperview];
+			}
 			return;
 		}
 	}
