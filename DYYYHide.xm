@@ -1682,7 +1682,10 @@
     %orig;
     
     UIView *parentView = self.superview;
-    if (parentView && [parentView.accessibilityLabel isEqualToString:@"搜索"]) {
+    
+    if (parentView && [parentView class] == [UIView class] && 
+        [parentView.accessibilityLabel isEqualToString:@"搜索"]) {
+          
         self.hidden = YES;
     }
 }
