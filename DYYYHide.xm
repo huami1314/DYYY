@@ -647,7 +647,10 @@
 	
 	if ([accessibilityLabel isEqualToString:@"返回"]) {
 		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideBack"]) {
-			[self removeFromSuperview];
+			UIView *parent = self.superview;
+			if ([parent isKindOfClass:%c(AWEBaseElementView)]) {
+				[self removeFromSuperview];
+			}
 			return;
 		}
 	}
@@ -1630,6 +1633,19 @@
 	%orig;
 
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideChapterProgress"]) {
+		[self removeFromSuperview];
+	}
+}
+
+%end
+
+// 隐藏上次看到
+%hook DUXPopover
+
+- (void)layoutSubviews {
+	%orig;
+
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePopover"]) {
 		[self removeFromSuperview];
 	}
 }
