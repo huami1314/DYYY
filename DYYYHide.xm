@@ -1636,6 +1636,19 @@
 
 %end
 
+// 隐藏上次看到
+%hook DUXPopover
+
+- (void)layoutSubviews {
+	%orig;
+
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePopover"]) {
+		[self removeFromSuperview];
+	}
+}
+
+%end
+
 // 隐藏双栏入口
 %hook AWENormalModeTabBarFeedView
 - (void)layoutSubviews {
