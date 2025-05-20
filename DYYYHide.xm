@@ -1,5 +1,14 @@
 #import "AwemeHeaders.h"
 
+%hook AWEFeedTabJumpGuideView
+
+- (void)layoutSubviews {
+    %orig;
+    [self removeFromSuperview];
+}
+
+%end
+
 %hook AWEFeedLiveMarkView
 - (void)setHidden:(BOOL)hidden {
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAvatarButton"]) {
@@ -1683,14 +1692,13 @@
 }
 %end
 
-%hook UIView
+%hook UIImageView
 - (void)layoutSubviews {
     %orig;
     
-    if (self.accessibilityLabel && [self.accessibilityLabel isEqualToString:@"搜索"]) {
-
+    UIView *parentView = self.superview;
+    if (parentView && [parentView.accessibilityLabel isEqualToString:@"搜索"]) {
         self.hidden = YES;
-
     }
 }
 %end
