@@ -284,7 +284,7 @@ static CGFloat currentScale = 1.0;
 - (void)layoutSubviews {
 	%orig;
 
-	if (self.frame.size.height < 100) {
+	if (self.frame.size.height < 85) {
 		return;
 	}
 
@@ -408,6 +408,12 @@ static CGFloat currentScale = 1.0;
 }
 
 - (NSArray<__kindof UIView *> *)arrangedSubviews {
+
+	if (self.frame.size.height < 64) {
+		NSArray *originalSubviews = %orig;
+		return originalSubviews;
+	}
+
 	CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
 	CGFloat screenCenterX = screenWidth / 2.0;
 
