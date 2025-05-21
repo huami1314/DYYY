@@ -40,9 +40,6 @@
 	hasAnyFeatureEnabled = enableSaveVideo || enableSaveCover || enableSaveAudio || enableSaveCurrentImage || enableSaveAllImages || enableCopyText || enableCopyLink || enableApiDownload ||
 			       enableFilterUser || enableFilterKeyword || enableTimerClose || enableCreateVideo;
 
-	// 处理原始面板按钮的显示/隐藏
-	NSMutableArray *officialButtons = [NSMutableArray array];
-
 	// 获取需要隐藏的按钮设置
 	BOOL hideDaily = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelDaily"];
 	BOOL hideRecommend = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelRecommend"];
@@ -60,6 +57,7 @@
 	BOOL hideListenDouyin = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelListenDouyin"];
 	BOOL hideBackgroundPlay = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelBackgroundPlay"];
 	BOOL hideBiserial = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelBiserial"];
+	BOOL hideTimerclose = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelTimerClose"];
 
 	// 存储处理后的原始组
 	NSMutableArray *modifiedOriginalGroups = [NSMutableArray array];
@@ -112,28 +110,11 @@
 						shouldHide = YES;
 					} else if ([descString isEqualToString:@"首页双列快捷入口"] && hideBiserial) {
 						shouldHide = YES;
+					} else if ([descString isEqualToString:@"定时关闭"] && hideTimerclose) {
+						shouldHide = YES;
 					}
 
 					if (!shouldHide) {
-						// 添加图标修改
-						if ([descString isEqualToString:@"后台播放设置"]) {
-							viewModel.duxIconName = @"ic_phonearrowup_outlined_20";
-						} else if ([descString isEqualToString:@"转发到日常"]) {
-							viewModel.duxIconName = @"ic_flash_outlined_20";
-						} else if ([descString isEqualToString:@"首页双列快捷入口"]) {
-							viewModel.duxIconName = @"ic_squaresplit_outlined_20";
-						} else if ([descString isEqualToString:@"推荐"]) {
-							viewModel.duxIconName = @"ic_thumbsup_outlined_20";
-						} else if ([descString isEqualToString:@"不感兴趣"]) {
-							viewModel.duxIconName = @"ic_heartbreak_outlined_20";
-						} else if ([descString isEqualToString:@"弹幕"] || [descString isEqualToString:@"弹幕开关"] || [descString isEqualToString:@"弹幕设置"]) {
-							viewModel.duxIconName = @"ic_dansquare_outlined_20";
-						}
-
-						// 将按钮添加到官方按钮列表
-						[officialButtons addObject:viewModel];
-
-						// 同时添加到当前组的过滤列表
 						[filteredGroupArr addObject:viewModel];
 					}
 				}
@@ -262,74 +243,74 @@
 		[viewModels addObject:imageViewModel];
 	}
 
-    // 保存所有图片/实况功能
-    if (enableSaveAllImages && self.awemeModel.awemeType == 68 && self.awemeModel.albumImages.count > 1) {
-        AWELongPressPanelBaseViewModel *allImagesViewModel = [[%c(AWELongPressPanelBaseViewModel) alloc] init];
-        allImagesViewModel.awemeModel = self.awemeModel;
-        allImagesViewModel.actionType = 670;
-        allImagesViewModel.duxIconName = @"ic_boxarrowdownhigh_outlined";
-        allImagesViewModel.describeString = @"保存所有图片";
-        // 检查是否有实况照片并更改按钮文字
-        BOOL hasLivePhoto = NO;
-        for (AWEImageAlbumImageModel *imageModel in self.awemeModel.albumImages) {
-            if (imageModel.clipVideo != nil) {
-                hasLivePhoto = YES;
-                break;
-            }
-        }
-        if (hasLivePhoto) {
-            allImagesViewModel.describeString = @"保存所有实况";
-        }
-        allImagesViewModel.action = ^{
-            AWEAwemeModel *awemeModel = self.awemeModel;
-            NSMutableArray *imageURLs = [NSMutableArray array];
-            NSMutableArray *livePhotos = [NSMutableArray array];
-            
-            for (AWEImageAlbumImageModel *imageModel in awemeModel.albumImages) {
-                if (imageModel.urlList.count > 0) {
-                    // 查找非.image后缀的URL
-                    NSURL *downloadURL = nil;
-                    for (NSString *urlString in imageModel.urlList) {
-                        NSURL *url = [NSURL URLWithString:urlString];
-                        NSString *pathExtension = [url.path.lowercaseString pathExtension];
-                        if (![pathExtension isEqualToString:@"image"]) {
-                            downloadURL = url;
-                            break;
-                        }
-                    }
-                    
-                    if (!downloadURL && imageModel.urlList.count > 0) {
-                        downloadURL = [NSURL URLWithString:imageModel.urlList.firstObject];
-                    }
-                    
-                    // 检查是否是实况照片
-                    if (imageModel.clipVideo != nil) {
-                        NSURL *videoURL = [imageModel.clipVideo.playURL getDYYYSrcURLDownload];
-                        [livePhotos addObject:@{@"imageURL" : downloadURL.absoluteString, @"videoURL" : videoURL.absoluteString}];
-                    } else {
-                        [imageURLs addObject:downloadURL.absoluteString];
-                    }
-                }
-            }
-            
-            // 分别处理普通图片和实况照片
-            if (livePhotos.count > 0) {
-                [DYYYManager downloadAllLivePhotos:livePhotos];
-            }
-            
-            if (imageURLs.count > 0) {
-                [DYYYManager downloadAllImages:imageURLs];
-            }
-            
-            if (livePhotos.count == 0 && imageURLs.count == 0) {
-                [DYYYManager showToast:@"没有找到合适格式的图片"];
-            }
-            
-            AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
-            [panelManager dismissWithAnimation:YES completion:nil];
-        };
-        [viewModels addObject:allImagesViewModel];
-    }
+	// 保存所有图片/实况功能
+	if (enableSaveAllImages && self.awemeModel.awemeType == 68 && self.awemeModel.albumImages.count > 1) {
+		AWELongPressPanelBaseViewModel *allImagesViewModel = [[%c(AWELongPressPanelBaseViewModel) alloc] init];
+		allImagesViewModel.awemeModel = self.awemeModel;
+		allImagesViewModel.actionType = 670;
+		allImagesViewModel.duxIconName = @"ic_boxarrowdownhigh_outlined";
+		allImagesViewModel.describeString = @"保存所有图片";
+		// 检查是否有实况照片并更改按钮文字
+		BOOL hasLivePhoto = NO;
+		for (AWEImageAlbumImageModel *imageModel in self.awemeModel.albumImages) {
+			if (imageModel.clipVideo != nil) {
+				hasLivePhoto = YES;
+				break;
+			}
+		}
+		if (hasLivePhoto) {
+			allImagesViewModel.describeString = @"保存所有实况";
+		}
+		allImagesViewModel.action = ^{
+		  AWEAwemeModel *awemeModel = self.awemeModel;
+		  NSMutableArray *imageURLs = [NSMutableArray array];
+		  NSMutableArray *livePhotos = [NSMutableArray array];
+
+		  for (AWEImageAlbumImageModel *imageModel in awemeModel.albumImages) {
+			  if (imageModel.urlList.count > 0) {
+				  // 查找非.image后缀的URL
+				  NSURL *downloadURL = nil;
+				  for (NSString *urlString in imageModel.urlList) {
+					  NSURL *url = [NSURL URLWithString:urlString];
+					  NSString *pathExtension = [url.path.lowercaseString pathExtension];
+					  if (![pathExtension isEqualToString:@"image"]) {
+						  downloadURL = url;
+						  break;
+					  }
+				  }
+
+				  if (!downloadURL && imageModel.urlList.count > 0) {
+					  downloadURL = [NSURL URLWithString:imageModel.urlList.firstObject];
+				  }
+
+				  // 检查是否是实况照片
+				  if (imageModel.clipVideo != nil) {
+					  NSURL *videoURL = [imageModel.clipVideo.playURL getDYYYSrcURLDownload];
+					  [livePhotos addObject:@{@"imageURL" : downloadURL.absoluteString, @"videoURL" : videoURL.absoluteString}];
+				  } else {
+					  [imageURLs addObject:downloadURL.absoluteString];
+				  }
+			  }
+		  }
+
+		  // 分别处理普通图片和实况照片
+		  if (livePhotos.count > 0) {
+			  [DYYYManager downloadAllLivePhotos:livePhotos];
+		  }
+
+		  if (imageURLs.count > 0) {
+			  [DYYYManager downloadAllImages:imageURLs];
+		  }
+
+		  if (livePhotos.count == 0 && imageURLs.count == 0) {
+			  [DYYYManager showToast:@"没有找到合适格式的图片"];
+		  }
+
+		  AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
+		  [panelManager dismissWithAnimation:YES completion:nil];
+		};
+		[viewModels addObject:allImagesViewModel];
+	}
 
 	// 接口保存功能
 	NSString *apiKey = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYInterfaceDownload"];
@@ -830,9 +811,7 @@
 	BOOL hideListenDouyin = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelListenDouyin"];
 	BOOL hideBackgroundPlay = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelBackgroundPlay"];
 	BOOL hideBiserial = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelBiserial"];
-
-	// 收集所有未被隐藏的官方按钮
-	NSMutableArray *officialButtons = [NSMutableArray array];
+	BOOL hideTimerclose = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePanelTimerClose"];
 
 	// 处理原始面板
 	for (id group in originalArray) {
@@ -883,28 +862,12 @@
 						shouldHide = YES;
 					} else if ([descString isEqualToString:@"首页双列快捷入口"] && hideBiserial) {
 						shouldHide = YES;
+					} else if ([descString isEqualToString:@"定时关闭"] && hideTimerclose) {
+						shouldHide = YES;
 					}
+
 					if (!shouldHide) {
-						// 添加图标修改逻辑
-						if ([descString isEqualToString:@"后台播放设置"]) {
-							viewModel.duxIconName = @"ic_phonearrowup_outlined_20";
-						} else if ([descString isEqualToString:@"转发到日常"]) {
-							viewModel.duxIconName = @"ic_flash_outlined_20";
-						} else if ([descString isEqualToString:@"首页双列快捷入口"]) {
-							viewModel.duxIconName = @"ic_squaresplit_outlined_20";
-						} else if ([descString isEqualToString:@"推荐"]) {
-							viewModel.duxIconName = @"ic_thumbsup_outlined_20";
-						} else if ([descString isEqualToString:@"不感兴趣"]) {
-							viewModel.duxIconName = @"ic_heartbreak_outlined_20";
-						} else if ([descString isEqualToString:@"弹幕"] || [descString isEqualToString:@"弹幕开关"] || [descString isEqualToString:@"弹幕设置"]) {
-							viewModel.duxIconName = @"ic_dansquare_outlined_20";
-						}
-
-						// 添加到过滤后的按钮组
 						[filteredGroupArr addObject:viewModel];
-
-						// 同时添加到官方按钮列表，用于重组
-						[officialButtons addObject:viewModel];
 					}
 				} else {
 					// 不是视图模型的，直接添加
@@ -1112,74 +1075,74 @@
 		[viewModels addObject:imageViewModel];
 	}
 
-    // 保存所有图片/实况功能
-    if (enableSaveAllImages && self.awemeModel.awemeType == 68 && self.awemeModel.albumImages.count > 1) {
-        AWELongPressPanelBaseViewModel *allImagesViewModel = [[%c(AWELongPressPanelBaseViewModel) alloc] init];
-        allImagesViewModel.awemeModel = self.awemeModel;
-        allImagesViewModel.actionType = 670;
-        allImagesViewModel.duxIconName = @"ic_boxarrowdownhigh_outlined";
-        allImagesViewModel.describeString = @"保存所有图片";
-        // 检查是否有实况照片并更改按钮文字
-        BOOL hasLivePhoto = NO;
-        for (AWEImageAlbumImageModel *imageModel in self.awemeModel.albumImages) {
-            if (imageModel.clipVideo != nil) {
-                hasLivePhoto = YES;
-                break;
-            }
-        }
-        if (hasLivePhoto) {
-            allImagesViewModel.describeString = @"保存所有实况";
-        }
-        allImagesViewModel.action = ^{
-            AWEAwemeModel *awemeModel = self.awemeModel;
-            NSMutableArray *imageURLs = [NSMutableArray array];
-            NSMutableArray *livePhotos = [NSMutableArray array];
-            
-            for (AWEImageAlbumImageModel *imageModel in awemeModel.albumImages) {
-                if (imageModel.urlList.count > 0) {
-                    // 查找非.image后缀的URL
-                    NSURL *downloadURL = nil;
-                    for (NSString *urlString in imageModel.urlList) {
-                        NSURL *url = [NSURL URLWithString:urlString];
-                        NSString *pathExtension = [url.path.lowercaseString pathExtension];
-                        if (![pathExtension isEqualToString:@"image"]) {
-                            downloadURL = url;
-                            break;
-                        }
-                    }
-                    
-                    if (!downloadURL && imageModel.urlList.count > 0) {
-                        downloadURL = [NSURL URLWithString:imageModel.urlList.firstObject];
-                    }
-                    
-                    // 检查是否是实况照片
-                    if (imageModel.clipVideo != nil) {
-                        NSURL *videoURL = [imageModel.clipVideo.playURL getDYYYSrcURLDownload];
-                        [livePhotos addObject:@{@"imageURL" : downloadURL.absoluteString, @"videoURL" : videoURL.absoluteString}];
-                    } else {
-                        [imageURLs addObject:downloadURL.absoluteString];
-                    }
-                }
-            }
-            
-            // 分别处理普通图片和实况照片
-            if (livePhotos.count > 0) {
-                [DYYYManager downloadAllLivePhotos:livePhotos];
-            }
-            
-            if (imageURLs.count > 0) {
-                [DYYYManager downloadAllImages:imageURLs];
-            }
-            
-            if (livePhotos.count == 0 && imageURLs.count == 0) {
-                [DYYYManager showToast:@"没有找到合适格式的图片"];
-            }
-            
-            AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
-            [panelManager dismissWithAnimation:YES completion:nil];
-        };
-        [viewModels addObject:allImagesViewModel];
-    }
+	// 保存所有图片/实况功能
+	if (enableSaveAllImages && self.awemeModel.awemeType == 68 && self.awemeModel.albumImages.count > 1) {
+		AWELongPressPanelBaseViewModel *allImagesViewModel = [[%c(AWELongPressPanelBaseViewModel) alloc] init];
+		allImagesViewModel.awemeModel = self.awemeModel;
+		allImagesViewModel.actionType = 670;
+		allImagesViewModel.duxIconName = @"ic_boxarrowdownhigh_outlined";
+		allImagesViewModel.describeString = @"保存所有图片";
+		// 检查是否有实况照片并更改按钮文字
+		BOOL hasLivePhoto = NO;
+		for (AWEImageAlbumImageModel *imageModel in self.awemeModel.albumImages) {
+			if (imageModel.clipVideo != nil) {
+				hasLivePhoto = YES;
+				break;
+			}
+		}
+		if (hasLivePhoto) {
+			allImagesViewModel.describeString = @"保存所有实况";
+		}
+		allImagesViewModel.action = ^{
+		  AWEAwemeModel *awemeModel = self.awemeModel;
+		  NSMutableArray *imageURLs = [NSMutableArray array];
+		  NSMutableArray *livePhotos = [NSMutableArray array];
+
+		  for (AWEImageAlbumImageModel *imageModel in awemeModel.albumImages) {
+			  if (imageModel.urlList.count > 0) {
+				  // 查找非.image后缀的URL
+				  NSURL *downloadURL = nil;
+				  for (NSString *urlString in imageModel.urlList) {
+					  NSURL *url = [NSURL URLWithString:urlString];
+					  NSString *pathExtension = [url.path.lowercaseString pathExtension];
+					  if (![pathExtension isEqualToString:@"image"]) {
+						  downloadURL = url;
+						  break;
+					  }
+				  }
+
+				  if (!downloadURL && imageModel.urlList.count > 0) {
+					  downloadURL = [NSURL URLWithString:imageModel.urlList.firstObject];
+				  }
+
+				  // 检查是否是实况照片
+				  if (imageModel.clipVideo != nil) {
+					  NSURL *videoURL = [imageModel.clipVideo.playURL getDYYYSrcURLDownload];
+					  [livePhotos addObject:@{@"imageURL" : downloadURL.absoluteString, @"videoURL" : videoURL.absoluteString}];
+				  } else {
+					  [imageURLs addObject:downloadURL.absoluteString];
+				  }
+			  }
+		  }
+
+		  // 分别处理普通图片和实况照片
+		  if (livePhotos.count > 0) {
+			  [DYYYManager downloadAllLivePhotos:livePhotos];
+		  }
+
+		  if (imageURLs.count > 0) {
+			  [DYYYManager downloadAllImages:imageURLs];
+		  }
+
+		  if (livePhotos.count == 0 && imageURLs.count == 0) {
+			  [DYYYManager showToast:@"没有找到合适格式的图片"];
+		  }
+
+		  AWELongPressPanelManager *panelManager = [%c(AWELongPressPanelManager) shareInstance];
+		  [panelManager dismissWithAnimation:YES completion:nil];
+		};
+		[viewModels addObject:allImagesViewModel];
+	}
 
 	// 创建视频功能
 	if (enableCreateVideo && self.awemeModel.awemeType == 68 && self.awemeModel.albumImages.count > 1) {
@@ -1514,13 +1477,13 @@
 %hook AWEIMCommentShareUserHorizontalCollectionViewCell
 
 - (void)layoutSubviews {
-    %orig;
-    
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentShareToFriends"]) {
-        self.hidden = YES;
-    } else {
-        self.hidden = NO;
-    }
+	%orig;
+
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentShareToFriends"]) {
+		self.hidden = YES;
+	} else {
+		self.hidden = NO;
+	}
 }
 
 %end
@@ -1528,17 +1491,17 @@
 %hook AWEIMCommentShareUserHorizontalSectionController
 
 - (CGSize)sizeForItemAtIndex:(NSInteger)index model:(id)model collectionViewSize:(CGSize)size {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentShareToFriends"]) {
-        return CGSizeZero;
-    }
-    return %orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentShareToFriends"]) {
+		return CGSizeZero;
+	}
+	return %orig;
 }
 
 - (void)configCell:(id)cell index:(NSInteger)index model:(id)model {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentShareToFriends"]) {
-        return;
-    }
-    %orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentShareToFriends"]) {
+		return;
+	}
+	%orig;
 }
 
 %end
