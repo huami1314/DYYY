@@ -274,30 +274,37 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 %end
 
 %hook AWEElementStackView
-
 static CGFloat stream_frame_y = 0;
 static CGFloat right_tx = 0;
 static CGFloat left_tx = 0;
 static CGFloat currentScale = 1.0;
-
 - (void)layoutSubviews {
     %orig;
-
+    BOOL hasThreeBaseElementViews = NO;
+    if (self.subviews.count == 3) {
+        hasThreeBaseElementViews = YES;
+        for (UIView *subview in self.subviews) {
+            if (![subview isKindOfClass:%c(AWEBaseElementView)]) {
+                hasThreeBaseElementViews = NO;
+                break;
+            }
+        }
+    }
+    
+    if (hasThreeBaseElementViews) {
+        return;
+    }
     // 获取缩放比例
     NSString *nicknameScaleStr = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
     CGFloat nicknameScale = nicknameScaleStr.length > 0 ? [nicknameScaleStr floatValue] : 1.0;
-
     NSString *elementScaleStr = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYElementScale"];
     CGFloat elementScale = elementScaleStr.length > 0 ? [elementScaleStr floatValue] : 1.0;
-
     // 判断视图属于哪个VC
     UIResponder *nextResponder = [self nextResponder];
     if ([nextResponder isKindOfClass:[UIView class]]) {
         UIView *parentView = (UIView *)nextResponder;
         UIViewController *viewController = [parentView firstAvailableUIViewController];
-
         if ([viewController isKindOfClass:%c(AWELiveNewPreStreamViewController)]) {
-
             // 直播间整体文案缩放
             if (nicknameScale > 0 && nicknameScale != 1.0) {
                 self.transform = CGAffineTransformIdentity;
@@ -312,7 +319,6 @@ static CGFloat currentScale = 1.0;
                 newTransform = CGAffineTransformTranslate(newTransform, tx / nicknameScale, ty / nicknameScale);
                 self.transform = newTransform;
             }
-
             // 全屏处理
             if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
                 CGRect frame = self.frame;
@@ -322,31 +328,25 @@ static CGFloat currentScale = 1.0;
             }
         }
     }
-
-    // 侧边元素处理
+    // 先检查accessibilityLabel
     NSString *label = self.accessibilityLabel;
     NSString *position = nil;
-
     if (label != nil) {
         if ([label isEqualToString:@"right"]) {
             position = @"right";
         } else if ([label isEqualToString:@"left"]) {
             position = @"left";
-        } else if ([label isEqualToString:@"bottom"]){
-	    position = @"bottom";
-	}
+        }
     } else {
+        // 只有在没有accessibilityLabel时才使用位置判断
         CGFloat centerX = self.center.x;
         CGFloat screenCenterX = [UIScreen mainScreen].bounds.size.width / 2.0;
         if (centerX < screenCenterX - 5) {
             position = @"left";
         } else if (centerX > screenCenterX + 5) {
             position = @"right";
-        } else {
-            position = @"bottom";
         }
     }
-
     // 根据推断位置进行变换
     if ([position isEqualToString:@"right"] && elementScale > 0 && elementScale != 1.0) {
         self.transform = CGAffineTransformIdentity;
@@ -372,11 +372,23 @@ static CGFloat currentScale = 1.0;
         self.transform = newTransform;
     }
 }
-
 - (NSArray<__kindof UIView *> *)arrangedSubviews {
+    BOOL hasThreeBaseElementViews = NO;
+    if (self.subviews.count == 3) {
+        hasThreeBaseElementViews = YES;
+        for (UIView *subview in self.subviews) {
+            if (![subview isKindOfClass:%c(AWEBaseElementView)]) {
+                hasThreeBaseElementViews = NO;
+                break;
+            }
+        }
+    }
+    
+    if (hasThreeBaseElementViews) {
+        return %orig;
+    }
     NSString *label = self.accessibilityLabel;
     BOOL isLeft = NO;
-
     if (label != nil && [label isEqualToString:@"left"]) {
         isLeft = YES;
     } else if (label == nil) {
@@ -386,7 +398,6 @@ static CGFloat currentScale = 1.0;
             isLeft = YES;
         }
     }
-
     if (isLeft) {
         NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
         if (scaleValue.length > 0) {
@@ -406,10 +417,8 @@ static CGFloat currentScale = 1.0;
             }
         }
     }
-
     return %orig;
 }
-
 %end
 
 %hook AWEStoryContainerCollectionView
