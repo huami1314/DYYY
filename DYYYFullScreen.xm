@@ -284,36 +284,36 @@ static CGFloat currentScale = 1.0;
 - (void)layoutSubviews {
 	%orig;
 
-	// 处理视频流直播间文案缩放
-	UIResponder *nextResponder = [self nextResponder];
-	if ([nextResponder isKindOfClass:[UIView class]]) {
-		UIView *parentView = (UIView *)nextResponder;
-		UIViewController *viewController = [parentView firstAvailableUIViewController];
+	// 获取屏幕中点横坐标
+	CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
+	CGFloat screenCenterX = screenWidth / 2.0;
 
-		if ([viewController isKindOfClass:%c(AWELiveNewPreStreamViewController)]) {
-			NSString *vcScaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
-			if (vcScaleValue.length > 0) {
-				CGFloat scale = [vcScaleValue floatValue];
-				self.transform = CGAffineTransformIdentity;
+	CGPoint centerInWindow = [self.superview convertPoint:self.center toView:nil];
+	CGFloat viewCenterX = centerInWindow.x;
 
-				if (scale > 0 && scale != 1.0) {
-					NSArray *subviews = [self.subviews copy];
-					CGFloat ty = 0;
+	BOOL isRightElement = (viewCenterX > (screenCenterX + 50));
+	BOOL isLeftElement = (viewCenterX < (screenCenterX - 10));
 
-					for (UIView *view in subviews) {
-						CGFloat viewHeight = view.frame.size.height;
-						CGFloat contribution = (viewHeight - viewHeight * scale) / 2;
-						ty += contribution;
-					}
+	CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
+	CGFloat screenCenterX = screenWidth / 2.0;
 
-					CGFloat frameWidth = self.frame.size.width;
-					CGFloat tx = (frameWidth - frameWidth * scale) / 2 - frameWidth * (1 - scale);
+	CGPoint centerInWindow = [self.superview convertPoint:self.center toView:nil];
+	CGFloat viewCenterX = centerInWindow.x;
 
-					CGAffineTransform newTransform = CGAffineTransformMakeScale(scale, scale);
-					newTransform = CGAffineTransformTranslate(newTransform, tx / scale, ty / scale);
+	BOOL isRightElement = (viewCenterX > (screenCenterX + 50));
+	BOOL isLeftElement = (viewCenterX < (screenCenterX - 10));
 
-					self.transform = newTransform;
-				}
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+		UIResponder *nextResponder = [self nextResponder];
+		if ([nextResponder isKindOfClass:[UIView class]]) {
+			UIView *parentView = (UIView *)nextResponder;
+			UIViewController *viewController = [parentView firstAvailableUIViewController];
+
+			if ([viewController isKindOfClass:%c(AWELiveNewPreStreamViewController)]) {
+				CGRect frame = self.frame;
+				frame.origin.y -= 83;
+				stream_frame_y = frame.origin.y;
+				self.frame = frame;
 			}
 		}
 	}
@@ -332,16 +332,6 @@ static CGFloat currentScale = 1.0;
 			}
 		}
 	}
-
-	// 获取屏幕中点横坐标
-	CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
-	CGFloat screenCenterX = screenWidth / 2.0;
-
-	CGPoint centerInWindow = [self.superview convertPoint:self.center toView:nil];
-	CGFloat viewCenterX = centerInWindow.x;
-
-	BOOL isRightElement = (viewCenterX > (screenCenterX + 50));
-	BOOL isLeftElement = (viewCenterX < (screenCenterX - 50));
 
 	// 右侧元素的处理逻辑
 	if (isRightElement) {
@@ -411,7 +401,7 @@ static CGFloat currentScale = 1.0;
 	CGPoint centerInWindow = [self.superview convertPoint:self.center toView:nil];
 	CGFloat viewCenterX = centerInWindow.x;
 
-	BOOL isLeftElement = (viewCenterX < (screenCenterX - 50));
+	BOOL isLeftElement = (viewCenterX < (screenCenterX - 10));
 
 	if (isLeftElement) {
 		NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
