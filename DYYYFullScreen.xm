@@ -294,26 +294,35 @@ static CGFloat currentScale = 1.0;
 	BOOL isRightElement = (viewCenterX > (screenCenterX + 50));
 	BOOL isLeftElement = (viewCenterX < (screenCenterX - 10));
 
-	CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
-	CGFloat screenCenterX = screenWidth / 2.0;
+	UIResponder *nextResponder = [self nextResponder];
+	if ([nextResponder isKindOfClass:[UIView class]]) {
+		UIView *parentView = (UIView *)nextResponder;
+		UIViewController *viewController = [parentView firstAvailableUIViewController];
 
-	CGPoint centerInWindow = [self.superview convertPoint:self.center toView:nil];
-	CGFloat viewCenterX = centerInWindow.x;
+		if ([viewController isKindOfClass:%c(AWELiveNewPreStreamViewController)]) {
+			NSString *vcScaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
+			if (vcScaleValue.length > 0) {
+				CGFloat scale = [vcScaleValue floatValue];
+				self.transform = CGAffineTransformIdentity;
 
-	BOOL isRightElement = (viewCenterX > (screenCenterX + 50));
-	BOOL isLeftElement = (viewCenterX < (screenCenterX - 10));
+				if (scale > 0 && scale != 1.0) {
+					NSArray *subviews = [self.subviews copy];
+					CGFloat ty = 0;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-		UIResponder *nextResponder = [self nextResponder];
-		if ([nextResponder isKindOfClass:[UIView class]]) {
-			UIView *parentView = (UIView *)nextResponder;
-			UIViewController *viewController = [parentView firstAvailableUIViewController];
+					for (UIView *view in subviews) {
+						CGFloat viewHeight = view.frame.size.height;
+						CGFloat contribution = (viewHeight - viewHeight * scale) / 2;
+						ty += contribution;
+					}
 
-			if ([viewController isKindOfClass:%c(AWELiveNewPreStreamViewController)]) {
-				CGRect frame = self.frame;
-				frame.origin.y -= 83;
-				stream_frame_y = frame.origin.y;
-				self.frame = frame;
+					CGFloat frameWidth = self.frame.size.width;
+					CGFloat tx = (frameWidth - frameWidth * scale) / 2 - frameWidth * (1 - scale);
+
+					CGAffineTransform newTransform = CGAffineTransformMakeScale(scale, scale);
+					newTransform = CGAffineTransformTranslate(newTransform, tx / scale, ty / scale);
+
+					self.transform = newTransform;
+				}
 			}
 		}
 	}
