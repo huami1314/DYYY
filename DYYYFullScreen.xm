@@ -284,20 +284,7 @@ static CGFloat currentScale = 1.0;
 - (void)layoutSubviews {
 	%orig;
 
-	if (self.frame.size.height < 85) {
-		return;
-	}
-
-	// 获取屏幕中点横坐标
-	CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
-	CGFloat screenCenterX = screenWidth / 2.0;
-
-	CGPoint centerInWindow = [self.superview convertPoint:self.center toView:nil];
-	CGFloat viewCenterX = centerInWindow.x;
-
-	BOOL isRightElement = (viewCenterX > (screenCenterX + 10));
-	BOOL isLeftElement = (viewCenterX < (screenCenterX - 10));
-
+	// 处理视频流直播间文案缩放
 	UIResponder *nextResponder = [self nextResponder];
 	if ([nextResponder isKindOfClass:[UIView class]]) {
 		UIView *parentView = (UIView *)nextResponder;
@@ -347,9 +334,9 @@ static CGFloat currentScale = 1.0;
 	}
 
 	// 右侧元素的处理逻辑
-	if (isRightElement) {
+	NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYElementScale"];
+	if ([self.accessibilityLabel isEqualToString:@"right"]) {
 		self.transform = CGAffineTransformIdentity;
-		NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYElementScale"];
 
 		if (scaleValue.length > 0) {
 			CGFloat scale = [scaleValue floatValue];
@@ -377,7 +364,7 @@ static CGFloat currentScale = 1.0;
 		}
 	}
 	// 左侧元素的处理逻辑
-	else if (isLeftElement) {
+	else if ([self.accessibilityLabel isEqualToString:@"left"]) {
 		NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
 
 		if (scaleValue.length > 0) {
@@ -408,21 +395,7 @@ static CGFloat currentScale = 1.0;
 }
 
 - (NSArray<__kindof UIView *> *)arrangedSubviews {
-
-	if (self.frame.size.height < 64) {
-		NSArray *originalSubviews = %orig;
-		return originalSubviews;
-	}
-
-	CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
-	CGFloat screenCenterX = screenWidth / 2.0;
-
-	CGPoint centerInWindow = [self.superview convertPoint:self.center toView:nil];
-	CGFloat viewCenterX = centerInWindow.x;
-
-	BOOL isLeftElement = (viewCenterX < (screenCenterX - 10));
-
-	if (isLeftElement) {
+	if ([self.accessibilityLabel isEqualToString:@"left"]) {
 		NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
 
 		if (scaleValue.length > 0) {
@@ -662,10 +635,10 @@ static CGFloat currentScale = 1.0;
 %hook AWEMixVideoPanelMoreView
 
 - (void)setFrame:(CGRect)frame {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-		frame.origin.y -= 83;
-	}
-	%orig(frame);
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+        frame.origin.y -= 83;
+    }
+    %orig(frame);
 }
 
 %end
@@ -673,27 +646,27 @@ static CGFloat currentScale = 1.0;
 %hook CommentInputContainerView
 
 - (void)layoutSubviews {
-	%orig;
-	UIViewController *parentVC = nil;
-	if ([self respondsToSelector:@selector(viewController)]) {
-		id viewController = [self performSelector:@selector(viewController)];
-		if ([viewController respondsToSelector:@selector(parentViewController)]) {
-			parentVC = [viewController parentViewController];
-		}
-	}
+    %orig;
+    UIViewController *parentVC = nil;
+    if ([self respondsToSelector:@selector(viewController)]) {
+        id viewController = [self performSelector:@selector(viewController)];
+        if ([viewController respondsToSelector:@selector(parentViewController)]) {
+            parentVC = [viewController parentViewController];
+        }
+    }
 
-	if (parentVC && ([parentVC isKindOfClass:%c(AWEAwemeDetailTableViewController)] || [parentVC isKindOfClass:%c(AWEAwemeDetailCellViewController)])) {
-		for (UIView *subview in [self subviews]) {
-			if ([subview class] == [UIView class]) {
-				if ([(UIView *)self frame].size.height == 83) {
-					subview.hidden = YES;
-				} else {
-					subview.hidden = NO;
-				}
-				break;
-			}
-		}
-	}
+    if (parentVC && ([parentVC isKindOfClass:%c(AWEAwemeDetailTableViewController)] || [parentVC isKindOfClass:%c(AWEAwemeDetailCellViewController)])) {
+        for (UIView *subview in [self subviews]) {
+            if ([subview class] == [UIView class]) {
+                if ([(UIView *)self frame].size.height == 83) {
+                    subview.hidden = YES;
+                } else {
+                    subview.hidden = NO;
+                }
+                break;
+            }
+        }
+    }
 }
 
 %end
