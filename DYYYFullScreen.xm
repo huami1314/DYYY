@@ -284,6 +284,10 @@ static CGFloat currentScale = 1.0;
 - (void)layoutSubviews {
 	%orig;
 
+	if (self.frame.size.height < 100) {
+		return;
+	}
+
 	// 获取屏幕中点横坐标
 	CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
 	CGFloat screenCenterX = screenWidth / 2.0;
@@ -291,7 +295,7 @@ static CGFloat currentScale = 1.0;
 	CGPoint centerInWindow = [self.superview convertPoint:self.center toView:nil];
 	CGFloat viewCenterX = centerInWindow.x;
 
-	BOOL isRightElement = (viewCenterX > (screenCenterX + 50));
+	BOOL isRightElement = (viewCenterX > (screenCenterX + 10));
 	BOOL isLeftElement = (viewCenterX < (screenCenterX - 10));
 
 	UIResponder *nextResponder = [self nextResponder];
