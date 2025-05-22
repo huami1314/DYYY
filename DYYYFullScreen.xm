@@ -333,10 +333,23 @@ static CGFloat currentScale = 1.0;
 		}
 	}
 
+	// 获取屏幕尺寸
+	CGFloat screenHeight = [UIScreen mainScreen].bounds.size.height;
+	CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
+
+	// 获取视图在屏幕上的绝对位置
+	CGRect frameInWindow = [self convertRect:self.bounds toView:nil];
+
+	// 左侧元素判断：位于屏幕高度一半以下，并且自身高度大于50
+	BOOL isLeftElement = (frameInWindow.origin.y > (screenHeight / 2)) && (self.frame.size.height > 50);
+
+	// 右侧元素判断：最左侧边缘位于屏幕水平中央右侧，并且高度大于50
+	BOOL isRightElement = (frameInWindow.origin.x > (screenWidth / 2)) && (self.frame.size.height > 50);
+
 	// 右侧元素的处理逻辑
-	NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYElementScale"];
-	if ([self.accessibilityLabel isEqualToString:@"right"]) {
+	if (isRightElement) {
 		self.transform = CGAffineTransformIdentity;
+		NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYElementScale"];
 
 		if (scaleValue.length > 0) {
 			CGFloat scale = [scaleValue floatValue];
@@ -364,7 +377,7 @@ static CGFloat currentScale = 1.0;
 		}
 	}
 	// 左侧元素的处理逻辑
-	else if ([self.accessibilityLabel isEqualToString:@"left"]) {
+	else if (isLeftElement) {
 		NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
 
 		if (scaleValue.length > 0) {
@@ -395,7 +408,17 @@ static CGFloat currentScale = 1.0;
 }
 
 - (NSArray<__kindof UIView *> *)arrangedSubviews {
-	if ([self.accessibilityLabel isEqualToString:@"left"]) {
+	// 获取屏幕尺寸
+	CGFloat screenHeight = [UIScreen mainScreen].bounds.size.height;
+	CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
+
+	// 获取视图在屏幕上的绝对位置
+	CGRect frameInWindow = [self convertRect:self.bounds toView:nil];
+
+	// 左侧元素判断：位于屏幕高度一半以下，并且自身高度大于50
+	BOOL isLeftElement = (frameInWindow.origin.y > (screenHeight / 2)) && (self.frame.size.height > 50);
+
+	if (isLeftElement) {
 		NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
 
 		if (scaleValue.length > 0) {
@@ -635,10 +658,10 @@ static CGFloat currentScale = 1.0;
 %hook AWEMixVideoPanelMoreView
 
 - (void)setFrame:(CGRect)frame {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-        frame.origin.y -= 83;
-    }
-    %orig(frame);
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+		frame.origin.y -= 83;
+	}
+	%orig(frame);
 }
 
 %end
@@ -646,27 +669,27 @@ static CGFloat currentScale = 1.0;
 %hook CommentInputContainerView
 
 - (void)layoutSubviews {
-    %orig;
-    UIViewController *parentVC = nil;
-    if ([self respondsToSelector:@selector(viewController)]) {
-        id viewController = [self performSelector:@selector(viewController)];
-        if ([viewController respondsToSelector:@selector(parentViewController)]) {
-            parentVC = [viewController parentViewController];
-        }
-    }
+	%orig;
+	UIViewController *parentVC = nil;
+	if ([self respondsToSelector:@selector(viewController)]) {
+		id viewController = [self performSelector:@selector(viewController)];
+		if ([viewController respondsToSelector:@selector(parentViewController)]) {
+			parentVC = [viewController parentViewController];
+		}
+	}
 
-    if (parentVC && ([parentVC isKindOfClass:%c(AWEAwemeDetailTableViewController)] || [parentVC isKindOfClass:%c(AWEAwemeDetailCellViewController)])) {
-        for (UIView *subview in [self subviews]) {
-            if ([subview class] == [UIView class]) {
-                if ([(UIView *)self frame].size.height == 83) {
-                    subview.hidden = YES;
-                } else {
-                    subview.hidden = NO;
-                }
-                break;
-            }
-        }
-    }
+	if (parentVC && ([parentVC isKindOfClass:%c(AWEAwemeDetailTableViewController)] || [parentVC isKindOfClass:%c(AWEAwemeDetailCellViewController)])) {
+		for (UIView *subview in [self subviews]) {
+			if ([subview class] == [UIView class]) {
+				if ([(UIView *)self frame].size.height == 83) {
+					subview.hidden = YES;
+				} else {
+					subview.hidden = NO;
+				}
+				break;
+			}
+		}
+	}
 }
 
 %end
