@@ -334,14 +334,13 @@ static CGFloat currentScale = 1.0;
 	}
 
 	// 获取屏幕尺寸
-	CGFloat screenHeight = [UIScreen mainScreen].bounds.size.height;
 	CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
-
 	// 获取视图在屏幕上的绝对位置
 	CGRect frameInWindow = [self convertRect:self.bounds toView:nil];
 
-	// 左侧元素判断：位于屏幕高度一半以下，并且自身高度大于50
-	BOOL isLeftElement = (frameInWindow.origin.y > (screenHeight / 2)) && (self.frame.size.height > 50);
+	// 左侧元素判断
+	BOOL isLeftElement = (self.frame.size.width > 60) && (self.frame.size.width < (screenWidth - 20)) && (self.frame.size.height > 40) &&
+			     ![self.superview isKindOfClass:%c(AWEAwemeDetailNaviBarContainerView)];
 
 	// 右侧元素判断：最左侧边缘位于屏幕水平中央右侧，并且高度大于50
 	BOOL isRightElement = (frameInWindow.origin.x > (screenWidth / 2)) && (self.frame.size.height > 50);
@@ -408,15 +407,10 @@ static CGFloat currentScale = 1.0;
 }
 
 - (NSArray<__kindof UIView *> *)arrangedSubviews {
-	// 获取屏幕尺寸
-	CGFloat screenHeight = [UIScreen mainScreen].bounds.size.height;
 	CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
-
-	// 获取视图在屏幕上的绝对位置
-	CGRect frameInWindow = [self convertRect:self.bounds toView:nil];
-
-	// 左侧元素判断：位于屏幕高度一半以下，并且自身高度大于50
-	BOOL isLeftElement = (frameInWindow.origin.y > (screenHeight / 2)) && (self.frame.size.height > 50);
+	// 左侧元素判断
+	BOOL isLeftElement = (self.frame.size.width > 60) && (self.frame.size.width < (screenWidth - 20)) && (self.frame.size.height > 40) &&
+			     ![self.superview isKindOfClass:%c(AWEAwemeDetailNaviBarContainerView)];
 
 	if (isLeftElement) {
 		NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
