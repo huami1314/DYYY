@@ -508,22 +508,16 @@
 %hook AWELeftSideBarEntranceView
 
 - (void)layoutSubviews {
+	%orig;
 
-	__block BOOL isInTargetController = NO;
-	UIResponder *currentResponder = self;
-
-	while ((currentResponder = [currentResponder nextResponder])) {
-		if ([currentResponder isKindOfClass:NSClassFromString(@"AWEUserHomeViewControllerV2")]) {
-			isInTargetController = YES;
-			break;
-		}
-	}
-
-	if (!isInTargetController && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenLeftSideBar"]) {
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenLeftSideBar"]) {
 		for (UIView *subview in self.subviews) {
-			subview.hidden = YES;
+			if ([subview isKindOfClass:%c(DUXBaseImageView)]) {
+				subview.hidden = YES;
+			}
 		}
 	}
+
 }
 
 %end
