@@ -3619,11 +3619,14 @@ static CGFloat rightLabelRightMargin = -1;
 %end
 
 %end
-
 %hook AWEPlayInteractionSpeedController
 
 - (CGFloat)longPressFastSpeedValue {
-	return 3.0;
+    float longPressSpeed = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYLongPressSpeed"];
+    if (longPressSpeed == 0) {
+        longPressSpeed = 2.0;
+    }
+    return longPressSpeed;
 }
 
 %end
@@ -3631,13 +3634,25 @@ static CGFloat rightLabelRightMargin = -1;
 %hook UILabel
 
 - (void)setText:(NSString *)text {
-	UIView *superview = self.superview;
+    UIView *superview = self.superview;
 
-	if ([superview isKindOfClass:%c(AFDFastSpeedView)] && text && [text containsString:@"2"]) {
-		text = [text stringByReplacingOccurrencesOfString:@"2" withString:@"3"];
-	}
+    if ([superview isKindOfClass:%c(AFDFastSpeedView)] && text) {
+        float longPressSpeed = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYLongPressSpeed"];
+        if (longPressSpeed == 0) {
+            longPressSpeed = 2.0; 
+        }
+        
+        NSString *speedString = [NSString stringWithFormat:@"%.2f", longPressSpeed];
+        if ([speedString hasSuffix:@".00"]) {
+            speedString = [speedString substringToIndex:speedString.length - 3];
+        }
+        
+        if ([text containsString:@"2"]) {
+            text = [text stringByReplacingOccurrencesOfString:@"2" withString:speedString];
+        }
+    }
 
-	%orig(text);
+    %orig(text);
 }
 %end
 
@@ -3881,7 +3896,6 @@ static AWEIMReusableCommonCell *currentCell;
 }
 
 // 隐藏键盘ai
-//  隐藏父视图的子视图
 static void hideParentViewsSubviews(UIView *view) {
 	if (!view)
 		return;
@@ -3912,18 +3926,20 @@ static void findTargetViewInView(UIView *view) {
 		findTargetViewInView(subview);
 	}
 }
-// 构造函数
+
 %ctor {
 	// 注册键盘通知
-	[[NSNotificationCenter defaultCenter] addObserverForName:UIKeyboardWillShowNotification
-							  object:nil
-							   queue:[NSOperationQueue mainQueue]
-						      usingBlock:^(NSNotification *notification) {
-							// 检查开关状态
-							if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidekeyboardai"]) {
-								for (UIWindow *window in [UIApplication sharedApplication].windows) {
-									findTargetViewInView(window);
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {
+		[[NSNotificationCenter defaultCenter] addObserverForName:UIKeyboardWillShowNotification
+								  object:nil
+								   queue:[NSOperationQueue mainQueue]
+							      usingBlock:^(NSNotification *notification) {
+								// 检查开关状态
+								if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidekeyboardai"]) {
+									for (UIWindow *window in [UIApplication sharedApplication].windows) {
+										findTargetViewInView(window);
+									}
 								}
-							}
-						      }];
+							      }];
+	}
 }

@@ -586,6 +586,11 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"detail" : @"",
 		    @"cellType" : @26,
 		    @"imageName" : @"ic_speed_outlined_20"},
+		  @{@"identifier" : @"DYYYLongPressSpeed",
+		    @"title" : @"设置长按倍速",
+		    @"detail" : @"",
+		    @"cellType" : @26,
+		    @"imageName" : @"ic_speed_outlined_20"},
 		  @{@"identifier" : @"DYYYisEnableArea",
 		    @"title" : @"时间属地显示",
 		    @"detail" : @"",
@@ -623,6 +628,26 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 			    NSString *selectedValue = [DYYYOptionsSelectionView showWithPreferenceKey:@"DYYYDefaultSpeed"
 											 optionsArray:speedOptions
 											   headerText:@"选择默认倍速"
+										       onPresentingVC:topView()];
+
+			    // 设置详情文本为选中的值
+			    item.detail = selectedValue;
+			    [DYYYSettingsHelper refreshTableView];
+			  };
+		  }
+
+		  else if ([item.identifier isEqualToString:@"DYYYLongPressSpeed"]) {
+			  // 获取已保存的默认倍速值
+			  NSString *savedSpeed = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYLongPressSpeed"];
+			  item.detail = savedSpeed ?: @"2.0x";
+
+			  item.cellTappedBlock = ^{
+			    NSArray *speedOptions = @[ @"0.75x", @"1.0x", @"1.25x", @"1.5x", @"2.0x", @"2.5x", @"3.0x" ];
+
+			    // 显示选项选择视图并直接获取返回值
+			    NSString *selectedValue = [DYYYOptionsSelectionView showWithPreferenceKey:@"DYYYLongPressSpeed"
+											 optionsArray:speedOptions
+											   headerText:@"选择右侧长按倍速"
 										       onPresentingVC:topView()];
 
 			    // 设置详情文本为选中的值
