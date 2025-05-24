@@ -3622,11 +3622,24 @@ static CGFloat rightLabelRightMargin = -1;
 %hook AWEPlayInteractionSpeedController
 
 - (CGFloat)longPressFastSpeedValue {
-    float longPressSpeed = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYLongPressSpeed"];
-    if (longPressSpeed == 0) {
-        longPressSpeed = 2.0;
-    }
-    return longPressSpeed;
+	float longPressSpeed = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYLongPressSpeed"];
+	if (longPressSpeed == 0) {
+		longPressSpeed = 2.0;
+	}
+	return longPressSpeed;
+}
+
+- (void)changeSpeed:(double)speed {
+	float longPressSpeed = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYLongPressSpeed"];
+	if (longPressSpeed == 0) {
+		longPressSpeed = 2.0;
+	}
+
+	if (speed == 2.0) {
+		%orig(longPressSpeed);
+	} else {
+		%orig(speed);
+	}
 }
 
 %end
@@ -3634,25 +3647,27 @@ static CGFloat rightLabelRightMargin = -1;
 %hook UILabel
 
 - (void)setText:(NSString *)text {
-    UIView *superview = self.superview;
+	UIView *superview = self.superview;
 
-    if ([superview isKindOfClass:%c(AFDFastSpeedView)] && text) {
-        float longPressSpeed = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYLongPressSpeed"];
-        if (longPressSpeed == 0) {
-            longPressSpeed = 2.0; 
-        }
-        
-        NSString *speedString = [NSString stringWithFormat:@"%.2f", longPressSpeed];
-        if ([speedString hasSuffix:@".00"]) {
-            speedString = [speedString substringToIndex:speedString.length - 3];
-        }
-        
-        if ([text containsString:@"2"]) {
-            text = [text stringByReplacingOccurrencesOfString:@"2" withString:speedString];
-        }
-    }
+	if ([superview isKindOfClass:%c(AFDFastSpeedView)] && text) {
+		float longPressSpeed = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYLongPressSpeed"];
+		if (longPressSpeed == 0) {
+			longPressSpeed = 2.0;
+		}
 
-    %orig(text);
+		NSString *speedString = [NSString stringWithFormat:@"%.2f", longPressSpeed];
+		if ([speedString hasSuffix:@".00"]) {
+			speedString = [speedString substringToIndex:speedString.length - 3];
+		} else if ([speedString hasSuffix:@"0"] && [speedString containsString:@"."]) {
+			speedString = [speedString substringToIndex:speedString.length - 1];
+		}
+
+		if ([text containsString:@"2"]) {
+			text = [text stringByReplacingOccurrencesOfString:@"2" withString:speedString];
+		}
+	}
+
+	%orig(text);
 }
 %end
 
