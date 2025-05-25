@@ -1923,33 +1923,40 @@ static BOOL isCustomSpeedActive = NO;
 
 - (void)changeSpeed:(double)speed {
 	float longPressSpeed = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYLongPressSpeed"];
+	static BOOL justDeactivatedCustomSpeed = NO;
 
-	if (longPressSpeed == 0) {
-		longPressSpeed = 2.0;
+	if (longPressSpeed == 0 || longPressSpeed == 2) {
+		%orig(speed);
+		return;
 	}
 
 	if (speed == longPressSpeed) {
-		// 传入的速度是自定义倍速
 		if (isCustomSpeedActive) {
 			isCustomSpeedActive = NO;
+			justDeactivatedCustomSpeed = YES;
 			%orig(1.0);
 		} else {
 			isCustomSpeedActive = YES;
+			justDeactivatedCustomSpeed = NO;
 			%orig(longPressSpeed);
 		}
 	} else if (speed == 2.0) {
-		// 传入的是默认倍速2.0
-		if (!isCustomSpeedActive) {
+		if (justDeactivatedCustomSpeed) {
+			justDeactivatedCustomSpeed = NO;
+			%orig(1.0);
+		} else if (!isCustomSpeedActive) {
 			isCustomSpeedActive = YES;
 			%orig(longPressSpeed);
 		} else {
-			%orig(speed);
+			%orig(longPressSpeed);
 		}
 	} else if (speed == 1.0) {
 		isCustomSpeedActive = NO;
+		justDeactivatedCustomSpeed = NO;
 		%orig(1.0);
 	} else {
 		isCustomSpeedActive = (speed == longPressSpeed);
+		justDeactivatedCustomSpeed = NO;
 		%orig(speed);
 	}
 }
@@ -2717,24 +2724,24 @@ static AWEIMReusableCommonCell *currentCell;
 
 %hook AWELeftSideBarEntranceView
 - (void)layoutSubviews {
-    %orig;
-    
-    UIResponder *responder = self;
-    UIViewController *parentVC = nil;
-    while ((responder = [responder nextResponder])) {
-        if ([responder isKindOfClass:%c(AWEFeedContainerViewController)]) {
-            parentVC = (UIViewController *)responder;
-            break;
-        }
-    }
-    
-    if (parentVC && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenLeftSideBar"]) {
-        for (UIView *subview in self.subviews) {
-            if ([subview isKindOfClass:%c(DUXBaseImageView)]) {
-                subview.hidden = YES;
-            }
-        }
-    }
+	%orig;
+
+	UIResponder *responder = self;
+	UIViewController *parentVC = nil;
+	while ((responder = [responder nextResponder])) {
+		if ([responder isKindOfClass:%c(AWEFeedContainerViewController)]) {
+			parentVC = (UIViewController *)responder;
+			break;
+		}
+	}
+
+	if (parentVC && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenLeftSideBar"]) {
+		for (UIView *subview in self.subviews) {
+			if ([subview isKindOfClass:%c(DUXBaseImageView)]) {
+				subview.hidden = YES;
+			}
+		}
+	}
 }
 
 %end
