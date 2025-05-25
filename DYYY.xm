@@ -2695,17 +2695,25 @@ static AWEIMReusableCommonCell *currentCell;
 %end
 
 %hook AWELeftSideBarEntranceView
-
 - (void)layoutSubviews {
-	%orig;
-
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenLeftSideBar"]) {
-		for (UIView *subview in self.subviews) {
-			if ([subview isKindOfClass:%c(DUXBaseImageView)]) {
-				subview.hidden = YES;
-			}
-		}
-	}
+    %orig;
+    
+    UIResponder *responder = self;
+    UIViewController *parentVC = nil;
+    while ((responder = [responder nextResponder])) {
+        if ([responder isKindOfClass:%c(AWEFeedContainerViewController)]) {
+            parentVC = (UIViewController *)responder;
+            break;
+        }
+    }
+    
+    if (parentVC && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenLeftSideBar"]) {
+        for (UIView *subview in self.subviews) {
+            if ([subview isKindOfClass:%c(DUXBaseImageView)]) {
+                subview.hidden = YES;
+            }
+        }
+    }
 }
 
 %end
