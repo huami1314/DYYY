@@ -1911,6 +1911,8 @@ static CGFloat rightLabelRightMargin = -1;
 %end
 %hook AWEPlayInteractionSpeedController
 
+static BOOL isCustomSpeedActive = NO;
+
 - (CGFloat)longPressFastSpeedValue {
 	float longPressSpeed = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYLongPressSpeed"];
 	if (longPressSpeed == 0) {
@@ -1921,17 +1923,36 @@ static CGFloat rightLabelRightMargin = -1;
 
 - (void)changeSpeed:(double)speed {
 	float longPressSpeed = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYLongPressSpeed"];
+
 	if (longPressSpeed == 0) {
 		longPressSpeed = 2.0;
 	}
 
-	if (speed == 2.0) {
-		%orig(longPressSpeed);
+	if (speed == longPressSpeed) {
+		// 传入的速度是自定义倍速
+		if (isCustomSpeedActive) {
+			isCustomSpeedActive = NO;
+			%orig(1.0);
+		} else {
+			isCustomSpeedActive = YES;
+			%orig(longPressSpeed);
+		}
+	} else if (speed == 2.0) {
+		// 传入的是默认倍速2.0
+		if (!isCustomSpeedActive) {
+			isCustomSpeedActive = YES;
+			%orig(longPressSpeed);
+		} else {
+			%orig(speed);
+		}
+	} else if (speed == 1.0) {
+		isCustomSpeedActive = NO;
+		%orig(1.0);
 	} else {
+		isCustomSpeedActive = (speed == longPressSpeed);
 		%orig(speed);
 	}
 }
-
 %end
 
 %hook UILabel
