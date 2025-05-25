@@ -295,6 +295,9 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AFDFastSpeedView : UIView
 @end
 
+@interface AWEAwemeOfflineBottomView : UIView
+@end
+
 @interface AWEUserWorkCollectionViewComponentCell : UICollectionViewCell
 @end
 
