@@ -2181,7 +2181,7 @@ static AWEIMReusableCommonCell *currentCell;
 
 	AWEIMCustomMenuModel *newMenuItem1 = [%c(AWEIMCustomMenuModel) new];
 	newMenuItem1.title = @"保存表情";
-	newMenuItem1.imageName = @"im_image_ensure_download";
+	newMenuItem1.imageName = @"im_emoticon_interactive_tab_new";
 	newMenuItem1.willPerformMenuActionSelectorBlock = ^(id arg1) {
 	  AWEIMMessageComponentContext *context = (AWEIMMessageComponentContext *)currentCell.currentContext;
 	  if ([context.message isKindOfClass:%c(AWEIMGiphyMessage)]) {
