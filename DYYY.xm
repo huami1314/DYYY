@@ -3881,24 +3881,6 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
-%hook UIImageView
-- (void)layoutSubviews {
-	%orig;
-
-	if (!self.accessibilityLabel) {
-		UIView *parentView = self.superview;
-
-		if (parentView && [parentView class] == [UIView class] && [parentView.accessibilityLabel isEqualToString:@"搜索"]) {
-			self.hidden = YES;
-		}
-
-		else if (parentView && [NSStringFromClass([parentView class]) isEqualToString:@"AWESearchEntryHalfScreenElement"] && [parentView.accessibilityLabel isEqualToString:@"搜索"]) {
-			self.hidden = YES;
-		}
-	}
-}
-%end
-
 // 极速版红包激励挂件容器视图类组（移除逻辑）
 %group IncentivePendantGroup
 %hook AWEIncentiveSwiftImplDOUYINLite_IncentivePendantContainerView
