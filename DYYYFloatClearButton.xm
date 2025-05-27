@@ -74,6 +74,7 @@ static void forceResetAllUIElements(void) {
 	UIWindow *window = getKeyWindow();
 	if (!window)
 		return;
+	Class StackViewClass = NSClassFromString(@"AWEElementStackView");
 	for (NSString *className in targetClassNames) {
 		Class viewClass = NSClassFromString(className);
 		if (!viewClass)
@@ -81,7 +82,7 @@ static void forceResetAllUIElements(void) {
 		NSMutableArray *views = [NSMutableArray array];
 		findViewsOfClassHelper(window, viewClass, views);
 		for (UIView *view in views) {
-			if(view.superview && [view.superview isKindOfClass:[AWEElementStackView class]]) {
+			if(view.superview && [view.superview isKindOfClass:StackViewClass]) {
 				// 如果是 AWEElementStackView 的子视图，直接跳过
 				continue;
 			}
