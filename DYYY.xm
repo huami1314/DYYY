@@ -1925,24 +1925,20 @@ static BOOL hasChangedSpeed = NO;
 - (void)changeSpeed:(double)speed {
     float longPressSpeed = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYLongPressSpeed"];
     
-    // 如果传入的是2.0
     if (speed == 2.0) {
         if (!hasChangedSpeed) {
-            // 第一次传入2.0，使用设置的速度值
             if (longPressSpeed != 0 && longPressSpeed != 2.0) {
                 hasChangedSpeed = YES;
                 %orig(longPressSpeed);
                 return;
             }
         } else {
-            // 第二次传入2.0，保留原逻辑
             hasChangedSpeed = NO;
             %orig(1.0);
             return;
         }
     }
     
-    // 其他情况正常处理
     if (longPressSpeed == 0 || longPressSpeed == 2) {
         %orig(speed);
         return;
