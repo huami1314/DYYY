@@ -47,6 +47,11 @@ static BOOL isCommentViewVisible = NO;
 static HideUIButton *hideButton;
 static BOOL isAppInTransition = NO;
 static NSArray *targetClassNames;
+static CGFloat DYGetGlobalAlpha(void) {
+    NSString *value = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
+    CGFloat a = value.length ? value.floatValue : 1.0;
+    return (a >= 0.0 && a <= 1.0) ? a : 1.0;
+}
 static void findViewsOfClassHelper(UIView *view, Class viewClass, NSMutableArray *result) {
 	if ([view isKindOfClass:viewClass]) {
 		[result addObject:view];
@@ -76,7 +81,11 @@ static void forceResetAllUIElements(void) {
 		NSMutableArray *views = [NSMutableArray array];
 		findViewsOfClassHelper(window, viewClass, views);
 		for (UIView *view in views) {
-			view.alpha = 1.0;
+			if(view.superview && [view.superview isKindOfClass:[AWEElementStackView class]]) {
+				// 如果是 AWEElementStackView 的子视图，直接跳过
+				continue;
+			}
+			view.alpha = DYGetGlobalAlpha();
 		}
 	}
 }
@@ -324,7 +333,7 @@ static void initTargetClassNames(void) {
 			view.hidden = NO;
 		} else {
 			// 恢复透明度
-    		view.alpha = 1.0; 
+    		view.alpha = DYGetGlobalAlpha();
 		}
         return;
     }
