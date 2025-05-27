@@ -83,10 +83,11 @@ static void forceResetAllUIElements(void) {
 		findViewsOfClassHelper(window, viewClass, views);
 		for (UIView *view in views) {
 			if([view isKindOfClass:StackViewClass]) {
-				// 如果是 AWEElementStackView，直接跳过
-				continue;
+				view.alpha = DYGetGlobalAlpha();
 			}
-			view.alpha = DYGetGlobalAlpha();
+			else{
+				view.alpha = 1.0; // 恢复透明度
+			}
 		}
 	}
 }
