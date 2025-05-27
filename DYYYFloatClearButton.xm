@@ -82,8 +82,8 @@ static void forceResetAllUIElements(void) {
 		NSMutableArray *views = [NSMutableArray array];
 		findViewsOfClassHelper(window, viewClass, views);
 		for (UIView *view in views) {
-			if(view.superview && [view.superview isKindOfClass:StackViewClass]) {
-				// 如果是 AWEElementStackView 的子视图，直接跳过
+			if([view isKindOfClass:StackViewClass]) {
+				// 如果是 AWEElementStackView，直接跳过
 				continue;
 			}
 			view.alpha = DYGetGlobalAlpha();
