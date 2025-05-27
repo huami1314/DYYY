@@ -47,6 +47,11 @@ static BOOL isCommentViewVisible = NO;
 static HideUIButton *hideButton;
 static BOOL isAppInTransition = NO;
 static NSArray *targetClassNames;
+static CGFloat DYGetGlobalAlpha(void) {
+    NSString *value = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
+    CGFloat a = value.length ? value.floatValue : 1.0;
+    return (a >= 0.0 && a <= 1.0) ? a : 1.0;
+}
 static void findViewsOfClassHelper(UIView *view, Class viewClass, NSMutableArray *result) {
 	if ([view isKindOfClass:viewClass]) {
 		[result addObject:view];
@@ -69,6 +74,7 @@ static void forceResetAllUIElements(void) {
 	UIWindow *window = getKeyWindow();
 	if (!window)
 		return;
+	Class StackViewClass = NSClassFromString(@"AWEElementStackView");
 	for (NSString *className in targetClassNames) {
 		Class viewClass = NSClassFromString(className);
 		if (!viewClass)
@@ -76,7 +82,12 @@ static void forceResetAllUIElements(void) {
 		NSMutableArray *views = [NSMutableArray array];
 		findViewsOfClassHelper(window, viewClass, views);
 		for (UIView *view in views) {
-			view.alpha = 1.0;
+			if([view isKindOfClass:StackViewClass]) {
+				view.alpha = DYGetGlobalAlpha();
+			}
+			else{
+				view.alpha = 1.0; // 恢复透明度
+			}
 		}
 	}
 }
@@ -324,7 +335,7 @@ static void initTargetClassNames(void) {
 			view.hidden = NO;
 		} else {
 			// 恢复透明度
-    		view.alpha = 1.0; 
+    		view.alpha = DYGetGlobalAlpha();
 		}
         return;
     }
