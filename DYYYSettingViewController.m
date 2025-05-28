@@ -2,6 +2,11 @@
 #import "DYYYConstants.h"
 #import "DYYYManager.h"
 #import "DYYYCustomInputView.h"
+#import <AVFoundation/AVFoundation.h>
+#import <MobileCoreServices/MobileCoreServices.h>
+#import <objc/runtime.h>
+
+extern CFStringRef kUTTypeMovie;
 
 @interface DYYYSettingViewController () <UITableViewDataSource, UITableViewDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate>
 @property (nonatomic, strong) UIVisualEffectView *containerBlurView;
@@ -14,6 +19,10 @@
 @property (nonatomic, strong) UILabel *pluginNameLabel;
 @property (nonatomic, strong) UILabel *versionLabel;
 @property (nonatomic, assign) BOOL isAgreementShown;
+@property (nonatomic, strong) UIImageView *backgroundImageView;
+@property (nonatomic, strong) AVPlayerLayer *backgroundVideoLayer;
+@property (nonatomic, strong) AVPlayer *backgroundPlayer;
+@property (nonatomic, assign) BOOL hasCustomBackground;
 @end
 
 @implementation DYYYSettingViewController
@@ -21,17 +30,51 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.isAgreementShown = NO;
+    self.hasCustomBackground = NO;
     [self setupSettingsData];
+    
+    [self checkForCustomBackground];
+    
     [self setupUI];
 }
 
-- (void)viewDidAppear:(BOOL)animated {
-    [super viewDidAppear:animated];
-    
-    if (!self.isAgreementShown) {
-        [self checkFirstLaunch];
-        self.isAgreementShown = YES;
+// 新增方法：检查是否存在自定义背景
+- (void)checkForCustomBackground {
+    // 检查是否有视频背景
+    NSString *videoPath = [[self dyyyDocumentsDirectory] stringByAppendingPathComponent:@"background.mp4"];
+    if ([[NSFileManager defaultManager] fileExistsAtPath:videoPath]) {
+        self.hasCustomBackground = YES;
+        return;
     }
+    
+    // 检查是否有图片背景
+    NSString *imagePath = [[self dyyyDocumentsDirectory] stringByAppendingPathComponent:@"background.jpg"];
+    if ([[NSFileManager defaultManager] fileExistsAtPath:imagePath]) {
+        UIImage *backgroundImage = [UIImage imageWithContentsOfFile:imagePath];
+        if (backgroundImage) {
+            self.hasCustomBackground = YES;
+        }
+    }
+}
+
+#pragma mark - 文件管理
+
+- (NSString *)dyyyDocumentsDirectory {
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    NSString *documentsDirectory = [paths objectAtIndex:0];
+    NSString *dyyyDirectory = [documentsDirectory stringByAppendingPathComponent:@"DYYY"];
+    
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    BOOL isDir;
+    if (![fileManager fileExistsAtPath:dyyyDirectory isDirectory:&isDir] || !isDir) {
+        NSError *error = nil;
+        [fileManager createDirectoryAtPath:dyyyDirectory withIntermediateDirectories:YES attributes:nil error:&error];
+        if (error) {
+            NSLog(@"创建DYYY目录失败: %@", error);
+        }
+    }
+    
+    return dyyyDirectory;
 }
 
 #pragma mark - First Launch Agreement
@@ -86,6 +129,98 @@
     
     [self presentViewController:alertController animated:YES completion:nil];
 }
+
+#pragma mark - 设置背景
+
+- (void)setupBackgroundView {
+    self.backgroundImageView = [[UIImageView alloc] init];
+    self.backgroundImageView.contentMode = UIViewContentModeScaleAspectFill;
+    self.backgroundImageView.clipsToBounds = YES;
+    self.backgroundImageView.layer.cornerRadius = 16;
+    self.backgroundImageView.hidden = YES;
+    [self.view insertSubview:self.backgroundImageView belowSubview:self.containerBlurView];
+    
+    self.backgroundImageView.translatesAutoresizingMaskIntoConstraints = NO;
+    [NSLayoutConstraint activateConstraints:@[
+        [self.backgroundImageView.topAnchor constraintEqualToAnchor:self.containerBlurView.topAnchor],
+        [self.backgroundImageView.leadingAnchor constraintEqualToAnchor:self.containerBlurView.leadingAnchor],
+        [self.backgroundImageView.trailingAnchor constraintEqualToAnchor:self.containerBlurView.trailingAnchor],
+        [self.backgroundImageView.bottomAnchor constraintEqualToAnchor:self.containerBlurView.bottomAnchor]
+    ]];
+    
+    [self loadCustomBackground];
+}
+
+- (void)loadCustomBackground {
+    // 检查是否有视频背景
+    NSString *videoPath = [[self dyyyDocumentsDirectory] stringByAppendingPathComponent:@"background.mp4"];
+    if ([[NSFileManager defaultManager] fileExistsAtPath:videoPath]) {
+        [self setupVideoBackground:videoPath];
+        return;
+    }
+    
+    // 检查是否有图片背景
+    NSString *imagePath = [[self dyyyDocumentsDirectory] stringByAppendingPathComponent:@"background.jpg"];
+    if ([[NSFileManager defaultManager] fileExistsAtPath:imagePath]) {
+        UIImage *backgroundImage = [UIImage imageWithContentsOfFile:imagePath];
+        if (backgroundImage) {
+            self.backgroundImageView.image = backgroundImage;
+            self.backgroundImageView.hidden = NO;
+        }
+    }
+}
+
+- (void)setupVideoBackground:(NSString *)videoPath {
+
+    if (self.backgroundVideoLayer) {
+        [self.backgroundVideoLayer removeFromSuperlayer];
+        self.backgroundVideoLayer = nil;
+    }
+    if (self.backgroundPlayer) {
+        [self.backgroundPlayer pause];
+        self.backgroundPlayer = nil;
+    }
+    
+    // 创建新的视频播放器
+    NSURL *videoURL = [NSURL fileURLWithPath:videoPath];
+    self.backgroundPlayer = [AVPlayer playerWithURL:videoURL];
+    self.backgroundPlayer.volume = 0.0; // 静音播放
+    
+    self.backgroundVideoLayer = [AVPlayerLayer playerLayerWithPlayer:self.backgroundPlayer];
+    self.backgroundVideoLayer.videoGravity = AVLayerVideoGravityResizeAspectFill;
+    self.backgroundVideoLayer.cornerRadius = 16;
+    self.backgroundVideoLayer.masksToBounds = YES;
+    
+    [self.view.layer insertSublayer:self.backgroundVideoLayer below:self.containerBlurView.layer];
+    
+    [self updateVideoLayerFrame];
+    
+    // 循环播放视频
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(playerItemDidReachEnd:)
+                                                 name:AVPlayerItemDidPlayToEndTimeNotification
+                                               object:self.backgroundPlayer.currentItem];
+    
+    [self.backgroundPlayer play];
+}
+
+- (void)updateVideoLayerFrame {
+    if (self.backgroundVideoLayer) {
+        self.backgroundVideoLayer.frame = self.containerBlurView.frame;
+    }
+}
+
+- (void)viewDidLayoutSubviews {
+    [super viewDidLayoutSubviews];
+    [self updateVideoLayerFrame];
+}
+
+- (void)playerItemDidReachEnd:(NSNotification *)notification {
+    [self.backgroundPlayer seekToTime:kCMTimeZero];
+    [self.backgroundPlayer play];
+}
+
+#pragma mark - 设置UI
 
 - (void)setupSettingsData {
     self.settingsData = [NSMutableArray arrayWithArray:@[
@@ -394,9 +529,20 @@
     self.view.backgroundColor = [UIColor clearColor];
     
     BOOL isDarkMode = [DYYYManager isDarkMode];
-    UIBlurEffectStyle containerBlurStyle = isDarkMode ? UIBlurEffectStyleSystemMaterialDark : UIBlurEffectStyleSystemMaterial;
-    UIBlurEffect *containerBlur = [UIBlurEffect effectWithStyle:containerBlurStyle];
-    self.containerBlurView = [[UIVisualEffectView alloc] initWithEffect:containerBlur];
+    
+    // 根据是否有自定义背景决定容器效果
+    if (self.hasCustomBackground) {
+        // 使用半透明效果
+        self.containerBlurView = [[UIVisualEffectView alloc] initWithEffect:nil];
+        self.containerBlurView.backgroundColor = isDarkMode ? 
+            [UIColor colorWithRed:0.1 green:0.1 blue:0.1 alpha:0.7] : 
+            [UIColor colorWithRed:1.0 green:1.0 blue:1.0 alpha:0.7];
+    } else {
+        // 使用毛玻璃效果
+        UIBlurEffectStyle containerBlurStyle = isDarkMode ? UIBlurEffectStyleSystemMaterialDark : UIBlurEffectStyleSystemMaterial;
+        UIBlurEffect *containerBlur = [UIBlurEffect effectWithStyle:containerBlurStyle];
+        self.containerBlurView = [[UIVisualEffectView alloc] initWithEffect:containerBlur];
+    }
     
     CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
     CGFloat screenHeight = [UIScreen mainScreen].bounds.size.height;
@@ -412,6 +558,9 @@
     self.containerBlurView.layer.shadowOpacity = 0.2;
     self.containerBlurView.layer.shadowRadius = 8;
     [self.view addSubview:self.containerBlurView];
+    
+    // 添加背景
+    [self setupBackgroundView];
     
     // 标题标签
     self.titleLabel = [[UILabel alloc] init];
@@ -487,7 +636,6 @@
     self.avatarImageView.contentMode = UIViewContentModeScaleAspectFill;
     self.avatarImageView.userInteractionEnabled = YES;
     
-    // 从UserDefaults加载自定义头像
     [self loadCustomAvatar];
     
     // 添加点击手势
@@ -537,10 +685,14 @@
     ]];
 }
 
+- (void)closeButtonTapped {
+    [self dismissWithFadeOut];
+}
+
 - (void)loadCustomAvatar {
-    NSData *avatarData = [[NSUserDefaults standardUserDefaults] dataForKey:@"DYYYCustomAvatar"];
-    if (avatarData) {
-        UIImage *customAvatar = [UIImage imageWithData:avatarData];
+    NSString *avatarPath = [[self dyyyDocumentsDirectory] stringByAppendingPathComponent:@"avatar.jpg"];
+    if ([[NSFileManager defaultManager] fileExistsAtPath:avatarPath]) {
+        UIImage *customAvatar = [UIImage imageWithContentsOfFile:avatarPath];
         if (customAvatar) {
             self.avatarImageView.image = customAvatar;
             self.avatarImageView.backgroundColor = [UIColor clearColor];
@@ -548,7 +700,6 @@
         }
     }
     
-    // 如果没有自定义头像，显示默认字母头像
     [self createDefaultAvatar];
 }
 
@@ -580,15 +731,48 @@
 }
 
 - (void)avatarTapped {
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"自定义头像"
-                                                                   message:@"选择头像来源"
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"自定义设置"
+                                                                   message:@"选择要更改的选项"
+                                                            preferredStyle:UIAlertControllerStyleActionSheet];
+    
+    UIAlertAction *changeAvatarAction = [UIAlertAction actionWithTitle:@"更改头像" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+        [self showAvatarPickerOptions];
+    }];
+    
+    UIAlertAction *changeBackgroundAction = [UIAlertAction actionWithTitle:@"更改弹窗背景" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+        [self showBackgroundPickerOptions];
+    }];
+    
+    UIAlertAction *resetAllAction = [UIAlertAction actionWithTitle:@"恢复默认设置" style:UIAlertActionStyleDestructive handler:^(UIAlertAction * _Nonnull action) {
+        [self resetAllCustomizations];
+    }];
+    
+    UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil];
+    
+    [alert addAction:changeAvatarAction];
+    [alert addAction:changeBackgroundAction];
+    [alert addAction:resetAllAction];
+    [alert addAction:cancelAction];
+    
+    // iPad适配
+    if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+        alert.popoverPresentationController.sourceView = self.avatarImageView;
+        alert.popoverPresentationController.sourceRect = self.avatarImageView.bounds;
+    }
+    
+    [self presentViewController:alert animated:YES completion:nil];
+}
+
+- (void)showAvatarPickerOptions {
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"选择头像"
+                                                                   message:@"从以下选项中选择"
                                                             preferredStyle:UIAlertControllerStyleActionSheet];
     
     UIAlertAction *photoLibraryAction = [UIAlertAction actionWithTitle:@"从相册选择" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-        [self openImagePicker:UIImagePickerControllerSourceTypePhotoLibrary];
+        [self openImagePicker:UIImagePickerControllerSourceTypePhotoLibrary forType:@"avatar"];
     }];
     
-    UIAlertAction *resetAction = [UIAlertAction actionWithTitle:@"恢复默认" style:UIAlertActionStyleDestructive handler:^(UIAlertAction * _Nonnull action) {
+    UIAlertAction *resetAction = [UIAlertAction actionWithTitle:@"恢复默认头像" style:UIAlertActionStyleDestructive handler:^(UIAlertAction * _Nonnull action) {
         [self resetToDefaultAvatar];
     }];
     
@@ -607,40 +791,227 @@
     [self presentViewController:alert animated:YES completion:nil];
 }
 
-- (void)openImagePicker:(UIImagePickerControllerSourceType)sourceType {
+- (void)showBackgroundPickerOptions {
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"选择背景"
+                                                                   message:@"从以下选项中选择"
+                                                            preferredStyle:UIAlertControllerStyleActionSheet];
+    
+    UIAlertAction *photoAction = [UIAlertAction actionWithTitle:@"设置图片背景" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+        [self openImagePicker:UIImagePickerControllerSourceTypePhotoLibrary forType:@"background"];
+    }];
+    
+    UIAlertAction *videoAction = [UIAlertAction actionWithTitle:@"设置视频背景" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+        [self openVideoPicker];
+    }];
+    
+    UIAlertAction *resetAction = [UIAlertAction actionWithTitle:@"移除自定义背景" style:UIAlertActionStyleDestructive handler:^(UIAlertAction * _Nonnull action) {
+        [self resetCustomBackground];
+    }];
+    
+    UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil];
+    
+    [alert addAction:photoAction];
+    [alert addAction:videoAction];
+    [alert addAction:resetAction];
+    [alert addAction:cancelAction];
+    
+    // iPad适配
+    if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+        alert.popoverPresentationController.sourceView = self.containerBlurView;
+        alert.popoverPresentationController.sourceRect = self.containerBlurView.bounds;
+    }
+    
+    [self presentViewController:alert animated:YES completion:nil];
+}
+
+- (void)resetAllCustomizations {
+    [self resetToDefaultAvatar];
+    [self resetCustomBackground];
+}
+
+- (void)resetCustomBackground {
+    // 移除视频播放器
+    if (self.backgroundVideoLayer) {
+        [self.backgroundVideoLayer removeFromSuperlayer];
+        self.backgroundVideoLayer = nil;
+    }
+    if (self.backgroundPlayer) {
+        [self.backgroundPlayer pause];
+        self.backgroundPlayer = nil;
+    }
+    
+    // 隐藏图片背景
+    self.backgroundImageView.hidden = YES;
+    self.backgroundImageView.image = nil;
+    
+    // 删除背景文件
+    NSString *videoPath = [[self dyyyDocumentsDirectory] stringByAppendingPathComponent:@"background.mp4"];
+    NSString *imagePath = [[self dyyyDocumentsDirectory] stringByAppendingPathComponent:@"background.jpg"];
+    
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    if ([fileManager fileExistsAtPath:videoPath]) {
+        [fileManager removeItemAtPath:videoPath error:nil];
+    }
+    if ([fileManager fileExistsAtPath:imagePath]) {
+        [fileManager removeItemAtPath:imagePath error:nil];
+    }
+    
+    // 恢复毛玻璃效果
+    self.hasCustomBackground = NO;
+    BOOL isDarkMode = [DYYYManager isDarkMode];
+    UIBlurEffectStyle containerBlurStyle = isDarkMode ? UIBlurEffectStyleSystemMaterialDark : UIBlurEffectStyleSystemMaterial;
+    UIBlurEffect *containerBlur = [UIBlurEffect effectWithStyle:containerBlurStyle];
+    self.containerBlurView.effect = containerBlur;
+    self.containerBlurView.backgroundColor = [UIColor clearColor];
+}
+
+- (void)openImagePicker:(UIImagePickerControllerSourceType)sourceType forType:(NSString *)type {
     UIImagePickerController *picker = [[UIImagePickerController alloc] init];
     picker.delegate = self;
     picker.sourceType = sourceType;
-    picker.allowsEditing = YES;
+    
+    // 存储当前处理的类型
+    objc_setAssociatedObject(picker, "pickerType", type, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    
+    if ([type isEqualToString:@"avatar"]) {
+        picker.allowsEditing = YES; // 头像允许编辑
+    } else {
+        picker.allowsEditing = NO;  // 背景不强制剪切
+    }
+    
+    [self presentViewController:picker animated:YES completion:nil];
+}
+
+- (void)openVideoPicker {
+    UIImagePickerController *picker = [[UIImagePickerController alloc] init];
+    picker.delegate = self;
+    picker.sourceType = UIImagePickerControllerSourceTypePhotoLibrary;
+    picker.mediaTypes = @[(__bridge NSString *)kUTTypeMovie];
+    picker.videoQuality = UIImagePickerControllerQualityTypeMedium;
+    picker.allowsEditing = NO;
+    
+    // 存储当前处理的类型
+    objc_setAssociatedObject(picker, "pickerType", @"video", OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    
     [self presentViewController:picker animated:YES completion:nil];
 }
 
 - (void)resetToDefaultAvatar {
-    [[NSUserDefaults standardUserDefaults] removeObjectForKey:@"DYYYCustomAvatar"];
-    [[NSUserDefaults standardUserDefaults] synchronize];
+    NSString *avatarPath = [[self dyyyDocumentsDirectory] stringByAppendingPathComponent:@"avatar.jpg"];
+    if ([[NSFileManager defaultManager] fileExistsAtPath:avatarPath]) {
+        [[NSFileManager defaultManager] removeItemAtPath:avatarPath error:nil];
+    }
     [self createDefaultAvatar];
 }
 
 #pragma mark - UIImagePickerControllerDelegate
 
 - (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary<UIImagePickerControllerInfoKey,id> *)info {
+    NSString *pickerType = (NSString *)objc_getAssociatedObject(picker, "pickerType");
+    
+    if ([pickerType isEqualToString:@"avatar"]) {
+        [self handleAvatarSelection:info];
+    } else if ([pickerType isEqualToString:@"background"]) {
+        [self handleBackgroundImageSelection:info];
+    } else if ([pickerType isEqualToString:@"video"]) {
+        [self handleBackgroundVideoSelection:info];
+    }
+    
+    [picker dismissViewControllerAnimated:YES completion:nil];
+}
+
+- (void)handleAvatarSelection:(NSDictionary *)info {
     UIImage *selectedImage = info[UIImagePickerControllerEditedImage] ?: info[UIImagePickerControllerOriginalImage];
     
     if (selectedImage) {
         // 调整图片大小
         UIImage *resizedImage = [self resizeImage:selectedImage toSize:CGSizeMake(100, 100)];
         
-        // 保存到UserDefaults
+        // 保存到文件
+        NSString *avatarPath = [[self dyyyDocumentsDirectory] stringByAppendingPathComponent:@"avatar.jpg"];
         NSData *imageData = UIImageJPEGRepresentation(resizedImage, 0.8);
-        [[NSUserDefaults standardUserDefaults] setObject:imageData forKey:@"DYYYCustomAvatar"];
-        [[NSUserDefaults standardUserDefaults] synchronize];
+        [imageData writeToFile:avatarPath atomically:YES];
         
         // 更新头像显示
         self.avatarImageView.image = resizedImage;
         self.avatarImageView.backgroundColor = [UIColor clearColor];
     }
+}
+
+- (void)handleBackgroundImageSelection:(NSDictionary *)info {
+    UIImage *selectedImage = info[UIImagePickerControllerOriginalImage];
     
-    [picker dismissViewControllerAnimated:YES completion:nil];
+    if (selectedImage) {
+        // 确保先移除视频背景
+        if (self.backgroundVideoLayer) {
+            [self.backgroundVideoLayer removeFromSuperlayer];
+            self.backgroundVideoLayer = nil;
+        }
+        if (self.backgroundPlayer) {
+            [self.backgroundPlayer pause];
+            self.backgroundPlayer = nil;
+        }
+        
+        // 删除可能存在的视频文件
+        NSString *videoPath = [[self dyyyDocumentsDirectory] stringByAppendingPathComponent:@"background.mp4"];
+        if ([[NSFileManager defaultManager] fileExistsAtPath:videoPath]) {
+            [[NSFileManager defaultManager] removeItemAtPath:videoPath error:nil];
+        }
+        
+        // 保存背景图片
+        NSString *imagePath = [[self dyyyDocumentsDirectory] stringByAppendingPathComponent:@"background.jpg"];
+        NSData *imageData = UIImageJPEGRepresentation(selectedImage, 0.8);
+        [imageData writeToFile:imagePath atomically:YES];
+        
+        // 更新背景显示
+        self.backgroundImageView.image = selectedImage;
+        self.backgroundImageView.hidden = NO;
+        
+        // 更新容器为半透明
+        self.hasCustomBackground = YES;
+        self.containerBlurView.effect = nil;
+        self.containerBlurView.backgroundColor = [DYYYManager isDarkMode] ? 
+            [UIColor colorWithRed:0.1 green:0.1 blue:0.1 alpha:0.7] : 
+            [UIColor colorWithRed:1.0 green:1.0 blue:1.0 alpha:0.7];
+    }
+}
+
+- (void)handleBackgroundVideoSelection:(NSDictionary *)info {
+    NSURL *videoURL = info[UIImagePickerControllerMediaURL];
+    
+    if (videoURL) {
+        // 移除图片背景
+        self.backgroundImageView.hidden = YES;
+        self.backgroundImageView.image = nil;
+        
+        NSString *imagePath = [[self dyyyDocumentsDirectory] stringByAppendingPathComponent:@"background.jpg"];
+        if ([[NSFileManager defaultManager] fileExistsAtPath:imagePath]) {
+            [[NSFileManager defaultManager] removeItemAtPath:imagePath error:nil];
+        }
+        
+        NSString *videoPath = [[self dyyyDocumentsDirectory] stringByAppendingPathComponent:@"background.mp4"];
+        NSError *error;
+        
+        if ([[NSFileManager defaultManager] fileExistsAtPath:videoPath]) {
+            [[NSFileManager defaultManager] removeItemAtPath:videoPath error:nil];
+        }
+        
+        // 复制新视频
+        [[NSFileManager defaultManager] copyItemAtURL:videoURL toURL:[NSURL fileURLWithPath:videoPath] error:&error];
+        
+        if (error) {
+            NSLog(@"复制视频文件失败: %@", error);
+            return;
+        }
+        
+        [self setupVideoBackground:videoPath];
+        
+        self.hasCustomBackground = YES;
+        self.containerBlurView.effect = nil;
+        self.containerBlurView.backgroundColor = [DYYYManager isDarkMode] ? 
+            [UIColor colorWithRed:0.1 green:0.1 blue:0.1 alpha:0.7] : 
+            [UIColor colorWithRed:1.0 green:1.0 blue:1.0 alpha:0.7];
+    }
 }
 
 - (void)imagePickerControllerDidCancel:(UIImagePickerController *)picker {
@@ -687,23 +1058,45 @@
     self.view.alpha = 0;
     self.containerBlurView.transform = CGAffineTransformMakeScale(0.8, 0.8);
     
+    self.backgroundImageView.transform = self.containerBlurView.transform;
+    if (self.backgroundVideoLayer) {
+        CATransform3D transform = CATransform3DMakeAffineTransform(self.containerBlurView.transform);
+        self.backgroundVideoLayer.transform = transform;
+    }
+    
     [rootVC presentViewController:self animated:NO completion:^{
         [UIView animateWithDuration:0.3 delay:0 usingSpringWithDamping:0.7 initialSpringVelocity:0.3 options:UIViewAnimationOptionCurveEaseOut animations:^{
             self.view.alpha = 1;
             self.containerBlurView.transform = CGAffineTransformIdentity;
-        } completion:nil];
+            
+            self.backgroundImageView.transform = CGAffineTransformIdentity;
+            if (self.backgroundVideoLayer) {
+                self.backgroundVideoLayer.transform = CATransform3DIdentity;
+            }
+        } completion:^(BOOL finished) {
+            [self updateVideoLayerFrame];
+        }];
     }];
-}
-
-- (void)closeButtonTapped {
-    [self dismissWithFadeOut];
 }
 
 - (void)dismissWithFadeOut {
     [UIView animateWithDuration:0.25 animations:^{
         self.view.alpha = 0;
         self.containerBlurView.transform = CGAffineTransformMakeScale(0.85, 0.85);
+        
+        self.backgroundImageView.transform = self.containerBlurView.transform;
+        if (self.backgroundVideoLayer) {
+            CATransform3D transform = CATransform3DMakeAffineTransform(self.containerBlurView.transform);
+            self.backgroundVideoLayer.transform = transform;
+        }
     } completion:^(BOOL finished) {
+        if (self.backgroundVideoLayer) {
+            [self.backgroundVideoLayer removeFromSuperlayer];
+        }
+        if (self.backgroundPlayer) {
+            [self.backgroundPlayer pause];
+        }
+        
         [self dismissViewControllerAnimated:NO completion:nil];
     }];
 }
@@ -926,11 +1319,11 @@
 }
 
 - (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section {
-    return [[UIView alloc] init];
+    return [[UIView alloc] initWithFrame:CGRectZero];
 }
 
 - (UIView *)tableView:(UITableView *)tableView viewForFooterInSection:(NSInteger)section {
-    return [[UIView alloc] init];
+    return [[UIView alloc] initWithFrame:CGRectZero];
 }
 
 #pragma mark - Actions
@@ -981,6 +1374,15 @@
     
     [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:itemKey];
     [[NSUserDefaults standardUserDefaults] synchronize];
+}
+
+- (void)dealloc {
+    if (self.backgroundPlayer) {
+        [self.backgroundPlayer pause];
+        self.backgroundPlayer = nil;
+    }
+    
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
 @end
