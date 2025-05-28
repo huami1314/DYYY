@@ -325,7 +325,9 @@
 - (void)setupUI {
     self.view.backgroundColor = [UIColor clearColor];
     
-    UIBlurEffect *containerBlur = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemMaterial];
+    BOOL isDarkMode = [DYYYManager isDarkMode];
+    UIBlurEffectStyle containerBlurStyle = isDarkMode ? UIBlurEffectStyleSystemMaterialDark : UIBlurEffectStyleSystemMaterial;
+    UIBlurEffect *containerBlur = [UIBlurEffect effectWithStyle:containerBlurStyle];
     self.containerBlurView = [[UIVisualEffectView alloc] initWithEffect:containerBlur];
     
     CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
@@ -347,7 +349,7 @@
     self.titleLabel = [[UILabel alloc] init];
     self.titleLabel.text = @"DYYY";
     self.titleLabel.font = [UIFont systemFontOfSize:18];
-    self.titleLabel.textColor = [UIColor labelColor];
+    self.titleLabel.textColor = isDarkMode ? [UIColor whiteColor] : [UIColor labelColor];
     self.titleLabel.textAlignment = NSTextAlignmentCenter;
     [self.containerBlurView.contentView addSubview:self.titleLabel];
     
@@ -355,7 +357,7 @@
     self.closeButton = [UIButton buttonWithType:UIButtonTypeSystem];
     [self.closeButton setTitle:@"✕" forState:UIControlStateNormal];
     self.closeButton.titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightMedium];
-    self.closeButton.tintColor = [UIColor secondaryLabelColor];
+    self.closeButton.tintColor = isDarkMode ? [UIColor whiteColor] : [UIColor secondaryLabelColor];
     [self.closeButton addTarget:self action:@selector(closeButtonTapped) forControlEvents:UIControlEventTouchUpInside];
     [self.containerBlurView.contentView addSubview:self.closeButton];
     
@@ -446,20 +448,40 @@
     }
     
     NSDictionary *sectionData = self.settingsData[indexPath.section];
+    BOOL isDarkMode = [DYYYManager isDarkMode];
+    BOOL expanded = [sectionData[@"expanded"] boolValue];
     
     if (indexPath.row == 0) {
-        // 分类标题行 - 高模糊度毛玻璃背景
-        UIBlurEffect *cellBlur = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemMaterial];
+        // 分类标题行 - 根据模式选择毛玻璃样式
+        UIBlurEffectStyle cellBlurStyle = isDarkMode ? UIBlurEffectStyleSystemMaterialDark : UIBlurEffectStyleSystemMaterial;
+        UIBlurEffect *cellBlur = [UIBlurEffect effectWithStyle:cellBlurStyle];
         UIVisualEffectView *cellBlurView = [[UIVisualEffectView alloc] initWithEffect:cellBlur];
-        cellBlurView.layer.cornerRadius = 12;
+        cellBlurView.layer.cornerRadius = expanded ? 12 : 12;
         cellBlurView.clipsToBounds = YES;
         cellBlurView.alpha = 0.9;
+        
+        if (expanded) {
+            cellBlurView.layer.maskedCorners = kCALayerMinXMinYCorner | kCALayerMaxXMinYCorner;
+        }
+        
         cell.backgroundView = cellBlurView;
         
         [self setupSectionHeaderCell:cell withData:sectionData section:indexPath.section];
     } else {
-        // 设置项行 - 高透明度半透明背景
+        // 设置项行 - 根据暗黑模式设置背景色
         UIView *backgroundView = [[UIView alloc] init];
+        backgroundView.backgroundColor = isDarkMode ? [UIColor colorWithWhite:0.1 alpha:0.3] : [UIColor colorWithWhite:0.9 alpha:0.3];
+        
+        // 获取section中的总行数
+        NSInteger totalRows = [sectionData[@"items"] count];
+        BOOL isLastRow = (indexPath.row == totalRows);
+        
+        if (isLastRow) {
+            // 最后一行设置底部圆角
+            backgroundView.layer.cornerRadius = 12;
+            backgroundView.layer.maskedCorners = kCALayerMinXMaxYCorner | kCALayerMaxXMaxYCorner;
+        }
+        
         cell.backgroundView = backgroundView;
         
         NSArray *items = sectionData[@"items"];
@@ -473,10 +495,12 @@
 }
 
 - (void)setupSectionHeaderCell:(UITableViewCell *)cell withData:(NSDictionary *)sectionData section:(NSInteger)section {
+    BOOL isDarkMode = [DYYYManager isDarkMode];
+    
     UILabel *titleLabel = [[UILabel alloc] init];
     titleLabel.text = sectionData[@"title"];
     titleLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightSemibold];
-    titleLabel.textColor = [UIColor labelColor];
+    titleLabel.textColor = isDarkMode ? [UIColor whiteColor] : [UIColor labelColor];
     
     UIImageView *arrowImageView = [[UIImageView alloc] init];
     BOOL expanded = [sectionData[@"expanded"] boolValue];
@@ -501,11 +525,13 @@
 }
 
 - (UIImage *)createArrowImageWithExpanded:(BOOL)expanded {
+    BOOL isDarkMode = [DYYYManager isDarkMode];
     CGSize size = CGSizeMake(12, 12);
     UIGraphicsBeginImageContextWithOptions(size, NO, 0);
     CGContextRef context = UIGraphicsGetCurrentContext();
     
-    [[UIColor colorWithWhite:0.6 alpha:1.0] setStroke];
+    UIColor *arrowColor = isDarkMode ? [UIColor colorWithWhite:0.8 alpha:1.0] : [UIColor colorWithWhite:0.6 alpha:1.0];
+    [arrowColor setStroke];
     CGContextSetLineWidth(context, 1.5);
     CGContextSetLineCap(context, kCGLineCapRound);
     CGContextSetLineJoin(context, kCGLineJoinRound);
@@ -530,10 +556,12 @@
 }
 
 - (void)setupSettingItemCell:(UITableViewCell *)cell withData:(NSDictionary *)item indexPath:(NSIndexPath *)indexPath {
+    BOOL isDarkMode = [DYYYManager isDarkMode];
+    
     UILabel *titleLabel = [[UILabel alloc] init];
     titleLabel.text = item[@"title"];
     titleLabel.font = [UIFont systemFontOfSize:12];
-    titleLabel.textColor = [UIColor labelColor];
+    titleLabel.textColor = isDarkMode ? [UIColor whiteColor] : [UIColor labelColor];
     [cell.contentView addSubview:titleLabel];
     
     NSString *type = item[@"type"];
@@ -543,25 +571,19 @@
         [inputButton setTitle:item[@"value"] forState:UIControlStateNormal];
         inputButton.titleLabel.font = [UIFont systemFontOfSize:11];
         inputButton.titleLabel.textAlignment = NSTextAlignmentRight; 
-        inputButton.tintColor = [UIColor secondaryLabelColor];
+        inputButton.tintColor = isDarkMode ? [UIColor colorWithWhite:0.8 alpha:1.0] : [UIColor secondaryLabelColor];
         inputButton.layer.cornerRadius = 6;
         inputButton.tag = indexPath.section * 1000 + indexPath.row;
         [inputButton addTarget:self action:@selector(inputButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
         
-        UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemThinMaterial];
+        UIBlurEffectStyle inputBlurStyle = isDarkMode ? UIBlurEffectStyleSystemThinMaterialDark : UIBlurEffectStyleSystemThinMaterial;
+        UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:inputBlurStyle];
         UIVisualEffectView *blurView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
         blurView.layer.cornerRadius = 6;
         blurView.layer.masksToBounds = YES;
-        blurView.backgroundColor = [UIColor colorWithWhite:0.5 alpha:0.2];
+        blurView.backgroundColor = isDarkMode ? [UIColor colorWithWhite:0.2 alpha:0.2] : [UIColor colorWithWhite:0.5 alpha:0.2];
         blurView.userInteractionEnabled = NO;
         [inputButton insertSubview:blurView atIndex:0];
-        blurView.translatesAutoresizingMaskIntoConstraints = NO;
-        [NSLayoutConstraint activateConstraints:@[
-            [blurView.topAnchor constraintEqualToAnchor:inputButton.topAnchor],
-            [blurView.leadingAnchor constraintEqualToAnchor:inputButton.leadingAnchor],
-            [blurView.trailingAnchor constraintEqualToAnchor:inputButton.trailingAnchor],
-            [blurView.bottomAnchor constraintEqualToAnchor:inputButton.bottomAnchor]
-        ]];
         
         [cell.contentView addSubview:inputButton];
         
