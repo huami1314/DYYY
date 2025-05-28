@@ -795,10 +795,10 @@
     arrowImageView.translatesAutoresizingMaskIntoConstraints = NO;
     
     [NSLayoutConstraint activateConstraints:@[
-        [titleLabel.leadingAnchor constraintEqualToAnchor:cell.contentView.leadingAnchor constant:30],
+        [titleLabel.leadingAnchor constraintEqualToAnchor:cell.contentView.leadingAnchor constant:20],
         [titleLabel.centerYAnchor constraintEqualToAnchor:cell.contentView.centerYAnchor],
         
-        [arrowImageView.trailingAnchor constraintEqualToAnchor:cell.contentView.trailingAnchor constant:-30],
+        [arrowImageView.trailingAnchor constraintEqualToAnchor:cell.contentView.trailingAnchor constant:-20],
         [arrowImageView.centerYAnchor constraintEqualToAnchor:cell.contentView.centerYAnchor],
         [arrowImageView.widthAnchor constraintEqualToConstant:12],
         [arrowImageView.heightAnchor constraintEqualToConstant:12]
@@ -872,11 +872,11 @@
         inputButton.translatesAutoresizingMaskIntoConstraints = NO;
         
         [NSLayoutConstraint activateConstraints:@[
-            [titleLabel.leadingAnchor constraintEqualToAnchor:cell.contentView.leadingAnchor constant:30],
+            [titleLabel.leadingAnchor constraintEqualToAnchor:cell.contentView.leadingAnchor constant:20],
             [titleLabel.centerYAnchor constraintEqualToAnchor:cell.contentView.centerYAnchor],
             [titleLabel.trailingAnchor constraintLessThanOrEqualToAnchor:inputButton.leadingAnchor constant:-15],
             
-            [inputButton.trailingAnchor constraintEqualToAnchor:cell.contentView.trailingAnchor constant:-30],
+            [inputButton.trailingAnchor constraintEqualToAnchor:cell.contentView.trailingAnchor constant:-20],
             [inputButton.centerYAnchor constraintEqualToAnchor:cell.contentView.centerYAnchor],
             [inputButton.widthAnchor constraintEqualToConstant:60],
             [inputButton.heightAnchor constraintEqualToConstant:26]
@@ -894,10 +894,10 @@
         switchControl.translatesAutoresizingMaskIntoConstraints = NO;
         
         [NSLayoutConstraint activateConstraints:@[
-            [titleLabel.leadingAnchor constraintEqualToAnchor:cell.contentView.leadingAnchor constant:30],
+            [titleLabel.leadingAnchor constraintEqualToAnchor:cell.contentView.leadingAnchor constant:20],
             [titleLabel.centerYAnchor constraintEqualToAnchor:cell.contentView.centerYAnchor],
             
-            [switchControl.trailingAnchor constraintEqualToAnchor:cell.contentView.trailingAnchor constant:-30],
+            [switchControl.trailingAnchor constraintEqualToAnchor:cell.contentView.trailingAnchor constant:-20],
             [switchControl.centerYAnchor constraintEqualToAnchor:cell.contentView.centerYAnchor]
         ]];
     }
