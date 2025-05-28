@@ -2960,9 +2960,11 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWEGradientView
 - (void)layoutSubviews {
 	%orig;
-
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideGradient"]) {
-		[self removeFromSuperview];
+		UIView *parent = self.superview;
+		if ([parent isKindOfClass:%c(UIView)] && [parent.accessibilityLabel isEqualToString:@"暂停，按钮"]) {
+			[self removeFromSuperview];
+		}
 		return;
 	}
 }
