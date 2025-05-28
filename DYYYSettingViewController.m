@@ -9,14 +9,78 @@
 @property (nonatomic, strong) NSMutableArray<NSMutableDictionary *> *settingsData;
 @property (nonatomic, strong) UILabel *titleLabel;
 @property (nonatomic, strong) UIButton *closeButton;
+@property (nonatomic, assign) BOOL isAgreementShown;
 @end
 
 @implementation DYYYSettingViewController
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    self.isAgreementShown = NO;
     [self setupSettingsData];
     [self setupUI];
+}
+
+- (void)viewDidAppear:(BOOL)animated {
+    [super viewDidAppear:animated];
+    
+    if (!self.isAgreementShown) {
+        [self checkFirstLaunch];
+        self.isAgreementShown = YES;
+    }
+}
+
+#pragma mark - First Launch Agreement
+
+- (void)checkFirstLaunch {
+    BOOL hasAgreed = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"];
+    
+    if (!hasAgreed) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self showAgreementAlert];
+        });
+    }
+}
+
+- (void)showAgreementAlert {
+    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"用户协议"
+                                                                             message:@"本插件为开源项目\n基于 Huami 的项目二次开发\n仅供学习交流用途\n如有侵权请联系, GitHub 仓库：Wtrwx/DYYY\n请遵守当地法律法规, 逆向工程仅为学习目的\n盗用源码进行商业用途/发布但未标记开源项目必究\n详情请参阅项目内 MIT 许可证\n\n请输入\"我已阅读并同意继续使用\"以继续使用"
+                                                                      preferredStyle:UIAlertControllerStyleAlert];
+    
+    [alertController addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) {
+        textField.clearButtonMode = UITextFieldViewModeWhileEditing;
+        textField.placeholder = @"请输入确认文本";
+    }];
+    
+    UIAlertAction *confirmAction = [UIAlertAction actionWithTitle:@"确认" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+        UITextField *textField = alertController.textFields.firstObject;
+        NSString *inputText = textField.text;
+        
+        if ([inputText isEqualToString:@"我已阅读并同意继续使用"]) {
+            [[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"DYYYUserAgreementAccepted"];
+            [[NSUserDefaults standardUserDefaults] synchronize];
+        } else {
+            UIAlertController *errorAlert = [UIAlertController alertControllerWithTitle:@"输入错误"
+                                                                               message:@"请正确输入确认文本"
+                                                                        preferredStyle:UIAlertControllerStyleAlert];
+            
+            UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+                [self showAgreementAlert];
+            }];
+            
+            [errorAlert addAction:okAction];
+            [self presentViewController:errorAlert animated:YES completion:nil];
+        }
+    }];
+
+    UIAlertAction *exitAction = [UIAlertAction actionWithTitle:@"退出" style:UIAlertActionStyleDestructive handler:^(UIAlertAction * _Nonnull action) {
+        exit(0);
+    }];
+    
+    [alertController addAction:confirmAction];
+    [alertController addAction:exitAction];
+    
+    [self presentViewController:alertController animated:YES completion:nil];
 }
 
 - (void)setupSettingsData {
