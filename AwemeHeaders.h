@@ -966,7 +966,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 @interface AWEHotSpotBlurView : UIView
 @end
-@interface AWEHotSearchInnterBottomView : UIView
+@interface AWEHotSearchInnerBottomView : UIView
 @end
 // 底部热点提示框
 @interface AWENewHotSpotBottomBarView : UIView

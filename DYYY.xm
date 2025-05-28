@@ -2981,7 +2981,7 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
-%hook AWEHotSearchInnterBottomView
+%hook AWEHotSearchInnerBottomView
 - (void)layoutSubviews {
 	%orig;
 
