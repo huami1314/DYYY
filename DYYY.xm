@@ -2920,8 +2920,32 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWEGradientView
 - (void)layoutSubviews {
 	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideGradient"]) {
+		UIView *parent = self.superview;
+		if ([parent.accessibilityLabel isEqualToString:@"暂停，按钮"] || [parent.accessibilityLabel isEqualToString:@"播放，按钮"]) {
+			[self removeFromSuperview];
+		}
+		return;
+	}
+}
+%end
+
+%hook AWEHotSpotBlurView
+- (void)layoutSubviews {
+	%orig;
 
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideGradient"]) {
+		[self removeFromSuperview];
+		return;
+	}
+}
+%end
+
+%hook AWEHotSearchInnerBottomView
+- (void)layoutSubviews {
+	%orig;
+
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideHotSearch"]) {
 		[self removeFromSuperview];
 		return;
 	}
@@ -3059,6 +3083,21 @@ static AWEIMReusableCommonCell *currentCell;
 	} else {
 		if (class_getInstanceMethod([self class], @selector(prefersStatusBarHidden)) !=
 		    class_getInstanceMethod([%c(AWEAwemeDetailTableViewController) class], @selector(prefersStatusBarHidden))) {
+			return %orig;
+		}
+		return NO;
+	}
+}
+%end
+
+// 热点状态栏
+%hook AWEAwemeHotSpotTableViewController
+- (BOOL)prefersStatusBarHidden {
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHideStatusbar"]) {
+		return YES;
+	} else {
+		if (class_getInstanceMethod([self class], @selector(prefersStatusBarHidden)) !=
+		    class_getInstanceMethod([%c(AWEAwemeHotSpotTableViewController) class], @selector(prefersStatusBarHidden))) {
 			return %orig;
 		}
 		return NO;

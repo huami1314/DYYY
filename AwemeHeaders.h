@@ -942,6 +942,9 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWEAwemeDetailTableViewController : UIViewController
 - (BOOL)prefersStatusBarHidden;
 @end
+@interface AWEAwemeHotSpotTableViewController : UIViewController
+- (BOOL)prefersStatusBarHidden;
+@end
 @interface AWEFullPageFeedNewContainerViewController : UIViewController
 - (BOOL)prefersStatusBarHidden;
 @end
@@ -957,6 +960,10 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWEPlayInteractionElementMaskView : UIView
 @end
 @interface AWEGradientView : UIView
+@end
+@interface AWEHotSpotBlurView : UIView
+@end
+@interface AWEHotSearchInnerBottomView : UIView
 @end
 // 底部热点提示框
 @interface AWENewHotSpotBottomBarView : UIView
