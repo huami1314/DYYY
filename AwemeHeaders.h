@@ -954,6 +954,10 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (void)setVideoControllerPlaybackRate:(double)arg0;
 @end
 
+@interface AWEPlayInteractionElementMaskView : UIView
+@end
+@interface AWEGradientView : UIView
+@end
 // 底部热点提示框
 @interface AWENewHotSpotBottomBarView : UIView
 @property(nonatomic, strong, readonly) UIView *superview;
@@ -1050,27 +1054,27 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 @interface AWEIMGiphyMessage : NSObject
-@property (nonatomic, copy, readwrite) AWEURLModel *giphyURL;
+@property(nonatomic, copy, readwrite) AWEURLModel *giphyURL;
 @end
 
 @interface AWEIMMessageComponentContext : NSObject
-@property (nonatomic, weak, readwrite) AWEIMGiphyMessage *message;
+@property(nonatomic, weak, readwrite) AWEIMGiphyMessage *message;
 @end
 
 @interface AWEIMReusableCommonCell : UITableViewCell
-@property (nonatomic, weak, readwrite) id currentContext;
+@property(nonatomic, weak, readwrite) id currentContext;
 @end
 
 @interface AWEIMCustomMenuModel : NSObject
-@property (nonatomic, copy, readwrite) NSString *title;
-@property (nonatomic, copy, readwrite) NSString *imageName;
-@property (nonatomic, copy, readwrite) id willPerformMenuActionSelectorBlock;
-@property (nonatomic, copy, readwrite) NSString *trackerName;
-@property (nonatomic, assign, readwrite) NSUInteger type;
+@property(nonatomic, copy, readwrite) NSString *title;
+@property(nonatomic, copy, readwrite) NSString *imageName;
+@property(nonatomic, copy, readwrite) id willPerformMenuActionSelectorBlock;
+@property(nonatomic, copy, readwrite) NSString *trackerName;
+@property(nonatomic, assign, readwrite) NSUInteger type;
 @end
 
 @interface AWEPlayInteractionSpeedController : NSObject
-@property (nonatomic, strong) id progressSliderDelegate;
+@property(nonatomic, strong) id progressSliderDelegate;
 - (CGFloat)longPressFastSpeedValue;
 - (void)changeSpeed:(double)speed;
 - (void)handleLongPressLockedDoubleSpeedChanged:(id)arg1 gesture:(UIGestureRecognizer *)gesture;
