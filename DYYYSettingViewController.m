@@ -3,12 +3,16 @@
 #import "DYYYManager.h"
 #import "DYYYCustomInputView.h"
 
-@interface DYYYSettingViewController () <UITableViewDataSource, UITableViewDelegate>
+@interface DYYYSettingViewController () <UITableViewDataSource, UITableViewDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate>
 @property (nonatomic, strong) UIVisualEffectView *containerBlurView;
 @property (nonatomic, strong) UITableView *settingsTableView;
 @property (nonatomic, strong) NSMutableArray<NSMutableDictionary *> *settingsData;
 @property (nonatomic, strong) UILabel *titleLabel;
 @property (nonatomic, strong) UIButton *closeButton;
+@property (nonatomic, strong) UIVisualEffectView *headerBlurView;
+@property (nonatomic, strong) UIImageView *avatarImageView;
+@property (nonatomic, strong) UILabel *pluginNameLabel;
+@property (nonatomic, strong) UILabel *versionLabel;
 @property (nonatomic, assign) BOOL isAgreementShown;
 @end
 
@@ -396,7 +400,7 @@
     
     CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
     CGFloat screenHeight = [UIScreen mainScreen].bounds.size.height;
-    CGFloat containerWidth = MIN(screenWidth - 40, 320);
+    CGFloat containerWidth = MIN(screenWidth - 80, 320); 
     CGFloat containerHeight = MIN(screenHeight - 80, 450);
     
     self.containerBlurView.frame = CGRectMake(0, 0, containerWidth, containerHeight);
@@ -411,8 +415,11 @@
     
     // 标题标签
     self.titleLabel = [[UILabel alloc] init];
-    self.titleLabel.text = @"DYYY";
-    self.titleLabel.font = [UIFont systemFontOfSize:18];
+    self.titleLabel.text = DYYY_SETTINGS_NAME;
+    self.titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightBold];
+    if (@available(iOS 13.0, *)) {
+        self.titleLabel.font = [UIFont fontWithDescriptor:[[UIFontDescriptor preferredFontDescriptorWithTextStyle:UIFontTextStyleTitle2] fontDescriptorWithDesign:UIFontDescriptorSystemDesignRounded] size:16];
+    }
     self.titleLabel.textColor = isDarkMode ? [UIColor whiteColor] : [UIColor labelColor];
     self.titleLabel.textAlignment = NSTextAlignmentCenter;
     [self.containerBlurView.contentView addSubview:self.titleLabel];
@@ -433,9 +440,219 @@
     self.settingsTableView.separatorStyle = UITableViewCellSeparatorStyleNone;
     self.settingsTableView.showsVerticalScrollIndicator = NO;
     [self.settingsTableView registerClass:[UITableViewCell class] forCellReuseIdentifier:@"SettingsCell"];
+    
+    // 创建并设置 TableView Header
+    [self setupTableViewHeader];
+    
     [self.containerBlurView.contentView addSubview:self.settingsTableView];
     
     [self setupConstraints];
+}
+
+- (void)setupTableViewHeader {
+    // 创建 Header 容器
+    UIView *headerContainer = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 300, 100)];
+    
+    // 创建头部毛玻璃容器
+    [self setupHeaderBlurView];
+    [headerContainer addSubview:self.headerBlurView];
+    
+    // 设置头部容器的约束
+    self.headerBlurView.translatesAutoresizingMaskIntoConstraints = NO;
+    [NSLayoutConstraint activateConstraints:@[
+        [self.headerBlurView.topAnchor constraintEqualToAnchor:headerContainer.topAnchor constant:10],
+        [self.headerBlurView.leadingAnchor constraintEqualToAnchor:headerContainer.leadingAnchor constant:0],
+        [self.headerBlurView.trailingAnchor constraintEqualToAnchor:headerContainer.trailingAnchor constant:0],
+        [self.headerBlurView.bottomAnchor constraintEqualToAnchor:headerContainer.bottomAnchor constant:-10],
+        [self.headerBlurView.heightAnchor constraintEqualToConstant:80]
+    ]];
+    
+    self.settingsTableView.tableHeaderView = headerContainer;
+}
+
+- (void)setupHeaderBlurView {
+    BOOL isDarkMode = [DYYYManager isDarkMode];
+    UIBlurEffectStyle headerBlurStyle = isDarkMode ? UIBlurEffectStyleSystemMaterialDark : UIBlurEffectStyleSystemMaterial;
+    UIBlurEffect *headerBlur = [UIBlurEffect effectWithStyle:headerBlurStyle];
+    self.headerBlurView = [[UIVisualEffectView alloc] initWithEffect:headerBlur];
+    self.headerBlurView.layer.cornerRadius = 12;
+    self.headerBlurView.clipsToBounds = YES;
+    self.headerBlurView.alpha = 0.9;
+    
+    // 设置头像
+    self.avatarImageView = [[UIImageView alloc] init];
+    self.avatarImageView.backgroundColor = [UIColor colorWithRed:11.0/255.0 green:223.0/255.0 blue:154.0/255.0 alpha:1.0];
+    self.avatarImageView.layer.cornerRadius = 25;
+    self.avatarImageView.clipsToBounds = YES;
+    self.avatarImageView.contentMode = UIViewContentModeScaleAspectFill;
+    self.avatarImageView.userInteractionEnabled = YES;
+    
+    // 从UserDefaults加载自定义头像
+    [self loadCustomAvatar];
+    
+    // 添加点击手势
+    UITapGestureRecognizer *avatarTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(avatarTapped)];
+    [self.avatarImageView addGestureRecognizer:avatarTap];
+    
+    [self.headerBlurView.contentView addSubview:self.avatarImageView];
+    
+    // 插件名称标签
+    self.pluginNameLabel = [[UILabel alloc] init];
+    self.pluginNameLabel.text = DYYY_NAME;
+    self.pluginNameLabel.font = [UIFont systemFontOfSize:18 weight:UIFontWeightBold];
+    if (@available(iOS 13.0, *)) {
+        self.pluginNameLabel.font = [UIFont fontWithDescriptor:[[UIFontDescriptor preferredFontDescriptorWithTextStyle:UIFontTextStyleTitle2] fontDescriptorWithDesign:UIFontDescriptorSystemDesignRounded] size:18];
+    }
+    self.pluginNameLabel.textColor = isDarkMode ? [UIColor whiteColor] : [UIColor labelColor];
+    [self.headerBlurView.contentView addSubview:self.pluginNameLabel];
+    
+    // 版本标签
+    self.versionLabel = [[UILabel alloc] init];
+    self.versionLabel.text = [NSString stringWithFormat:@"v%@", DYYY_VERSION];
+    self.versionLabel.font = [UIFont systemFontOfSize:12 weight:UIFontWeightRegular];
+    self.versionLabel.textColor = isDarkMode ? [UIColor colorWithWhite:0.7 alpha:1.0] : [UIColor secondaryLabelColor];
+    [self.headerBlurView.contentView addSubview:self.versionLabel];
+    
+    // 设置头部内容的约束
+    self.avatarImageView.translatesAutoresizingMaskIntoConstraints = NO;
+    self.pluginNameLabel.translatesAutoresizingMaskIntoConstraints = NO;
+    self.versionLabel.translatesAutoresizingMaskIntoConstraints = NO;
+    
+    [NSLayoutConstraint activateConstraints:@[
+        // 头像约束
+        [self.avatarImageView.leadingAnchor constraintEqualToAnchor:self.headerBlurView.contentView.leadingAnchor constant:20],
+        [self.avatarImageView.centerYAnchor constraintEqualToAnchor:self.headerBlurView.contentView.centerYAnchor],
+        [self.avatarImageView.widthAnchor constraintEqualToConstant:50],
+        [self.avatarImageView.heightAnchor constraintEqualToConstant:50],
+        
+        // 插件名称约束
+        [self.pluginNameLabel.leadingAnchor constraintEqualToAnchor:self.avatarImageView.trailingAnchor constant:15],
+        [self.pluginNameLabel.topAnchor constraintEqualToAnchor:self.headerBlurView.contentView.topAnchor constant:20],
+        [self.pluginNameLabel.trailingAnchor constraintLessThanOrEqualToAnchor:self.headerBlurView.contentView.trailingAnchor constant:-20],
+        
+        // 版本标签约束
+        [self.versionLabel.leadingAnchor constraintEqualToAnchor:self.pluginNameLabel.leadingAnchor],
+        [self.versionLabel.topAnchor constraintEqualToAnchor:self.pluginNameLabel.bottomAnchor constant:5],
+        [self.versionLabel.trailingAnchor constraintLessThanOrEqualToAnchor:self.headerBlurView.contentView.trailingAnchor constant:-20]
+    ]];
+}
+
+- (void)loadCustomAvatar {
+    NSData *avatarData = [[NSUserDefaults standardUserDefaults] dataForKey:@"DYYYCustomAvatar"];
+    if (avatarData) {
+        UIImage *customAvatar = [UIImage imageWithData:avatarData];
+        if (customAvatar) {
+            self.avatarImageView.image = customAvatar;
+            self.avatarImageView.backgroundColor = [UIColor clearColor];
+            return;
+        }
+    }
+    
+    // 如果没有自定义头像，显示默认字母头像
+    [self createDefaultAvatar];
+}
+
+- (void)createDefaultAvatar {
+    UIGraphicsBeginImageContextWithOptions(CGSizeMake(50, 50), NO, 0);
+    CGContextRef context = UIGraphicsGetCurrentContext();
+    
+    // 绘制背景
+    [[UIColor colorWithRed:11.0/255.0 green:223.0/255.0 blue:154.0/255.0 alpha:1.0] setFill];
+    CGContextFillEllipseInRect(context, CGRectMake(0, 0, 50, 50));
+    
+    // 绘制字母
+    NSString *letter = @"D";
+    UIFont *font = [UIFont systemFontOfSize:20 weight:UIFontWeightBold];
+    NSDictionary *attributes = @{
+        NSFontAttributeName: font,
+        NSForegroundColorAttributeName: [UIColor whiteColor]
+    };
+    
+    CGSize textSize = [letter sizeWithAttributes:attributes];
+    CGPoint textPoint = CGPointMake((50 - textSize.width) / 2, (50 - textSize.height) / 2);
+    [letter drawAtPoint:textPoint withAttributes:attributes];
+    
+    UIImage *defaultAvatar = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    
+    self.avatarImageView.image = defaultAvatar;
+    self.avatarImageView.backgroundColor = [UIColor clearColor];
+}
+
+- (void)avatarTapped {
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"自定义头像"
+                                                                   message:@"选择头像来源"
+                                                            preferredStyle:UIAlertControllerStyleActionSheet];
+    
+    UIAlertAction *photoLibraryAction = [UIAlertAction actionWithTitle:@"从相册选择" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+        [self openImagePicker:UIImagePickerControllerSourceTypePhotoLibrary];
+    }];
+    
+    UIAlertAction *resetAction = [UIAlertAction actionWithTitle:@"恢复默认" style:UIAlertActionStyleDestructive handler:^(UIAlertAction * _Nonnull action) {
+        [self resetToDefaultAvatar];
+    }];
+    
+    UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil];
+    
+    [alert addAction:photoLibraryAction];
+    [alert addAction:resetAction];
+    [alert addAction:cancelAction];
+    
+    // iPad适配
+    if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+        alert.popoverPresentationController.sourceView = self.avatarImageView;
+        alert.popoverPresentationController.sourceRect = self.avatarImageView.bounds;
+    }
+    
+    [self presentViewController:alert animated:YES completion:nil];
+}
+
+- (void)openImagePicker:(UIImagePickerControllerSourceType)sourceType {
+    UIImagePickerController *picker = [[UIImagePickerController alloc] init];
+    picker.delegate = self;
+    picker.sourceType = sourceType;
+    picker.allowsEditing = YES;
+    [self presentViewController:picker animated:YES completion:nil];
+}
+
+- (void)resetToDefaultAvatar {
+    [[NSUserDefaults standardUserDefaults] removeObjectForKey:@"DYYYCustomAvatar"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+    [self createDefaultAvatar];
+}
+
+#pragma mark - UIImagePickerControllerDelegate
+
+- (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary<UIImagePickerControllerInfoKey,id> *)info {
+    UIImage *selectedImage = info[UIImagePickerControllerEditedImage] ?: info[UIImagePickerControllerOriginalImage];
+    
+    if (selectedImage) {
+        // 调整图片大小
+        UIImage *resizedImage = [self resizeImage:selectedImage toSize:CGSizeMake(100, 100)];
+        
+        // 保存到UserDefaults
+        NSData *imageData = UIImageJPEGRepresentation(resizedImage, 0.8);
+        [[NSUserDefaults standardUserDefaults] setObject:imageData forKey:@"DYYYCustomAvatar"];
+        [[NSUserDefaults standardUserDefaults] synchronize];
+        
+        // 更新头像显示
+        self.avatarImageView.image = resizedImage;
+        self.avatarImageView.backgroundColor = [UIColor clearColor];
+    }
+    
+    [picker dismissViewControllerAnimated:YES completion:nil];
+}
+
+- (void)imagePickerControllerDidCancel:(UIImagePickerController *)picker {
+    [picker dismissViewControllerAnimated:YES completion:nil];
+}
+
+- (UIImage *)resizeImage:(UIImage *)image toSize:(CGSize)size {
+    UIGraphicsBeginImageContextWithOptions(size, NO, 0);
+    [image drawInRect:CGRectMake(0, 0, size.width, size.height)];
+    UIImage *resizedImage = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    return resizedImage;
 }
 
 - (void)setupConstraints {
@@ -457,9 +674,9 @@
         [self.closeButton.heightAnchor constraintEqualToConstant:25],
         
         [self.settingsTableView.topAnchor constraintEqualToAnchor:self.titleLabel.bottomAnchor constant:15],
-        [self.settingsTableView.leadingAnchor constraintEqualToAnchor:self.containerBlurView.contentView.leadingAnchor constant:10],
-        [self.settingsTableView.trailingAnchor constraintEqualToAnchor:self.containerBlurView.contentView.trailingAnchor constant:-10],
-        [self.settingsTableView.bottomAnchor constraintEqualToAnchor:self.containerBlurView.contentView.bottomAnchor constant:-10]
+        [self.settingsTableView.leadingAnchor constraintEqualToAnchor:self.containerBlurView.contentView.leadingAnchor constant:16],
+        [self.settingsTableView.trailingAnchor constraintEqualToAnchor:self.containerBlurView.contentView.trailingAnchor constant:-16],
+        [self.settingsTableView.bottomAnchor constraintEqualToAnchor:self.containerBlurView.contentView.bottomAnchor constant:-16]
     ]];
 }
 
@@ -578,10 +795,10 @@
     arrowImageView.translatesAutoresizingMaskIntoConstraints = NO;
     
     [NSLayoutConstraint activateConstraints:@[
-        [titleLabel.leadingAnchor constraintEqualToAnchor:cell.contentView.leadingAnchor constant:15],
+        [titleLabel.leadingAnchor constraintEqualToAnchor:cell.contentView.leadingAnchor constant:30],
         [titleLabel.centerYAnchor constraintEqualToAnchor:cell.contentView.centerYAnchor],
         
-        [arrowImageView.trailingAnchor constraintEqualToAnchor:cell.contentView.trailingAnchor constant:-15],
+        [arrowImageView.trailingAnchor constraintEqualToAnchor:cell.contentView.trailingAnchor constant:-30],
         [arrowImageView.centerYAnchor constraintEqualToAnchor:cell.contentView.centerYAnchor],
         [arrowImageView.widthAnchor constraintEqualToConstant:12],
         [arrowImageView.heightAnchor constraintEqualToConstant:12]
@@ -655,11 +872,11 @@
         inputButton.translatesAutoresizingMaskIntoConstraints = NO;
         
         [NSLayoutConstraint activateConstraints:@[
-            [titleLabel.leadingAnchor constraintEqualToAnchor:cell.contentView.leadingAnchor constant:20],
+            [titleLabel.leadingAnchor constraintEqualToAnchor:cell.contentView.leadingAnchor constant:30],
             [titleLabel.centerYAnchor constraintEqualToAnchor:cell.contentView.centerYAnchor],
-            [titleLabel.trailingAnchor constraintLessThanOrEqualToAnchor:inputButton.leadingAnchor constant:-10],
+            [titleLabel.trailingAnchor constraintLessThanOrEqualToAnchor:inputButton.leadingAnchor constant:-15],
             
-            [inputButton.trailingAnchor constraintEqualToAnchor:cell.contentView.trailingAnchor constant:-15],
+            [inputButton.trailingAnchor constraintEqualToAnchor:cell.contentView.trailingAnchor constant:-30],
             [inputButton.centerYAnchor constraintEqualToAnchor:cell.contentView.centerYAnchor],
             [inputButton.widthAnchor constraintEqualToConstant:60],
             [inputButton.heightAnchor constraintEqualToConstant:26]
@@ -677,10 +894,10 @@
         switchControl.translatesAutoresizingMaskIntoConstraints = NO;
         
         [NSLayoutConstraint activateConstraints:@[
-            [titleLabel.leadingAnchor constraintEqualToAnchor:cell.contentView.leadingAnchor constant:20],
+            [titleLabel.leadingAnchor constraintEqualToAnchor:cell.contentView.leadingAnchor constant:30],
             [titleLabel.centerYAnchor constraintEqualToAnchor:cell.contentView.centerYAnchor],
             
-            [switchControl.trailingAnchor constraintEqualToAnchor:cell.contentView.trailingAnchor constant:-15],
+            [switchControl.trailingAnchor constraintEqualToAnchor:cell.contentView.trailingAnchor constant:-30],
             [switchControl.centerYAnchor constraintEqualToAnchor:cell.contentView.centerYAnchor]
         ]];
     }
