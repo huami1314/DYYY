@@ -1,695 +1,683 @@
-#import "DYYYSettingViewController.h"、
+#import "DYYYSettingViewController.h"
 #import "DYYYConstants.h"
+#import "DYYYManager.h"
+#import "DYYYCustomInputView.h"
 
-typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
-    DYYYSettingItemTypeSwitch,
-    DYYYSettingItemTypeTextField,
-    DYYYSettingItemTypeSpeedPicker
-};
-
-@interface DYYYSettingItem : NSObject
-
-@property (nonatomic, copy) NSString *title;
-@property (nonatomic, copy) NSString *key;
-@property (nonatomic, assign) DYYYSettingItemType type;
-@property (nonatomic, copy, nullable) NSString *placeholder;
-
-+ (instancetype)itemWithTitle:(NSString *)title key:(NSString *)key type:(DYYYSettingItemType)type;
-+ (instancetype)itemWithTitle:(NSString *)title key:(NSString *)key type:(DYYYSettingItemType)type placeholder:(nullable NSString *)placeholder;
-
-@end
-
-@implementation DYYYSettingItem
-
-+ (instancetype)itemWithTitle:(NSString *)title key:(NSString *)key type:(DYYYSettingItemType)type {
-    return [self itemWithTitle:title key:key type:type placeholder:nil];
-}
-
-+ (instancetype)itemWithTitle:(NSString *)title key:(NSString *)key type:(DYYYSettingItemType)type placeholder:(nullable NSString *)placeholder {
-    DYYYSettingItem *item = [[DYYYSettingItem alloc] init];
-    item.title = title;
-    item.key = key;
-    item.type = type;
-    item.placeholder = placeholder;
-    return item;
-}
-
-@end
-
-@interface DYYYSettingViewController () <UITableViewDelegate, UITableViewDataSource>
-
-@property (nonatomic, strong) UITableView *tableView;
-@property (nonatomic, strong) NSArray<NSArray<DYYYSettingItem *> *> *settingSections;
-@property (nonatomic, strong) UILabel *footerLabel;
-@property (nonatomic, strong) NSMutableArray<NSString *> *sectionTitles;
-@property (nonatomic, strong) NSMutableSet *expandedSections;
-@property (nonatomic, strong) UIVisualEffectView *blurEffectView;
-@property (nonatomic, strong) UIVisualEffectView *vibrancyEffectView;
-@property (nonatomic, assign) BOOL isAgreementShown;
-
+@interface DYYYSettingViewController () <UITableViewDataSource, UITableViewDelegate>
+@property (nonatomic, strong) UIVisualEffectView *containerBlurView;
+@property (nonatomic, strong) UITableView *settingsTableView;
+@property (nonatomic, strong) NSMutableArray<NSMutableDictionary *> *settingsData;
+@property (nonatomic, strong) UILabel *titleLabel;
+@property (nonatomic, strong) UIButton *closeButton;
 @end
 
 @implementation DYYYSettingViewController
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    
-    self.title = @"DYYY设置";
-    self.expandedSections = [NSMutableSet set];
-    self.isAgreementShown = NO;
-    
-    [self setupAppearance];
-    [self setupBlurEffect];
-    [self setupTableView];
-    [self setupDefaultValues];
-    [self setupSettingItems];
-    [self setupSectionTitles];
-    [self setupFooterLabel];
-    [self addTitleGradientAnimation];
+    [self setupSettingsData];
+    [self setupUI];
 }
 
-- (void)setupDefaultValues {
+- (void)setupSettingsData {
+    self.settingsData = [NSMutableArray arrayWithArray:@[
+        // 基本设置
+        [@{
+            @"title": @"基本设置",
+            @"expanded": @NO,
+            @"items": [self loadSettingsForSection:@[
+                @{@"title": @"启用弹幕改色", @"type": @"switch", @"value": @NO, @"key": @"DYYYEnableDanmuColor"},
+                @{@"title": @"自定弹幕颜色", @"type": @"input", @"value": @"", @"key": @"DYYYdanmuColor", @"placeholder": @"十六进制"},
+                @{@"title": @"设置默认倍速", @"type": @"input", @"value": @"1.0", @"key": @"DYYYDefaultSpeed", @"placeholder": @"倍速值"},
+                @{@"title": @"设置长按倍速", @"type": @"input", @"value": @"2.0", @"key": @"DYYYLongPressSpeed", @"placeholder": @"倍速值"},
+                @{@"title": @"显示进度时长", @"type": @"switch", @"value": @NO, @"key": @"DYYYisShowScheduleDisplay"},
+                @{@"title": @"进度纵轴位置", @"type": @"input", @"value": @"-12.5", @"key": @"DYYYTimelineVerticalPosition", @"placeholder": @"-12.5"},
+                @{@"title": @"进度标签颜色", @"type": @"input", @"value": @"", @"key": @"DYYYProgressLabelColor", @"placeholder": @"十六进制"},
+                @{@"title": @"隐藏视频进度", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideVideoProgress"},
+                @{@"title": @"启用自动播放", @"type": @"switch", @"value": @NO, @"key": @"DYYYisEnableAutoPlay"},
+                @{@"title": @"推荐过滤直播", @"type": @"switch", @"value": @NO, @"key": @"DYYYisSkipLive"},
+                @{@"title": @"推荐过滤热点", @"type": @"switch", @"value": @NO, @"key": @"DYYYisSkipHotSpot"},
+                @{@"title": @"推荐过滤低赞", @"type": @"input", @"value": @"0", @"key": @"DYYYfilterLowLikes", @"placeholder": @"填0关闭"},
+                @{@"title": @"推荐过滤文案", @"type": @"input", @"value": @"", @"key": @"DYYYfilterKeywords", @"placeholder": @"不填关闭"},
+                @{@"title": @"推荐视频时限", @"type": @"input", @"value": @"0", @"key": @"DYYYfiltertimelimit", @"placeholder": @"填0关闭，单位为天"},
+                @{@"title": @"启用首页净化", @"type": @"switch", @"value": @NO, @"key": @"DYYYisEnablePure"},
+                @{@"title": @"启用首页全屏", @"type": @"switch", @"value": @NO, @"key": @"DYYYisEnableFullScreen"},
+                @{@"title": @"启用屏蔽广告", @"type": @"switch", @"value": @NO, @"key": @"DYYYNoAds"},
+                @{@"title": @"屏蔽检测更新", @"type": @"switch", @"value": @NO, @"key": @"DYYYNoUpdates"},
+                @{@"title": @"去青少年弹窗", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideteenmode"},
+                @{@"title": @"评论区毛玻璃", @"type": @"switch", @"value": @NO, @"key": @"DYYYisEnableCommentBlur"},
+                @{@"title": @"通知玻璃效果", @"type": @"switch", @"value": @NO, @"key": @"DYYYEnableNotificationTransparency"},
+                @{@"title": @"毛玻璃透明度", @"type": @"input", @"value": @"0.8", @"key": @"DYYYCommentBlurTransparent", @"placeholder": @"0-1小数"},
+                @{@"title": @"通知圆角半径", @"type": @"input", @"value": @"12", @"key": @"DYYYNotificationCornerRadius", @"placeholder": @"默认12"},
+                @{@"title": @"时间属地显示", @"type": @"switch", @"value": @NO, @"key": @"DYYYisEnableArea"},
+                @{@"title": @"国外解析账号", @"type": @"input", @"value": @"", @"key": @"DYYYGeonamesUsername", @"placeholder": @"不填默认"},
+                @{@"title": @"时间标签颜色", @"type": @"input", @"value": @"", @"key": @"DYYYLabelColor", @"placeholder": @"十六进制"},
+                @{@"title": @"时间随机渐变", @"type": @"switch", @"value": @NO, @"key": @"DYYYEnabsuijiyanse"},
+                @{@"title": @"隐藏系统顶栏", @"type": @"switch", @"value": @NO, @"key": @"DYYYisHideStatusbar"},
+                @{@"title": @"关注二次确认", @"type": @"switch", @"value": @NO, @"key": @"DYYYfollowTips"},
+                @{@"title": @"收藏二次确认", @"type": @"switch", @"value": @NO, @"key": @"DYYYcollectTips"},
+                @{@"title": @"直播默认最高画质", @"type": @"switch", @"value": @NO, @"key": @"DYYYEnableLiveHighestQuality"},
+                @{@"title": @"视频默认最高画质", @"type": @"switch", @"value": @NO, @"key": @"DYYYEnableVideoHighestQuality"},
+                @{@"title": @"禁用直播PCDN功能", @"type": @"switch", @"value": @NO, @"key": @"DYYYDisableLivePCDN"}
+            ]]
+        } mutableCopy],
+        
+        // 界面设置
+        [@{
+            @"title": @"界面设置",
+            @"expanded": @NO,
+            @"items": [self loadSettingsForSection:@[
+                @{@"title": @"设置顶栏透明", @"type": @"input", @"value": @"1.0", @"key": @"DYYYtopbartransparent", @"placeholder": @"0-1小数"},
+                @{@"title": @"设置全局透明", @"type": @"input", @"value": @"1.0", @"key": @"DYYYGlobalTransparency", @"placeholder": @"0-1小数"},
+                @{@"title": @"首页头像透明", @"type": @"input", @"value": @"1.0", @"key": @"DYYYAvatarViewTransparency", @"placeholder": @"0-1小数"},
+                @{@"title": @"右侧栏缩放度", @"type": @"input", @"value": @"", @"key": @"DYYYElementScale", @"placeholder": @"不填默认"},
+                @{@"title": @"昵称文案缩放", @"type": @"input", @"value": @"", @"key": @"DYYYNicknameScale", @"placeholder": @"不填默认"},
+                @{@"title": @"昵称下移距离", @"type": @"input", @"value": @"", @"key": @"DYYYNicknameVerticalOffset", @"placeholder": @"不填默认"},
+                @{@"title": @"文案下移距离", @"type": @"input", @"value": @"", @"key": @"DYYYDescriptionVerticalOffset", @"placeholder": @"不填默认"},
+                @{@"title": @"属地上移距离", @"type": @"input", @"value": @"", @"key": @"DYYYIPLabelVerticalOffset", @"placeholder": @"不填默认"},
+                @{@"title": @"设置首页标题", @"type": @"input", @"value": @"", @"key": @"DYYYIndexTitle", @"placeholder": @"不填默认"},
+                @{@"title": @"设置朋友标题", @"type": @"input", @"value": @"", @"key": @"DYYYFriendsTitle", @"placeholder": @"不填默认"},
+                @{@"title": @"设置消息标题", @"type": @"input", @"value": @"", @"key": @"DYYYMsgTitle", @"placeholder": @"不填默认"},
+                @{@"title": @"设置我的标题", @"type": @"input", @"value": @"", @"key": @"DYYYSelfTitle", @"placeholder": @"不填默认"}
+            ]]
+        } mutableCopy],
+        
+        // 隐藏设置
+        [@{
+            @"title": @"隐藏设置",
+            @"expanded": @NO,
+            @"items": [self loadSettingsForSection:@[
+                @{@"title": @"隐藏全屏观看", @"type": @"switch", @"value": @NO, @"key": @"DYYYisHiddenEntry"},
+                @{@"title": @"隐藏底栏商城", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideShopButton"},
+                @{@"title": @"隐藏双列箭头", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideDoubleColumnEntry"},
+                @{@"title": @"隐藏底栏消息", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideMessageButton"},
+                @{@"title": @"隐藏底栏朋友", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideFriendsButton"},
+                @{@"title": @"隐藏底栏我的", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideMyButton"},
+                @{@"title": @"隐藏底栏加号", @"type": @"switch", @"value": @NO, @"key": @"DYYYisHiddenJia"},
+                @{@"title": @"隐藏底栏红点", @"type": @"switch", @"value": @NO, @"key": @"DYYYisHiddenBottomDot"},
+                @{@"title": @"隐藏底栏背景", @"type": @"switch", @"value": @NO, @"key": @"DYYYisHiddenBottomBg"},
+                @{@"title": @"隐藏侧栏红点", @"type": @"switch", @"value": @NO, @"key": @"DYYYisHiddenSidebarDot"},
+                @{@"title": @"隐藏发作品框", @"type": @"switch", @"value": @NO, @"key": @"DYYYHidePostView"},
+                @{@"title": @"隐藏头像加号", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideLOTAnimationView"},
+                @{@"title": @"隐藏点赞数值", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideLikeLabel"},
+                @{@"title": @"隐藏评论数值", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideCommentLabel"},
+                @{@"title": @"隐藏收藏数值", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideCollectLabel"},
+                @{@"title": @"隐藏分享数值", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideShareLabel"},
+                @{@"title": @"隐藏点赞按钮", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideLikeButton"},
+                @{@"title": @"隐藏评论按钮", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideCommentButton"},
+                @{@"title": @"隐藏收藏按钮", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideCollectButton"},
+                @{@"title": @"隐藏头像按钮", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideAvatarButton"},
+                @{@"title": @"隐藏音乐按钮", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideMusicButton"},
+                @{@"title": @"隐藏分享按钮", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideShareButton"},
+                @{@"title": @"隐藏视频定位", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideLocation"},
+                @{@"title": @"隐藏右上搜索", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideDiscover"},
+                @{@"title": @"隐藏相关搜索", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideInteractionSearch"},
+                @{@"title": @"隐藏搜索同款", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideSearchSame"},
+                @{@"title": @"隐藏长框搜索", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideSearchEntrance"},
+                @{@"title": @"隐藏进入直播", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideEnterLive"},
+                @{@"title": @"隐藏评论视图", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideCommentViews"},
+                @{@"title": @"隐藏通知提示", @"type": @"switch", @"value": @NO, @"key": @"DYYYHidePushBanner"},
+                @{@"title": @"隐藏头像列表", @"type": @"switch", @"value": @NO, @"key": @"DYYYisHiddenAvatarList"},
+                @{@"title": @"隐藏头像气泡", @"type": @"switch", @"value": @NO, @"key": @"DYYYisHiddenAvatarBubble"},
+                @{@"title": @"隐藏左侧边栏", @"type": @"switch", @"value": @NO, @"key": @"DYYYisHiddenLeftSideBar"},
+                @{@"title": @"隐藏吃喝玩乐", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideNearbyCapsuleView"},
+                @{@"title": @"隐藏弹幕按钮", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideDanmuButton"},
+                @{@"title": @"隐藏取消静音", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideCancelMute"},
+                @{@"title": @"隐藏去汽水听", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideQuqishuiting"},
+                @{@"title": @"隐藏共创头像", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideGongChuang"},
+                @{@"title": @"隐藏热点提示", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideHotspot"},
+                @{@"title": @"隐藏推荐提示", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideRecommendTips"},
+                @{@"title": @"隐藏分享提示", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideShareContentView"},
+                @{@"title": @"隐藏作者声明", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideAntiAddictedNotice"},
+                @{@"title": @"隐藏底部相关", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideBottomRelated"},
+                @{@"title": @"隐藏拍摄同款", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideFeedAnchorContainer"},
+                @{@"title": @"隐藏挑战贴纸", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideChallengeStickers"},
+                @{@"title": @"隐藏校园提示", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideTemplateTags"},
+                @{@"title": @"隐藏作者店铺", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideHisShop"},
+                @{@"title": @"隐藏关注直播", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideConcernCapsuleView"},
+                @{@"title": @"隐藏顶栏横线", @"type": @"switch", @"value": @NO, @"key": @"DYYYHidentopbarprompt"},
+                @{@"title": @"隐藏视频合集", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideTemplateVideo"},
+                @{@"title": @"隐藏短剧合集", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideTemplatePlaylet"},
+                @{@"title": @"隐藏动图标签", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideLiveGIF"},
+                @{@"title": @"隐藏笔记标签", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideItemTag"},
+                @{@"title": @"隐藏底部话题", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideTemplateGroup"},
+                @{@"title": @"隐藏相机定位", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideCameraLocation"},
+                @{@"title": @"隐藏视频滑条", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideStoryProgressSlide"},
+                @{@"title": @"隐藏图片滑条", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideDotsIndicator"},
+                @{@"title": @"隐藏分享私信", @"type": @"switch", @"value": @NO, @"key": @"DYYYHidePrivateMessages"},
+                @{@"title": @"隐藏昵称右侧", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideRightLable"},
+                @{@"title": @"隐藏群聊商店", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideGroupShop"},
+                @{@"title": @"隐藏直播胶囊", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideLiveCapsuleView"},
+                @{@"title": @"隐藏关注顶端", @"type": @"switch", @"value": @NO, @"key": @"DYYYHidenLiveView"},
+                @{@"title": @"隐藏同城顶端", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideMenuView"},
+                @{@"title": @"隐藏群直播中", @"type": @"switch", @"value": @NO, @"key": @"DYYYGroupLiving"},
+                @{@"title": @"隐藏聊天底栏", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideGroupInputActionBar"},
+                @{@"title": @"隐藏添加朋友", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideButton"},
+                @{@"title": @"隐藏日常按钮", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideFamiliar"},
+                @{@"title": @"隐藏直播广场", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideLivePlayground"},
+                @{@"title": @"隐藏礼物展馆", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideGiftPavilion"},
+                @{@"title": @"隐藏顶栏红点", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideTopBarBadge"},
+                @{@"title": @"隐藏退出清屏", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideLiveRoomClear"},
+                @{@"title": @"隐藏投屏按钮", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideLiveRoomMirroring"},
+                @{@"title": @"隐藏直播发现", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideLiveDiscovery"},
+                @{@"title": @"隐藏直播点歌", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideKTVSongIndicator"},
+                @{@"title": @"隐藏流量提醒", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideCellularAlert"},
+                @{@"title": @"隐藏红包悬浮", @"type": @"switch", @"value": @NO, @"key": @"DYYYHidePendantGroup"},
+                @{@"title": @"隐藏聊天评论", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideChatCommentBg"},
+                @{@"title": @"隐藏章节进度", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideChapterProgress"},
+                @{@"title": @"隐藏键盘AI", @"type": @"switch", @"value": @NO, @"key": @"DYYYHidekeyboardai"}
+            ]]
+        } mutableCopy],
+        
+        // 顶栏移除
+        [@{
+            @"title": @"顶栏移除",
+            @"expanded": @NO,
+            @"items": [self loadSettingsForSection:@[
+                @{@"title": @"移除推荐", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideHotContainer"},
+                @{@"title": @"移除关注", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideFollow"},
+                @{@"title": @"移除精选", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideMediumVideo"},
+                @{@"title": @"移除商城", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideMall"},
+                @{@"title": @"移除朋友", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideFriend"},
+                @{@"title": @"移除同城", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideNearby"},
+                @{@"title": @"移除团购", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideGroupon"},
+                @{@"title": @"移除直播", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideTabLive"},
+                @{@"title": @"移除热点", @"type": @"switch", @"value": @NO, @"key": @"DYYYHidePadHot"},
+                @{@"title": @"移除经验", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideHangout"},
+                @{@"title": @"移除短剧", @"type": @"switch", @"value": @NO, @"key": @"DYYYHidePlaylet"},
+                @{@"title": @"移除看剧", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideCinema"},
+                @{@"title": @"移除少儿", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideKidsV2"},
+                @{@"title": @"移除游戏", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideGame"}
+            ]]
+        } mutableCopy],
+        
+        // 隐藏面板
+        [@{
+            @"title": @"隐藏面板",
+            @"expanded": @NO,
+            @"items": [self loadSettingsForSection:@[
+                @{@"title": @"隐藏面板日常", @"type": @"switch", @"value": @NO, @"key": @"DYYYHidePanelDaily"},
+                @{@"title": @"隐藏面板推荐", @"type": @"switch", @"value": @NO, @"key": @"DYYYHidePanelRecommend"},
+                @{@"title": @"隐藏面板举报", @"type": @"switch", @"value": @NO, @"key": @"DYYYHidePanelReport"},
+                @{@"title": @"隐藏面板倍速", @"type": @"switch", @"value": @NO, @"key": @"DYYYHidePanelSpeed"},
+                @{@"title": @"隐藏面板清屏", @"type": @"switch", @"value": @NO, @"key": @"DYYYHidePanelClearScreen"},
+                @{@"title": @"隐藏面板缓存", @"type": @"switch", @"value": @NO, @"key": @"DYYYHidePanelFavorite"},
+                @{@"title": @"隐藏面板投屏", @"type": @"switch", @"value": @NO, @"key": @"DYYYHidePanelCast"},
+                @{@"title": @"隐藏面板弹幕", @"type": @"switch", @"value": @NO, @"key": @"DYYYHidePanelSubtitle"},
+                @{@"title": @"隐藏面板识图", @"type": @"switch", @"value": @NO, @"key": @"DYYYHidePanelSearchImage"},
+                @{@"title": @"隐藏面板听抖音", @"type": @"switch", @"value": @NO, @"key": @"DYYYHidePanelListenDouyin"},
+                @{@"title": @"隐藏电脑Pad打开", @"type": @"switch", @"value": @NO, @"key": @"DYYYHidePanelOpenInPC"},
+                @{@"title": @"隐藏面板稍后再看", @"type": @"switch", @"value": @NO, @"key": @"DYYYHidePanelLater"},
+                @{@"title": @"隐藏面板自动连播", @"type": @"switch", @"value": @NO, @"key": @"DYYYHidePanelAutoPlay"},
+                @{@"title": @"隐藏面板不感兴趣", @"type": @"switch", @"value": @NO, @"key": @"DYYYHidePanelNotInterested"},
+                @{@"title": @"隐藏面板后台播放", @"type": @"switch", @"value": @NO, @"key": @"DYYYHidePanelBackgroundPlay"},
+                @{@"title": @"隐藏双列快捷入口", @"type": @"switch", @"value": @NO, @"key": @"DYYYHidePanelBiserial"},
+                @{@"title": @"隐藏评论分享", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideCommentShareToFriends"},
+                @{@"title": @"隐藏评论复制", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideCommentLongPressCopy"},
+                @{@"title": @"隐藏评论保存", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideCommentLongPressSaveImage"},
+                @{@"title": @"隐藏评论举报", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideCommentLongPressReport"},
+                @{@"title": @"隐藏评论搜索", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideCommentLongPressSearch"},
+                @{@"title": @"隐藏评论转发日常", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideCommentLongPressDaily"},
+                @{@"title": @"隐藏评论视频回复", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideCommentLongPressVideoReply"},
+                @{@"title": @"隐藏评论识别图片", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideCommentLongPressPictureSearch"}
+            ]]
+        } mutableCopy],
+        
+        // 面板设置
+        [@{
+            @"title": @"面板设置",
+            @"expanded": @NO,
+            @"items": [self loadSettingsForSection:@[
+                @{@"title": @"启用新版玻璃面板", @"type": @"switch", @"value": @NO, @"key": @"DYYYisEnableModern"},
+                @{@"title": @"启用新版浅色面板", @"type": @"switch", @"value": @NO, @"key": @"DYYYisEnableModernLight"},
+                @{@"title": @"新版面板跟随系统", @"type": @"switch", @"value": @NO, @"key": @"DYYYModernPanelFollowSystem"},
+                @{@"title": @"长按面板保存视频", @"type": @"switch", @"value": @NO, @"key": @"DYYYLongPressSaveVideo"},
+                @{@"title": @"长按面板保存封面", @"type": @"switch", @"value": @NO, @"key": @"DYYYLongPressSaveCover"},
+                @{@"title": @"长按面板保存音频", @"type": @"switch", @"value": @NO, @"key": @"DYYYLongPressSaveAudio"},
+                @{@"title": @"长按面板保存图片", @"type": @"switch", @"value": @NO, @"key": @"DYYYLongPressSaveCurrentImage"},
+                @{@"title": @"长按保存所有图片", @"type": @"switch", @"value": @NO, @"key": @"DYYYLongPressSaveAllImages"},
+                @{@"title": @"长按面板生成视频", @"type": @"switch", @"value": @NO, @"key": @"DYYYLongPressCreateVideo"},
+                @{@"title": @"长按面板复制文案", @"type": @"switch", @"value": @NO, @"key": @"DYYYLongPressCopyText"},
+                @{@"title": @"长按面板复制链接", @"type": @"switch", @"value": @NO, @"key": @"DYYYLongPressCopyLink"},
+                @{@"title": @"长按面板接口解析", @"type": @"switch", @"value": @NO, @"key": @"DYYYLongPressApiDownload"},
+                @{@"title": @"长按面板定时关闭", @"type": @"switch", @"value": @NO, @"key": @"DYYYLongPressTimerClose"},
+                @{@"title": @"长按面板过滤文案", @"type": @"switch", @"value": @NO, @"key": @"DYYYLongPressFilterTitle"},
+                @{@"title": @"长按面板过滤作者", @"type": @"switch", @"value": @NO, @"key": @"DYYYLongPressFilterUser"},
+                @{@"title": @"双击面板保存视频", @"type": @"switch", @"value": @NO, @"key": @"DYYYDoubleTapDownload"},
+                @{@"title": @"双击面板保存音频", @"type": @"switch", @"value": @NO, @"key": @"DYYYDoubleTapDownloadAudio"},
+                @{@"title": @"双击面板接口解析", @"type": @"switch", @"value": @NO, @"key": @"DYYYDoubleInterfaceDownload"},
+                @{@"title": @"双击面板复制文案", @"type": @"switch", @"value": @NO, @"key": @"DYYYDoubleTapCopyDesc"},
+                @{@"title": @"双击面板打开评论", @"type": @"switch", @"value": @NO, @"key": @"DYYYDoubleTapComment"},
+                @{@"title": @"双击面板点赞视频", @"type": @"switch", @"value": @NO, @"key": @"DYYYDoubleTapLike"},
+                @{@"title": @"双击面板分享视频", @"type": @"switch", @"value": @NO, @"key": @"DYYYDoubleTapshowSharePanel"},
+                @{@"title": @"双击面板长按面板", @"type": @"switch", @"value": @NO, @"key": @"DYYYDoubleTapshowDislikeOnVideo"}
+            ]]
+        } mutableCopy],
+        
+        // 功能设置
+        [@{
+            @"title": @"功能设置",
+            @"expanded": @NO,
+            @"items": [self loadSettingsForSection:@[
+                @{@"title": @"启用双击打开评论", @"type": @"switch", @"value": @NO, @"key": @"DYYYEnableDoubleOpenComment"},
+                @{@"title": @"启用双击打开菜单", @"type": @"switch", @"value": @NO, @"key": @"DYYYEnableDoubleOpenAlertController"},
+                @{@"title": @"启用自动勾选原图", @"type": @"switch", @"value": @NO, @"key": @"DYYYisAutoSelectOriginalPhoto"},
+                @{@"title": @"资料默认进入作品", @"type": @"switch", @"value": @NO, @"key": @"DYYYDefaultEnterWorks"},
+                @{@"title": @"启用保存他人头像", @"type": @"switch", @"value": @NO, @"key": @"DYYYEnableSaveAvatar"},
+                @{@"title": @"接口解析保存媒体", @"type": @"input", @"value": @"", @"key": @"DYYYInterfaceDownload", @"placeholder": @"不填关闭"},
+                @{@"title": @"接口显示清晰选项", @"type": @"switch", @"value": @NO, @"key": @"DYYYShowAllVideoQuality"},
+                @{@"title": @"移除评论实况水印", @"type": @"switch", @"value": @NO, @"key": @"DYYYCommentLivePhotoNotWaterMark"},
+                @{@"title": @"移除评论图片水印", @"type": @"switch", @"value": @NO, @"key": @"DYYYCommentNotWaterMark"},
+                @{@"title": @"禁用点击首页刷新", @"type": @"switch", @"value": @NO, @"key": @"DYYYDisableHomeRefresh"},
+                @{@"title": @"禁用双击视频点赞", @"type": @"switch", @"value": @NO, @"key": @"DYYYDouble"},
+                @{@"title": @"保存评论区表情包", @"type": @"switch", @"value": @NO, @"key": @"DYYYForceDownloadEmotion"},
+                @{@"title": @"保存预览页表情包", @"type": @"switch", @"value": @NO, @"key": @"DYYYForceDownloadPreviewEmotion"},
+                @{@"title": @"保存聊天页表情包", @"type": @"switch", @"value": @NO, @"key": @"DYYYForceDownloadIMEmotion"},
+                @{@"title": @"长按评论复制文案", @"type": @"switch", @"value": @NO, @"key": @"DYYYCommentCopyText"}
+            ]]
+        } mutableCopy],
+        
+        // 悬浮按钮
+        [@{
+            @"title": @"悬浮按钮",
+            @"expanded": @NO,
+            @"items": [self loadSettingsForSection:@[
+                @{@"title": @"启用快捷倍速按钮", @"type": @"switch", @"value": @NO, @"key": @"DYYYEnableFloatSpeedButton"},
+                @{@"title": @"快捷倍速数值设置", @"type": @"input", @"value": @"", @"key": @"DYYYSpeedSettings", @"placeholder": @"逗号分隔"},
+                @{@"title": @"自动恢复默认倍速", @"type": @"switch", @"value": @NO, @"key": @"DYYYAutoRestoreSpeed"},
+                @{@"title": @"倍速按钮显示后缀", @"type": @"switch", @"value": @NO, @"key": @"DYYYSpeedButtonShowX"},
+                @{@"title": @"快捷倍速按钮大小", @"type": @"input", @"value": @"32", @"key": @"DYYYSpeedButtonSize", @"placeholder": @"默认32"},
+                @{@"title": @"启用一键清屏按钮", @"type": @"switch", @"value": @NO, @"key": @"DYYYEnableFloatClearButton"},
+                @{@"title": @"快捷清屏按钮大小", @"type": @"input", @"value": @"40", @"key": @"DYYYEnableFloatClearButtonSize", @"placeholder": @"默认40"},
+                @{@"title": @"清屏移除时间进度", @"type": @"switch", @"value": @NO, @"key": @"DYYYEnabshijianjindu"},
+                @{@"title": @"清屏隐藏时间进度", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideTimeProgress"}
+            ]]
+        } mutableCopy]
+    ]];
+}
+
+- (NSArray *)loadSettingsForSection:(NSArray *)defaultItems {
+    NSMutableArray *loadedItems = [NSMutableArray array];
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     
-    // 如果快捷倍速数值未设置，设置默认值
-    if (![defaults objectForKey:@"DYYYSpeedSettings"]) {
-        [defaults setObject:@"1.0,1.25,1.5,2.0" forKey:@"DYYYSpeedSettings"];
-    }
-    
-    // 如果按钮大小未设置，设置默认值
-    if (![defaults objectForKey:@"DYYYSpeedButtonSize"]) {
-        [defaults setFloat:32.0 forKey:@"DYYYSpeedButtonSize"];
-    }
-    
-    [defaults synchronize];
-}
-
-- (void)viewDidAppear:(BOOL)animated {
-    [super viewDidAppear:animated];
-    
-    if (!self.isAgreementShown) {
-        [self checkFirstLaunch];
-        self.isAgreementShown = YES;
-    }
-}
-
-- (void)setupAppearance {
-    self.navigationController.navigationBar.barTintColor = [UIColor clearColor];
-    self.navigationController.navigationBar.tintColor = [UIColor whiteColor];
-    self.navigationController.navigationBar.largeTitleTextAttributes = @{NSForegroundColorAttributeName: [UIColor whiteColor]};
-    self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeAlways;
-    self.navigationController.navigationBar.prefersLargeTitles = YES;
-}
-
-- (void)setupBlurEffect {
-    UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
-    self.blurEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
-    self.blurEffectView.frame = self.view.bounds;
-    self.blurEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    [self.view addSubview:self.blurEffectView];
-    
-    UIVibrancyEffect *vibrancyEffect = [UIVibrancyEffect effectForBlurEffect:blurEffect];
-    self.vibrancyEffectView = [[UIVisualEffectView alloc] initWithEffect:vibrancyEffect];
-    self.vibrancyEffectView.frame = self.blurEffectView.bounds;
-    self.vibrancyEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    [self.blurEffectView.contentView addSubview:self.vibrancyEffectView];
-    
-    UIView *overlayView = [[UIView alloc] initWithFrame:self.view.bounds];
-    overlayView.backgroundColor = [UIColor colorWithWhite:0 alpha:0.3];
-    overlayView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    [self.view addSubview:overlayView];
-}
-
-- (void)setupTableView {
-    self.tableView = [[UITableView alloc] initWithFrame:self.view.bounds style:UITableViewStyleInsetGrouped];
-    self.tableView.delegate = self;
-    self.tableView.dataSource = self;
-    self.tableView.backgroundColor = [UIColor clearColor];
-    self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
-    self.tableView.contentInset = UIEdgeInsetsMake(20, 0, 0, 0);
-    self.tableView.sectionHeaderTopPadding = 0;
-    [self.view addSubview:self.tableView];
-}
-
-- (void)setupSettingItems {
-    self.settingSections = @[
-        @[
-            [DYYYSettingItem itemWithTitle:@"启用弹幕改色" key:@"DYYYEnableDanmuColor" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"自定弹幕颜色" key:@"DYYYdanmuColor" type:DYYYSettingItemTypeTextField placeholder:@"十六进制"],
-            [DYYYSettingItem itemWithTitle:@"设置默认倍速" key:@"DYYYDefaultSpeed" type:DYYYSettingItemTypeSpeedPicker],
-            [DYYYSettingItem itemWithTitle:@"设置长按倍速" key:@"DYYYLongPressSpeed" type:DYYYSettingItemTypeSpeedPicker],
-            [DYYYSettingItem itemWithTitle:@"显示进度时长" key:@"DYYYisShowScheduleDisplay" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"进度纵轴位置" key:@"DYYYTimelineVerticalPosition" type:DYYYSettingItemTypeTextField placeholder:@"-12.5"],
-            [DYYYSettingItem itemWithTitle:@"进度标签颜色" key:@"DYYYProgressLabelColor" type:DYYYSettingItemTypeTextField placeholder:@"十六进制"],
-            [DYYYSettingItem itemWithTitle:@"隐藏视频进度" key:@"DYYYHideVideoProgress" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"启用自动播放" key:@"DYYYisEnableAutoPlay" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"推荐过滤直播" key:@"DYYYisSkipLive" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"推荐过滤热点" key:@"DYYYisSkipHotSpot" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"推荐过滤低赞" key:@"DYYYfilterLowLikes" type:DYYYSettingItemTypeTextField placeholder:@"填0关闭"],
-            [DYYYSettingItem itemWithTitle:@"推荐过滤文案" key:@"DYYYfilterKeywords" type:DYYYSettingItemTypeTextField placeholder:@"不填关闭"],           
-            [DYYYSettingItem itemWithTitle:@"推荐视频时限" key:@"DYYYfiltertimelimit" type:DYYYSettingItemTypeTextField placeholder:@"填0关闭，单位为天"],
-            [DYYYSettingItem itemWithTitle:@"启用首页净化" key:@"DYYYisEnablePure" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"启用首页全屏" key:@"DYYYisEnableFullScreen" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"启用屏蔽广告" key:@"DYYYNoAds" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"屏蔽检测更新" key:@"DYYYNoUpdates" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"去青少年弹窗" key:@"DYYYHideteenmode" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"评论区毛玻璃" key:@"DYYYisEnableCommentBlur" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"通知玻璃效果" key:@"DYYYEnableNotificationTransparency" type:DYYYSettingItemTypeSwitch],  
-            [DYYYSettingItem itemWithTitle:@"毛玻璃透明度" key:@"DYYYCommentBlurTransparent" type:DYYYSettingItemTypeTextField placeholder:@"0-1小数"],
-            [DYYYSettingItem itemWithTitle:@"通知圆角半径" key:@"DYYYNotificationCornerRadius" type:DYYYSettingItemTypeTextField placeholder:@"默认12"],
-            [DYYYSettingItem itemWithTitle:@"时间属地显示" key:@"DYYYisEnableArea" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"国外解析账号" key:@"DYYYGeonamesUsername" type:DYYYSettingItemTypeTextField placeholder:@"不填默认"],
-            [DYYYSettingItem itemWithTitle:@"时间标签颜色" key:@"DYYYLabelColor" type:DYYYSettingItemTypeTextField placeholder:@"十六进制"],
-            [DYYYSettingItem itemWithTitle:@"时间随机渐变" key:@"DYYYEnabsuijiyanse" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏系统顶栏" key:@"DYYYisHideStatusbar" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"关注二次确认" key:@"DYYYfollowTips" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"收藏二次确认" key:@"DYYYcollectTips" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"直播默认最高画质" key:@"DYYYEnableLiveHighestQuality" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"视频默认最高画质" key:@"DYYYEnableVideoHighestQuality" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"禁用直播PCDN功能" key:@"DYYYDisableLivePCDN" type:DYYYSettingItemTypeSwitch]
-        ],
-        @[
-            [DYYYSettingItem itemWithTitle:@"设置顶栏透明" key:@"DYYYtopbartransparent" type:DYYYSettingItemTypeTextField placeholder:@"0-1小数"],
-            [DYYYSettingItem itemWithTitle:@"设置全局透明" key:@"DYYYGlobalTransparency" type:DYYYSettingItemTypeTextField placeholder:@"0-1小数"],
-            [DYYYSettingItem itemWithTitle:@"首页头像透明" key:@"DYYYAvatarViewTransparency" type:DYYYSettingItemTypeTextField placeholder:@"0-1小数"],                              
-            [DYYYSettingItem itemWithTitle:@"右侧栏缩放度" key:@"DYYYElementScale" type:DYYYSettingItemTypeTextField placeholder:@"不填默认"],
-            [DYYYSettingItem itemWithTitle:@"昵称文案缩放" key:@"DYYYNicknameScale" type:DYYYSettingItemTypeTextField placeholder:@"不填默认"],
-            [DYYYSettingItem itemWithTitle:@"昵称下移距离" key:@"DYYYNicknameVerticalOffset" type:DYYYSettingItemTypeTextField placeholder:@"不填默认"],
-            [DYYYSettingItem itemWithTitle:@"文案下移距离" key:@"DYYYDescriptionVerticalOffset" type:DYYYSettingItemTypeTextField placeholder:@"不填默认"],
-            [DYYYSettingItem itemWithTitle:@"属地上移距离" key:@"DYYYIPLabelVerticalOffset" type:DYYYSettingItemTypeTextField placeholder:@"不填默认"],
-            [DYYYSettingItem itemWithTitle:@"设置首页标题" key:@"DYYYIndexTitle" type:DYYYSettingItemTypeTextField placeholder:@"不填默认"],
-            [DYYYSettingItem itemWithTitle:@"设置朋友标题" key:@"DYYYFriendsTitle" type:DYYYSettingItemTypeTextField placeholder:@"不填默认"],
-            [DYYYSettingItem itemWithTitle:@"设置消息标题" key:@"DYYYMsgTitle" type:DYYYSettingItemTypeTextField placeholder:@"不填默认"],
-            [DYYYSettingItem itemWithTitle:@"设置我的标题" key:@"DYYYSelfTitle" type:DYYYSettingItemTypeTextField placeholder:@"不填默认"]
-        ],
-        @[
-            [DYYYSettingItem itemWithTitle:@"隐藏全屏观看" key:@"DYYYisHiddenEntry" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏底栏商城" key:@"DYYYHideShopButton" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏双列箭头" key:@"DYYYHideDoubleColumnEntry" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏底栏消息" key:@"DYYYHideMessageButton" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏底栏朋友" key:@"DYYYHideFriendsButton" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏底栏我的" key:@"DYYYHideMyButton" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏底栏加号" key:@"DYYYisHiddenJia" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏底栏红点" key:@"DYYYisHiddenBottomDot" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏底栏背景" key:@"DYYYisHiddenBottomBg" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏侧栏红点" key:@"DYYYisHiddenSidebarDot" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏发作品框" key:@"DYYYHidePostView" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏头像加号" key:@"DYYYHideLOTAnimationView" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏点赞数值" key:@"DYYYHideLikeLabel" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏评论数值" key:@"DYYYHideCommentLabel" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏收藏数值" key:@"DYYYHideCollectLabel" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏分享数值" key:@"DYYYHideShareLabel" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏点赞按钮" key:@"DYYYHideLikeButton" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏评论按钮" key:@"DYYYHideCommentButton" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏收藏按钮" key:@"DYYYHideCollectButton" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏头像按钮" key:@"DYYYHideAvatarButton" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏音乐按钮" key:@"DYYYHideMusicButton" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏分享按钮" key:@"DYYYHideShareButton" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏视频定位" key:@"DYYYHideLocation" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏右上搜索" key:@"DYYYHideDiscover" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏相关搜索" key:@"DYYYHideInteractionSearch" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏搜索同款" key:@"DYYYHideSearchSame" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏长框搜索" key:@"DYYYHideSearchEntrance" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏进入直播" key:@"DYYYHideEnterLive" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏评论视图"  key:@"DYYYHideCommentViews" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏通知提示" key:@"DYYYHidePushBanner" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏头像列表" key:@"DYYYisHiddenAvatarList" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏头像气泡" key:@"DYYYisHiddenAvatarBubble" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏左侧边栏" key:@"DYYYisHiddenLeftSideBar" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏吃喝玩乐" key:@"DYYYHideNearbyCapsuleView" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏弹幕按钮" key:@"DYYYHideDanmuButton" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏取消静音" key:@"DYYYHideCancelMute" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏去汽水听" key:@"DYYYHideQuqishuiting" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏共创头像" key:@"DYYYHideGongChuang" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏热点提示" key:@"DYYYHideHotspot" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏推荐提示" key:@"DYYYHideRecommendTips" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏分享提示" key:@"DYYYHideShareContentView" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏作者声明" key:@"DYYYHideAntiAddictedNotice" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏底部相关" key:@"DYYYHideBottomRelated" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏拍摄同款" key:@"DYYYHideFeedAnchorContainer" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏挑战贴纸" key:@"DYYYHideChallengeStickers" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏校园提示" key:@"DYYYHideTemplateTags" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏作者店铺" key:@"DYYYHideHisShop" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏关注直播" key:@"DYYYHideConcernCapsuleView" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏顶栏横线" key:@"DYYYHidentopbarprompt" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏视频合集" key:@"DYYYHideTemplateVideo" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏短剧合集" key:@"DYYYHideTemplatePlaylet" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏动图标签" key:@"DYYYHideLiveGIF" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏笔记标签" key:@"DYYYHideItemTag" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏底部话题" key:@"DYYYHideTemplateGroup" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏相机定位" key:@"DYYYHideCameraLocation" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏视频滑条" key:@"DYYYHideStoryProgressSlide" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏图片滑条" key:@"DYYYHideDotsIndicator" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏分享私信" key:@"DYYYHidePrivateMessages" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏昵称右侧" key:@"DYYYHideRightLable" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏群聊商店" key:@"DYYYHideGroupShop" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏直播胶囊" key:@"DYYYHideLiveCapsuleView" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏关注顶端" key:@"DYYYHidenLiveView" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏同城顶端" key:@"DYYYHideMenuView" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏群直播中" key:@"DYYYGroupLiving" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏聊天底栏" key:@"DYYYHideGroupInputActionBar" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏添加朋友" key:@"DYYYHideButton" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏日常按钮" key:@"DYYYHideFamiliar" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏直播广场" key:@"DYYYHideLivePlayground" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏礼物展馆" key:@"DYYYHideGiftPavilion" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏顶栏红点" key:@"DYYYHideTopBarBadge" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏退出清屏" key:@"DYYYHideLiveRoomClear" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏投屏按钮" key:@"DYYYHideLiveRoomMirroring" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏直播发现" key:@"DYYYHideLiveDiscovery" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏直播点歌" key:@"DYYYHideKTVSongIndicator" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏流量提醒" key:@"DYYYHideCellularAlert" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏红包悬浮" key:@"DYYYHidePendantGroup" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏聊天评论" key:@"DYYYHideChatCommentBg" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏章节进度" key:@"DYYYHideChapterProgress" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏键盘AI" key:@"DYYYHidekeyboardai" type:DYYYSettingItemTypeSwitch]
-        ],
-        @[
-            [DYYYSettingItem itemWithTitle:@"移除推荐" key:@"DYYYHideHotContainer" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"移除关注" key:@"DYYYHideFollow" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"移除精选" key:@"DYYYHideMediumVideo" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"移除商城" key:@"DYYYHideMall" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"移除朋友" key:@"DYYYHideFriend" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"移除同城" key:@"DYYYHideNearby" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"移除团购" key:@"DYYYHideGroupon" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"移除直播" key:@"DYYYHideTabLive" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"移除热点" key:@"DYYYHidePadHot" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"移除经验" key:@"DYYYHideHangout" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"移除短剧" key:@"DYYYHidePlaylet" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"移除看剧" key:@"DYYYHideCinema" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"移除少儿" key:@"DYYYHideKidsV2" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"移除游戏" key:@"DYYYHideGame" type:DYYYSettingItemTypeSwitch]
-        ],
-        @[
-            [DYYYSettingItem itemWithTitle:@"隐藏面板日常" key:@"DYYYHidePanelDaily" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏面板推荐" key:@"DYYYHidePanelRecommend" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏面板举报" key:@"DYYYHidePanelReport" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏面板倍速" key:@"DYYYHidePanelSpeed" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏面板清屏" key:@"DYYYHidePanelClearScreen" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏面板缓存" key:@"DYYYHidePanelFavorite" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏面板投屏" key:@"DYYYHidePanelCast" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏面板弹幕" key:@"DYYYHidePanelSubtitle" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏面板识图" key:@"DYYYHidePanelSearchImage" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏面板听抖音" key:@"DYYYHidePanelListenDouyin" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏电脑Pad打开" key:@"DYYYHidePanelOpenInPC" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏面板稍后再看" key:@"DYYYHidePanelLater" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏面板自动连播" key:@"DYYYHidePanelAutoPlay" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏面板不感兴趣" key:@"DYYYHidePanelNotInterested" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏面板后台播放" key:@"DYYYHidePanelBackgroundPlay" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏双列快捷入口" key:@"DYYYHidePanelBiserial" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏评论分享" key:@"DYYYHideCommentShareToFriends" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏评论复制" key:@"DYYYHideCommentLongPressCopy" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏评论保存" key:@"DYYYHideCommentLongPressSaveImage" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏评论举报" key:@"DYYYHideCommentLongPressReport" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏评论搜索" key:@"DYYYHideCommentLongPressSearch" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏评论转发日常" key:@"DYYYHideCommentLongPressDaily" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏评论视频回复" key:@"DYYYHideCommentLongPressVideoReply" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏评论识别图片" key:@"DYYYHideCommentLongPressPictureSearch" type:DYYYSettingItemTypeSwitch]
-         ],
-        @[
-            [DYYYSettingItem itemWithTitle:@"启用新版玻璃面板" key:@"DYYYisEnableModern" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"启用新版浅色面板" key:@"DYYYisEnableModernLight" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"新版面板跟随系统" key:@"DYYYModernPanelFollowSystem" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"长按面板保存视频" key:@"DYYYLongPressSaveVideo" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"长按面板保存封面" key:@"DYYYLongPressSaveCover" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"长按面板保存音频" key:@"DYYYLongPressSaveAudio" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"长按面板保存图片" key:@"DYYYLongPressSaveCurrentImage" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"长按保存所有图片" key:@"DYYYLongPressSaveAllImages" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"长按面板生成视频" key:@"DYYYLongPressCreateVideo" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"长按面板复制文案" key:@"DYYYLongPressCopyText" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"长按面板复制链接" key:@"DYYYLongPressCopyLink" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"长按面板接口解析" key:@"DYYYLongPressApiDownload" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"长按面板定时关闭" key:@"DYYYLongPressTimerClose" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"长按面板过滤文案" key:@"DYYYLongPressFilterTitle" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"长按面板过滤作者" key:@"DYYYLongPressFilterUser" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"双击面板保存视频" key:@"DYYYDoubleTapDownload" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"双击面板保存音频" key:@"DYYYDoubleTapDownloadAudio" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"双击面板接口解析" key:@"DYYYDoubleInterfaceDownload" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"双击面板复制文案" key:@"DYYYDoubleTapCopyDesc" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"双击面板打开评论" key:@"DYYYDoubleTapComment" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"双击面板点赞视频" key:@"DYYYDoubleTapLike" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"双击面板分享视频" key:@"DYYYDoubleTapshowSharePanel" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"双击面板长按面板" key:@"DYYYDoubleTapshowDislikeOnVideo" type:DYYYSettingItemTypeSwitch]
-         ],
-        @[
-            [DYYYSettingItem itemWithTitle:@"启用双击打开评论" key:@"DYYYEnableDoubleOpenComment" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"启用双击打开菜单" key:@"DYYYEnableDoubleOpenAlertController" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"启用自动勾选原图" key:@"DYYYisAutoSelectOriginalPhoto" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"资料默认进入作品" key:@"DYYYDefaultEnterWorks" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"启用保存他人头像" key:@"DYYYEnableSaveAvatar" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"接口解析保存媒体" key:@"DYYYInterfaceDownload" type:DYYYSettingItemTypeTextField placeholder:@"不填关闭"],
-            [DYYYSettingItem itemWithTitle:@"接口显示清晰选项" key:@"DYYYShowAllVideoQuality" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"移除评论实况水印" key:@"DYYYCommentLivePhotoNotWaterMark" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"移除评论图片水印" key:@"DYYYCommentNotWaterMark" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"禁用点击首页刷新" key:@"DYYYDisableHomeRefresh" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"禁用双击视频点赞" key:@"DYYYDouble" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"保存评论区表情包" key:@"DYYYForceDownloadEmotion" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"保存预览页表情包" key:@"DYYYForceDownloadPreviewEmotion" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"保存聊天页表情包" key:@"DYYYForceDownloadIMEmotion" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"长按评论复制文案" key:@"DYYYCommentCopyText" type:DYYYSettingItemTypeSwitch]
-        ],
-        @[
-            [DYYYSettingItem itemWithTitle:@"启用快捷倍速按钮" key:@"DYYYEnableFloatSpeedButton" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"快捷倍速数值设置" key:@"DYYYSpeedSettings" type:DYYYSettingItemTypeTextField placeholder:@"逗号分隔"],
-            [DYYYSettingItem itemWithTitle:@"自动恢复默认倍速" key:@"DYYYAutoRestoreSpeed" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"倍速按钮显示后缀" key:@"DYYYSpeedButtonShowX" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"快捷倍速按钮大小" key:@"DYYYSpeedButtonSize" type:DYYYSettingItemTypeTextField placeholder:@"默认32"],
-            [DYYYSettingItem itemWithTitle:@"启用一键清屏按钮" key:@"DYYYEnableFloatClearButton" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"快捷清屏按钮大小" key:@"DYYYEnableFloatClearButtonSize" type:DYYYSettingItemTypeTextField placeholder:@"默认40"],
-            [DYYYSettingItem itemWithTitle:@"清屏移除时间进度" key:@"DYYYEnabshijianjindu" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"清屏隐藏时间进度" key:@"DYYYHideTimeProgress" type:DYYYSettingItemTypeSwitch]
-        ]
-    ];
-}
-
-- (void)setupSectionTitles {
-    self.sectionTitles = [@[@"基本设置", @"界面设置", @"隐藏设置", @"顶栏移除",@"隐藏面板", @"面板设置",@"功能设置", @"悬浮按钮"] mutableCopy];
-}
-
-- (void)setupFooterLabel {
-    self.footerLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width, 50)];
-    self.footerLabel.text = [NSString stringWithFormat:@"Developer By @huamidev\nVersion: %@ (%@)", DYYY_VERSION, @"2503End"];
-    self.footerLabel.textAlignment = NSTextAlignmentCenter;
-    self.footerLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightRegular];
-    self.footerLabel.textColor = [UIColor colorWithRed:173/255.0 green:216/255.0 blue:230/255.0 alpha:1.0];
-    self.footerLabel.numberOfLines = 2;
-    self.footerLabel.lineBreakMode = NSLineBreakByWordWrapping;
-    self.tableView.tableFooterView = self.footerLabel;
-}
-
-
-- (void)addTitleGradientAnimation {
-    CAGradientLayer *gradient = [CAGradientLayer layer];
-    gradient.colors = @[(__bridge id)[UIColor systemRedColor].CGColor, (__bridge id)[UIColor systemBlueColor].CGColor];
-    gradient.startPoint = CGPointMake(0, 0);
-    gradient.endPoint = CGPointMake(1, 0);
-    gradient.frame = CGRectMake(0, 0, 150, 30);
-    
-    UIView *titleView = [[UIView alloc] initWithFrame:gradient.frame];
-    [titleView.layer addSublayer:gradient];
-    
-    UILabel *titleLabel = [[UILabel alloc] initWithFrame:titleView.bounds];
-    titleLabel.text = self.title;
-    titleLabel.textAlignment = NSTextAlignmentCenter;
-    titleLabel.font = [UIFont boldSystemFontOfSize:20];
-    titleLabel.textColor = [UIColor clearColor];
-    
-    gradient.mask = titleLabel.layer;
-    self.navigationItem.titleView = titleView;
-    
-    CABasicAnimation *colorChange = [CABasicAnimation animationWithKeyPath:@"colors"];
-    colorChange.toValue = @[(__bridge id)[UIColor systemYellowColor].CGColor, (__bridge id)[UIColor systemGreenColor].CGColor];
-    colorChange.duration = 2.0;
-    colorChange.autoreverses = YES;
-    colorChange.repeatCount = HUGE_VALF;
-    
-    [gradient addAnimation:colorChange forKey:@"colorChangeAnimation"];
-}
-
-#pragma mark - First Launch Agreement
-
-- (void)checkFirstLaunch {
-    
-    BOOL hasAgreed = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"];
-    
-    if (!hasAgreed) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [self showAgreementAlert];
-        });
-    }
-}
-
-- (void)showAgreementAlert {
-    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"用户协议"
-                                                                             message:@"本插件为开源项目\n仅供学习交流用途\n如有侵权请联系, GitHub 仓库：Wtrwx/DYYY\n请遵守当地法律法规, 逆向工程仅为学习目的\n盗用源码进行商业用途/发布但未标记开源项目必究\n详情请参阅项目内 MIT 许可证\n\n请输入\"我已阅读并同意继续使用\"以继续使用"
-                                                                      preferredStyle:UIAlertControllerStyleAlert];
-    
-    [alertController addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) {
-        textField.clearButtonMode = UITextFieldViewModeWhileEditing;
-    }];
-    
-    UIAlertAction *confirmAction = [UIAlertAction actionWithTitle:@"确认" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-        UITextField *textField = alertController.textFields.firstObject;
-        NSString *inputText = textField.text;
+    for (NSDictionary *item in defaultItems) {
+        NSMutableDictionary *mutableItem = [item mutableCopy];
+        NSString *key = item[@"key"];
+        NSString *type = item[@"type"];
         
-        if ([inputText isEqualToString:@"我已阅读并同意继续使用"]) {
-            [[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"DYYYUserAgreementAccepted"];
-            [[NSUserDefaults standardUserDefaults] synchronize];
-        } else {
-            UIAlertController *errorAlert = [UIAlertController alertControllerWithTitle:@"输入错误"
-                                                                               message:@"请正确输入"
-                                                                        preferredStyle:UIAlertControllerStyleAlert];
-            
-            UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-                [self showAgreementAlert];
-            }];
-            
-            [errorAlert addAction:okAction];
-            [self presentViewController:errorAlert animated:YES completion:nil];
+        if ([type isEqualToString:@"switch"]) {
+            if ([defaults objectForKey:key] != nil) {
+                mutableItem[@"value"] = @([defaults boolForKey:key]);
+            }
+        } else if ([type isEqualToString:@"input"]) {
+            NSString *savedValue = [defaults stringForKey:key];
+            if (savedValue != nil) {
+                mutableItem[@"value"] = savedValue;
+            }
         }
-    }];
-
-    UIAlertAction *exitAction = [UIAlertAction actionWithTitle:@"退出" style:UIAlertActionStyleDestructive handler:^(UIAlertAction * _Nonnull action) {
-        exit(0);
-    }];
+        
+        [loadedItems addObject:mutableItem];
+    }
     
-    [alertController addAction:confirmAction];
-    [alertController addAction:exitAction];
-    
-    [self presentViewController:alertController animated:YES completion:nil];
+    return [loadedItems copy];
 }
 
-#pragma mark - UITableViewDataSource
+- (void)setupUI {
+    self.view.backgroundColor = [UIColor clearColor];
+    
+    UIBlurEffect *containerBlur = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemMaterial];
+    self.containerBlurView = [[UIVisualEffectView alloc] initWithEffect:containerBlur];
+    
+    CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
+    CGFloat screenHeight = [UIScreen mainScreen].bounds.size.height;
+    CGFloat containerWidth = MIN(screenWidth - 40, 320);
+    CGFloat containerHeight = MIN(screenHeight - 80, 450);
+    
+    self.containerBlurView.frame = CGRectMake(0, 0, containerWidth, containerHeight);
+    self.containerBlurView.center = self.view.center;
+    self.containerBlurView.layer.cornerRadius = 16;
+    self.containerBlurView.clipsToBounds = YES;
+    self.containerBlurView.layer.shadowColor = [UIColor blackColor].CGColor;
+    self.containerBlurView.layer.shadowOffset = CGSizeMake(0, 4);
+    self.containerBlurView.layer.shadowOpacity = 0.2;
+    self.containerBlurView.layer.shadowRadius = 8;
+    [self.view addSubview:self.containerBlurView];
+    
+    // 标题标签
+    self.titleLabel = [[UILabel alloc] init];
+    self.titleLabel.text = @"DYYY";
+    self.titleLabel.font = [UIFont systemFontOfSize:18];
+    self.titleLabel.textColor = [UIColor labelColor];
+    self.titleLabel.textAlignment = NSTextAlignmentCenter;
+    [self.containerBlurView.contentView addSubview:self.titleLabel];
+    
+    // 关闭按钮
+    self.closeButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    [self.closeButton setTitle:@"✕" forState:UIControlStateNormal];
+    self.closeButton.titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightMedium];
+    self.closeButton.tintColor = [UIColor secondaryLabelColor];
+    [self.closeButton addTarget:self action:@selector(closeButtonTapped) forControlEvents:UIControlEventTouchUpInside];
+    [self.containerBlurView.contentView addSubview:self.closeButton];
+    
+    // 设置表格
+    self.settingsTableView = [[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStyleGrouped];
+    self.settingsTableView.backgroundColor = [UIColor clearColor];
+    self.settingsTableView.dataSource = self;
+    self.settingsTableView.delegate = self;
+    self.settingsTableView.separatorStyle = UITableViewCellSeparatorStyleNone;
+    self.settingsTableView.showsVerticalScrollIndicator = NO;
+    [self.settingsTableView registerClass:[UITableViewCell class] forCellReuseIdentifier:@"SettingsCell"];
+    [self.containerBlurView.contentView addSubview:self.settingsTableView];
+    
+    [self setupConstraints];
+}
+
+- (void)setupConstraints {
+    self.titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
+    self.closeButton.translatesAutoresizingMaskIntoConstraints = NO;
+    self.settingsTableView.translatesAutoresizingMaskIntoConstraints = NO;
+    
+    [NSLayoutConstraint activateConstraints:@[
+        // 容器视图约束
+        [self.containerBlurView.centerXAnchor constraintEqualToAnchor:self.view.centerXAnchor],
+        [self.containerBlurView.centerYAnchor constraintEqualToAnchor:self.view.centerYAnchor],
+        
+        [self.titleLabel.topAnchor constraintEqualToAnchor:self.containerBlurView.contentView.topAnchor constant:15],
+        [self.titleLabel.centerXAnchor constraintEqualToAnchor:self.containerBlurView.contentView.centerXAnchor],
+        
+        [self.closeButton.topAnchor constraintEqualToAnchor:self.containerBlurView.contentView.topAnchor constant:15],
+        [self.closeButton.trailingAnchor constraintEqualToAnchor:self.containerBlurView.contentView.trailingAnchor constant:-15],
+        [self.closeButton.widthAnchor constraintEqualToConstant:25],
+        [self.closeButton.heightAnchor constraintEqualToConstant:25],
+        
+        [self.settingsTableView.topAnchor constraintEqualToAnchor:self.titleLabel.bottomAnchor constant:15],
+        [self.settingsTableView.leadingAnchor constraintEqualToAnchor:self.containerBlurView.contentView.leadingAnchor constant:10],
+        [self.settingsTableView.trailingAnchor constraintEqualToAnchor:self.containerBlurView.contentView.trailingAnchor constant:-10],
+        [self.settingsTableView.bottomAnchor constraintEqualToAnchor:self.containerBlurView.contentView.bottomAnchor constant:-10]
+    ]];
+}
+
+- (void)showModernSettingsPanel {
+    UIViewController *rootVC = [UIApplication sharedApplication].keyWindow.rootViewController;
+    self.modalPresentationStyle = UIModalPresentationOverFullScreen;
+    
+    self.view.alpha = 0;
+    self.containerBlurView.transform = CGAffineTransformMakeScale(0.8, 0.8);
+    
+    [rootVC presentViewController:self animated:NO completion:^{
+        [UIView animateWithDuration:0.3 delay:0 usingSpringWithDamping:0.7 initialSpringVelocity:0.3 options:UIViewAnimationOptionCurveEaseOut animations:^{
+            self.view.alpha = 1;
+            self.containerBlurView.transform = CGAffineTransformIdentity;
+        } completion:nil];
+    }];
+}
+
+- (void)closeButtonTapped {
+    [self dismissWithFadeOut];
+}
+
+- (void)dismissWithFadeOut {
+    [UIView animateWithDuration:0.25 animations:^{
+        self.view.alpha = 0;
+        self.containerBlurView.transform = CGAffineTransformMakeScale(0.85, 0.85);
+    } completion:^(BOOL finished) {
+        [self dismissViewControllerAnimated:NO completion:nil];
+    }];
+}
+
+#pragma mark - UITableView DataSource & Delegate
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-    return self.settingSections.count;
-}
-
-- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
-    switch (section) {
-        case 0:
-            return @"基本设置";
-        case 1:
-            return @"界面设置";
-        case 2:
-            return @"隐藏设置";
-        case 3:
-            return @"顶栏移除";
-        case 4:
-            return @"隐藏面板";
-        case 5:
-            return @"面板设置";
-        case 6:
-            return @"功能设置";
-        case 7:
-            return @"悬浮按钮";
-        default:
-            return @"";
-    }
-}
-
-- (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section {
-    UIView *headerView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, tableView.bounds.size.width, 44)];
-    
-    UILabel *titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(15, 0, headerView.bounds.size.width - 50, 44)];
-    titleLabel.text = [self tableView:tableView titleForHeaderInSection:section];
-    titleLabel.textColor = [UIColor whiteColor];
-    titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightMedium];
-    [headerView addSubview:titleLabel];
-    
-    UIImageView *arrowImageView = [[UIImageView alloc] initWithFrame:CGRectMake(titleLabel.frame.origin.x + titleLabel.frame.size.width - 30, 15, 14, 14)];
-    arrowImageView.image = [UIImage systemImageNamed:[self.expandedSections containsObject:@(section)] ? @"chevron.down" : @"chevron.right"];
-    arrowImageView.tintColor = [UIColor lightGrayColor];
-    arrowImageView.tag = 100;
-    arrowImageView.contentMode = UIViewContentModeScaleAspectFit;
-    [headerView addSubview:arrowImageView];
-    
-    UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
-    button.frame = headerView.bounds;
-    button.tag = section;
-    [button addTarget:self action:@selector(headerTapped:) forControlEvents:UIControlEventTouchUpInside];
-    [headerView addSubview:button];
-    
-    return headerView;
-}
-
-- (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section {
-    return 44;
+    return self.settingsData.count;
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return [self.expandedSections containsObject:@(section)] ? self.settingSections[section].count : 0;
-}
-
-- (void)toggleSection:(UIButton *)sender {
-    NSNumber *section = @(sender.tag);
-    if ([self.expandedSections containsObject:section]) {
-        [self.expandedSections removeObject:section];
-    } else {
-        [self.expandedSections addObject:section];
-    }
-    
-    [self.tableView reloadSections:[NSIndexSet indexSetWithIndex:sender.tag] withRowAnimation:UITableViewRowAnimationFade];
+    NSDictionary *sectionData = self.settingsData[section];
+    BOOL expanded = [sectionData[@"expanded"] boolValue];
+    return expanded ? [sectionData[@"items"] count] + 1 : 1;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    DYYYSettingItem *item = self.settingSections[indexPath.section][indexPath.row];
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"SettingsCell" forIndexPath:indexPath];
     
-    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"SettingCell"];
-    if (!cell) {
-        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"SettingCell"];
-        cell.textLabel.translatesAutoresizingMaskIntoConstraints = NO;
-        [cell.textLabel.leadingAnchor constraintEqualToAnchor:cell.contentView.leadingAnchor constant:16].active = YES;
-        [cell.textLabel.centerYAnchor constraintEqualToAnchor:cell.contentView.centerYAnchor].active = YES;
-        
-        UIView *selectedBackgroundView = [[UIView alloc] init];
-        selectedBackgroundView.backgroundColor = [UIColor colorWithRed:84/255.0 green:84/255.0 blue:84/255.0 alpha:1.0];
-        cell.selectedBackgroundView = selectedBackgroundView;
+    // 清除之前的子视图
+    for (UIView *subview in cell.contentView.subviews) {
+        [subview removeFromSuperview];
     }
     
-    cell.textLabel.text = item.title;
-    cell.textLabel.textColor = [UIColor whiteColor];
-    cell.backgroundColor = [UIColor colorWithWhite:1 alpha:0.1];
+    NSDictionary *sectionData = self.settingsData[indexPath.section];
     
-    cell.backgroundView = nil;
-    
-    if (indexPath.row == [self.settingSections[indexPath.section] count] - 1) {
-        cell.layer.cornerRadius = 10;
-        cell.layer.maskedCorners = kCALayerMinXMaxYCorner | kCALayerMaxXMaxYCorner;
-        cell.layer.masksToBounds = YES;
+    if (indexPath.row == 0) {
+        // 分类标题行 - 高模糊度毛玻璃背景
+        UIBlurEffect *cellBlur = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemMaterial];
+        UIVisualEffectView *cellBlurView = [[UIVisualEffectView alloc] initWithEffect:cellBlur];
+        cellBlurView.layer.cornerRadius = 12;
+        cellBlurView.clipsToBounds = YES;
+        cellBlurView.alpha = 0.9;
+        cell.backgroundView = cellBlurView;
+        
+        [self setupSectionHeaderCell:cell withData:sectionData section:indexPath.section];
     } else {
-        cell.layer.cornerRadius = 0;
-        cell.layer.maskedCorners = 0;
+        // 设置项行 - 高透明度半透明背景
+        UIView *backgroundView = [[UIView alloc] init];
+        cell.backgroundView = backgroundView;
+        
+        NSArray *items = sectionData[@"items"];
+        NSDictionary *item = items[indexPath.row - 1];
+        [self setupSettingItemCell:cell withData:item indexPath:indexPath];
     }
     
-    if (item.type == DYYYSettingItemTypeSwitch) {
-        UISwitch *switchView = [[UISwitch alloc] init];
-        [switchView setOn:[[NSUserDefaults standardUserDefaults] boolForKey:item.key]];
-        [switchView addTarget:self action:@selector(switchToggled:) forControlEvents:UIControlEventValueChanged];
-        switchView.tag = indexPath.section * 1000 + indexPath.row;
-        cell.accessoryView = switchView;
-    } else if (item.type == DYYYSettingItemTypeTextField) {
-        UITextField *textField = [[UITextField alloc] initWithFrame:CGRectMake(0, 0, 100, 30)];
-        textField.borderStyle = UITextBorderStyleRoundedRect;
-        textField.placeholder = item.placeholder;
-        textField.attributedPlaceholder = [[NSAttributedString alloc]
-            initWithString:item.placeholder
-            attributes:@{NSForegroundColorAttributeName: [UIColor lightGrayColor]}];
-        textField.text = [[NSUserDefaults standardUserDefaults] objectForKey:item.key];
-        textField.textAlignment = NSTextAlignmentRight;
-        textField.backgroundColor = [UIColor colorWithWhite:1 alpha:0.1];
-        textField.textColor = [UIColor whiteColor];
-        
-        [textField addTarget:self action:@selector(textFieldDidChange:) forControlEvents:UIControlEventEditingDidEnd];
-        textField.tag = indexPath.section * 1000 + indexPath.row;
-        cell.accessoryView = textField;
-    } else if (item.type == DYYYSettingItemTypeSpeedPicker) {
-        cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-
-        UITextField *speedField = [[UITextField alloc] initWithFrame:CGRectMake(0, 0, 80, 30)];
-        // 根据对应的key获取倍速值，如果没有设置则使用默认值1.0
-        float currentSpeed = [[NSUserDefaults standardUserDefaults] floatForKey:item.key];
-        if (currentSpeed == 0) {
-            currentSpeed = 1.0;
-        }
-        speedField.text = [NSString stringWithFormat:@"%.2f", currentSpeed];
-        speedField.textColor = [UIColor whiteColor];
-        speedField.borderStyle = UITextBorderStyleNone;
-        speedField.backgroundColor = [UIColor clearColor];
-        speedField.textAlignment = NSTextAlignmentRight;
-        speedField.enabled = NO;
-        
-        speedField.tag = indexPath.section * 1000 + indexPath.row;
-        cell.accessoryView = speedField;
-    }
+    cell.selectionStyle = UITableViewCellSelectionStyleNone;
     
     return cell;
 }
 
-- (void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath {
-    CGFloat sectionInset = 16;
-    cell.contentView.frame = UIEdgeInsetsInsetRect(cell.contentView.frame, UIEdgeInsetsMake(0, sectionInset, 0, sectionInset));
+- (void)setupSectionHeaderCell:(UITableViewCell *)cell withData:(NSDictionary *)sectionData section:(NSInteger)section {
+    UILabel *titleLabel = [[UILabel alloc] init];
+    titleLabel.text = sectionData[@"title"];
+    titleLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightSemibold];
+    titleLabel.textColor = [UIColor labelColor];
+    
+    UIImageView *arrowImageView = [[UIImageView alloc] init];
+    BOOL expanded = [sectionData[@"expanded"] boolValue];
+    arrowImageView.image = [self createArrowImageWithExpanded:expanded];
+    arrowImageView.contentMode = UIViewContentModeScaleAspectFit;
+    
+    [cell.contentView addSubview:titleLabel];
+    [cell.contentView addSubview:arrowImageView];
+    
+    titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
+    arrowImageView.translatesAutoresizingMaskIntoConstraints = NO;
+    
+    [NSLayoutConstraint activateConstraints:@[
+        [titleLabel.leadingAnchor constraintEqualToAnchor:cell.contentView.leadingAnchor constant:15],
+        [titleLabel.centerYAnchor constraintEqualToAnchor:cell.contentView.centerYAnchor],
+        
+        [arrowImageView.trailingAnchor constraintEqualToAnchor:cell.contentView.trailingAnchor constant:-15],
+        [arrowImageView.centerYAnchor constraintEqualToAnchor:cell.contentView.centerYAnchor],
+        [arrowImageView.widthAnchor constraintEqualToConstant:12],
+        [arrowImageView.heightAnchor constraintEqualToConstant:12]
+    ]];
 }
 
-#pragma mark - UITableViewDelegate
+- (UIImage *)createArrowImageWithExpanded:(BOOL)expanded {
+    CGSize size = CGSizeMake(12, 12);
+    UIGraphicsBeginImageContextWithOptions(size, NO, 0);
+    CGContextRef context = UIGraphicsGetCurrentContext();
+    
+    [[UIColor colorWithWhite:0.6 alpha:1.0] setStroke];
+    CGContextSetLineWidth(context, 1.5);
+    CGContextSetLineCap(context, kCGLineCapRound);
+    CGContextSetLineJoin(context, kCGLineJoinRound);
+    
+    if (expanded) {
+        // 向下箭头 ↓
+        CGContextMoveToPoint(context, 3, 5);
+        CGContextAddLineToPoint(context, 6, 8);
+        CGContextAddLineToPoint(context, 9, 5);
+    } else {
+        // 向右箭头 →
+        CGContextMoveToPoint(context, 5, 3);
+        CGContextAddLineToPoint(context, 8, 6);
+        CGContextAddLineToPoint(context, 5, 9);
+    }
+    
+    CGContextStrokePath(context);
+    UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    
+    return image;
+}
+
+- (void)setupSettingItemCell:(UITableViewCell *)cell withData:(NSDictionary *)item indexPath:(NSIndexPath *)indexPath {
+    UILabel *titleLabel = [[UILabel alloc] init];
+    titleLabel.text = item[@"title"];
+    titleLabel.font = [UIFont systemFontOfSize:12];
+    titleLabel.textColor = [UIColor labelColor];
+    [cell.contentView addSubview:titleLabel];
+    
+    NSString *type = item[@"type"];
+    
+    if ([type isEqualToString:@"input"]) {
+        UIButton *inputButton = [UIButton buttonWithType:UIButtonTypeSystem];
+        [inputButton setTitle:item[@"value"] forState:UIControlStateNormal];
+        inputButton.titleLabel.font = [UIFont systemFontOfSize:11];
+        inputButton.titleLabel.textAlignment = NSTextAlignmentRight; 
+        inputButton.tintColor = [UIColor secondaryLabelColor];
+        inputButton.layer.cornerRadius = 6;
+        inputButton.tag = indexPath.section * 1000 + indexPath.row;
+        [inputButton addTarget:self action:@selector(inputButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
+        
+        UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemThinMaterial];
+        UIVisualEffectView *blurView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
+        blurView.layer.cornerRadius = 6;
+        blurView.layer.masksToBounds = YES;
+        blurView.backgroundColor = [UIColor colorWithWhite:0.5 alpha:0.2];
+        blurView.userInteractionEnabled = NO;
+        [inputButton insertSubview:blurView atIndex:0];
+        blurView.translatesAutoresizingMaskIntoConstraints = NO;
+        [NSLayoutConstraint activateConstraints:@[
+            [blurView.topAnchor constraintEqualToAnchor:inputButton.topAnchor],
+            [blurView.leadingAnchor constraintEqualToAnchor:inputButton.leadingAnchor],
+            [blurView.trailingAnchor constraintEqualToAnchor:inputButton.trailingAnchor],
+            [blurView.bottomAnchor constraintEqualToAnchor:inputButton.bottomAnchor]
+        ]];
+        
+        [cell.contentView addSubview:inputButton];
+        
+        titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
+        inputButton.translatesAutoresizingMaskIntoConstraints = NO;
+        
+        [NSLayoutConstraint activateConstraints:@[
+            [titleLabel.leadingAnchor constraintEqualToAnchor:cell.contentView.leadingAnchor constant:20],
+            [titleLabel.centerYAnchor constraintEqualToAnchor:cell.contentView.centerYAnchor],
+            [titleLabel.trailingAnchor constraintLessThanOrEqualToAnchor:inputButton.leadingAnchor constant:-10],
+            
+            [inputButton.trailingAnchor constraintEqualToAnchor:cell.contentView.trailingAnchor constant:-15],
+            [inputButton.centerYAnchor constraintEqualToAnchor:cell.contentView.centerYAnchor],
+            [inputButton.widthAnchor constraintEqualToConstant:60],
+            [inputButton.heightAnchor constraintEqualToConstant:26]
+        ]];
+    } else if ([type isEqualToString:@"switch"]) {
+        UISwitch *switchControl = [[UISwitch alloc] init];
+        switchControl.on = [item[@"value"] boolValue];
+        switchControl.onTintColor = [UIColor colorWithRed:11.0/255.0 green:223.0/255.0 blue:154.0/255.0 alpha:1.0]; // #0BDF9A
+        switchControl.tag = indexPath.section * 1000 + indexPath.row;
+        switchControl.transform = CGAffineTransformMakeScale(0.8, 0.8);
+        [switchControl addTarget:self action:@selector(switchValueChanged:) forControlEvents:UIControlEventValueChanged];
+        [cell.contentView addSubview:switchControl];
+        
+        titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
+        switchControl.translatesAutoresizingMaskIntoConstraints = NO;
+        
+        [NSLayoutConstraint activateConstraints:@[
+            [titleLabel.leadingAnchor constraintEqualToAnchor:cell.contentView.leadingAnchor constant:20],
+            [titleLabel.centerYAnchor constraintEqualToAnchor:cell.contentView.centerYAnchor],
+            
+            [switchControl.trailingAnchor constraintEqualToAnchor:cell.contentView.trailingAnchor constant:-15],
+            [switchControl.centerYAnchor constraintEqualToAnchor:cell.contentView.centerYAnchor]
+        ]];
+    }
+}
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
-    DYYYSettingItem *item = self.settingSections[indexPath.section][indexPath.row];
-    if (item.type == DYYYSettingItemTypeSpeedPicker) {
-        [self showSpeedPickerForIndexPath:indexPath];
+    if (indexPath.row == 0) {
+        NSMutableDictionary *sectionData = self.settingsData[indexPath.section];
+        BOOL expanded = [sectionData[@"expanded"] boolValue];
+        sectionData[@"expanded"] = @(!expanded);
+        
+        [tableView reloadSections:[NSIndexSet indexSetWithIndex:indexPath.section] withRowAnimation:UITableViewRowAnimationFade];
     }
-    [tableView deselectRowAtIndexPath:indexPath animated:YES];
 }
 
-- (void)showSpeedPickerForIndexPath:(NSIndexPath *)indexPath {
-    DYYYSettingItem *item = self.settingSections[indexPath.section][indexPath.row];
-    
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:[NSString stringWithFormat:@"选择%@", item.title]
-                                                                   message:nil
-                                                            preferredStyle:UIAlertControllerStyleActionSheet];
-    
-    NSArray *speeds = @[@0.75, @1.0, @1.25, @1.5, @2.0, @2.5, @3.0];
-    for (NSNumber *speed in speeds) {
-        UIAlertAction *action = [UIAlertAction actionWithTitle:[NSString stringWithFormat:@"%.2f", speed.floatValue]
-                                                        style:UIAlertActionStyleDefault
-                                                      handler:^(UIAlertAction * _Nonnull action) {
-            // 保存到对应的key
-            [[NSUserDefaults standardUserDefaults] setFloat:speed.floatValue forKey:item.key];
-            [[NSUserDefaults standardUserDefaults] synchronize];
-            
-            // 更新对应的cell显示
-            UITableViewCell *cell = [self.tableView cellForRowAtIndexPath:indexPath];
-            UITextField *speedField = (UITextField *)cell.accessoryView;
-            if (speedField) {
-                speedField.text = [NSString stringWithFormat:@"%.2f", speed.floatValue];
-            }
-        }];
-        [alert addAction:action];
-    }
-    
-    UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil];
-    [alert addAction:cancelAction];
-    
-    if (UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPad) {
-        UITableViewCell *selectedCell = [self.tableView cellForRowAtIndexPath:indexPath];
-        alert.popoverPresentationController.sourceView = selectedCell;
-        alert.popoverPresentationController.sourceRect = selectedCell.bounds;
-    }
-    
-    [self presentViewController:alert animated:YES completion:nil];
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
+    return indexPath.row == 0 ? 40 : 35;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section {
+    return 5;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section {
+    return 5;
+}
+
+- (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section {
+    return [[UIView alloc] init];
+}
+
+- (UIView *)tableView:(UITableView *)tableView viewForFooterInSection:(NSInteger)section {
+    return [[UIView alloc] init];
 }
 
 #pragma mark - Actions
 
-- (void)switchToggled:(UISwitch *)sender {
-    NSIndexPath *indexPath = [NSIndexPath indexPathForRow:sender.tag % 1000 inSection:sender.tag / 1000];
-    DYYYSettingItem *item = self.settingSections[indexPath.section][indexPath.row];
-    [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:item.key];
-    [[NSUserDefaults standardUserDefaults] synchronize];
+- (void)inputButtonTapped:(UIButton *)sender {
+    NSInteger section = sender.tag / 1000;
+    NSInteger row = sender.tag % 1000;
+    
+    NSArray *items = self.settingsData[section][@"items"];
+    NSDictionary *item = items[row - 1];
+    NSString *itemKey = item[@"key"];
+    
+    DYYYCustomInputView *inputView = [[DYYYCustomInputView alloc] initWithTitle:item[@"title"] 
+                                                                    defaultText:item[@"value"] 
+                                                                    placeholder:@"请输入内容"];
+    
+    __weak typeof(self) weakSelf = self;
+    inputView.onConfirm = ^(NSString *text) {
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        if (strongSelf) {
+            NSMutableArray *mutableItems = [strongSelf.settingsData[section][@"items"] mutableCopy];
+            NSMutableDictionary *mutableItem = [mutableItems[row - 1] mutableCopy];
+            mutableItem[@"value"] = text;
+            mutableItems[row - 1] = mutableItem;
+            strongSelf.settingsData[section][@"items"] = mutableItems;
+            
+            [[NSUserDefaults standardUserDefaults] setObject:text forKey:itemKey];
+            [[NSUserDefaults standardUserDefaults] synchronize];
+            
+            [strongSelf.settingsTableView reloadData];
+        }
+    };
+    
+    [inputView show];
 }
 
-- (void)textFieldDidChange:(UITextField *)textField {
-    NSIndexPath *indexPath = [NSIndexPath indexPathForRow:textField.tag % 1000 inSection:textField.tag / 1000];
-    DYYYSettingItem *item = self.settingSections[indexPath.section][indexPath.row];
-    [[NSUserDefaults standardUserDefaults] setObject:textField.text forKey:item.key];
+- (void)switchValueChanged:(UISwitch *)sender {
+    NSInteger section = sender.tag / 1000;
+    NSInteger row = sender.tag % 1000;
+    
+    NSMutableArray *mutableItems = [self.settingsData[section][@"items"] mutableCopy];
+    NSMutableDictionary *mutableItem = [mutableItems[row - 1] mutableCopy];
+    mutableItem[@"value"] = @(sender.isOn);
+    mutableItems[row - 1] = mutableItem;
+    self.settingsData[section][@"items"] = mutableItems;
+    
+    NSString *itemKey = mutableItem[@"key"];
+    
+    [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:itemKey];
     [[NSUserDefaults standardUserDefaults] synchronize];
-}
-
-- (void)headerTapped:(UIButton *)sender {
-    NSNumber *section = @(sender.tag);
-    if ([self.expandedSections containsObject:section]) {
-        [self.expandedSections removeObject:section];
-    } else {
-        [self.expandedSections addObject:section];
-    }
-    
-    UIView *headerView = [self.tableView headerViewForSection:sender.tag];
-    UIImageView *arrowImageView = [headerView viewWithTag:100];
-    
-    [UIView animateWithDuration:0.3 animations:^{
-        arrowImageView.image = [UIImage systemImageNamed:[self.expandedSections containsObject:section] ? @"chevron.down" : @"chevron.right"];
-    }];
-    
-    [self.tableView reloadSections:[NSIndexSet indexSetWithIndex:sender.tag] withRowAnimation:UITableViewRowAnimationFade];
 }
 
 @end
