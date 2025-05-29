@@ -1746,68 +1746,18 @@ static CGFloat rightLabelRightMargin = -1;
 
 %group AutoPlay
 
-%hook DUXToast
+%hook AWEAwemeDetailTableViewController
 
-+ (void)showText:(NSString *)text {
-	if (text && [text isEqualToString:@"已取消自动翻页"]) {
-		return;
-	}
-	%orig;
+- (BOOL)hasIphoneAutoPlaySwitch {
+	return YES;
 }
 
 %end
 
-%hook UIViewController
 
-- (void)viewDidAppear:(BOOL)animated {
-	%orig;
-	if ([self isKindOfClass:%c(AWESearchViewController)] || [self isKindOfClass:%c(IESLiveInnerFeedViewController)] ||
-	    [self isKindOfClass:%c(AWEAwemeDetailTableViewController)]) {
-		UITabBarController *tabBarController = self.tabBarController;
-		if ([tabBarController isKindOfClass:%c(AWENormalModeTabBarController)]) {
-			tabBarController.tabBar.hidden = YES;
-		}
-	}
-}
+%hook AWEAwemeDetailContainerPlayControlConfig
 
-%end
-
-%hook AWENormalModeTabBarController
-
-- (void)viewDidLoad {
-	%orig;
-
-	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleApplicationWillEnterForeground:) name:UIApplicationWillEnterForegroundNotification object:nil];
-}
-
-%new
-- (void)handleApplicationWillEnterForeground:(NSNotification *)notification {
-	UIViewController *topVC = topVC;
-	if ([topVC isKindOfClass:%c(UINavigationController)]) {
-		UINavigationController *navVC = (UINavigationController *)topVC;
-		topVC = navVC.topViewController;
-	}
-
-	if ([topVC isKindOfClass:%c(AWESearchViewController)] || [topVC isKindOfClass:%c(IESLiveInnerFeedViewController)] ||
-	    [topVC isKindOfClass:%c(AWEAwemeDetailTableViewController)]) {
-		self.awe_tabBar.hidden = YES;
-	}
-}
-
-- (void)dealloc {
-	[[NSNotificationCenter defaultCenter] removeObserver:self];
-	%orig;
-}
-
-%end
-
-%hook AWEFeedGuideManager
-
-- (bool)enableAutoplay {
-	BOOL featureEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableAutoPlay"];
-	if (!featureEnabled) {
-		return %orig;
-	}
+- (BOOL)enableUserProfilePostAutoPlay {
 	return YES;
 }
 
