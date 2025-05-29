@@ -1089,3 +1089,6 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (void)handleLongPressLockedDoubleSpeedEnded:(id)arg1 gesture:(UIGestureRecognizer *)gesture;
 - (void)longPressSpeedControlDidChangeSpeed:(double)speed;
 @end
+
+@interface AWEPlayInteractionUserAvatarView : UIView
+@end
