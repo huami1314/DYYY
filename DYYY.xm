@@ -17,6 +17,19 @@
 #import "DYYYSettingViewController.h"
 #import "DYYYToast.h"
 
+// 禁用自动进入直播间
+%hook AWELiveNewPreStreamViewController
+
+- (void)setAutoEnterEnable:(BOOL)enable {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableAutoEnterLive"]) {
+        %orig(NO);
+    } else {
+        %orig(enable);
+    }
+}
+
+%end
+
 %hook AWEFeedChannelManager
 
 - (void)reloadChannelWithChannelModels:(id)arg1 currentChannelIDList:(id)arg2 reloadType:(id)arg3 selectedChannelID:(id)arg4 {
@@ -4658,7 +4671,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
         }
         parentVC = parentVC.parentViewController;
     }
-	
+
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
 		NSString *currentReferString = self.referString;
 		CGRect frame = self.view.frame;

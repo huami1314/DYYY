@@ -679,7 +679,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	  }
 	  // 【杂项设置】分类
 	  NSMutableArray<AWESettingItemModel *> *miscellaneousItems = [NSMutableArray array];
-	  NSArray *miscellaneousSettings = @[	
+	  NSArray *miscellaneousSettings = @[
 		  @{@"identifier" : @"DYYYisHideStatusbar",
 		    @"title" : @"隐藏系统顶栏",
 		    @"detail" : @"",
@@ -1199,7 +1199,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	  // 【侧边栏】分类
 	  NSMutableArray<AWESettingItemModel *> *sidebarItems = [NSMutableArray array];
 	  NSArray *sidebarSettings = @[
-                  @{@"identifier" : @"DYYYStreamlinethesidebar",
+		  @{@"identifier" : @"DYYYStreamlinethesidebar",
 		    @"title" : @"隐藏侧栏元素",
 		    @"detail" : @"",
 		    @"cellType" : @6,
@@ -2262,6 +2262,11 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_gearsimplify_outlined_20"},
+		  @{@"identifier" : @"DYYYDisableAutoEnterLive",
+		    @"title" : @"禁用自动进入直播",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_video_outlined_20"},
 		  @{@"identifier" : @"DYYYCommentCopyText",
 		    @"title" : @"长按评论复制文案",
 		    @"detail" : @"",
