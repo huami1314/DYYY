@@ -1096,6 +1096,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (UICollectionView *)collectionView;
 - (void)adjustContainerViewLayout:(UICollectionViewCell *)cell;
 @end
+
 @interface UIView (Helper)
 - (BOOL)containsClassNamed:(NSString *)className;
 - (UIView *)findViewWithClassName:(NSString *)className;
@@ -1104,4 +1105,5 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWESettingsTableViewController : AWESettingBaseViewController
 - (id)viewModel;
 - (void)removeAboutSection;
+
 @end
