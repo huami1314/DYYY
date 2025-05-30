@@ -258,8 +258,7 @@ extern CFStringRef kUTTypeMovie;
                 @{@"title": @"时间随机渐变", @"type": @"switch", @"value": @NO, @"key": @"DYYYEnabsuijiyanse"},
                 @{@"title": @"隐藏系统顶栏", @"type": @"switch", @"value": @NO, @"key": @"DYYYisHideStatusbar"},
                 @{@"title": @"关注二次确认", @"type": @"switch", @"value": @NO, @"key": @"DYYYfollowTips"},
-                @{@"title": @"收藏二次确认", @"type": @"switch", @"value": @NO, @"key": @"DYYYcollectTips"},
-                @{@"title": @"启用精简侧边栏", @"type": @"switch", @"value": @NO, @"key": @"DYYYStreamlinethesidebar"},
+                @{@"title": @"收藏二次确认", @"type": @"switch", @"value": @NO, @"key": @"DYYYcollectTips"}，                
                 @{@"title": @"直播默认最高画质", @"type": @"switch", @"value": @NO, @"key": @"DYYYEnableLiveHighestQuality"},
                 @{@"title": @"视频默认最高画质", @"type": @"switch", @"value": @NO, @"key": @"DYYYEnableVideoHighestQuality"},
                 @{@"title": @"禁用直播PCDN功能", @"type": @"switch", @"value": @NO, @"key": @"DYYYDisableLivePCDN"}
@@ -300,6 +299,7 @@ extern CFStringRef kUTTypeMovie;
                 @{@"title": @"隐藏底栏加号", @"type": @"switch", @"value": @NO, @"key": @"DYYYisHiddenJia"},
                 @{@"title": @"隐藏底栏红点", @"type": @"switch", @"value": @NO, @"key": @"DYYYisHiddenBottomDot"},
                 @{@"title": @"隐藏底栏背景", @"type": @"switch", @"value": @NO, @"key": @"DYYYisHiddenBottomBg"},
+                @{@"title": @"隐藏侧栏元素", @"type": @"switch", @"value": @NO, @"key": @"DYYYStreamlinethesidebar"},
                 @{@"title": @"隐藏侧栏红点", @"type": @"switch", @"value": @NO, @"key": @"DYYYisHiddenSidebarDot"},
                 @{@"title": @"隐藏发作品框", @"type": @"switch", @"value": @NO, @"key": @"DYYYHidePostView"},
                 @{@"title": @"隐藏头像加号", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideLOTAnimationView"},
