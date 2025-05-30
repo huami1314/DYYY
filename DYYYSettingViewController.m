@@ -258,7 +258,7 @@ extern CFStringRef kUTTypeMovie;
                 @{@"title": @"时间随机渐变", @"type": @"switch", @"value": @NO, @"key": @"DYYYEnabsuijiyanse"},
                 @{@"title": @"隐藏系统顶栏", @"type": @"switch", @"value": @NO, @"key": @"DYYYisHideStatusbar"},
                 @{@"title": @"关注二次确认", @"type": @"switch", @"value": @NO, @"key": @"DYYYfollowTips"},
-                @{@"title": @"收藏二次确认", @"type": @"switch", @"value": @NO, @"key": @"DYYYcollectTips"}，                
+                @{@"title": @"收藏二次确认", @"type": @"switch", @"value": @NO, @"key": @"DYYYcollectTips"},             
                 @{@"title": @"直播默认最高画质", @"type": @"switch", @"value": @NO, @"key": @"DYYYEnableLiveHighestQuality"},
                 @{@"title": @"视频默认最高画质", @"type": @"switch", @"value": @NO, @"key": @"DYYYEnableVideoHighestQuality"},
                 @{@"title": @"禁用直播PCDN功能", @"type": @"switch", @"value": @NO, @"key": @"DYYYDisableLivePCDN"}
