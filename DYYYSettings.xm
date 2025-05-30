@@ -680,6 +680,11 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	  // 【杂项设置】分类
 	  NSMutableArray<AWESettingItemModel *> *miscellaneousItems = [NSMutableArray array];
 	  NSArray *miscellaneousSettings = @[
+			@{@"identifier" : @"DYYYStreamlinethesidebar",
+		    @"title" : @"精简侧边栏",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_eyeslash_outlined_16"},
 		  @{@"identifier" : @"DYYYisHideStatusbar",
 		    @"title" : @"隐藏系统顶栏",
 		    @"detail" : @"",
@@ -1211,6 +1216,11 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"imageName" : @"ic_eyeslash_outlined_16"},
 		  @{@"identifier" : @"DYYYHideBack",
 		    @"title" : @"隐藏返回按钮",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_eyeslash_outlined_16"},
+		  @{@"identifier" : @"DYYYHideSettingsAbout",
+		    @"title" : @"隐藏设置关于",
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_eyeslash_outlined_16"},

@@ -5197,6 +5197,194 @@ static CGFloat currentScale = 1.0;
 }
 %end
 
+@implementation UIView (Helper)
+- (BOOL)containsClassNamed:(NSString *)className {
+    if ([[[self class] description] isEqualToString:className]) {
+        return YES;
+    }
+    
+    for (UIView *subview in self.subviews) {
+        if ([subview containsClassNamed:className]) {
+            return YES;
+        }
+    }
+    
+    return NO;
+}
+- (UIView *)findViewWithClassName:(NSString *)className {
+    if ([[[self class] description] isEqualToString:className]) {
+        return self;
+    }
+    
+    for (UIView *subview in self.subviews) {
+        UIView *result = [subview findViewWithClassName:className];
+        if (result) {
+            return result;
+        }
+    }
+    
+    return nil;
+}
+@end
+
+// 存储需要保留的单元格信息
+static NSMutableDictionary *keepCellsInfo;
+%hook AWELeftSideBarViewController
+// 在视图加载时初始化
+- (void)viewDidLoad {
+    %orig;
+    keepCellsInfo = [NSMutableDictionary dictionary];
+}
+// 拦截单元格配置方法
+- (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {
+    UICollectionViewCell *cell = %orig;
+    
+    // 如果功能未启用，直接返回原始cell
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYStreamlinethesidebar"]) {
+        return cell;
+    }
+    
+    // 检查这个单元格是否包含我们要保留的视图类型
+    BOOL shouldKeep = [cell.contentView containsClassNamed:@"AWELeftSideBarTopRightLayoutView"] || 
+                      [cell.contentView containsClassNamed:@"AWELeftSideBarFunctionContainerView"];
+    
+    // 存储信息，用于后续的数据源方法
+    NSString *key = [NSString stringWithFormat:@"%ld-%ld", (long)indexPath.section, (long)indexPath.row];
+    keepCellsInfo[key] = @(shouldKeep);
+    
+    // 如果不需要保留，则设置为不可见
+    if (!shouldKeep) {
+        cell.hidden = YES;
+        cell.alpha = 0;
+        
+        // 尝试设置尺寸为0
+        CGRect frame = cell.frame;
+        frame.size.width = 0;
+        frame.size.height = 0;
+        cell.frame = frame;
+    } else if ([cell.contentView containsClassNamed:@"AWELeftSideBarFunctionContainerView"]) {
+        // 如果是FunctionContainerView，调整其高度
+        [self adjustContainerViewLayout:cell];
+    }
+    
+    return cell;
+}
+// 拦截尺寸计算方法
+- (CGSize)collectionView:(UICollectionView *)collectionView layout:(id)layout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
+    CGSize originalSize = %orig;
+    
+    // 如果功能未启用，直接返回原始尺寸
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYStreamlinethesidebar"]) {
+        return originalSize;
+    }
+    
+    NSString *key = [NSString stringWithFormat:@"%ld-%ld", (long)indexPath.section, (long)indexPath.row];
+    NSNumber *shouldKeep = keepCellsInfo[key];
+    
+    // 如果已经确定不需要保留，则返回零尺寸
+    if (shouldKeep != nil && ![shouldKeep boolValue]) {
+        return CGSizeZero;
+    }
+    
+    return originalSize;
+}
+// 拦截边距计算方法
+- (UIEdgeInsets)collectionView:(UICollectionView *)collectionView layout:(id)layout insetForSectionAtIndex:(NSInteger)section {
+    UIEdgeInsets originalInsets = %orig;
+    
+    // 如果功能未启用，直接返回原始边距
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYStreamlinethesidebar"]) {
+        return originalInsets;
+    }
+    
+    // 检查这个section是否有需要保留的单元格
+    BOOL hasKeepCells = NO;
+    for (NSString *key in keepCellsInfo.allKeys) {
+        if ([key hasPrefix:[NSString stringWithFormat:@"%ld-", (long)section]] && 
+            [keepCellsInfo[key] boolValue]) {
+            hasKeepCells = YES;
+            break;
+        }
+    }
+    
+    // 如果section没有需要保留的单元格，则返回零边距
+    if (!hasKeepCells) {
+        return UIEdgeInsetsZero;
+    }
+    
+    return originalInsets;
+}
+%new
+- (void)adjustContainerViewLayout:(UICollectionViewCell *)containerCell {
+    UICollectionView *collectionView = [self collectionView];
+    if (!collectionView || !containerCell) return;
+    
+    // 找到FunctionContainerView
+    UIView *containerView = [containerCell.contentView findViewWithClassName:@"AWELeftSideBarFunctionContainerView"];
+    if (!containerView) return;
+    
+    // 计算需要的新高度（拉伸到窗口底部）
+    CGFloat windowHeight = collectionView.window.bounds.size.height;
+    CGFloat currentY = [containerCell convertPoint:containerCell.bounds.origin toView:nil].y;
+
+	CGFloat newHeight = windowHeight - currentY - 20; // 减去一些底部间距
+    
+    // 调整containerView的frame
+    CGRect containerFrame = containerView.frame;
+    containerFrame.size.height = newHeight;
+    containerView.frame = containerFrame;
+    
+    // 调整containerCell的frame
+    CGRect cellFrame = containerCell.frame;
+    cellFrame.size.height = newHeight;
+    containerCell.frame = cellFrame;
+}
+%end
+
+%hook AWESettingsTableViewController
+- (void)viewDidLoad {
+    %orig;
+    
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideSettingsAbout"]) {
+        [self removeAboutSection];
+    }
+}
+
+%new
+- (void)removeAboutSection {
+    // 获取 viewModel 属性
+    id viewModel = [self viewModel];
+    if (!viewModel) {
+        return;
+    }
+    
+    NSArray *sectionDataArray = [viewModel valueForKey:@"sectionDataArray"];
+    if (!sectionDataArray || ![sectionDataArray isKindOfClass:[NSArray class]]) {
+        return;
+    }
+    
+    NSMutableArray *mutableSections = [sectionDataArray mutableCopy];
+    
+    // 遍历查找"关于"部分
+    for (id sectionModel in [sectionDataArray copy]) {
+
+        Class sectionModelClass = NSClassFromString(@"AWESettingSectionModel");
+        if (!sectionModelClass || ![sectionModel isKindOfClass:sectionModelClass]) {
+            continue;
+        }
+        
+        // 获取 sectionHeaderTitle
+        NSString *sectionHeaderTitle = [sectionModel valueForKey:@"sectionHeaderTitle"];
+        if ([sectionHeaderTitle isEqualToString:@"关于"]) {
+
+            [mutableSections removeObject:sectionModel];
+            [viewModel setValue:mutableSections forKey:@"sectionDataArray"];
+            break;
+        }
+    }
+}
+%end
+
 // 极速版红包激励挂件容器视图类组（移除逻辑）
 %group IncentivePendantGroup
 %hook AWEIncentiveSwiftImplDOUYINLite_IncentivePendantContainerView

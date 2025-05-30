@@ -259,6 +259,7 @@ extern CFStringRef kUTTypeMovie;
                 @{@"title": @"隐藏系统顶栏", @"type": @"switch", @"value": @NO, @"key": @"DYYYisHideStatusbar"},
                 @{@"title": @"关注二次确认", @"type": @"switch", @"value": @NO, @"key": @"DYYYfollowTips"},
                 @{@"title": @"收藏二次确认", @"type": @"switch", @"value": @NO, @"key": @"DYYYcollectTips"},
+                @{@"title": @"启用精简侧边栏", @"type": @"switch", @"value": @NO, @"key": @"DYYYStreamlinethesidebar"},
                 @{@"title": @"直播默认最高画质", @"type": @"switch", @"value": @NO, @"key": @"DYYYEnableLiveHighestQuality"},
                 @{@"title": @"视频默认最高画质", @"type": @"switch", @"value": @NO, @"key": @"DYYYEnableVideoHighestQuality"},
                 @{@"title": @"禁用直播PCDN功能", @"type": @"switch", @"value": @NO, @"key": @"DYYYDisableLivePCDN"}
@@ -368,7 +369,9 @@ extern CFStringRef kUTTypeMovie;
                 @{@"title": @"隐藏红包悬浮", @"type": @"switch", @"value": @NO, @"key": @"DYYYHidePendantGroup"},
                 @{@"title": @"隐藏聊天评论", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideChatCommentBg"},
                 @{@"title": @"隐藏章节进度", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideChapterProgress"},
+                @{@"title": @"隐藏设置关于", @"type": @"switch", @"value": @NO, @"key": @"DYYYHideSettingsAbout"},
                 @{@"title": @"隐藏键盘AI", @"type": @"switch", @"value": @NO, @"key": @"DYYYHidekeyboardai"}
+                
             ]]
         } mutableCopy],
         
