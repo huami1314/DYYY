@@ -2869,22 +2869,6 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
-%hook AWEPlayInteractionUserAvatarView
-- (void)layoutSubviews {
-    %orig;
-    
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFollowPromptView"]) {
-        for (UIView *subview in self.subviews) {
-            if ([subview isMemberOfClass:[UIView class]]) {
-                for (UIView *childView in subview.subviews) {
-                    childView.alpha = 0.0;
-                }
-            }
-        }
-    }
-}
-%end
-
 %hook AWENormalModeTabBar
 
 - (void)layoutSubviews {
