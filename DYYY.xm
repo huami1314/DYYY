@@ -5197,6 +5197,210 @@ static CGFloat currentScale = 1.0;
 }
 %end
 
+@implementation UIView (Helper)
+- (BOOL)containsClassNamed:(NSString *)className {
+    if ([[[self class] description] isEqualToString:className]) {
+        return YES;
+    }
+    for (UIView *subview in self.subviews) {
+        if ([subview containsClassNamed:className]) {
+            return YES;
+        }
+    }
+    return NO;
+}
+
+- (UIView *)findViewWithClassName:(NSString *)className {
+    if ([[[self class] description] isEqualToString:className]) {
+        return self;
+    }
+    for (UIView *subview in self.subviews) {
+        UIView *result = [subview findViewWithClassName:className];
+        if (result) {
+            return result;
+        }
+    }
+    return nil;
+}
+@end
+
+static NSMutableDictionary *keepCellsInfo;
+
+static NSString * const kAWELeftSideBarTopRightLayoutView = @"AWELeftSideBarTopRightLayoutView";
+static NSString * const kAWELeftSideBarFunctionContainerView = @"AWELeftSideBarFunctionContainerView";
+static NSString * const kAWELeftSideBarWeatherView = @"AWELeftSideBarWeatherView";
+
+static NSString * const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
+
+%hook AWELeftSideBarViewController
+
+- (void)viewDidLoad {
+    %orig;
+    
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:kStreamlineSidebarKey]) {
+        return;
+    }
+    
+    if (!keepCellsInfo) {
+        keepCellsInfo = [NSMutableDictionary dictionary];
+    }
+}
+
+- (void)viewDidDisappear:(BOOL)animated {
+    %orig;
+    
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:kStreamlineSidebarKey]) {
+        return;
+    }
+    
+    [keepCellsInfo removeAllObjects];
+}
+
+- (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {
+    UICollectionViewCell *cell = %orig;
+    
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:kStreamlineSidebarKey]) {
+        return cell;
+    }
+    
+    if (!cell) return cell;
+    
+    @try {
+        BOOL shouldKeep = [cell.contentView containsClassNamed:kAWELeftSideBarTopRightLayoutView] ||
+                         [cell.contentView containsClassNamed:kAWELeftSideBarFunctionContainerView] ||
+                         [cell.contentView containsClassNamed:kAWELeftSideBarWeatherView];
+        
+        NSString *key = [NSString stringWithFormat:@"%ld-%ld", (long)indexPath.section, (long)indexPath.row];
+        keepCellsInfo[key] = @(shouldKeep);
+        
+        if (!shouldKeep) {
+            cell.hidden = YES;
+            cell.alpha = 0;
+            CGRect frame = cell.frame;
+            frame.size.width = 0;
+            frame.size.height = 0;
+            cell.frame = frame;
+        } else if ([cell.contentView containsClassNamed:kAWELeftSideBarFunctionContainerView]) {
+            [self adjustContainerViewLayout:cell];
+        }
+    } @catch (NSException *exception) {
+        NSLog(@"Error in cellForItemAtIndexPath: %@", exception);
+    }
+    
+    return cell;
+}
+
+- (CGSize)collectionView:(UICollectionView *)collectionView layout:(id)layout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
+    CGSize originalSize = %orig;
+    
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:kStreamlineSidebarKey]) {
+        return originalSize;
+    }
+    
+    NSString *key = [NSString stringWithFormat:@"%ld-%ld", (long)indexPath.section, (long)indexPath.row];
+    NSNumber *shouldKeep = keepCellsInfo[key];
+    
+    if (shouldKeep != nil && ![shouldKeep boolValue]) {
+        return CGSizeZero;
+    }
+    
+    return originalSize;
+}
+
+- (UIEdgeInsets)collectionView:(UICollectionView *)collectionView layout:(id)layout insetForSectionAtIndex:(NSInteger)section {
+    UIEdgeInsets originalInsets = %orig;
+    
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:kStreamlineSidebarKey]) {
+        return originalInsets;
+    }
+    
+    BOOL hasKeepCells = NO;
+    for (NSString *key in keepCellsInfo.allKeys) {
+        if ([key hasPrefix:[NSString stringWithFormat:@"%ld-", (long)section]] &&
+            [keepCellsInfo[key] boolValue]) {
+            hasKeepCells = YES;
+            break;
+        }
+    }
+    
+    if (!hasKeepCells) {
+        return UIEdgeInsetsZero;
+    }
+    
+    return originalInsets;
+}
+
+%new
+- (void)adjustContainerViewLayout:(UICollectionViewCell *)containerCell {
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:kStreamlineSidebarKey]) {
+        return;
+    }
+    
+    UICollectionView *collectionView = [self collectionView];
+    if (!collectionView || !containerCell) return;
+    
+    UIView *containerView = [containerCell.contentView findViewWithClassName:kAWELeftSideBarFunctionContainerView];
+    if (!containerView) return;
+    
+    CGFloat windowHeight = collectionView.window.bounds.size.height;
+    CGFloat currentY = [containerCell convertPoint:containerCell.bounds.origin toView:nil].y;
+    CGFloat newHeight = windowHeight - currentY - 20;
+    
+    CGRect containerFrame = containerView.frame;
+    containerFrame.size.height = newHeight;
+    containerView.frame = containerFrame;
+    
+    CGRect cellFrame = containerCell.frame;
+    cellFrame.size.height = newHeight;
+    containerCell.frame = cellFrame;
+}
+
+%end
+
+%hook AWESettingsTableViewController
+- (void)viewDidLoad {
+    %orig;
+    
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideSettingsAbout"]) {
+        [self removeAboutSection];
+    }
+}
+
+%new
+- (void)removeAboutSection {
+    // 获取 viewModel 属性
+    id viewModel = [self viewModel];
+    if (!viewModel) {
+        return;
+    }
+    
+    NSArray *sectionDataArray = [viewModel valueForKey:@"sectionDataArray"];
+    if (!sectionDataArray || ![sectionDataArray isKindOfClass:[NSArray class]]) {
+        return;
+    }
+    
+    NSMutableArray *mutableSections = [sectionDataArray mutableCopy];
+    
+    // 遍历查找"关于"部分
+    for (id sectionModel in [sectionDataArray copy]) {
+
+        Class sectionModelClass = NSClassFromString(@"AWESettingSectionModel");
+        if (!sectionModelClass || ![sectionModel isKindOfClass:sectionModelClass]) {
+            continue;
+        }
+        
+        // 获取 sectionHeaderTitle
+        NSString *sectionHeaderTitle = [sectionModel valueForKey:@"sectionHeaderTitle"];
+        if ([sectionHeaderTitle isEqualToString:@"关于"]) {
+
+            [mutableSections removeObject:sectionModel];
+            [viewModel setValue:mutableSections forKey:@"sectionDataArray"];
+            break;
+        }
+    }
+}
+%end
+
 // 极速版红包激励挂件容器视图类组（移除逻辑）
 %group IncentivePendantGroup
 %hook AWEIncentiveSwiftImplDOUYINLite_IncentivePendantContainerView
