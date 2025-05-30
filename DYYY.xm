@@ -5202,143 +5202,159 @@ static CGFloat currentScale = 1.0;
     if ([[[self class] description] isEqualToString:className]) {
         return YES;
     }
-    
     for (UIView *subview in self.subviews) {
         if ([subview containsClassNamed:className]) {
             return YES;
         }
     }
-    
     return NO;
 }
+
 - (UIView *)findViewWithClassName:(NSString *)className {
     if ([[[self class] description] isEqualToString:className]) {
         return self;
     }
-    
     for (UIView *subview in self.subviews) {
         UIView *result = [subview findViewWithClassName:className];
         if (result) {
             return result;
         }
     }
-    
     return nil;
 }
 @end
 
-// 存储需要保留的单元格信息
 static NSMutableDictionary *keepCellsInfo;
+
+static NSString * const kAWELeftSideBarTopRightLayoutView = @"AWELeftSideBarTopRightLayoutView";
+static NSString * const kAWELeftSideBarFunctionContainerView = @"AWELeftSideBarFunctionContainerView";
+static NSString * const kAWELeftSideBarWeatherView = @"AWELeftSideBarWeatherView";
+
+static NSString * const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
+
 %hook AWELeftSideBarViewController
-// 在视图加载时初始化
+
 - (void)viewDidLoad {
     %orig;
-    keepCellsInfo = [NSMutableDictionary dictionary];
+    
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:kStreamlineSidebarKey]) {
+        return;
+    }
+    
+    if (!keepCellsInfo) {
+        keepCellsInfo = [NSMutableDictionary dictionary];
+    }
 }
-// 拦截单元格配置方法
+
+- (void)viewDidDisappear:(BOOL)animated {
+    %orig;
+    
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:kStreamlineSidebarKey]) {
+        return;
+    }
+    
+    [keepCellsInfo removeAllObjects];
+}
+
 - (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {
     UICollectionViewCell *cell = %orig;
     
-    // 如果功能未启用，直接返回原始cell
-    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYStreamlinethesidebar"]) {
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:kStreamlineSidebarKey]) {
         return cell;
     }
     
-    // 检查这个单元格是否包含我们要保留的视图类型
-    BOOL shouldKeep = [cell.contentView containsClassNamed:@"AWELeftSideBarTopRightLayoutView"] || 
-                      [cell.contentView containsClassNamed:@"AWELeftSideBarFunctionContainerView"];
+    if (!cell) return cell;
     
-    // 存储信息，用于后续的数据源方法
-    NSString *key = [NSString stringWithFormat:@"%ld-%ld", (long)indexPath.section, (long)indexPath.row];
-    keepCellsInfo[key] = @(shouldKeep);
-    
-    // 如果不需要保留，则设置为不可见
-    if (!shouldKeep) {
-        cell.hidden = YES;
-        cell.alpha = 0;
+    @try {
+        BOOL shouldKeep = [cell.contentView containsClassNamed:kAWELeftSideBarTopRightLayoutView] ||
+                         [cell.contentView containsClassNamed:kAWELeftSideBarFunctionContainerView] ||
+                         [cell.contentView containsClassNamed:kAWELeftSideBarWeatherView];
         
-        // 尝试设置尺寸为0
-        CGRect frame = cell.frame;
-        frame.size.width = 0;
-        frame.size.height = 0;
-        cell.frame = frame;
-    } else if ([cell.contentView containsClassNamed:@"AWELeftSideBarFunctionContainerView"]) {
-        // 如果是FunctionContainerView，调整其高度
-        [self adjustContainerViewLayout:cell];
+        NSString *key = [NSString stringWithFormat:@"%ld-%ld", (long)indexPath.section, (long)indexPath.row];
+        keepCellsInfo[key] = @(shouldKeep);
+        
+        if (!shouldKeep) {
+            cell.hidden = YES;
+            cell.alpha = 0;
+            CGRect frame = cell.frame;
+            frame.size.width = 0;
+            frame.size.height = 0;
+            cell.frame = frame;
+        } else if ([cell.contentView containsClassNamed:kAWELeftSideBarFunctionContainerView]) {
+            [self adjustContainerViewLayout:cell];
+        }
+    } @catch (NSException *exception) {
+        NSLog(@"Error in cellForItemAtIndexPath: %@", exception);
     }
     
     return cell;
 }
-// 拦截尺寸计算方法
+
 - (CGSize)collectionView:(UICollectionView *)collectionView layout:(id)layout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
     CGSize originalSize = %orig;
     
-    // 如果功能未启用，直接返回原始尺寸
-    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYStreamlinethesidebar"]) {
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:kStreamlineSidebarKey]) {
         return originalSize;
     }
     
     NSString *key = [NSString stringWithFormat:@"%ld-%ld", (long)indexPath.section, (long)indexPath.row];
     NSNumber *shouldKeep = keepCellsInfo[key];
     
-    // 如果已经确定不需要保留，则返回零尺寸
     if (shouldKeep != nil && ![shouldKeep boolValue]) {
         return CGSizeZero;
     }
     
     return originalSize;
 }
-// 拦截边距计算方法
+
 - (UIEdgeInsets)collectionView:(UICollectionView *)collectionView layout:(id)layout insetForSectionAtIndex:(NSInteger)section {
     UIEdgeInsets originalInsets = %orig;
     
-    // 如果功能未启用，直接返回原始边距
-    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYStreamlinethesidebar"]) {
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:kStreamlineSidebarKey]) {
         return originalInsets;
     }
     
-    // 检查这个section是否有需要保留的单元格
     BOOL hasKeepCells = NO;
     for (NSString *key in keepCellsInfo.allKeys) {
-        if ([key hasPrefix:[NSString stringWithFormat:@"%ld-", (long)section]] && 
+        if ([key hasPrefix:[NSString stringWithFormat:@"%ld-", (long)section]] &&
             [keepCellsInfo[key] boolValue]) {
             hasKeepCells = YES;
             break;
         }
     }
     
-    // 如果section没有需要保留的单元格，则返回零边距
     if (!hasKeepCells) {
         return UIEdgeInsetsZero;
     }
     
     return originalInsets;
 }
+
 %new
 - (void)adjustContainerViewLayout:(UICollectionViewCell *)containerCell {
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:kStreamlineSidebarKey]) {
+        return;
+    }
+    
     UICollectionView *collectionView = [self collectionView];
     if (!collectionView || !containerCell) return;
     
-    // 找到FunctionContainerView
-    UIView *containerView = [containerCell.contentView findViewWithClassName:@"AWELeftSideBarFunctionContainerView"];
+    UIView *containerView = [containerCell.contentView findViewWithClassName:kAWELeftSideBarFunctionContainerView];
     if (!containerView) return;
     
-    // 计算需要的新高度（拉伸到窗口底部）
     CGFloat windowHeight = collectionView.window.bounds.size.height;
     CGFloat currentY = [containerCell convertPoint:containerCell.bounds.origin toView:nil].y;
-
-	CGFloat newHeight = windowHeight - currentY - 20; // 减去一些底部间距
+    CGFloat newHeight = windowHeight - currentY - 20;
     
-    // 调整containerView的frame
     CGRect containerFrame = containerView.frame;
     containerFrame.size.height = newHeight;
     containerView.frame = containerFrame;
     
-    // 调整containerCell的frame
     CGRect cellFrame = containerCell.frame;
     cellFrame.size.height = newHeight;
     containerCell.frame = cellFrame;
 }
+
 %end
 
 %hook AWESettingsTableViewController
