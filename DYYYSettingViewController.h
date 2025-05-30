@@ -11,9 +11,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface DYYYSettingViewController : UIViewController
 
-// 显示现代化设置面板
-- (void)showModernSettingsPanel;
-
 @end
 
 NS_ASSUME_NONNULL_END
