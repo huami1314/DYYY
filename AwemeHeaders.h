@@ -376,9 +376,6 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @property(nonatomic, assign) BOOL isAppearing;
 @end
 
-@interface DYYYSettingViewController : UIViewController
-@end
-
 @interface AWEElementStackView : UIView
 @property(nonatomic, copy) NSString *accessibilityLabel;
 @property(nonatomic, assign) CGRect frame;
@@ -945,6 +942,9 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @interface AWEAwemeDetailTableViewController : UIViewController
 - (BOOL)prefersStatusBarHidden;
 @end
+@interface AWEAwemeHotSpotTableViewController : UIViewController
+- (BOOL)prefersStatusBarHidden;
+@end
 @interface AWEFullPageFeedNewContainerViewController : UIViewController
 - (BOOL)prefersStatusBarHidden;
 @end
@@ -957,6 +957,14 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (void)setVideoControllerPlaybackRate:(double)arg0;
 @end
 
+@interface AWEPlayInteractionElementMaskView : UIView
+@end
+@interface AWEGradientView : UIView
+@end
+@interface AWEHotSpotBlurView : UIView
+@end
+@interface AWEHotSearchInnerBottomView : UIView
+@end
 // 底部热点提示框
 @interface AWENewHotSpotBottomBarView : UIView
 @property(nonatomic, strong, readonly) UIView *superview;
@@ -1047,37 +1055,55 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (UITapGestureRecognizer *)tapGestureForSubview:(UIView *)subview;
 - (void)openDYYYSettings;
 @end
-@interface AWELeftSideBarViewController : UIViewController
-@end
+
 @interface AWEFeedContainerViewController : UIViewController
 @end
 
 @interface AWEIMGiphyMessage : NSObject
-@property (nonatomic, copy, readwrite) AWEURLModel *giphyURL;
+@property(nonatomic, copy, readwrite) AWEURLModel *giphyURL;
 @end
 
 @interface AWEIMMessageComponentContext : NSObject
-@property (nonatomic, weak, readwrite) AWEIMGiphyMessage *message;
+@property(nonatomic, weak, readwrite) AWEIMGiphyMessage *message;
 @end
 
 @interface AWEIMReusableCommonCell : UITableViewCell
-@property (nonatomic, weak, readwrite) id currentContext;
+@property(nonatomic, weak, readwrite) id currentContext;
 @end
 
 @interface AWEIMCustomMenuModel : NSObject
-@property (nonatomic, copy, readwrite) NSString *title;
-@property (nonatomic, copy, readwrite) NSString *imageName;
-@property (nonatomic, copy, readwrite) id willPerformMenuActionSelectorBlock;
-@property (nonatomic, copy, readwrite) NSString *trackerName;
-@property (nonatomic, assign, readwrite) NSUInteger type;
+@property(nonatomic, copy, readwrite) NSString *title;
+@property(nonatomic, copy, readwrite) NSString *imageName;
+@property(nonatomic, copy, readwrite) id willPerformMenuActionSelectorBlock;
+@property(nonatomic, copy, readwrite) NSString *trackerName;
+@property(nonatomic, assign, readwrite) NSUInteger type;
 @end
 
 @interface AWEPlayInteractionSpeedController : NSObject
-@property (nonatomic, strong) id progressSliderDelegate;
+@property(nonatomic, strong) id progressSliderDelegate;
 - (CGFloat)longPressFastSpeedValue;
 - (void)changeSpeed:(double)speed;
 - (void)handleLongPressLockedDoubleSpeedChanged:(id)arg1 gesture:(UIGestureRecognizer *)gesture;
 - (void)handleLongPressLockedSpeedBegan;
 - (void)handleLongPressLockedDoubleSpeedEnded:(id)arg1 gesture:(UIGestureRecognizer *)gesture;
 - (void)longPressSpeedControlDidChangeSpeed:(double)speed;
+@end
+
+@interface AWEPlayInteractionUserAvatarView : UIView
+@end
+
+@interface AWELeftSideBarViewController : UIViewController <UICollectionViewDelegate, UICollectionViewDataSource>
+- (UICollectionView *)collectionView;
+- (void)adjustContainerViewLayout:(UICollectionViewCell *)cell;
+@end
+
+@interface UIView (Helper)
+- (BOOL)containsClassNamed:(NSString *)className;
+- (UIView *)findViewWithClassName:(NSString *)className;
+@end
+
+@interface AWESettingsTableViewController : AWESettingBaseViewController
+- (id)viewModel;
+- (void)removeAboutSection;
+
 @end
