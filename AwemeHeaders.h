@@ -376,9 +376,6 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @property(nonatomic, assign) BOOL isAppearing;
 @end
 
-@interface DYYYSettingViewController : UIViewController
-@end
-
 @interface AWEElementStackView : UIView
 @property(nonatomic, copy) NSString *accessibilityLabel;
 @property(nonatomic, assign) CGRect frame;
@@ -1058,8 +1055,7 @@ typedef NS_ENUM(NSInteger, MediaType) {
 - (UITapGestureRecognizer *)tapGestureForSubview:(UIView *)subview;
 - (void)openDYYYSettings;
 @end
-@interface AWELeftSideBarViewController : UIViewController
-@end
+
 @interface AWEFeedContainerViewController : UIViewController
 @end
 
@@ -1094,4 +1090,20 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 @interface AWEPlayInteractionUserAvatarView : UIView
+@end
+
+@interface AWELeftSideBarViewController : UIViewController <UICollectionViewDelegate, UICollectionViewDataSource>
+- (UICollectionView *)collectionView;
+- (void)adjustContainerViewLayout:(UICollectionViewCell *)cell;
+@end
+
+@interface UIView (Helper)
+- (BOOL)containsClassNamed:(NSString *)className;
+- (UIView *)findViewWithClassName:(NSString *)className;
+@end
+
+@interface AWESettingsTableViewController : AWESettingBaseViewController
+- (id)viewModel;
+- (void)removeAboutSection;
+
 @end
