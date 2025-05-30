@@ -4651,6 +4651,14 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 - (void)viewDidLayoutSubviews {
 	%orig;
 
+    UIViewController *parentVC = self.parentViewController;
+    while (parentVC) {
+        if ([parentVC isKindOfClass:%c(AFDPlayRemoteFeedTableViewController)]) {
+            return;
+        }
+        parentVC = parentVC.parentViewController;
+    }
+	
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
 		NSString *currentReferString = self.referString;
 		CGRect frame = self.view.frame;
