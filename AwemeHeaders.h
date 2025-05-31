@@ -891,6 +891,9 @@ static CGFloat gStartVal = 0.0;
 @interface AFDButton : UIButton
 @end
 
+@interface AWENoxusHighlightButton : UIButton
+@end
+
 @interface AWEProfileToggleView : UIView
 @end
 

@@ -2924,7 +2924,8 @@ static AWEIMReusableCommonCell *currentCell;
 	if ([accessibilityLabel isEqualToString:@"返回"]) {
 		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideBack"]) {
 			UIView *parent = self.superview;
-			if ([parent isKindOfClass:%c(AWEBaseElementView)]) {
+			// 父视图是AWEBaseElementView(排除用户主页返回按钮) 按钮类不是AWENoxusHighlightButton(排除横屏返回按钮)
+			if ([parent isKindOfClass:%c(AWEBaseElementView)] && ![self isKindOfClass:%c(AWENoxusHighlightButton)]) {
 				[self removeFromSuperview];
 			}
 			return;
