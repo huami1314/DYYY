@@ -3502,21 +3502,40 @@ static AWEIMReusableCommonCell *currentCell;
 %end
 
 // 隐藏自己无公开作品的视图
-%hook AWEProfileMixCollectionViewCell
+%hook AWEProfileMixItemCollectionViewCell
 - (void)layoutSubviews {
-	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePostView"]) {
-		self.hidden = YES;
-	}
+    %orig;
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePostView"]) {
+        if ([self.accessibilityLabel isEqualToString:@"私密作品"]) {
+            [self removeFromSuperview];
+        }
+    }
 }
 %end
 
 %hook AWEProfileTaskCardStyleListCollectionViewCell
-- (void)layoutSubviews {
-	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePostView"]) {
-		self.hidden = YES;
-	}
+- (BOOL)shouldShowPublishGuide {
+  if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePostView"]) {
+    return NO;
+  }
+  return %orig;
+}
+%end
+
+%hook AWEProfileRichEmptyView
+
+- (void)setTitle:(id)title {
+  if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePostView"]) {
+    return;
+  }
+  %orig(title);
+}
+
+- (void)setDetail:(id)detail {
+  if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePostView"]) {
+    return;
+  }
+  %orig(detail);
 }
 %end
 
