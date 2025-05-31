@@ -5644,6 +5644,19 @@ static NSString * const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 }
 %end
 
+%hook AFDViewedBottomView
+- (void)layoutSubviews {
+    %orig;
+    
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+
+        self.backgroundColor = [UIColor clearColor];
+        
+        self.effectView.hidden = YES;
+    }
+}
+%end
+
 // 极速版红包激励挂件容器视图类组（移除逻辑）
 %group IncentivePendantGroup
 %hook AWEIncentiveSwiftImplDOUYINLite_IncentivePendantContainerView
