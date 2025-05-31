@@ -2286,7 +2286,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"title" : @"长按评论复制文案",
 		    @"detail" : @"",
 		    @"cellType" : @6,
-		    @"imageName" : @"ic_at_outlined_20"},]
+		    @"imageName" : @"ic_at_outlined_20"},
 		  @{@"identifier" : @"DYYYMusicCopyText",
 		    @"title" : @"评论音乐点击复制",
 		    @"detail" : @"",
@@ -2658,6 +2658,14 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_eyeslash_outlined_16"}];
 	  [clearButtonItems addObject:hideSliderButton];
+	  AWESettingItemModel *hideChapterButton = [DYYYSettingsHelper
+	      createSettingItem:
+		  @{@"identifier" : @"DYYYHideChapter",
+		    @"title" : @"清屏隐藏章节",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_eyeslash_outlined_16"}];
+	  [clearButtonItems addObject:hideChapterButton];
 	  AWESettingItemModel *hideTabButton = [DYYYSettingsHelper
 	      createSettingItem:
 		  @{@"identifier" : @"DYYYHideTabBar",

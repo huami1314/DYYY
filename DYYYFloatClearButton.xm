@@ -107,18 +107,18 @@ static void initTargetClassNames(void) {
         @"AWEFeedAnchorContainerView", @"AFDAIbumFolioView", @"DUXPopover",
 		@"AWEMixVideoPanelMoreView", @"AWEHotSearchInnerBottomView"
     ] mutableCopy];
-    BOOL hideTabBar = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTabBar"];
-    if (hideTabBar) {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTabBar"]) {
         [list addObject:@"AWENormalModeTabBar"];
     }
-	BOOL hideDanmaku = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideDanmaku"];
-	if (hideDanmaku) {
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideDanmaku"]) {
 		[list addObject:@"AWEVideoPlayDanmakuContainerView"];
 	}
-	BOOL hideSlider = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideSlider"];
-	if (hideSlider) {
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideSlider"]) {
 		[list addObject:@"AWEStoryProgressSlideView"];
 		[list addObject:@"AWEStoryProgressContainerView"];
+	}
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideChapter"]) {
+		[list addObject:@"AWEDemaciaChapterProgressSlider"];
 	}
 
     targetClassNames = [list copy];
