@@ -102,6 +102,102 @@
 
 %end
 
+%hook AWELandscapeFeedViewController
+- (void)viewDidLoad {
+    %orig;
+
+    // 尝试优先走属性
+    gFeedCV = self.collectionView;
+
+    // 保险起见再fallback,遍历 subviews
+    if (!gFeedCV) {
+        for (UIView *v in self.view.subviews) {
+            if ([v isKindOfClass:[UICollectionView class]]) {
+                gFeedCV = (UICollectionView *)v;
+                break;
+            }
+        }
+    }
+}
+%end
+
+%hook UICollectionView
+
+// 拦截手指拖动
+- (void)handlePan:(UIPanGestureRecognizer *)pan {
+
+    /* 仅处理横屏Feed列表。其余collectionView直接走系统逻辑 */
+    if (self != gFeedCV || ![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYVideoGesture"]) {
+        %orig;
+        return;
+    }
+
+    /* 取触点坐标、手势状态 */
+    CGPoint loc   = [pan locationInView:self];
+    CGFloat w     = self.bounds.size.width;
+    CGFloat xPct  = loc.x / w;                          // 0.0 ~ 1.0
+    UIGestureRecognizerState st = pan.state;
+
+    /* BEGAN：判定左右 20 % 区域 → 进入亮度 / 音量模式 */
+    if (st == UIGestureRecognizerStateBegan) {
+
+        gStartY = loc.y;
+
+        if (xPct <= 0.20) {                             // 左边缘 → 亮度
+            gMode     = DYEdgeModeBrightness;
+            gStartVal = [UIScreen mainScreen].brightness;
+
+        } else if (xPct >= 0.80) {                      // 右边缘 → 音量
+            gMode     = DYEdgeModeVolume;
+            gStartVal = [[objc_getClass("AVSystemController") sharedAVSystemController]
+                          volumeForCategory:@"Audio/Video"];
+
+        } else {
+            gMode = DYEdgeModeNone;                     // 中间区域走原逻辑
+        }
+    }
+
+    /* 调节阶段：左右边缘时吞掉滚动、修改亮度/音量 */
+    if (gMode != DYEdgeModeNone) {
+
+        if (st == UIGestureRecognizerStateChanged) {
+
+            CGFloat delta   = (gStartY - loc.y) / self.bounds.size.height; // ↑ 为正
+            const  CGFloat kScale = 2.0;                 // 灵敏度
+            float newVal   = gStartVal + delta * kScale;
+            newVal         = fminf(fmaxf(newVal, 0.0), 1.0);   // Clamp 0~1
+
+            if (gMode == DYEdgeModeBrightness) {
+                [UIScreen mainScreen].brightness = newVal;
+                // 弹系统亮度 HUD
+                [[%c(SBHUDController) sharedInstance] presentHUDWithIcon:@"Brightness" level:newVal];
+
+            } else {                                    // DYEdgeModeVolume
+                // iOS 18 音量控制 + 系统音量 HUD
+                [[objc_getClass("AVSystemController") sharedAVSystemController]
+                    setVolumeTo:newVal forCategory:@"Audio/Video"];
+            }
+
+            // 吞掉滚动：归零 translation，防止内容位移
+            [pan setTranslation:CGPointZero inView:self];
+        }
+
+        /* 结束／取消：状态复位 */
+        if (st == UIGestureRecognizerStateEnded     ||
+            st == UIGestureRecognizerStateCancelled ||
+            st == UIGestureRecognizerStateFailed) {
+            gMode = DYEdgeModeNone;
+        }
+
+        return;    // 左右边缘：彻底阻断 %orig，避免翻页
+    }
+
+    /* 中间区域：直接执行原先翻页逻辑 */
+    %orig;
+}
+
+%end
+
 %hook AWEPlayInteractionUserAvatarElement
 - (void)onFollowViewClicked:(UITapGestureRecognizer *)gesture {
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYfollowTips"]) {
@@ -2352,6 +2448,37 @@ static AWEIMReusableCommonCell *currentCell;
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"]) {
 		[self setHidden:YES];
 	}
+
+	if([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYMusicCopyText"]) {
+    	UILabel *label = nil;
+		if ([self respondsToSelector:@selector(preTitleLabel)]) {
+			label = [self valueForKey:@"preTitleLabel"];
+		}
+		if (label && [label isKindOfClass:[UILabel class]]) {
+			label.text = @"";
+		}
+	}
+}
+
+- (void)p_didClickSong {
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYMusicCopyText"]) {
+		// 通过 KVC 拿到内部的 songButton
+		UIButton *btn = nil;
+		if ([self respondsToSelector:@selector(songButton)]) {
+			btn = (UIButton *)[self valueForKey:@"songButton"];
+		}
+
+		// 获取歌曲名并复制到剪贴板
+		if (btn && [btn isKindOfClass:[UIButton class]]) {
+			NSString *song = btn.currentTitle;
+			if (song.length) {
+				[UIPasteboard generalPasteboard].string = song;
+				[DYYYToast showSuccessToastWithMessage:@"歌曲名已复制"];
+			}
+		}
+	} else {
+		%orig;
+	}
 }
 
 %end
@@ -2390,6 +2517,16 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 %end
+%group CommentBottomTipsVCGroup
+%hook AWECommentPanelListSwiftImpl_CommentBottomTipsContainerViewController
+- (void)viewWillAppear:(BOOL)animated {
+    %orig(animated);
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentTips"]){
+        ((UIViewController *)self).view.hidden = YES;
+    }
+}
+%end
+%end
 // Swift 类初始化
 %ctor {
 
@@ -2408,6 +2545,11 @@ static AWEIMReusableCommonCell *currentCell;
 	if (commentHeaderTemplateClass) {
 		%init(CommentHeaderTemplateGroup, AWECommentPanelHeaderSwiftImpl_CommentHeaderTemplateAnchorView = commentHeaderTemplateClass);
 	}
+
+	Class tipsVCClass = objc_getClass("AWECommentPanelListSwiftImpl.CommentBottomTipsContainerViewController");
+    if (tipsVCClass) {
+        %init(CommentBottomTipsVCGroup,AWECommentPanelListSwiftImpl_CommentBottomTipsContainerViewController = tipsVCClass);
+    }
 }
 
 // 去除隐藏大家都在搜后的留白
@@ -2893,7 +3035,7 @@ static AWEIMReusableCommonCell *currentCell;
 	%orig;
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideGradient"]) {
 		UIView *parent = self.superview;
-		if ([parent.accessibilityLabel isEqualToString:@"暂停，按钮"] || [parent.accessibilityLabel isEqualToString:@"播放，按钮"]) {
+		if ([parent.accessibilityLabel isEqualToString:@"暂停，按钮"] || [parent.accessibilityLabel isEqualToString:@"播放，按钮"] || [parent.accessibilityLabel isEqualToString:@"“切换视角，按钮"]) {
 			[self removeFromSuperview];
 		}
 		return;
@@ -5242,6 +5384,25 @@ static CGFloat currentScale = 1.0;
 		for (UIView *subview in self.subviews) {
 			if (![subview isKindOfClass:[UILabel class]]) {
 				subview.hidden = YES;
+			}
+		}
+	}
+}
+%end
+
+%hook UIImageView
+- (void)layoutSubviews {
+	%orig;
+	if([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentDiscover"]) {
+		if (!self.accessibilityLabel) {
+			UIView *parentView = self.superview;
+
+			if (parentView && [parentView class] == [UIView class] && [parentView.accessibilityLabel isEqualToString:@"搜索"]) {
+				self.hidden = YES;
+			}
+
+			else if (parentView && [NSStringFromClass([parentView class]) isEqualToString:@"AWESearchEntryHalfScreenElement"] && [parentView.accessibilityLabel isEqualToString:@"搜索"]) {
+				self.hidden = YES;
 			}
 		}
 	}

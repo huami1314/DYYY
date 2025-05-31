@@ -10,6 +10,28 @@ typedef NS_ENUM(NSInteger, MediaType) {
   MediaTypeHeic
 };
 
+static __weak UICollectionView *gFeedCV = nil;
+// 音量控制
+@interface AVSystemController : NSObject
++ (instancetype)sharedAVSystemController;
+- (BOOL)setVolumeTo:(float)value forCategory:(NSString *)cat;
+- (float)volumeForCategory:(NSString *)cat;
+@end
+// 亮度控制
+@interface SBHUDController : NSObject
++ (instancetype)sharedInstance;
+- (void)presentHUDWithIcon:(NSString *)name level:(float)level;
+@end
+// 调节模式&全局状态
+typedef NS_ENUM(NSUInteger, DYEdgeMode) {
+  DYEdgeModeNone = 0,
+  DYEdgeModeBrightness = 1,
+  DYEdgeModeVolume = 2,
+};
+static DYEdgeMode gMode = DYEdgeModeNone;
+static CGFloat gStartY = 0.0;
+static CGFloat gStartVal = 0.0;
+
 @interface URLModel : NSObject
 @property(nonatomic, strong) NSArray *originURLList;
 @end
@@ -299,6 +321,10 @@ typedef NS_ENUM(NSInteger, MediaType) {
 @end
 
 @interface AWEUserWorkCollectionViewComponentCell : UICollectionViewCell
+@end
+
+@interface AWELandscapeFeedViewController : UIViewController
+@property(nonatomic, strong) UICollectionView *collectionView;
 @end
 
 @interface AWEFeedRefreshFooter : UIView
