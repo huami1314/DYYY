@@ -544,7 +544,7 @@ static CGFloat gStartVal = 0.0;
 @property(nonatomic, assign, getter=isHidden) BOOL hidden;
 @end
 
-@interface AWEProfileMixCollectionViewCell : UIView
+@interface AWEProfileMixItemCollectionViewCell : UICollectionViewCell
 @end
 
 @interface AWEProfileTaskCardStyleListCollectionViewCell : UIView
@@ -1135,4 +1135,12 @@ static CGFloat gStartVal = 0.0;
 - (id)viewModel;
 - (void)removeAboutSection;
 
+@end
+
+@interface AWEProfileMixCollectionView : UICollectionView
+@property(nonatomic, assign) BOOL fromHome;
+@end
+
+@interface AFDViewedBottomView : UIView
+@property (nonatomic, strong, readonly) UIView *effectView;
 @end

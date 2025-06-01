@@ -3517,21 +3517,40 @@ static AWEIMReusableCommonCell *currentCell;
 %end
 
 // 隐藏自己无公开作品的视图
-%hook AWEProfileMixCollectionViewCell
+%hook AWEProfileMixItemCollectionViewCell
 - (void)layoutSubviews {
-	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePostView"]) {
-		self.hidden = YES;
-	}
+    %orig;
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePostView"]) {
+        if ([self.accessibilityLabel isEqualToString:@"私密作品"]) {
+            [self removeFromSuperview];
+        }
+    }
 }
 %end
 
 %hook AWEProfileTaskCardStyleListCollectionViewCell
-- (void)layoutSubviews {
-	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePostView"]) {
-		self.hidden = YES;
-	}
+- (BOOL)shouldShowPublishGuide {
+  if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePostView"]) {
+    return NO;
+  }
+  return %orig;
+}
+%end
+
+%hook AWEProfileRichEmptyView
+
+- (void)setTitle:(id)title {
+  if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePostView"]) {
+    return;
+  }
+  %orig(title);
+}
+
+- (void)setDetail:(id)detail {
+  if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePostView"]) {
+    return;
+  }
+  %orig(detail);
 }
 %end
 
@@ -5324,7 +5343,7 @@ static CGFloat currentScale = 1.0;
 - (void)layoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideChatCommentBg"]) {
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
 		UIView *parentView = self.superview;
 		while (parentView) {
 			if ([NSStringFromClass([parentView class]) isEqualToString:@"UIView"]) {
@@ -5613,6 +5632,19 @@ static NSString * const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
             [viewModel setValue:mutableSections forKey:@"sectionDataArray"];
             break;
         }
+    }
+}
+%end
+
+%hook AFDViewedBottomView
+- (void)layoutSubviews {
+    %orig;
+    
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+
+        self.backgroundColor = [UIColor clearColor];
+        
+        self.effectView.hidden = YES;
     }
 }
 %end
