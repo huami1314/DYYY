@@ -212,6 +212,18 @@
 
 %end
 
+%hook AWESidebarPanGestureRecognizer
+
+- (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer {
+    if([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableSidebarGesture"]) {
+		// 如果启用了视频手势，禁止侧边栏手势
+		return NO;
+	}
+	return YES;
+}
+
+%end
+
 %hook AWEPlayInteractionUserAvatarElement
 - (void)onFollowViewClicked:(UITapGestureRecognizer *)gesture {
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYfollowTips"]) {
