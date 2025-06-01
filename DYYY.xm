@@ -4790,7 +4790,6 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 
     if (isPlayVC && enableBlur) {
         if (frame.origin.x != 0) {
-            %orig(frame);
             return;
         }
     }
