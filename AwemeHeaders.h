@@ -885,7 +885,7 @@ static CGFloat gStartVal = 0.0;
 - (void)setOnlyTopCornerClips:(BOOL)onlyTop;
 @end
 
-@interface AWESidebarPanGestureRecognizer : UIPanGestureRecognizer
+@interface AWELeftSideBarAddChildTransitionObject : NSObject
 @end
 
 @interface AWEButton : UIButton

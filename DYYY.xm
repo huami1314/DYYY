@@ -212,14 +212,15 @@
 
 %end
 
-%hook AWESidebarPanGestureRecognizer
+%hook AWELeftSideBarAddChildTransitionObject
 
-- (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer {
+- (void)handleShowSliderPanGesture:(id)gr {
     if([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableSidebarGesture"]) {
-		// 如果启用了视频手势，禁止侧边栏手势
-		return NO;
+		// 禁用侧边栏手势
+		return;
 	}
-	return YES;
+	// 如果没有禁用侧边栏手势，则执行原有逻辑
+	%orig(gr);
 }
 
 %end
