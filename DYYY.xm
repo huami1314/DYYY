@@ -205,6 +205,19 @@
 
 %end
 
+%hook AWELeftSideBarAddChildTransitionObject
+
+- (void)handleShowSliderPanGesture:(id)gr {
+    if([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableSidebarGesture"]) {
+		// 禁用侧边栏手势
+		return;
+	}
+	// 如果没有禁用侧边栏手势，则执行原有逻辑
+	%orig(gr);
+}
+
+%end
+
 %hook AWEPlayInteractionUserAvatarElement
 - (void)onFollowViewClicked:(UITapGestureRecognizer *)gesture {
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYfollowTips"]) {
