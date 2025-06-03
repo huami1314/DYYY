@@ -1130,3 +1130,8 @@ static CGFloat gStartVal = 0.0;
 
 @interface AWEAwemeDetailNaviBarContainerView : UIView
 @end
+
+@interface AWEVideoBSModel : NSObject
+@property (nonatomic) NSNumber *bitrate;
+@property (nonatomic) AWEURLModel *playAddr;
+@end

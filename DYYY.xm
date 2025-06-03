@@ -17,6 +17,76 @@
 #import "DYYYSettingViewController.h"
 #import "DYYYToast.h"
 
+%hook AWEVideoModel
+
+- (AWEURLModel *)playURL {
+	AWEURLModel *originalURL = %orig;
+
+	if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableVideoHighestQuality"]) {
+		return originalURL;
+	}
+	
+	if (!originalURL || !originalURL.originURLList || originalURL.originURLList.count == 0) {
+		return nil;
+	}
+
+	// 检查是否为MP4
+	for (NSString *urlString in originalURL.originURLList) {
+		if ([urlString containsString:@"video_mp4"] || [urlString containsString:@"video_id"]) {
+			return nil;
+		}
+	}
+
+	return originalURL;
+}
+
+- (NSArray *)bitrateModels {
+
+	NSArray *originalModels = %orig;
+
+	if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableVideoHighestQuality"]) {
+		return originalModels;
+	}
+
+	if (originalModels.count == 0) {
+		return originalModels;
+	}
+
+	// 查找比特率最高的模型
+	id highestBitrateModel = nil;
+	NSInteger highestBitrate = 0;
+
+	for (id model in originalModels) {
+
+		NSInteger bitrate = 0;
+		BOOL validModel = NO;
+
+		if ([model isKindOfClass:NSClassFromString(@"AWEVideoBSModel")]) {
+			id bitrateValue = [model bitrate];
+			if (bitrateValue) {
+				bitrate = [bitrateValue integerValue];
+				validModel = YES;
+			}
+		}
+
+		if (validModel) {
+			if (bitrate > highestBitrate) {
+				highestBitrate = bitrate;
+				highestBitrateModel = model;
+			}
+		}
+	}
+
+	if (highestBitrateModel) {
+		NSLog(@"[DYYY] 最高bitrate模型: %@", highestBitrateModel);
+		return @[ highestBitrateModel ];
+	}
+
+	return originalModels;
+}
+
+%end
+
 // 禁用自动进入直播间
 %hook AWELiveFeedStatusViewModel
 
@@ -1899,57 +1969,6 @@ static CGFloat rightLabelRightMargin = -1;
 	} else {
 		return %orig;
 	}
-}
-
-%end
-
-%hook AWEURLModel
-
-- (id)originURLList {
-    NSArray *originalList = %orig;
-
-    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableVideoHighestQuality"]) {
-        return originalList;
-    }
-
-    BOOL containsVideoURL = NO;
-    for (NSString *url in originalList) {
-        if ([url containsString:@"video_mp4"] || [url containsString:@".mp4"]) {
-            containsVideoURL = YES;
-            break;
-        }
-    }
-    
-    if (containsVideoURL) {
-        NSString *highestQualityURL = nil;
-        NSInteger highestBitrate = 0;
-        
-        for (NSString *url in originalList) {
-            if ([url containsString:@"video_mp4"] || [url containsString:@".mp4"]) {
-                // 从URL中提取比特率参数
-                NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:@"br=(\\d+)" options:0 error:nil];
-                NSTextCheckingResult *match = [regex firstMatchInString:url options:0 range:NSMakeRange(0, url.length)];
-                
-                if (match) {
-                    NSRange bitrateRange = [match rangeAtIndex:1];
-                    NSString *bitrateString = [url substringWithRange:bitrateRange];
-                    NSInteger bitrate = [bitrateString integerValue];
-                    
-                    if (bitrate > highestBitrate) {
-                        highestBitrate = bitrate;
-                        highestQualityURL = url;
-                    }
-                }
-            }
-        }
-        
-        if (highestQualityURL) {
-            return @[highestQualityURL];
-        }
-    }
-    
-    // 如果不是视频URL或者找不到比特率参数，则返回原始列表
-    return originalList;
 }
 
 %end
