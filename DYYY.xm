@@ -5447,12 +5447,34 @@ static CGFloat currentScale = 1.0;
 // 隐藏上次看到
 %hook DUXPopover
 
-- (void)layoutSubviews {
-	%orig;
+- (void)layoutSubviews
+{
+    %orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePopover"]) {
-		[self removeFromSuperview];
-	}
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePopover"]) {
+        return;
+    }
+
+    id rawContent = nil;
+    @try {
+        // 直接用 KVC 读取，避免需要精确的类型声明
+        rawContent = [self valueForKey:@"content"];
+    } @catch (__unused NSException *e) {}
+
+    NSString *text = nil;
+    if ([rawContent isKindOfClass:NSString.class]) {
+        text = (NSString *)rawContent;
+    } else if ([rawContent respondsToSelector:@selector(text)]) {
+        //text = [rawContent text];             
+    } else if ([rawContent respondsToSelector:@selector(title)]) {
+        //text = [rawContent title];            
+    } else {
+        //text = [rawContent description];       
+    }
+
+    if (text && [text containsString:@"上次看到"]) {
+        [self removeFromSuperview];
+    }
 }
 
 %end
