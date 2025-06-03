@@ -20,24 +20,47 @@
 %hook AWEVideoModel
 
 - (AWEURLModel *)playURL {
-	AWEURLModel *originalURL = %orig;
-
-	if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableVideoHighestQuality"]) {
-		return originalURL;
-	}
-	
-	if (!originalURL || !originalURL.originURLList || originalURL.originURLList.count == 0) {
-		return nil;
-	}
-
-	// 检查是否为MP4
-	for (NSString *urlString in originalURL.originURLList) {
-		if ([urlString containsString:@"video_mp4"] || [urlString containsString:@"video_id"]) {
-			return nil;
-		}
-	}
-
-	return originalURL;
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableVideoHighestQuality"]) {
+        return %orig;
+    }
+    
+    // 获取比特率模型数组
+    NSArray *bitrateModels = [self bitrateModels];
+    if (!bitrateModels || bitrateModels.count == 0) {
+        return %orig;
+    }
+    
+    // 查找比特率最高的模型
+    id highestBitrateModel = nil;
+    NSInteger highestBitrate = 0;
+    
+    for (id model in bitrateModels) {
+        NSInteger bitrate = 0;
+        BOOL validModel = NO;
+        
+        if ([model isKindOfClass:NSClassFromString(@"AWEVideoBSModel")]) {
+            id bitrateValue = [model bitrate];
+            if (bitrateValue) {
+                bitrate = [bitrateValue integerValue];
+                validModel = YES;
+            }
+        }
+        
+        if (validModel && bitrate > highestBitrate) {
+            highestBitrate = bitrate;
+            highestBitrateModel = model;
+        }
+    }
+    
+    // 如果找到了最高比特率模型，获取其播放地址
+    if (highestBitrateModel) {
+        id playAddr = [highestBitrateModel valueForKey:@"playAddr"];
+        if (playAddr && [playAddr isKindOfClass:%c(AWEURLModel)]) {
+            return playAddr;
+        }
+    }
+    
+    return %orig;
 }
 
 - (NSArray *)bitrateModels {
@@ -78,7 +101,6 @@
 	}
 
 	if (highestBitrateModel) {
-		NSLog(@"[DYYY] 最高bitrate模型: %@", highestBitrateModel);
 		return @[ highestBitrateModel ];
 	}
 
