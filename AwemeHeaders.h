@@ -1144,3 +1144,6 @@ static CGFloat gStartVal = 0.0;
 @interface AFDViewedBottomView : UIView
 @property (nonatomic, strong, readonly) UIView *effectView;
 @end
+
+@interface AWEAwemeDetailNaviBarContainerView : UIView
+@end
