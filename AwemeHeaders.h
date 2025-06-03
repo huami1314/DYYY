@@ -1137,7 +1137,6 @@ static CGFloat gStartVal = 0.0;
 @interface AWESettingsTableViewController : AWESettingBaseViewController
 - (id)viewModel;
 - (void)removeAboutSection;
-
 @end
 
 @interface AWEProfileMixCollectionView : UICollectionView
@@ -1146,4 +1145,7 @@ static CGFloat gStartVal = 0.0;
 
 @interface AFDViewedBottomView : UIView
 @property(nonatomic, strong, readonly) UIView *effectView;
+@end
+
+@interface AWEAwemeDetailNaviBarContainerView : UIView
 @end

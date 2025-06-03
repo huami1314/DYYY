@@ -47,71 +47,64 @@
 %hook AWEFeedChannelManager
 
 - (void)reloadChannelWithChannelModels:(id)arg1 currentChannelIDList:(id)arg2 reloadType:(id)arg3 selectedChannelID:(id)arg4 {
-	NSArray *channelModels = arg1;
-	NSMutableArray *newChannelModels = [NSMutableArray array];
-	NSArray *currentChannelIDList = arg2;
-	NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-
-	NSMutableArray *newCurrentChannelIDList = [NSMutableArray arrayWithArray:currentChannelIDList];
-
-	NSString *hideOtherChannels = [defaults objectForKey:@"DYYYHideOtherChannel"] ?: @"";
-	NSArray *hideChannelKeywords = [hideOtherChannels componentsSeparatedByString:@","];
-
-	for (AWEHPTopTabItemModel *tabItemModel in channelModels) {
-		NSString *channelID = tabItemModel.channelID;
-		NSString *newChannelTitle = tabItemModel.title;
-		NSString *oldChannelTitle = tabItemModel.channelTitle;
-
-		if ([channelID isEqualToString:@"homepage_hot_container"]) {
-			[newChannelModels addObject:tabItemModel];
-			continue;
-		}
-
-		BOOL isHideChannel = NO;
-		if ([channelID isEqualToString:@"homepage_follow"]) {
-			isHideChannel = [defaults boolForKey:@"DYYYHideFollow"];
-		} else if ([channelID isEqualToString:@"homepage_mediumvideo"]) {
-			isHideChannel = [defaults boolForKey:@"DYYYHideMediumVideo"];
-		} else if ([channelID isEqualToString:@"homepage_mall"]) {
-			isHideChannel = [defaults boolForKey:@"DYYYHideMall"];
-		} else if ([channelID isEqualToString:@"homepage_nearby"]) {
-			isHideChannel = [defaults boolForKey:@"DYYYHideNearby"];
-		} else if ([channelID isEqualToString:@"homepage_groupon"]) {
-			isHideChannel = [defaults boolForKey:@"DYYYHideGroupon"];
-		} else if ([channelID isEqualToString:@"homepage_tablive"]) {
-			isHideChannel = [defaults boolForKey:@"DYYYHideTabLive"];
-		} else if ([channelID isEqualToString:@"homepage_pad_hot"]) {
-			isHideChannel = [defaults boolForKey:@"DYYYHidePadHot"];
-		} else if ([channelID isEqualToString:@"homepage_hangout"]) {
-			isHideChannel = [defaults boolForKey:@"DYYYHideHangout"];
-		} else if ([channelID isEqualToString:@"homepage_familiar"]) {
-			isHideChannel = [defaults boolForKey:@"DYYYHideFriend"];
-		} else if ([channelID isEqualToString:@"homepage_playlet_stream"]) {
-			isHideChannel = [defaults boolForKey:@"DYYYHidePlaylet"];
-		} else if ([channelID isEqualToString:@"homepage_pad_cinema"]) {
-			isHideChannel = [defaults boolForKey:@"DYYYHideCinema"];
-		} else if ([channelID isEqualToString:@"homepage_pad_kids_v2"]) {
-			isHideChannel = [defaults boolForKey:@"DYYYHideKidsV2"];
-		} else if ([channelID isEqualToString:@"homepage_pad_game"]) {
-			isHideChannel = [defaults boolForKey:@"DYYYHideGame"];
-		}
-
-		if (oldChannelTitle.length > 0 || newChannelTitle.length > 0) {
-			for (NSString *keyword in hideChannelKeywords) {
-				if (keyword.length > 0 && ([oldChannelTitle containsString:keyword] || [newChannelTitle containsString:keyword])) {
-					isHideChannel = YES;
-				}
-			}
-		}
-
-		if (!isHideChannel) {
-			[newChannelModels addObject:tabItemModel];
-		} else {
-			[newCurrentChannelIDList removeObject:channelID];
-		}
-	}
-
-	%orig(newChannelModels, newCurrentChannelIDList, arg3, arg4);
+    NSArray *channelModels = arg1;
+    NSMutableArray *newChannelModels = [NSMutableArray array];
+    NSArray *currentChannelIDList = arg2;
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    NSMutableArray *newCurrentChannelIDList = [NSMutableArray arrayWithArray:currentChannelIDList];
+    NSString *hideOtherChannels = [defaults objectForKey:@"DYYYHideOtherChannel"] ?: @"";
+    NSArray *hideChannelKeywords = [hideOtherChannels componentsSeparatedByString:@","];
+    
+    for (AWEHPTopTabItemModel *tabItemModel in channelModels) {
+        NSString *channelID = tabItemModel.channelID;
+        NSString *newChannelTitle = tabItemModel.title;
+        NSString *oldChannelTitle = tabItemModel.channelTitle;
+        BOOL isHideChannel = NO;
+        
+        if ([channelID isEqualToString:@"homepage_hot_container"]) {
+            isHideChannel = [defaults boolForKey:@"DYYYHideHotContainer"];
+        } else if ([channelID isEqualToString:@"homepage_follow"]) {
+            isHideChannel = [defaults boolForKey:@"DYYYHideFollow"];
+        } else if ([channelID isEqualToString:@"homepage_mediumvideo"]) {
+            isHideChannel = [defaults boolForKey:@"DYYYHideMediumVideo"];
+        } else if ([channelID isEqualToString:@"homepage_mall"]) {
+            isHideChannel = [defaults boolForKey:@"DYYYHideMall"];
+        } else if ([channelID isEqualToString:@"homepage_nearby"]) {
+            isHideChannel = [defaults boolForKey:@"DYYYHideNearby"];
+        } else if ([channelID isEqualToString:@"homepage_groupon"]) {
+            isHideChannel = [defaults boolForKey:@"DYYYHideGroupon"];
+        } else if ([channelID isEqualToString:@"homepage_tablive"]) {
+            isHideChannel = [defaults boolForKey:@"DYYYHideTabLive"];
+        } else if ([channelID isEqualToString:@"homepage_pad_hot"]) {
+            isHideChannel = [defaults boolForKey:@"DYYYHidePadHot"];
+        } else if ([channelID isEqualToString:@"homepage_hangout"]) {
+            isHideChannel = [defaults boolForKey:@"DYYYHideHangout"];
+        } else if ([channelID isEqualToString:@"homepage_familiar"]) {
+            isHideChannel = [defaults boolForKey:@"DYYYHideFriend"];
+        } else if ([channelID isEqualToString:@"homepage_playlet_stream"]) {
+            isHideChannel = [defaults boolForKey:@"DYYYHidePlaylet"];
+        } else if ([channelID isEqualToString:@"homepage_pad_cinema"]) {
+            isHideChannel = [defaults boolForKey:@"DYYYHideCinema"];
+        } else if ([channelID isEqualToString:@"homepage_pad_kids_v2"]) {
+            isHideChannel = [defaults boolForKey:@"DYYYHideKidsV2"];
+        } else if ([channelID isEqualToString:@"homepage_pad_game"]) {
+            isHideChannel = [defaults boolForKey:@"DYYYHideGame"];
+        }
+        if (oldChannelTitle.length > 0 || newChannelTitle.length > 0) {
+            for (NSString *keyword in hideChannelKeywords) {
+                if (keyword.length > 0 && ([oldChannelTitle containsString:keyword] || [newChannelTitle containsString:keyword])) {
+                    isHideChannel = YES;
+                }
+            }
+        }
+        if (!isHideChannel) {
+            [newChannelModels addObject:tabItemModel];
+        } else {
+            [newCurrentChannelIDList removeObject:channelID];
+        }
+    }
+    
+    %orig(newChannelModels, newCurrentChannelIDList, arg3, arg4);
 }
 
 %end
@@ -724,6 +717,52 @@
 	}
 
 	return originalView;
+}
+
+%end
+
+%hook AWECommentInputViewController
+
+- (UIView *)view {
+	UIView *originalView = %orig;
+
+	NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
+	if (transparentValue.length > 0) {
+		CGFloat alphaValue = transparentValue.floatValue;
+		if (alphaValue >= 0.0 && alphaValue <= 1.0) {
+			for (UIView *subview in originalView.subviews) {
+				if (subview.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG) {
+					if (subview.alpha > 0) {
+						subview.alpha = alphaValue;
+					}
+				}
+			}
+		}
+	}
+
+	return originalView;
+}
+
+%end
+
+%hook AWEAwemeDetailNaviBarContainerView
+
+- (void)layoutSubviews {
+    %orig;
+    
+    NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
+    if (transparentValue.length > 0) {
+        CGFloat alphaValue = transparentValue.floatValue;
+        if (alphaValue >= 0.0 && alphaValue <= 1.0) {
+            for (UIView *subview in self.subviews) {
+                if (subview.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG) {
+                    if (subview.alpha > 0) {
+                        subview.alpha = alphaValue;
+                    }
+                }
+            }
+        }
+    }
 }
 
 %end
@@ -3330,6 +3369,20 @@ static AWEIMReusableCommonCell *currentCell;
 		self.hidden = YES;
 		return;
 	}
+
+    NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
+    if (transparentValue.length > 0) {
+        CGFloat alphaValue = transparentValue.floatValue;
+        if (alphaValue >= 0.0 && alphaValue <= 1.0) {
+            for (UIView *subview in self.subviews) {
+                if (subview.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG) {
+                    if (subview.alpha > 0) {
+                        subview.alpha = alphaValue;
+                    }
+                }
+            }
+        }
+    }
 	%orig;
 }
 
