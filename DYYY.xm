@@ -1973,59 +1973,6 @@ static CGFloat rightLabelRightMargin = -1;
 
 %end
 
-%hook AWEPlayerPlayControlHandler
-
-- (void)setupAVPlayerItem:(AVPlayerItem *)item {
-	%orig;
-
-	BOOL enableHighestQuality = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableVideoHighestQuality"];
-	if (enableHighestQuality && item) {
-		// 内联 tryUpgradeToHighDefinition 的实现
-		// 尝试获取当前视频的所有清晰度选项
-		id videoModel = [self valueForKey:@"videoModel"];
-		if (!videoModel)
-			return;
-
-		// 获取视频URL模型
-		AWEURLModel *urlModel = [videoModel valueForKey:@"videoURLModel"];
-		if (!urlModel || !urlModel.originURLList || urlModel.originURLList.count == 0)
-			return;
-
-		// 选择最高清晰度URL
-		NSURL *bestURL = [urlModel getDYYYSrcURLDownload];
-		if (!bestURL)
-			return;
-
-		// 内联 reloadVideoWithURL 的实现
-		// 获取播放器对象并进行类型检查
-		id playerObject = [self valueForKey:@"player"];
-		if (!playerObject || ![playerObject isKindOfClass:[AVPlayer class]]) {
-			return;
-		}
-
-		AVPlayer *player = (AVPlayer *)playerObject;
-		AVPlayerItem *currentItem = player.currentItem;
-		if (!currentItem)
-			return;
-
-		// 创建新的AVPlayerItem并替换
-		AVPlayerItem *newItem = [AVPlayerItem playerItemWithURL:bestURL];
-		if (!newItem)
-			return;
-
-		// 保存当前播放位置
-		CMTime currentTime = currentItem.currentTime;
-
-		// 替换播放项
-		[player replaceCurrentItemWithPlayerItem:newItem];
-
-		// 恢复播放位置
-		[newItem seekToTime:currentTime toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero];
-	}
-}
-
-%end
-
 %group AutoPlay
 
 %hook AWEAwemeDetailTableViewController
