@@ -2099,6 +2099,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 					confirmButtonText:@"确定"
 					cancelAction:^{
 					  item.isSwitchOn = !newValue;
+					  [DYYYSettingsHelper refreshTableView]; // 刷新 UI
 					}
 					confirmAction:^{
 					  item.isSwitchOn = newValue;
@@ -2127,6 +2128,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 					confirmButtonText:@"确定"
 					cancelAction:^{
 					  item.isSwitchOn = !newValue;
+					  [DYYYSettingsHelper refreshTableView]; // 刷新 UI
 					}
 					confirmAction:^{
 					  item.isSwitchOn = newValue;
