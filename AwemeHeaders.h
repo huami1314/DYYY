@@ -407,6 +407,7 @@ static CGFloat gStartVal = 0.0;
 @property(nonatomic, assign) CGRect frame;
 @property(nonatomic, strong) NSArray *subviews;
 @property(nonatomic, assign) CGAffineTransform transform;
+- (BOOL)view:(UIView *)view containsSubviewOfClass:(Class)viewClass;
 @end
 
 @interface AWECommentImageModel : NSObject
