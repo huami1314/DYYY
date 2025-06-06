@@ -5175,11 +5175,17 @@ static CGFloat currentScale = 1.0;
 				isLeftElement = YES;
 			}
 		} else {
-
-			NSInteger subviewCount = self.subviews.count;
-			if (subviewCount == 6) {
+			// 没有accessibilityLabel，计算AWEBaseElementView类型子视图的数量
+			NSInteger baseElementViewCount = 0;
+			for (UIView *subview in self.subviews) {
+				if ([subview isKindOfClass:%c(AWEBaseElementView)]) {
+					baseElementViewCount++;
+				}
+			}
+			
+			if (baseElementViewCount == 6) {
 				isRightElement = YES;
-			} else if (subviewCount == 5 || subviewCount == 4) {
+			} else if (baseElementViewCount == 5 || baseElementViewCount == 4) {
 				isLeftElement = YES;
 			}
 		}
@@ -5236,7 +5242,7 @@ static CGFloat currentScale = 1.0;
 
 	UIViewController *viewController = [self firstAvailableUIViewController];
 	if ([viewController isKindOfClass:%c(AWEPlayInteractionViewController)]) {
-	
+		// 先判断是否有accessibilityLabel
 		BOOL isLeftElement = NO;
 		
 		if (self.accessibilityLabel) {
@@ -5245,8 +5251,14 @@ static CGFloat currentScale = 1.0;
 			}
 		} else {
 
-			NSInteger subviewCount = self.subviews.count;
-			if (subviewCount == 5 || subviewCount == 4) {
+			NSInteger baseElementViewCount = 0;
+			for (UIView *subview in self.subviews) {
+				if ([subview isKindOfClass:%c(AWEBaseElementView)]) {
+					baseElementViewCount++;
+				}
+			}
+			
+			if (baseElementViewCount == 5 || baseElementViewCount == 4) {
 				isLeftElement = YES;
 			}
 		}
