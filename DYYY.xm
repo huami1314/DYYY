@@ -5109,10 +5109,8 @@ static CGFloat stream_frame_y = 0;
 static CGFloat right_tx = 0;
 static CGFloat left_tx = 0;
 static CGFloat currentScale = 1.0;
-
 - (void)layoutSubviews {
 	%orig;
-
 	UIViewController *vc = [self firstAvailableUIViewController];
 	if ([vc isKindOfClass:%c(AWELiveNewPreStreamViewController)]) {
 		NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
@@ -5123,46 +5121,81 @@ static CGFloat currentScale = 1.0;
 			}
 		}
 	}
-	// 处理视频流直播间文案缩放
+	
+	// 只在AWEPlayInteractionViewController上应用缩放
 	UIResponder *nextResponder = [self nextResponder];
 	if ([nextResponder isKindOfClass:[UIView class]]) {
 		UIView *parentView = (UIView *)nextResponder;
 		UIViewController *viewController = [parentView firstAvailableUIViewController];
-
-		if ([viewController isKindOfClass:%c(AWELiveNewPreStreamViewController)]) {
-			NSString *vcScaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
-			if (vcScaleValue.length > 0) {
-				CGFloat scale = [vcScaleValue floatValue];
-				self.transform = CGAffineTransformIdentity;
-
-				if (scale > 0 && scale != 1.0) {
-					NSArray *subviews = [self.subviews copy];
-					CGFloat ty = 0;
-
-					for (UIView *view in subviews) {
-						CGFloat viewHeight = view.frame.size.height;
-						CGFloat contribution = (viewHeight - viewHeight * scale) / 2;
-						ty += contribution;
+		if ([viewController isKindOfClass:%c(AWEPlayInteractionViewController)]) {
+		
+			NSString *scaleKey = nil;
+			
+			if ([self.accessibilityLabel isEqualToString:@"right"]) {
+				scaleKey = @"DYYYElementScale";
+			} else if ([self.accessibilityLabel isEqualToString:@"left"]) {
+				scaleKey = @"DYYYNicknameScale";
+			} else {
+				
+				NSArray *subviews = [self subviews];
+				NSInteger awBaseElementViewCount = 0;
+				
+				for (UIView *view in subviews) {
+					if ([view isKindOfClass:%c(AWEBaseElementView)]) {
+						awBaseElementViewCount++;
 					}
-
-					CGFloat frameWidth = self.frame.size.width;
-					CGFloat tx = (frameWidth - frameWidth * scale) / 2 - frameWidth * (1 - scale);
-
-					CGAffineTransform newTransform = CGAffineTransformMakeScale(scale, scale);
-					newTransform = CGAffineTransformTranslate(newTransform, tx / scale, ty / scale);
-
-					self.transform = newTransform;
+				}
+				
+				if (awBaseElementViewCount == 6) {
+					scaleKey = @"DYYYElementScale";
+				} else if (awBaseElementViewCount == 5 || awBaseElementViewCount == 4) {
+					scaleKey = @"DYYYNicknameScale";
+				}
+			}
+			
+			if (scaleKey) {
+				NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:scaleKey];
+				if (scaleValue.length > 0) {
+					CGFloat scale = [scaleValue floatValue];
+					
+					self.transform = CGAffineTransformIdentity;
+					
+					if (scale > 0 && scale != 1.0) {
+						NSArray *subviews = [self.subviews copy];
+						CGFloat ty = 0;
+						
+						for (UIView *view in subviews) {
+							CGFloat viewHeight = view.frame.size.height;
+							CGFloat contribution = (viewHeight - viewHeight * scale) / 2;
+							ty += contribution;
+						}
+						
+						CGFloat frameWidth = self.frame.size.width;
+						CGFloat tx = 0;
+						
+						if ([self.accessibilityLabel isEqualToString:@"right"] || [scaleKey isEqualToString:@"DYYYElementScale"]) {
+							tx = (frameWidth - frameWidth * scale) / 2;
+							right_tx = tx;
+							self.transform = CGAffineTransformMake(scale, 0, 0, scale, tx, ty);
+						} else {
+							tx = (frameWidth - frameWidth * scale) / 2 - frameWidth * (1 - scale);
+							left_tx = tx;
+							CGAffineTransform newTransform = CGAffineTransformMakeScale(scale, scale);
+							newTransform = CGAffineTransformTranslate(newTransform, tx / scale, ty / scale);
+							self.transform = newTransform;
+						}
+						
+						currentScale = scale;
+					}
 				}
 			}
 		}
 	}
-
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
 		UIResponder *nextResponder = [self nextResponder];
 		if ([nextResponder isKindOfClass:[UIView class]]) {
 			UIView *parentView = (UIView *)nextResponder;
 			UIViewController *viewController = [parentView firstAvailableUIViewController];
-
 			if ([viewController isKindOfClass:%c(AWELiveNewPreStreamViewController)]) {
 				CGRect frame = self.frame;
 				frame.origin.y -= g_heightDifference;
@@ -5171,93 +5204,25 @@ static CGFloat currentScale = 1.0;
 			}
 		}
 	}
-
-	// 右侧元素的处理逻辑
-	NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYElementScale"];
-	if ([self.accessibilityLabel isEqualToString:@"right"]) {
-		self.transform = CGAffineTransformIdentity;
-
-		if (scaleValue.length > 0) {
-			CGFloat scale = [scaleValue floatValue];
-
-			if (currentScale != scale) {
-				currentScale = scale;
-			}
-
-			if (scale > 0 && scale != 1.0) {
-				CGFloat ty = 0;
-
-				for (UIView *view in self.subviews) {
-					CGFloat viewHeight = view.frame.size.height;
-					CGFloat contribution = (viewHeight - viewHeight * scale) / 2;
-					ty += contribution;
-				}
-
-				CGFloat frameWidth = self.frame.size.width;
-				right_tx = (frameWidth - frameWidth * scale) / 2;
-
-				self.transform = CGAffineTransformMake(scale, 0, 0, scale, right_tx, ty);
-			} else {
-				self.transform = CGAffineTransformIdentity;
-			}
-		}
-	}
-	// 左侧元素的处理逻辑
-	else if ([self.accessibilityLabel isEqualToString:@"left"]) {
-		NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
-
-		if (scaleValue.length > 0) {
-			CGFloat scale = [scaleValue floatValue];
-
-			self.transform = CGAffineTransformIdentity;
-
-			if (scale > 0 && scale != 1.0) {
-				NSArray *subviews = [self.subviews copy];
-				CGFloat ty = 0;
-
-				for (UIView *view in subviews) {
-					CGFloat viewHeight = view.frame.size.height;
-					CGFloat contribution = (viewHeight - viewHeight * scale) / 2;
-					ty += contribution;
-				}
-
-				CGFloat frameWidth = self.frame.size.width;
-				CGFloat left_tx = (frameWidth - frameWidth * scale) / 2 - frameWidth * (1 - scale);
-
-				CGAffineTransform newTransform = CGAffineTransformMakeScale(scale, scale);
-				newTransform = CGAffineTransformTranslate(newTransform, left_tx / scale, ty / scale);
-
-				self.transform = newTransform;
-			}
-		}
-	}
 }
-
 - (NSArray<__kindof UIView *> *)arrangedSubviews {
 	if ([self.accessibilityLabel isEqualToString:@"left"]) {
 		NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
-
 		if (scaleValue.length > 0) {
 			CGFloat scale = [scaleValue floatValue];
-
 			self.transform = CGAffineTransformIdentity;
-
 			if (scale > 0 && scale != 1.0) {
 				NSArray *subviews = [self.subviews copy];
 				CGFloat ty = 0;
-
 				for (UIView *view in subviews) {
 					CGFloat viewHeight = view.frame.size.height;
 					CGFloat contribution = (viewHeight - viewHeight * scale) / 2;
 					ty += contribution;
 				}
-
 				CGFloat frameWidth = self.frame.size.width;
 				CGFloat left_tx = (frameWidth - frameWidth * scale) / 2 - frameWidth * (1 - scale);
-
 				CGAffineTransform newTransform = CGAffineTransformMakeScale(scale, scale);
 				newTransform = CGAffineTransformTranslate(newTransform, left_tx / scale, ty / scale);
-
 				self.transform = newTransform;
 			}
 		}
@@ -5265,7 +5230,6 @@ static CGFloat currentScale = 1.0;
 	NSArray *originalSubviews = %orig;
 	return originalSubviews;
 }
-
 %new
 - (UIViewController *)firstAvailableUIViewController {
 	UIResponder *responder = [self nextResponder];
@@ -5276,72 +5240,6 @@ static CGFloat currentScale = 1.0;
 		responder = [responder nextResponder];
 	}
 	return nil;
-}
-%end
-
-%hook AWEStoryContainerCollectionView
-- (void)layoutSubviews {
-	%orig;
-	if ([self.subviews count] == 2)
-		return;
-
-	// 获取 enableEnterProfile 属性来判断是否是主页
-	id enableEnterProfile = [self valueForKey:@"enableEnterProfile"];
-	BOOL isHome = (enableEnterProfile != nil && [enableEnterProfile boolValue]);
-
-	// 检查是否在作者主页
-	BOOL isAuthorProfile = NO;
-	UIResponder *responder = self;
-	while ((responder = [responder nextResponder])) {
-		if ([NSStringFromClass([responder class]) containsString:@"UserHomeViewController"] || [NSStringFromClass([responder class]) containsString:@"ProfileViewController"]) {
-			isAuthorProfile = YES;
-			break;
-		}
-	}
-
-	// 如果不是主页也不是作者主页，直接返回
-	if (!isHome && !isAuthorProfile)
-		return;
-
-	for (UIView *subview in self.subviews) {
-		if ([subview isKindOfClass:[UIView class]]) {
-			UIView *nextResponder = (UIView *)subview.nextResponder;
-
-			// 处理主页的情况
-			if (isHome && [nextResponder isKindOfClass:%c(AWEPlayInteractionViewController)]) {
-				UIViewController *awemeBaseViewController = [nextResponder valueForKey:@"awemeBaseViewController"];
-				if (![awemeBaseViewController isKindOfClass:%c(AWEFeedCellViewController)]) {
-					continue;
-				}
-
-				CGRect frame = subview.frame;
-				if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-					frame.size.height = subview.superview.frame.size.height - g_heightDifference;
-					subview.frame = frame;
-				}
-			}
-			// 处理作者主页的情况
-			else if (isAuthorProfile) {
-				// 检查是否是作品图片
-				BOOL isWorkImage = NO;
-
-				// 可以通过检查子视图、标签或其他特性来确定是否是作品图片
-				for (UIView *childView in subview.subviews) {
-					if ([NSStringFromClass([childView class]) containsString:@"ImageView"] || [NSStringFromClass([childView class]) containsString:@"ThumbnailView"]) {
-						isWorkImage = YES;
-						break;
-					}
-				}
-
-				if (isWorkImage) {
-					// 修复作者主页作品图片上移问题
-					CGRect frame = subview.frame;
-					frame.origin.y += g_heightDifference;
-					subview.frame = frame;
-				}
-			}
-		}
-	}
 }
 %end
 
@@ -5845,6 +5743,30 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 			break;
 		}
 	}
+}
+%end
+
+%hook AWENormalModeTabBarGeneralPlusButton
+- (void)setImage:(UIImage *)image forState:(UIControlState)state {
+
+    if ([self.accessibilityLabel isEqualToString:@"拍摄"]) {
+
+        NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
+        NSString *dyyyFolderPath = [documentsPath stringByAppendingPathComponent:@"DYYY"];
+        
+        NSString *customImagePath = [dyyyFolderPath stringByAppendingPathComponent:@"photograph.png"];
+        
+        if ([[NSFileManager defaultManager] fileExistsAtPath:customImagePath]) {
+            UIImage *customImage = [UIImage imageWithContentsOfFile:customImagePath];
+            if (customImage) {
+              
+                %orig(customImage, state);
+                return;
+            }
+        }
+    }
+    
+    %orig;
 }
 %end
 

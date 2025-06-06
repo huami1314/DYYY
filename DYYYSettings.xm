@@ -1024,7 +1024,8 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	  [iconItems addObject:createIconCustomizationItem(@"DYYYIconUnfavorite", @"未收藏图标", @"ic_star_outlined_20", @"unfavorite.png")];
 	  [iconItems addObject:createIconCustomizationItem(@"DYYYIconFavorite", @"已收藏图标", @"ic_star_filled_20", @"favorite.png")];
 	  [iconItems addObject:createIconCustomizationItem(@"DYYYIconShare", @"分享的图标", @"ic_share_outlined", @"share.png")];
-
+         [iconItems addObject:createIconCustomizationItem(@"DYYYIcon photograph", @"拍摄的图标", @"ic_camera_outlined", @"photograph.png")];
+         
 	  // 将图标自定义section添加到sections数组
 	  NSMutableArray *sections = [NSMutableArray array];
 	  [sections addObject:createSection(@"透明度设置", transparencyItems)];

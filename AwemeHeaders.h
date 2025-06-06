@@ -1135,3 +1135,6 @@ static CGFloat gStartVal = 0.0;
 @property (nonatomic) NSNumber *bitrate;
 @property (nonatomic) AWEURLModel *playAddr;
 @end
+
+@interface AWENormalModeTabBarGeneralPlusButton : UIView
+@end
