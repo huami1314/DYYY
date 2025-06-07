@@ -2069,12 +2069,17 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_enterpriseservice_outlined"},
 		  @{@"identifier" : @"SaveCurrentABTestData",
-		    @"title" : @"保存当前配置",
+		    @"title" : @"导出当前配置",
+		    @"detail" : @"",
+		    @"cellType" : @26,
+		    @"imageName" : @"ic_memorycard_outlined_20"},
+		  @{@"identifier" : @"SaveABTestConfigFile",
+		    @"title" : @"导出本地配置",
 		    @"detail" : @"",
 		    @"cellType" : @26,
 		    @"imageName" : @"ic_memorycard_outlined_20"},
 		  @{@"identifier" : @"LoadABTestConfigFile",
-		    @"title" : @"本地选择配置",
+		    @"title" : @"导入本地配置",
 		    @"detail" : @"",
 		    @"cellType" : @26,
 		    @"imageName" : @"ic_phonearrowup_outlined_20"},
@@ -2084,6 +2089,44 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"cellType" : @26,
 		    @"imageName" : @"ic_trash_outlined_20"}
 	  ];
+
+	  // --- 声明一个__block变量来持有SaveABTestConfigFileitem ---
+	  __block AWESettingItemModel *saveABTestConfigFileItemRef = nil;
+	  // --- 定义一个用于刷新SaveABTestConfigFileitem的局部block ---
+	  void (^refreshSaveABTestConfigFileItem)(void) = ^{
+		  if (!saveABTestConfigFileItemRef) return;
+
+		  NSFileManager *fileManager = [NSFileManager defaultManager];
+		  NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+		  NSString *documentsDirectory = [paths firstObject];
+		  NSString *dyyyFolderPath = [documentsDirectory stringByAppendingPathComponent:@"DYYY"];
+		  NSString *jsonFilePath = [dyyyFolderPath stringByAppendingPathComponent:@"abtest_data_fixed.json"];
+		  if (![fileManager fileExistsAtPath:jsonFilePath]) {
+			  saveABTestConfigFileItemRef.detail = @"(文件不存在)";
+			  saveABTestConfigFileItemRef.isEnable = NO;
+		  } else {
+			  unsigned long long jsonFileSize = 0;
+			  NSError *attributesError = nil;
+			  NSDictionary *attributes = [fileManager attributesOfItemAtPath:jsonFilePath error:&attributesError];
+			  if (!attributesError && attributes) {
+				  jsonFileSize = [attributes fileSize];
+				  NSString *dataSizeString;
+				  if (jsonFileSize < 1024) {
+					  dataSizeString = [NSString stringWithFormat:@"(%llu B)", jsonFileSize];
+				  } else if (jsonFileSize < 1024 * 1024) {
+					  dataSizeString = [NSString stringWithFormat:@"(%.2f KB)", (double)jsonFileSize / 1024.0];
+				  } else {
+					  dataSizeString = [NSString stringWithFormat:@"(%.2f MB)", (double)jsonFileSize / (1024.0 * 1024.0)];
+				  }
+				  saveABTestConfigFileItemRef.detail = dataSizeString;
+				  saveABTestConfigFileItemRef.isEnable = YES;
+			  } else {
+				  saveABTestConfigFileItemRef.detail = [NSString stringWithFormat:@"(读取失败: %@)", attributesError.localizedDescription ?: @"未知错误"];
+				  saveABTestConfigFileItemRef.isEnable = NO;
+			  }
+		  }
+		  [DYYYSettingsHelper refreshTableView]; // 刷新表格视图以更新显示
+	  };
 
 	  for (NSDictionary *dict in hotUpdateSettings) {
 		  AWESettingItemModel *item = [DYYYSettingsHelper createSettingItem:dict];
@@ -2147,6 +2190,33 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 			    }
 			  };
 		  } else if ([item.identifier isEqualToString:@"SaveCurrentABTestData"]) {
+			  item.detail = @"(获取中...)"; // 默认显示获取中
+
+			  NSDictionary *currentData = getCurrentABTestData();
+
+			  if (!currentData) {
+			    item.detail = @"(获取失败)";
+			    item.isEnable = NO;
+			  } else {
+			    NSError *serializationError = nil;
+			    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:currentData options:NSJSONWritingPrettyPrinted error:&serializationError];
+			    if (!serializationError && jsonData) {
+				    unsigned long long dataSize = jsonData.length;
+				    NSString *dataSizeString;
+				    if (dataSize < 1024) {
+					  dataSizeString = [NSString stringWithFormat:@"(%llu B)", dataSize];
+				    } else if (dataSize < 1024 * 1024) {
+					  dataSizeString = [NSString stringWithFormat:@"(%.2f KB)", (double)dataSize / 1024.0];
+				    } else {
+					  dataSizeString = [NSString stringWithFormat:@"(%.2f MB)", (double)dataSize / (1024.0 * 1024.0)];
+				    }
+				    item.detail = dataSizeString;
+			    } else {
+				    item.detail = [NSString stringWithFormat:@"(序列化失败: %@)", serializationError.localizedDescription ?: @"未知错误"];
+				    item.isEnable = NO;
+			    }
+			  }
+
 			  item.cellTappedBlock = ^{
 			    NSDictionary *currentData = getCurrentABTestData();
 
@@ -2194,6 +2264,34 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 			    UIViewController *topVC = topView();
 			    [topVC presentViewController:documentPicker animated:YES completion:nil];
 			  };
+		  } else if ([item.identifier isEqualToString:@"SaveABTestConfigFile"]) {
+			  item.detail = @"(获取中...)"; // 默认显示获取中
+
+			  saveABTestConfigFileItemRef = item; // 捕获对该特定item的引用
+			  refreshSaveABTestConfigFileItem();  // 确保初始显示正确状态
+
+			  item.cellTappedBlock = ^{
+			    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+			    NSString *documentsDirectory = [paths firstObject];
+
+			    NSString *dyyyFolderPath = [documentsDirectory stringByAppendingPathComponent:@"DYYY"];
+			    NSString *jsonFilePath = [dyyyFolderPath stringByAppendingPathComponent:@"abtest_data_fixed.json"];
+        
+			    NSURL *jsonFileURL = [NSURL fileURLWithPath:jsonFilePath];
+			    UIDocumentPickerViewController *documentPicker = [[UIDocumentPickerViewController alloc] initWithURLs:@[ jsonFileURL ] inMode:UIDocumentPickerModeExportToService];
+        
+			    DYYYBackupPickerDelegate *pickerDelegate = [[DYYYBackupPickerDelegate alloc] init];
+			    pickerDelegate.completionBlock = ^(NSURL *url) {
+			      [DYYYManager showToast:@"ABTest配置已保存"];
+			    };
+        
+			    static char kABTestConfigPickerDelegateKey;
+			    documentPicker.delegate = pickerDelegate;
+			    objc_setAssociatedObject(documentPicker, &kABTestConfigPickerDelegateKey, pickerDelegate, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+			    UIViewController *topVC = topView();
+			    [topVC presentViewController:documentPicker animated:YES completion:nil];
+			  };
 		  } else if ([item.identifier isEqualToString:@"LoadABTestConfigFile"]) {
 			  item.cellTappedBlock = ^{
 			    UIDocumentPickerViewController *documentPicker = [[UIDocumentPickerViewController alloc] initWithDocumentTypes:@[ @"public.json" ] inMode:UIDocumentPickerModeImport];
@@ -2225,6 +2323,8 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 				      gFixedABTestData = nil;
 				      onceToken = 0;
 				      loadFixedABTestData();
+				      // 导入成功后更新 SaveABTestConfigFile item 的状态
+				      refreshSaveABTestConfigFileItem();
 			      }
 			    };
 
@@ -2252,6 +2352,10 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 				    if (success) {
 					    gFixedABTestData = nil;
 					    onceToken = 0;
+					    // 删除成功后修改 SaveABTestConfigFile item 的状态
+					    saveABTestConfigFileItemRef.detail = @"(不存在)";
+					    saveABTestConfigFileItemRef.isEnable = NO;
+					    [DYYYSettingsHelper refreshTableView];
 				    }
 			    } else {
 				    [DYYYManager showToast:@"本地配置不存在"];
