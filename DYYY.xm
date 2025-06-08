@@ -110,28 +110,20 @@
 %end
 
 // 禁用自动进入直播间
-%hook AWELiveFeedStatusViewModel
+%hook AWELiveGuideElement
 
-- (BOOL)enableAutoEnterLive {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableAutoEnterLive"]) {
-		return NO;
-	}
-	return %orig;
+- (BOOL)enableAutoEnterRoom {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableAutoEnterLive"]) {
+        return NO;
+    }
+    return %orig;
 }
 
-- (void)updateAutoEnterTips {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableAutoEnterLive"]) {
-		return;
-	}
-	%orig;
-}
-
-- (void)setDirectShowAutoEnterStyle:(BOOL)style {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableAutoEnterLive"]) {
-		%orig(NO);
-	} else {
-		%orig(style);
-	}
+- (BOOL)enableNewAutoEnter {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableAutoEnterLive"]) {
+        return NO;
+    }
+    return %orig;
 }
 
 %end
