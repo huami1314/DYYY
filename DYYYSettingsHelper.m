@@ -71,8 +71,6 @@
           @"conflicts" : @{
               @"DYYYEnableDoubleOpenComment" : @[ @"DYYYEnableDoubleOpenAlertController" ],
               @"DYYYEnableDoubleOpenAlertController" : @[ @"DYYYEnableDoubleOpenComment" ],
-              @"DYYYABTestBlockEnabled" : @[ @"DYYYABTestPatchEnabled" ],
-              @"DYYYABTestPatchEnabled" : @[ @"DYYYABTestBlockEnabled" ],
               @"DYYYEnabshijianjindu" : @[ @"DYYYHideTimeProgress" ],
               @"DYYYHideTimeProgress" : @[ @"DYYYEnabshijianjindu" ],
               @"DYYYHideLOTAnimationView" : @[ @"DYYYHideFollowPromptView" ],
@@ -86,8 +84,6 @@
           @"mutualExclusive" : @{
               @"DYYYEnableDoubleOpenComment" : @[ @"DYYYEnableDoubleOpenAlertController" ],
               @"DYYYEnableDoubleOpenAlertController" : @[ @"DYYYEnableDoubleOpenComment" ],
-              @"DYYYABTestBlockEnabled" : @[ @"DYYYABTestPatchEnabled" ],
-              @"DYYYABTestPatchEnabled" : @[ @"DYYYABTestBlockEnabled" ],
               @"DYYYEnabshijianjindu" : @[ @"DYYYHideTimeProgress" ],
               @"DYYYHideTimeProgress" : @[ @"DYYYEnabshijianjindu" ],
               @"DYYYHideLOTAnimationView" : @[ @"DYYYHideFollowPromptView" ],

@@ -5,7 +5,8 @@ extern BOOL abTestBlockEnabled;
 extern BOOL abTestPatchEnabled;
 extern NSDictionary *gFixedABTestData;
 extern dispatch_once_t onceToken;
+extern BOOL gDataLoaded;
 
 // 声明函数
-NSDictionary *loadFixedABTestData(void);
+void ensureABTestDataLoaded(void);
 NSDictionary *getCurrentABTestData(void);

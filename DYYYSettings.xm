@@ -2059,14 +2059,14 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	  NSMutableArray<AWESettingItemModel *> *hotUpdateItems = [NSMutableArray array];
 	  NSArray *hotUpdateSettings = @[
 		  @{@"identifier" : @"DYYYABTestBlockEnabled",
-		    @"title" : @"禁用下发配置",
+		    @"title" : @"禁止下发配置",
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_fire_outlined_20"},
 		  @{@"identifier" : @"DYYYABTestPatchEnabled",
-		    @"title" : @"启用补丁模式",
+		    @"title" : @"配置应用方式",
 		    @"detail" : @"",
-		    @"cellType" : @6,
+		    @"cellType" : @26,
 		    @"imageName" : @"ic_enterpriseservice_outlined"},
 		  @{@"identifier" : @"SaveCurrentABTestData",
 		    @"title" : @"导出当前配置",
@@ -2101,8 +2101,10 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		  NSString *documentsDirectory = [paths firstObject];
 		  NSString *dyyyFolderPath = [documentsDirectory stringByAppendingPathComponent:@"DYYY"];
 		  NSString *jsonFilePath = [dyyyFolderPath stringByAppendingPathComponent:@"abtest_data_fixed.json"];
+
+		  NSString *loadingStatus = gDataLoaded ? @"已加载：" : @"未加载：";
 		  if (![fileManager fileExistsAtPath:jsonFilePath]) {
-			  saveABTestConfigFileItemRef.detail = @"(文件不存在)";
+			  saveABTestConfigFileItemRef.detail = [NSString stringWithFormat:@"%@ (文件不存在)", loadingStatus];
 			  saveABTestConfigFileItemRef.isEnable = NO;
 		  } else {
 			  unsigned long long jsonFileSize = 0;
@@ -2112,16 +2114,16 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 				  jsonFileSize = [attributes fileSize];
 				  NSString *dataSizeString;
 				  if (jsonFileSize < 1024) {
-					  dataSizeString = [NSString stringWithFormat:@"(%llu B)", jsonFileSize];
+					  dataSizeString = [NSString stringWithFormat:@"%llu B", jsonFileSize];
 				  } else if (jsonFileSize < 1024 * 1024) {
-					  dataSizeString = [NSString stringWithFormat:@"(%.2f KB)", (double)jsonFileSize / 1024.0];
+					  dataSizeString = [NSString stringWithFormat:@"%.2f KB", (double)jsonFileSize / 1024.0];
 				  } else {
-					  dataSizeString = [NSString stringWithFormat:@"(%.2f MB)", (double)jsonFileSize / (1024.0 * 1024.0)];
+					  dataSizeString = [NSString stringWithFormat:@"%.2f MB", (double)jsonFileSize / (1024.0 * 1024.0)];
 				  }
-				  saveABTestConfigFileItemRef.detail = dataSizeString;
+				  saveABTestConfigFileItemRef.detail = [NSString stringWithFormat:@"%@ %@", loadingStatus, dataSizeString];
 				  saveABTestConfigFileItemRef.isEnable = YES;
 			  } else {
-				  saveABTestConfigFileItemRef.detail = [NSString stringWithFormat:@"(读取失败: %@)", attributesError.localizedDescription ?: @"未知错误"];
+				  saveABTestConfigFileItemRef.detail = [NSString stringWithFormat:@"%@ (读取失败: %@)", loadingStatus, attributesError.localizedDescription ?: @"未知错误"]; // 修改此处
 				  saveABTestConfigFileItemRef.isEnable = NO;
 			  }
 		  }
@@ -2136,57 +2138,53 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 			    BOOL newValue = !item.isSwitchOn;
 
 			    if (newValue) {
-				    [DYYYBottomAlertView showAlertWithTitle:@"禁用下发配置"
-					message:@"请尽量保证在禁用热更新前导入正确配置，否则会导致插件部分功能失效。确定要继续吗？"
+				    [DYYYBottomAlertView showAlertWithTitle:@"禁止热更新下发配置"
+					message:@"这将暂停接收测试新功能的推送。确定要继续吗？"
 					cancelButtonText:@"取消"
 					confirmButtonText:@"确定"
 					cancelAction:^{
 					  item.isSwitchOn = !newValue;
-					  [DYYYSettingsHelper refreshTableView]; // 刷新 UI
+					  [DYYYSettingsHelper refreshTableView];
 					}
 					confirmAction:^{
 					  item.isSwitchOn = newValue;
 					  [DYYYSettingsHelper setUserDefaults:@(newValue) forKey:@"DYYYABTestBlockEnabled"];
-					  [DYYYSettingsHelper handleConflictsAndDependenciesForSetting:item.identifier isEnabled:newValue];
 
 					  // 重置全局变量
-					  gFixedABTestData = nil;
-					  onceToken = 0;
-					  loadFixedABTestData();
+					  abTestBlockEnabled = newValue;
 					}];
 			    } else {
 				    item.isSwitchOn = newValue;
 				    [DYYYSettingsHelper setUserDefaults:@(newValue) forKey:@"DYYYABTestBlockEnabled"];
-				    [DYYYSettingsHelper handleConflictsAndDependenciesForSetting:item.identifier isEnabled:newValue];
 			    }
 			  };
 		  } else if ([item.identifier isEqualToString:@"DYYYABTestPatchEnabled"]) {
-			  item.switchChangedBlock = ^{
-			    BOOL newValue = !item.isSwitchOn;
+			  item.detail = [[NSUserDefaults standardUserDefaults] boolForKey:item.identifier] ? @"覆写模式" : @"替换模式";
+
+			  item.cellTappedBlock = ^{
+			    BOOL oldPatchMode = [[NSUserDefaults standardUserDefaults] boolForKey:item.identifier];
+
+			    NSArray *modeOptions = @[ @"覆写模式：保留原设置，覆盖同名项", @"替换模式：清除原配置，写入新数据" ];
+
+			    NSString *newValue = [DYYYOptionsSelectionView showWithPreferenceKey:@"DYYYABTestPatchEnabledString"
+											 optionsArray:modeOptions
+											   headerText:@"选择本地配置的应用方式"
+										       onPresentingVC:topView()];
 
 			    if (newValue) {
-				    [DYYYBottomAlertView showAlertWithTitle:@"热更新补丁模式"
-					message:@"这是一个全新的、更稳定的热更新配置模式，请您确保导入正确的配置文件。"
-					cancelButtonText:@"取消"
-					confirmButtonText:@"确定"
-					cancelAction:^{
-					  item.isSwitchOn = !newValue;
-					  [DYYYSettingsHelper refreshTableView]; // 刷新 UI
-					}
-					confirmAction:^{
-					  item.isSwitchOn = newValue;
-					  [DYYYSettingsHelper setUserDefaults:@(newValue) forKey:@"DYYYABTestPatchEnabled"];
-					  [DYYYSettingsHelper handleConflictsAndDependenciesForSetting:item.identifier isEnabled:newValue];
+				    BOOL newPatchMode = [newValue isEqualToString:@"覆写模式：保留原设置，覆盖同名项"];
 
+				    item.detail = newPatchMode ? @"覆写模式" : @"替换模式";
+				    if (newPatchMode != oldPatchMode) {
+					  [DYYYSettingsHelper setUserDefaults:@(newPatchMode) forKey:item.identifier];
+
+					  //[DYYYManager showToast:@"应用方式已更改，重启抖音生效"];
 					  // 重置全局变量
 					  gFixedABTestData = nil;
 					  onceToken = 0;
-					  loadFixedABTestData();
-					}];
-			    } else {
-				    item.isSwitchOn = newValue;
-				    [DYYYSettingsHelper setUserDefaults:@(newValue) forKey:@"DYYYABTestPatchEnabled"];
-				    [DYYYSettingsHelper handleConflictsAndDependenciesForSetting:item.identifier isEnabled:newValue];
+					  ensureABTestDataLoaded();
+				    }
+				    [DYYYSettingsHelper refreshTableView];
 			    }
 			  };
 		  } else if ([item.identifier isEqualToString:@"SaveCurrentABTestData"]) {
@@ -2204,11 +2202,11 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 				    unsigned long long dataSize = jsonData.length;
 				    NSString *dataSizeString;
 				    if (dataSize < 1024) {
-					  dataSizeString = [NSString stringWithFormat:@"(%llu B)", dataSize];
+					  dataSizeString = [NSString stringWithFormat:@"%llu B", dataSize];
 				    } else if (dataSize < 1024 * 1024) {
-					  dataSizeString = [NSString stringWithFormat:@"(%.2f KB)", (double)dataSize / 1024.0];
+					  dataSizeString = [NSString stringWithFormat:@"%.2f KB", (double)dataSize / 1024.0];
 				    } else {
-					  dataSizeString = [NSString stringWithFormat:@"(%.2f MB)", (double)dataSize / (1024.0 * 1024.0)];
+					  dataSizeString = [NSString stringWithFormat:@"%.2f MB", (double)dataSize / (1024.0 * 1024.0)];
 				    }
 				    item.detail = dataSizeString;
 			    } else {
@@ -2322,7 +2320,18 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 			    [topVC presentViewController:documentPicker animated:YES completion:nil];
 			  };
 		  } else if ([item.identifier isEqualToString:@"LoadABTestConfigFile"]) {
-			  item.cellTappedBlock = ^{
+			item.cellTappedBlock = ^{
+			  BOOL isPatchMode = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYABTestPatchEnabled"];
+			  NSString *confirmTitle, *confirmMessage;
+			  if (isPatchMode) {
+			    confirmTitle = @"当前覆写模式,请确保配置有效";
+			    confirmMessage = @"覆写模式将保留并覆盖原设置。确定要继续吗？";
+			  } else {
+			    confirmTitle = @"当前替换模式，请确保配置完整";
+			    confirmMessage = @"替换模式将丢弃并替换原设置。确定要继续吗？";
+			  }
+			  DYYYAboutDialogView *confirmDialog = [[DYYYAboutDialogView alloc] initWithTitle:confirmTitle message:confirmMessage];
+			  confirmDialog.onConfirm = ^{
 			    UIDocumentPickerViewController *documentPicker = [[UIDocumentPickerViewController alloc] initWithDocumentTypes:@[ @"public.json" ] inMode:UIDocumentPickerModeImport];
 
 			    DYYYBackupPickerDelegate *pickerDelegate = [[DYYYBackupPickerDelegate alloc] init];
@@ -2351,7 +2360,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 			      if (success) {
 				      gFixedABTestData = nil;
 				      onceToken = 0;
-				      loadFixedABTestData();
+				      ensureABTestDataLoaded();
 				      // 导入成功后更新 SaveABTestConfigFile item 的状态
 				      refreshSaveABTestConfigFileItem();
 			      }
@@ -2364,6 +2373,8 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 			    UIViewController *topVC = topView();
 			    [topVC presentViewController:documentPicker animated:YES completion:nil];
 			  };
+			  [confirmDialog show];
+			};
 		  } else if ([item.identifier isEqualToString:@"DeleteABTestConfigFile"]) {
 			  item.cellTappedBlock = ^{
 			    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
@@ -2382,7 +2393,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 					    gFixedABTestData = nil;
 					    onceToken = 0;
 					    // 删除成功后修改 SaveABTestConfigFile item 的状态
-					    saveABTestConfigFileItemRef.detail = @"(文件不存在)";
+					    saveABTestConfigFileItemRef.detail = @"(文件已删除)";
 					    saveABTestConfigFileItemRef.isEnable = NO;
 					    [DYYYSettingsHelper refreshTableView];
 				    }
