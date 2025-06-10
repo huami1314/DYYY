@@ -7,5 +7,3 @@
 #### **功能说明**  
 - 通过 **双指长按** 或 **抖音设置** 进入设置界面  
 - 功能自测
-
-[![Powered by DartNode](https://dartnode.com/branding/DN-Open-Source-sm.png)](https://dartnode.com "Powered by DartNode - Free VPS for Open Source")

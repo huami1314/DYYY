@@ -2221,30 +2221,28 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 			    NSDictionary *currentData = getCurrentABTestData();
 
 			    if (!currentData) {
-				    [DYYYManager showToast:@"获取ABTest配置失败"];
+				    [DYYYManager showToast:@"ABTest配置获取失败"];
 				    return;
 			    }
 
 			    NSError *error;
-			    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:currentData options:NSJSONWritingPrettyPrinted error:&error];
+			    NSData *sortedJsonData = [NSJSONSerialization dataWithJSONObject:currentData  options:NSJSONWritingPrettyPrinted | NSJSONWritingSortedKeys error:&error];
 
 			    if (error) {
-				    [DYYYManager showToast:@"序列化配置数据失败"];
+				    [DYYYManager showToast:@"ABTest配置序列化失败"];
 				    return;
 			    }
 
 			    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
 			    [formatter setDateFormat:@"yyyyMMdd_HHmmss"];
 			    NSString *timestamp = [formatter stringFromDate:[NSDate date]];
-			    NSString *filename = [NSString stringWithFormat:@"ABTest_Config_%@.json", timestamp];
+			    NSString *tempFile = [NSString stringWithFormat:@"ABTest_Config_%@.json", timestamp];
+			    NSString *tempFilePath = [NSTemporaryDirectory() stringByAppendingPathComponent:tempFile];
 
-			    NSString *tempDir = NSTemporaryDirectory();
-			    NSString *tempFilePath = [tempDir stringByAppendingPathComponent:filename];
-
-			    BOOL success = [jsonData writeToFile:tempFilePath atomically:YES];
+			    BOOL success = [sortedJsonData writeToFile:tempFilePath atomically:YES];
 
 			    if (!success) {
-				    [DYYYManager showToast:@"创建临时文件失败"];
+				    [DYYYManager showToast:@"临时文件创建失败"];
 				    return;
 			    }
 
@@ -2276,15 +2274,46 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 
 			    NSString *dyyyFolderPath = [documentsDirectory stringByAppendingPathComponent:@"DYYY"];
 			    NSString *jsonFilePath = [dyyyFolderPath stringByAppendingPathComponent:@"abtest_data_fixed.json"];
-        
-			    NSURL *jsonFileURL = [NSURL fileURLWithPath:jsonFilePath];
-			    UIDocumentPickerViewController *documentPicker = [[UIDocumentPickerViewController alloc] initWithURLs:@[ jsonFileURL ] inMode:UIDocumentPickerModeExportToService];
-        
+
+			    NSData *jsonData = [NSData dataWithContentsOfFile:jsonFilePath];
+			    if (!jsonData) {
+			      [DYYYManager showToast:@"本地配置获取失败"];
+			      return;
+			    }
+
+			    NSError *error;
+			    NSDictionary *originalData = [NSJSONSerialization JSONObjectWithData:jsonData options:0 error:&error];
+			    if (error || ![originalData isKindOfClass:[NSDictionary class]]) {
+			      [DYYYManager showToast:@"本地配置序列化失败"];
+			      return;
+			    }
+
+			    NSData *sortedJsonData = [NSJSONSerialization dataWithJSONObject:originalData options:NSJSONWritingPrettyPrinted | NSJSONWritingSortedKeys error:&error];
+			    if (error || !sortedJsonData) {
+			      [DYYYManager showToast:@"排序数据序列化失败"];
+			      return;
+			    }
+
+			    // 创建临时文件
+			    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+			    [formatter setDateFormat:@"yyyyMMdd_HHmmss"];
+			    NSString *timestamp = [formatter stringFromDate:[NSDate date]];
+			    NSString *tempFile = [NSString stringWithFormat:@"abtest_data_fixed_%@.json", timestamp];
+			    NSString *tempFilePath = [NSTemporaryDirectory() stringByAppendingPathComponent:tempFile];
+
+			    if (![sortedJsonData writeToFile:tempFilePath atomically:YES]) {
+			      [DYYYManager showToast:@"临时文件创建失败"];
+			      return;
+			    }
+
+			    UIDocumentPickerViewController *documentPicker = [[UIDocumentPickerViewController alloc] initWithURLs:@[[NSURL fileURLWithPath:tempFilePath]] inMode:UIDocumentPickerModeExportToService];
+
 			    DYYYBackupPickerDelegate *pickerDelegate = [[DYYYBackupPickerDelegate alloc] init];
+			    pickerDelegate.tempFilePath = tempFilePath;
 			    pickerDelegate.completionBlock = ^(NSURL *url) {
-			      [DYYYManager showToast:@"ABTest配置已保存"];
+			      [DYYYManager showToast:@"本地配置已保存"];
 			    };
-        
+
 			    static char kABTestConfigPickerDelegateKey;
 			    documentPicker.delegate = pickerDelegate;
 			    objc_setAssociatedObject(documentPicker, &kABTestConfigPickerDelegateKey, pickerDelegate, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
@@ -2353,7 +2382,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 					    gFixedABTestData = nil;
 					    onceToken = 0;
 					    // 删除成功后修改 SaveABTestConfigFile item 的状态
-					    saveABTestConfigFileItemRef.detail = @"(不存在)";
+					    saveABTestConfigFileItemRef.detail = @"(文件不存在)";
 					    saveABTestConfigFileItemRef.isEnable = NO;
 					    [DYYYSettingsHelper refreshTableView];
 				    }
@@ -2860,7 +2889,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 
 	  // 转换为JSON数据
 	  NSError *error;
-	  NSData *jsonData = [NSJSONSerialization dataWithJSONObject:dyyySettings options:NSJSONWritingPrettyPrinted error:&error];
+	  NSData *sortedJsonData = [NSJSONSerialization dataWithJSONObject:dyyySettings options:NSJSONWritingPrettyPrinted | NSJSONWritingSortedKeys error:&error];
 
 	  if (error) {
 		  [DYYYManager showToast:@"备份失败：无法序列化设置数据"];
@@ -2874,7 +2903,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	  NSString *tempDir = NSTemporaryDirectory();
 	  NSString *tempFilePath = [tempDir stringByAppendingPathComponent:backupFileName];
 
-	  BOOL success = [jsonData writeToFile:tempFilePath atomically:YES];
+	  BOOL success = [sortedJsonData writeToFile:tempFilePath atomically:YES];
 
 	  if (!success) {
 		  [DYYYManager showToast:@"备份失败：无法创建临时文件"];
