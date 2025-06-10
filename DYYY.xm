@@ -20,47 +20,47 @@
 %hook AWEVideoModel
 
 - (AWEURLModel *)playURL {
-    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableVideoHighestQuality"]) {
-        return %orig;
-    }
-    
-    // 获取比特率模型数组
-    NSArray *bitrateModels = [self bitrateModels];
-    if (!bitrateModels || bitrateModels.count == 0) {
-        return %orig;
-    }
-    
-    // 查找比特率最高的模型
-    id highestBitrateModel = nil;
-    NSInteger highestBitrate = 0;
-    
-    for (id model in bitrateModels) {
-        NSInteger bitrate = 0;
-        BOOL validModel = NO;
-        
-        if ([model isKindOfClass:NSClassFromString(@"AWEVideoBSModel")]) {
-            id bitrateValue = [model bitrate];
-            if (bitrateValue) {
-                bitrate = [bitrateValue integerValue];
-                validModel = YES;
-            }
-        }
-        
-        if (validModel && bitrate > highestBitrate) {
-            highestBitrate = bitrate;
-            highestBitrateModel = model;
-        }
-    }
-    
-    // 如果找到了最高比特率模型，获取其播放地址
-    if (highestBitrateModel) {
-        id playAddr = [highestBitrateModel valueForKey:@"playAddr"];
-        if (playAddr && [playAddr isKindOfClass:%c(AWEURLModel)]) {
-            return playAddr;
-        }
-    }
-    
-    return %orig;
+	if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableVideoHighestQuality"]) {
+		return %orig;
+	}
+
+	// 获取比特率模型数组
+	NSArray *bitrateModels = [self bitrateModels];
+	if (!bitrateModels || bitrateModels.count == 0) {
+		return %orig;
+	}
+
+	// 查找比特率最高的模型
+	id highestBitrateModel = nil;
+	NSInteger highestBitrate = 0;
+
+	for (id model in bitrateModels) {
+		NSInteger bitrate = 0;
+		BOOL validModel = NO;
+
+		if ([model isKindOfClass:NSClassFromString(@"AWEVideoBSModel")]) {
+			id bitrateValue = [model bitrate];
+			if (bitrateValue) {
+				bitrate = [bitrateValue integerValue];
+				validModel = YES;
+			}
+		}
+
+		if (validModel && bitrate > highestBitrate) {
+			highestBitrate = bitrate;
+			highestBitrateModel = model;
+		}
+	}
+
+	// 如果找到了最高比特率模型，获取其播放地址
+	if (highestBitrateModel) {
+		id playAddr = [highestBitrateModel valueForKey:@"playAddr"];
+		if (playAddr && [playAddr isKindOfClass:%c(AWEURLModel)]) {
+			return playAddr;
+		}
+	}
+
+	return %orig;
 }
 
 - (NSArray *)bitrateModels {
@@ -113,17 +113,17 @@
 %hook AWELiveGuideElement
 
 - (BOOL)enableAutoEnterRoom {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableAutoEnterLive"]) {
-        return NO;
-    }
-    return %orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableAutoEnterLive"]) {
+		return NO;
+	}
+	return %orig;
 }
 
 - (BOOL)enableNewAutoEnter {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableAutoEnterLive"]) {
-        return NO;
-    }
-    return %orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableAutoEnterLive"]) {
+		return NO;
+	}
+	return %orig;
 }
 
 %end
@@ -2767,6 +2767,8 @@ static AWEIMReusableCommonCell *currentCell;
 				// 如果是合集，只检查合集的开关
 				if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTemplateVideo"]) {
 					[self removeFromSuperview];
+				} else if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+					self.backgroundColor = [UIColor clearColor];
 				}
 			} else {
 				// 如果不是合集（即作者声明），只检查声明的开关
@@ -2781,8 +2783,7 @@ static AWEIMReusableCommonCell *currentCell;
 	// 禁用背景色设置
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideGradient"]) {
 		%orig(UIColor.clearColor);
-	}
-	else {
+	} else {
 		%orig(backgroundColor);
 	}
 }
@@ -4838,7 +4839,7 @@ static AWEIMReusableCommonCell *currentCell;
 %end
 
 // 底栏高度
-static CGFloat g_heightDifference = 0;
+static CGFloat tabHeight = 0;
 
 static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 	if (!parentView)
@@ -4893,6 +4894,15 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 %hook UIView
 - (void)layoutSubviews {
 	%orig;
+
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+		if (self.frame.size.height == tabHeight && tabHeight > 0) {
+			UIViewController *vc = [self firstAvailableUIViewController];
+			if ([vc isKindOfClass:NSClassFromString(@"AWEMixVideoPanelDetailTableViewController")]) {
+				self.backgroundColor = [UIColor clearColor];
+			}
+		}
+	}
 
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"]) {
 		for (UIView *subview in self.subviews) {
@@ -5012,7 +5022,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 		CGRect superF = self.superview.frame;
 		if (CGRectGetHeight(superF) > 0 && CGRectGetHeight(frame) > 0 && CGRectGetHeight(frame) < CGRectGetHeight(superF)) {
 			CGFloat diff = CGRectGetHeight(superF) - CGRectGetHeight(frame);
-			if (fabs(diff - g_heightDifference) < 1.0) {
+			if (fabs(diff - tabHeight) < 1.0) {
 				frame.size.height = CGRectGetHeight(superF);
 			}
 		}
@@ -5053,9 +5063,9 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 		} else if ([currentReferString isEqualToString:@"offline_mode"] || currentReferString == nil) {
 			frame.size.height = self.view.superview.frame.size.height;
 		} else if ([currentReferString isEqualToString:@"others_homepage"] || currentReferString == nil) {
-			frame.size.height = self.view.superview.frame.size.height - g_heightDifference;
+			frame.size.height = self.view.superview.frame.size.height - tabHeight;
 		} else {
-			frame.size.height = self.view.superview.frame.size.height - g_heightDifference;
+			frame.size.height = self.view.superview.frame.size.height - tabHeight;
 		}
 
 		self.view.frame = frame;
@@ -5074,11 +5084,11 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 			CGRect frame = contentView.frame;
 			CGFloat parentHeight = contentView.superview.frame.size.height;
 
-			if (frame.size.height == parentHeight - g_heightDifference) {
+			if (frame.size.height == parentHeight - tabHeight) {
 				frame.size.height = parentHeight;
 				contentView.frame = frame;
-			} else if (frame.size.height == parentHeight - (g_heightDifference * 2)) {
-				frame.size.height = parentHeight - g_heightDifference;
+			} else if (frame.size.height == parentHeight - (tabHeight * 2)) {
+				frame.size.height = parentHeight - tabHeight;
 				contentView.frame = frame;
 			}
 		}
@@ -5093,8 +5103,8 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
 		if (self.superview) {
 			CGFloat currentDifference = self.superview.frame.size.height - self.frame.size.height;
-			if (currentDifference > 0 && currentDifference != g_heightDifference) {
-				g_heightDifference = currentDifference;
+			if (currentDifference > 0 && currentDifference != tabHeight) {
+				tabHeight = currentDifference;
 			}
 		}
 
@@ -5169,7 +5179,7 @@ static CGFloat currentScale = 1.0;
 			UIViewController *viewController = [parentView firstAvailableUIViewController];
 			if ([viewController isKindOfClass:%c(AWELiveNewPreStreamViewController)]) {
 				CGRect frame = self.frame;
-				frame.origin.y -= g_heightDifference;
+				frame.origin.y -= tabHeight;
 				stream_frame_y = frame.origin.y;
 				self.frame = frame;
 			}
@@ -5181,7 +5191,7 @@ static CGFloat currentScale = 1.0;
 		// 先判断是否有accessibilityLabel
 		BOOL isRightElement = NO;
 		BOOL isLeftElement = NO;
-		
+
 		if (self.accessibilityLabel) {
 			if ([self.accessibilityLabel isEqualToString:@"right"]) {
 				isRightElement = YES;
@@ -5202,7 +5212,7 @@ static CGFloat currentScale = 1.0;
 				}
 			}
 		}
-		
+
 		// 右侧元素的处理逻辑
 		if (isRightElement) {
 			NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYElementScale"];
@@ -5257,7 +5267,7 @@ static CGFloat currentScale = 1.0;
 	if ([viewController isKindOfClass:%c(AWEPlayInteractionViewController)]) {
 		// 先判断是否有accessibilityLabel
 		BOOL isLeftElement = NO;
-		
+
 		if (self.accessibilityLabel) {
 			if ([self.accessibilityLabel isEqualToString:@"left"]) {
 				isLeftElement = YES;
@@ -5271,7 +5281,7 @@ static CGFloat currentScale = 1.0;
 				}
 			}
 		}
-		
+
 		if (isLeftElement) {
 			NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
 			if (scaleValue.length > 0) {
@@ -5294,7 +5304,7 @@ static CGFloat currentScale = 1.0;
 			}
 		}
 	}
-	
+
 	NSArray *originalSubviews = %orig;
 	return originalSubviews;
 }
@@ -5311,20 +5321,19 @@ static CGFloat currentScale = 1.0;
 }
 %new
 - (BOOL)view:(UIView *)view containsSubviewOfClass:(Class)viewClass {
-    if ([view isKindOfClass:viewClass]) {
-        return YES;
-    }
-    
-    for (UIView *subview in view.subviews) {
-        if ([self view:subview containsSubviewOfClass:viewClass]) {
-            return YES;
-        }
-    }
-    
-    return NO;
+	if ([view isKindOfClass:viewClass]) {
+		return YES;
+	}
+
+	for (UIView *subview in view.subviews) {
+		if ([self view:subview containsSubviewOfClass:viewClass]) {
+			return YES;
+		}
+	}
+
+	return NO;
 }
 %end
-
 
 %hook AWEStoryContainerCollectionView
 - (void)layoutSubviews {
@@ -5363,7 +5372,7 @@ static CGFloat currentScale = 1.0;
 
 				CGRect frame = subview.frame;
 				if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-					frame.size.height = subview.superview.frame.size.height - g_heightDifference;
+					frame.size.height = subview.superview.frame.size.height - tabHeight;
 					subview.frame = frame;
 				}
 			}
@@ -5383,7 +5392,7 @@ static CGFloat currentScale = 1.0;
 				if (isWorkImage) {
 					// 修复作者主页作品图片上移问题
 					CGRect frame = subview.frame;
-					frame.origin.y += g_heightDifference;
+					frame.origin.y += tabHeight;
 					subview.frame = frame;
 				}
 			}
@@ -5545,17 +5554,25 @@ static CGFloat currentScale = 1.0;
 %hook AWEMixVideoPanelMoreView
 
 - (void)setFrame:(CGRect)frame {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-        CGFloat targetY = frame.origin.y - g_heightDifference;
-        CGFloat screenHeightMinusGDiff = [UIScreen mainScreen].bounds.size.height - g_heightDifference;
-        
-        CGFloat tolerance = 10.0;
-        
-        if (fabs(targetY - screenHeightMinusGDiff) <= tolerance) {
-            frame.origin.y = targetY;
-        }
-    }
-    %orig(frame);
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+		CGFloat targetY = frame.origin.y - tabHeight;
+		CGFloat screenHeightMinusGDiff = [UIScreen mainScreen].bounds.size.height - tabHeight;
+
+		CGFloat tolerance = 10.0;
+
+		if (fabs(targetY - screenHeightMinusGDiff) <= tolerance) {
+			frame.origin.y = targetY;
+		}
+	}
+	%orig(frame);
+}
+
+- (void)layoutSubviews {
+	%orig;
+
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+		self.backgroundColor = [UIColor clearColor];
+	}
 }
 
 %end
@@ -5575,7 +5592,7 @@ static CGFloat currentScale = 1.0;
 	if (parentVC && ([parentVC isKindOfClass:%c(AWEAwemeDetailTableViewController)] || [parentVC isKindOfClass:%c(AWEAwemeDetailCellViewController)])) {
 		for (UIView *subview in [self subviews]) {
 			if ([subview class] == [UIView class]) {
-				if ([(UIView *)self frame].size.height == g_heightDifference) {
+				if ([(UIView *)self frame].size.height == tabHeight) {
 					subview.hidden = YES;
 				} else {
 					subview.hidden = NO;
@@ -5627,28 +5644,25 @@ static CGFloat currentScale = 1.0;
 
 // 隐藏上次看到
 %hook DUXPopover
-- (void)layoutSubviews
-{
-    %orig;
+- (void)layoutSubviews {
+	%orig;
 
-    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePopover"]) {
-        return;
-    }
+	if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePopover"]) {
+		return;
+	}
 
-    id rawContent = nil;
-    @try {
-        rawContent = [self valueForKey:@"content"];
-    } @catch (__unused NSException *e) {
-        return;
-    }
+	id rawContent = nil;
+	@try {
+		rawContent = [self valueForKey:@"content"];
+	} @catch (__unused NSException *e) {
+		return;
+	}
 
-    NSString *text = [rawContent isKindOfClass:NSString.class]
-                     ? (NSString *)rawContent
-                     : [rawContent description];
+	NSString *text = [rawContent isKindOfClass:NSString.class] ? (NSString *)rawContent : [rawContent description];
 
-    if ([text containsString:@"上次看到"]) {
-        [self removeFromSuperview];
-    }
+	if ([text containsString:@"上次看到"]) {
+		[self removeFromSuperview];
+	}
 }
 %end
 
@@ -5918,24 +5932,24 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 %hook AWENormalModeTabBarGeneralPlusButton
 - (void)setImage:(UIImage *)image forState:(UIControlState)state {
 
-    if ([self.accessibilityLabel isEqualToString:@"拍摄"]) {
+	if ([self.accessibilityLabel isEqualToString:@"拍摄"]) {
 
-        NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
-        NSString *dyyyFolderPath = [documentsPath stringByAppendingPathComponent:@"DYYY"];
-        
-        NSString *customImagePath = [dyyyFolderPath stringByAppendingPathComponent:@"photograph.png"];
-        
-        if ([[NSFileManager defaultManager] fileExistsAtPath:customImagePath]) {
-            UIImage *customImage = [UIImage imageWithContentsOfFile:customImagePath];
-            if (customImage) {
-              
-                %orig(customImage, state);
-                return;
-            }
-        }
-    }
-    
-    %orig;
+		NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
+		NSString *dyyyFolderPath = [documentsPath stringByAppendingPathComponent:@"DYYY"];
+
+		NSString *customImagePath = [dyyyFolderPath stringByAppendingPathComponent:@"photograph.png"];
+
+		if ([[NSFileManager defaultManager] fileExistsAtPath:customImagePath]) {
+			UIImage *customImage = [UIImage imageWithContentsOfFile:customImagePath];
+			if (customImage) {
+
+				%orig(customImage, state);
+				return;
+			}
+		}
+	}
+
+	%orig;
 }
 %end
 
