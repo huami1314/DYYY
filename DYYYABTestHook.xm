@@ -5,12 +5,9 @@
 @property(retain, nonatomic) NSDictionary *abTestData;
 @property(retain, nonatomic) NSMutableDictionary *consistentABTestDic;
 @property(copy, nonatomic) NSDictionary *performanceReversalDic;
-- (void)fetchConfiguration:(id)arg1;
-- (void)fetchConfigurationWithRetry:(BOOL)arg1 completion:(id)arg2;
-- (void)incrementalUpdateData:(id)arg1 unchangedKeyList:(id)arg2;
-- (void)overrideABTestData:(id)arg1 needCleanCache:(BOOL)arg2;
 - (void)setAbTestData:(id)arg1;
 - (void)_saveABTestData:(id)arg1;
+- (id)abTestData;
 + (id)sharedManager;
 @end
 
@@ -19,11 +16,15 @@ BOOL abTestPatchEnabled = NO;
 NSDictionary *gFixedABTestData = nil;
 dispatch_once_t onceToken;
 BOOL gDataLoaded = NO;
-
+BOOL gFileExists = NO;
 static NSDate *lastLoadAttemptTime = nil;
 static const NSTimeInterval kMinLoadInterval = 60.0;
+BOOL gABTestDataFixed = NO;
 
 void ensureABTestDataLoaded(void) {
+	if (gDataLoaded)
+		return;
+
 	dispatch_once(&onceToken, ^{
 	  NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
 	  NSString *documentsDirectory = [paths firstObject];
@@ -40,38 +41,51 @@ void ensureABTestDataLoaded(void) {
 		  }
 	  }
 
+	  // 检查文件是否存在
+	  if (![fileManager fileExistsAtPath:jsonFilePath]) {
+		  gFileExists = NO;
+		  gDataLoaded = YES;
+		  return;
+	  }
+
 	  NSError *error = nil;
 	  NSData *jsonData = [NSData dataWithContentsOfFile:jsonFilePath options:0 error:&error];
 
 	  if (jsonData) {
 		  NSDictionary *loadedData = [NSJSONSerialization JSONObjectWithData:jsonData options:0 error:&error];
 		  if (loadedData && !error) {
-			  // 成功加载数据，判断应用方式
-			  AWEABTestManager *manager = [%c(AWEABTestManager) sharedManager];
-			  if (manager && abTestPatchEnabled) {
-				  // 覆写模式：使用合并的mergedData
-				  NSDictionary *currentABTestData = [manager abTestData];
-				  NSMutableDictionary *mergedData = [NSMutableDictionary dictionaryWithDictionary:currentABTestData ?: @{}];
-				  [mergedData addEntriesFromDictionary:loadedData];
-				  gFixedABTestData = [mergedData copy];
-			  } else {
-				  // 替换模式：使用读取的loadedData
-				  gFixedABTestData = [loadedData copy];
-			  }
+			  // 成功加载数据，保存到全局变量
+			  gFixedABTestData = [loadedData copy];
+			  gFileExists = YES;
 			  gDataLoaded = YES;
 			  return;
 		  }
 	  }
-	  gFixedABTestData = nil;
-	  gDataLoaded = NO;
+	  gFileExists = NO;
+	  gDataLoaded = YES;
 	});
 }
 
 // 获取当前ABTest数据
 NSDictionary *getCurrentABTestData(void) {
-    ensureABTestDataLoaded();
-    AWEABTestManager *manager = [%c(AWEABTestManager) sharedManager];
-    return manager ? [manager abTestData] : nil;
+	if (abTestBlockEnabled) {
+		if (!gDataLoaded) {
+			ensureABTestDataLoaded();
+		}
+		if (!gFileExists) {
+			AWEABTestManager *manager = [%c(AWEABTestManager) sharedManager];
+			return manager ? [manager abTestData] : nil;
+		}
+		return gFixedABTestData;
+	}
+
+	AWEABTestManager *manager = [%c(AWEABTestManager) sharedManager];
+	if (!manager) {
+		return nil;
+	}
+
+	NSDictionary *currentData = [manager abTestData];
+	return currentData;
 }
 
 static NSMutableDictionary *gCaseCache = nil;
@@ -124,9 +138,15 @@ static NSMutableDictionary *gCaseCache = nil;
 
 // 拦截一致性ABTest值获取方法
 - (id)getValueOfConsistentABTestWithKey:(id)arg1 {
-    if (!abTestBlockEnabled && arg1) {
-        ensureABTestDataLoaded();
+    if (gABTestDataFixed) {
+        return %orig;
+    }
+
+    if ((abTestBlockEnabled || abTestPatchEnabled) && arg1) {
         if (!gDataLoaded) {
+            ensureABTestDataLoaded();
+        }
+        if (!gFileExists) {
             return %orig; 
         }
         NSString *key = (NSString *)arg1;
@@ -146,26 +166,10 @@ static NSMutableDictionary *gCaseCache = nil;
     return %orig;
 }
 
-// 拦截保存 ABTest 数据的方法
-- (void)_saveABTestData:(id)arg1 {
-    if (abTestBlockEnabled) {
-        return;
-    }
-    %orig;
-}
-
 %end
 
 %ctor {
     %init;
     abTestBlockEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYABTestBlockEnabled"];
     abTestPatchEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYABTestPatchEnabled"];
-
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        AWEABTestManager *manager = [%c(AWEABTestManager) sharedManager];
-        if (manager && gDataLoaded && abTestBlockEnabled) {
-            ensureABTestDataLoaded();
-            [manager setAbTestData:gFixedABTestData];
-        }
-    });
 }
