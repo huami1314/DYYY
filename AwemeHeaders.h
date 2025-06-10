@@ -933,6 +933,7 @@ static CGFloat gStartVal = 0.0;
 - (void)setTapDismissBlock:(void (^)(void))tapDismissBlock;
 - (void)setAfterDismissBlock:(void (^)(void))afterDismissBlock;
 - (void)updateDarkModeAppearance;
+- (void)presentOnViewController:(UIViewController *)presentingViewController;
 @end
 
 @interface AWELoadingAndVolumeView : UIView
