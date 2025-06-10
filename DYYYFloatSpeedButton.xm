@@ -252,10 +252,35 @@ static AWEAwemePlayVideoViewController *currentVideoController = nil;
 static AWEDPlayerFeedPlayerViewController *currentFeedVideoController = nil;
 
 static FloatingSpeedButton *speedButton = nil;
+static BOOL isCommentViewVisible = NO;
 static BOOL showSpeedX = NO;
 static CGFloat speedButtonSize = 32.0;
 static BOOL isFloatSpeedButtonEnabled = NO;
+
 static BOOL isForceHidden = NO;
+
+%hook AWECommentContainerViewController
+
+- (void)viewWillAppear:(BOOL)animated {
+	%orig;
+	isCommentViewVisible = YES;
+	if (speedButton) {
+		dispatch_async(dispatch_get_main_queue(), ^{
+		  speedButton.hidden = YES;
+		});
+	}
+}
+
+- (void)viewWillDisappear:(BOOL)animated {
+	%orig;
+	if (speedButton) {
+		dispatch_async(dispatch_get_main_queue(), ^{
+		  speedButton.hidden = YES;
+		});
+	}
+}
+
+%end
 
 NSArray *getSpeedOptions() {
 	NSString *speedConfig = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYSpeedSettings"] ?: @"1.0,1.25,1.5,2.0";
@@ -304,10 +329,13 @@ void updateSpeedButtonUI() {
 
 	NSString *formattedSpeed;
 	if (fmodf(currentSpeed, 1.0) == 0) {
+		// 整数值 (1.0, 2.0) -> "1", "2"
 		formattedSpeed = [NSString stringWithFormat:@"%.0f", currentSpeed];
 	} else if (fmodf(currentSpeed * 10, 1.0) == 0) {
+		// 一位小数 (1.5) -> "1.5"
 		formattedSpeed = [NSString stringWithFormat:@"%.1f", currentSpeed];
 	} else {
+		// 两位小数 (1.25) -> "1.25"
 		formattedSpeed = [NSString stringWithFormat:@"%.2f", currentSpeed];
 	}
 
@@ -453,7 +481,7 @@ void updateSpeedButtonUI() {
 
 	if (speedButton) {
 		BOOL isCommentShowing = [self isCommentVCShowing];
-		speedButton.hidden = isCommentShowing || isForceHidden;
+		speedButton.hidden = isCommentShowing || isCommentViewVisible || isForceHidden;
 	}
 }
 
@@ -461,8 +489,8 @@ void updateSpeedButtonUI() {
 	%orig;
 	if (speedButton) {
 		dispatch_async(dispatch_get_main_queue(), ^{
-		  BOOL isCommentShowing = [self isCommentVCShowing];
-		  speedButton.hidden = isCommentShowing || isForceHidden;
+			BOOL isCommentShowing = [self isCommentVCShowing];
+			speedButton.hidden = isCommentShowing || isCommentViewVisible || isForceHidden;
 		});
 	}
 }
@@ -501,10 +529,13 @@ void updateSpeedButtonUI() {
 
 	NSString *formattedSpeed;
 	if (fmodf(newSpeed, 1.0) == 0) {
+		// 整数值 (1.0, 2.0) -> "1", "2"
 		formattedSpeed = [NSString stringWithFormat:@"%.0f", newSpeed];
 	} else if (fmodf(newSpeed * 10, 1.0) == 0) {
+		// 一位小数 (1.5) -> "1.5"
 		formattedSpeed = [NSString stringWithFormat:@"%.1f", newSpeed];
 	} else {
+		// 两位小数 (1.25) -> "1.25"
 		formattedSpeed = [NSString stringWithFormat:@"%.2f", newSpeed];
 	}
 
@@ -594,22 +625,7 @@ void updateSpeedButtonUI() {
 		dispatch_async(dispatch_get_main_queue(), ^{
 		  [self addSubview:speedButton];
 		  [speedButton loadSavedPosition];
-		  // 获取当前的 AWEPlayInteractionViewController 实例来检查评论状态
-		  UIViewController *topVC = [UIApplication sharedApplication].keyWindow.rootViewController;
-		  while (topVC.presentedViewController) {
-		    topVC = topVC.presentedViewController;
-		  }
-		  
-		  AWEPlayInteractionViewController *interactionVC = nil;
-		  for (UIViewController *vc in [speedButton findViewControllersInHierarchy:topVC]) {
-		    if ([vc isKindOfClass:%c(AWEPlayInteractionViewController)]) {
-		      interactionVC = (AWEPlayInteractionViewController *)vc;
-		      break;
-		    }
-		  }
-		  
-		  BOOL isCommentShowing = interactionVC ? [interactionVC isCommentVCShowing] : NO;
-		  speedButton.hidden = isCommentShowing || isForceHidden;
+		  speedButton.hidden = isCommentViewVisible || isForceHidden;
 		});
 	}
 }
@@ -623,22 +639,7 @@ void showSpeedButton(void) {
     isForceHidden = NO;
     if (speedButton) {
         dispatch_async(dispatch_get_main_queue(), ^{
-            // 获取当前的 AWEPlayInteractionViewController 实例来检查评论状态
-            UIViewController *topVC = [UIApplication sharedApplication].keyWindow.rootViewController;
-            while (topVC.presentedViewController) {
-                topVC = topVC.presentedViewController;
-            }
-            
-            AWEPlayInteractionViewController *interactionVC = nil;
-            for (UIViewController *vc in [speedButton findViewControllersInHierarchy:topVC]) {
-                if ([vc isKindOfClass:%c(AWEPlayInteractionViewController)]) {
-                    interactionVC = (AWEPlayInteractionViewController *)vc;
-                    break;
-                }
-            }
-            
-            BOOL isCommentShowing = interactionVC ? [interactionVC isCommentVCShowing] : NO;
-            speedButton.hidden = isCommentShowing;
+            speedButton.hidden = isCommentViewVisible;
         });
     }
 }
