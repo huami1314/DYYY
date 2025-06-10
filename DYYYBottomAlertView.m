@@ -53,10 +53,6 @@
        rightBtnClickedBlock:wrappedConfirmAction
       leftButtonClickedBlock:wrappedCancelAction];
     
-    // 设置圆角
-    [vc setCornerRadius:16.0];
-    [vc setOnlyTopCornerClips:YES];
-    
     [vc setUseCardUIStyle:YES];
 
     UIViewController *topVC = topView(); 
