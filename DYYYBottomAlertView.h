@@ -24,7 +24,6 @@ typedef void (^DYYYAlertActionHandler)(void);
                             cancelAction:(nullable DYYYAlertActionHandler)cancelAction
                            confirmAction:(nullable DYYYAlertActionHandler)confirmAction;
 
-
 /**
  * 显示警告框，使用默认按钮文本
  * @param title 标题文本
@@ -35,6 +34,21 @@ typedef void (^DYYYAlertActionHandler)(void);
  */
 + (UIViewController *)showAlertWithTitle:(nullable NSString *)title
                                  message:(nullable NSString *)message
+                            cancelAction:(nullable DYYYAlertActionHandler)cancelAction
+                           confirmAction:(nullable DYYYAlertActionHandler)confirmAction;
+
+/**
+ * 显示带头像的警告框
+ * @param title 标题文本
+ * @param message 消息文本
+ * @param avatarURL 头像URL
+ * @param cancelAction 点击取消按钮回调
+ * @param confirmAction 点击确认按钮回调
+ * @return 返回控制器实例，可用于视图管理
+ */
++ (UIViewController *)showAlertWithTitle:(nullable NSString *)title
+                                 message:(nullable NSString *)message
+                               avatarURL:(nullable NSString *)avatarURL
                             cancelAction:(nullable DYYYAlertActionHandler)cancelAction
                            confirmAction:(nullable DYYYAlertActionHandler)confirmAction;
 

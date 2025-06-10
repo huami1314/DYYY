@@ -90,6 +90,8 @@ static CGFloat gStartVal = 0.0;
 @interface AWEUserModel : NSObject
 @property(copy, nonatomic) NSString *nickname;
 @property(copy, nonatomic) NSString *shortID;
+@property(copy, nonatomic) NSString *signature;
+@property(copy, nonatomic) AWEURLModel *avatarMedium;
 @end
 
 @interface AWEAwemeModel : NSObject
@@ -1145,4 +1147,8 @@ static CGFloat gStartVal = 0.0;
 @end
 
 @interface AWEMixVideoPanelMoreView : UIView
+@end
+
+@interface AWEPlayInteractionUserAvatarFollowController : UIViewController
+@property(retain, nonatomic) AWEAwemeModel *model;
 @end
