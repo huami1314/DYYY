@@ -2777,6 +2777,15 @@ static AWEIMReusableCommonCell *currentCell;
 		}
 	}
 }
+- (void)setBackgroundColor:(UIColor *)backgroundColor {
+	// 禁用背景色设置
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideGradient"]) {
+		%orig(UIColor.clearColor);
+	}
+	else {
+		%orig(backgroundColor);
+	}
+}
 %end
 
 // 隐藏我的添加朋友
@@ -3662,6 +3671,19 @@ static AWEIMReusableCommonCell *currentCell;
 		%orig(NO);
 	} else {
 		%orig(arg0);
+	}
+}
+
+%end
+
+%hook AWELiveAutoEnterStyleAView
+
+- (void)layoutSubviews {
+	%orig;
+
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidenLiveView"]) {
+		[self removeFromSuperview];
+		return;
 	}
 }
 
