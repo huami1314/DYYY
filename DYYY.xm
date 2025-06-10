@@ -5523,10 +5523,17 @@ static CGFloat currentScale = 1.0;
 %hook AWEMixVideoPanelMoreView
 
 - (void)setFrame:(CGRect)frame {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-		frame.origin.y -= g_heightDifference;
-	}
-	%orig(frame);
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+        CGFloat targetY = frame.origin.y - g_heightDifference;
+        CGFloat screenHeightMinusGDiff = [UIScreen mainScreen].bounds.size.height - g_heightDifference;
+        
+        CGFloat tolerance = 10.0;
+        
+        if (fabs(targetY - screenHeightMinusGDiff) <= tolerance) {
+            frame.origin.y = targetY;
+        }
+    }
+    %orig(frame);
 }
 
 %end
