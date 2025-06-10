@@ -319,62 +319,62 @@
 
 %hook AWEPlayInteractionUserAvatarFollowController
 - (void)onFollowViewClicked:(UITapGestureRecognizer *)gesture {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYfollowTips"]) {
-        // 获取用户信息
-        AWEUserModel *author = nil;
-        NSString *nickname = @"";
-        NSString *signature = @"";
-        NSString *avatarURL = @"";
-        
-        if ([self respondsToSelector:@selector(model)]) {
-            id model = [self model];
-            if ([model isKindOfClass:NSClassFromString(@"AWEAwemeModel")]) {
-                author = [model valueForKey:@"author"];
-            }
-        }
-        
-        if (author) {
-            // 获取昵称
-            if ([author respondsToSelector:@selector(nickname)]) {
-                nickname = [author valueForKey:@"nickname"] ?: @"";
-            }
-            
-            // 获取签名
-            if ([author respondsToSelector:@selector(signature)]) {
-                signature = [author valueForKey:@"signature"] ?: @"";
-            }
-            
-            // 获取头像URL
-            if ([author respondsToSelector:@selector(avatarThumb)]) {
-                AWEURLModel *avatarThumb = [author valueForKey:@"avatarThumb"];
-                if (avatarThumb && avatarThumb.originURLList.count > 0) {
-                    avatarURL = avatarThumb.originURLList.firstObject;
-                }
-            }
-        }
-        
-        NSMutableString *messageContent = [NSMutableString string];
-        if (signature.length > 0) {
-            [messageContent appendFormat:@"%@", signature];
-        }
-        if (messageContent.length > 0) {
-            [messageContent appendString:@"\n是否确认关注此用户？"];
-        } else {
-            [messageContent appendString:@"是否确认关注？"];
-        }
-        
-        NSString *title = nickname.length > 0 ? nickname : @"关注确认";
-        
-        [DYYYBottomAlertView showAlertWithTitle:title
-                                        message:messageContent
-                                       avatarURL:avatarURL
-                                   cancelAction:nil
-                                  confirmAction:^{
-                                      %orig(gesture);
-                                  }];
-    } else {
-        %orig;
-    }
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYfollowTips"]) {
+		// 获取用户信息
+		AWEUserModel *author = nil;
+		NSString *nickname = @"";
+		NSString *signature = @"";
+		NSString *avatarURL = @"";
+
+		if ([self respondsToSelector:@selector(model)]) {
+			id model = [self model];
+			if ([model isKindOfClass:NSClassFromString(@"AWEAwemeModel")]) {
+				author = [model valueForKey:@"author"];
+			}
+		}
+
+		if (author) {
+			// 获取昵称
+			if ([author respondsToSelector:@selector(nickname)]) {
+				nickname = [author valueForKey:@"nickname"] ?: @"";
+			}
+
+			// 获取签名
+			if ([author respondsToSelector:@selector(signature)]) {
+				signature = [author valueForKey:@"signature"] ?: @"";
+			}
+
+			// 获取头像URL
+			if ([author respondsToSelector:@selector(avatarThumb)]) {
+				AWEURLModel *avatarThumb = [author valueForKey:@"avatarThumb"];
+				if (avatarThumb && avatarThumb.originURLList.count > 0) {
+					avatarURL = avatarThumb.originURLList.firstObject;
+				}
+			}
+		}
+
+		NSMutableString *messageContent = [NSMutableString string];
+		if (signature.length > 0) {
+			[messageContent appendFormat:@"%@", signature];
+		}
+		if (messageContent.length > 0) {
+			[messageContent appendString:@"\n是否确认关注此用户？"];
+		} else {
+			[messageContent appendString:@"是否确认关注？"];
+		}
+
+		NSString *title = nickname.length > 0 ? nickname : @"关注确认";
+
+		[DYYYBottomAlertView showAlertWithTitle:title
+						message:messageContent
+					      avatarURL:avatarURL
+					   cancelAction:nil
+					  confirmAction:^{
+					    %orig(gesture);
+					  }];
+	} else {
+		%orig;
+	}
 }
 
 %end
@@ -4417,7 +4417,6 @@ static AWEIMReusableCommonCell *currentCell;
 
 	// 显示弹窗的情况
 	if (isPopupEnabled) {
-		// 获取当前视频模型
 		AWEAwemeModel *awemeModel = nil;
 
 		awemeModel = [self performSelector:@selector(awemeModel)];
@@ -4427,9 +4426,25 @@ static AWEIMReusableCommonCell *currentCell;
 
 		// 确定内容类型（视频或图片）
 		BOOL isImageContent = (awemeModel.awemeType == 68);
-		NSString *downloadTitle = isImageContent ? @"保存图片" : @"保存视频";
+		NSString *downloadTitle;
 
-		// 创建AWEUserActionSheetView
+		if (isImageContent) {
+			AWEImageAlbumImageModel *currentImageModel = nil;
+			if (awemeModel.currentImageIndex > 0 && awemeModel.currentImageIndex <= awemeModel.albumImages.count) {
+				currentImageModel = awemeModel.albumImages[awemeModel.currentImageIndex - 1];
+			} else {
+				currentImageModel = awemeModel.albumImages.firstObject;
+			}
+
+			if (awemeModel.albumImages.count > 1) {
+				downloadTitle = (currentImageModel.clipVideo != nil) ? @"保存当前实况" : @"保存当前图片";
+			} else {
+				downloadTitle = (currentImageModel.clipVideo != nil) ? @"保存实况" : @"保存图片";
+			}
+		} else {
+			downloadTitle = @"保存视频";
+		}
+
 		AWEUserActionSheetView *actionSheet = [[NSClassFromString(@"AWEUserActionSheetView") alloc] init];
 		NSMutableArray *actions = [NSMutableArray array];
 
@@ -4514,28 +4529,6 @@ static AWEIMReusableCommonCell *currentCell;
 				    }];
 			[actions addObject:downloadAction];
 
-			// 添加保存封面选项
-			if (!isImageContent) { // 仅视频内容显示保存封面选项
-				AWEUserSheetAction *saveCoverAction = [NSClassFromString(@"AWEUserSheetAction")
-				    actionWithTitle:@"保存封面"
-					    imgName:nil
-					    handler:^{
-					      AWEVideoModel *videoModel = awemeModel.video;
-					      if (videoModel && videoModel.coverURL && videoModel.coverURL.originURLList.count > 0) {
-						      NSURL *coverURL = [NSURL URLWithString:videoModel.coverURL.originURLList.firstObject];
-						      [DYYYManager downloadMedia:coverURL
-								       mediaType:MediaTypeImage
-								      completion:^(BOOL success) {
-									if (success) {
-									} else {
-										[DYYYManager showToast:@"封面保存已取消"];
-									}
-								      }];
-					      }
-					    }];
-				[actions addObject:saveCoverAction];
-			}
-
 			// 如果是图集，添加下载所有图片选项
 			if (isImageContent && awemeModel.albumImages.count > 1) {
 				// 检查是否有实况照片
@@ -4598,6 +4591,28 @@ static AWEIMReusableCommonCell *currentCell;
 					    }];
 				[actions addObject:downloadAllAction];
 			}
+		}
+
+		// 添加保存封面选项
+		if (!isImageContent) {
+			AWEUserSheetAction *saveCoverAction = [NSClassFromString(@"AWEUserSheetAction")
+			    actionWithTitle:@"保存封面"
+				    imgName:nil
+				    handler:^{
+				      AWEVideoModel *videoModel = awemeModel.video;
+				      if (videoModel && videoModel.coverURL && videoModel.coverURL.originURLList.count > 0) {
+					      NSURL *coverURL = [NSURL URLWithString:videoModel.coverURL.originURLList.firstObject];
+					      [DYYYManager downloadMedia:coverURL
+							       mediaType:MediaTypeImage
+							      completion:^(BOOL success) {
+								if (success) {
+								} else {
+									[DYYYManager showToast:@"封面保存已取消"];
+								}
+							      }];
+				      }
+				    }];
+			[actions addObject:saveCoverAction];
 		}
 
 		// 添加下载音频选项
