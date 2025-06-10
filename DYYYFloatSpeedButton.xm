@@ -271,11 +271,12 @@ static BOOL isForceHidden = NO;
 	}
 }
 
-- (void)viewWillDisappear:(BOOL)animated {
+- (void)viewDidDisappear:(BOOL)animated {
 	%orig;
+	isCommentViewVisible = NO;
 	if (speedButton) {
 		dispatch_async(dispatch_get_main_queue(), ^{
-		  speedButton.hidden = YES;
+		  speedButton.hidden = NO;
 		});
 	}
 }
