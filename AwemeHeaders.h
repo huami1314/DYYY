@@ -1017,6 +1017,9 @@ static CGFloat gStartVal = 0.0;
 @interface AWEDemaciaChapterProgressSlider : UIView
 @end
 
+@interface AWELiveAutoEnterStyleAView : UIView
+@end
+
 @interface AWEABTestManager : NSObject
 @property(retain, nonatomic) NSDictionary *abTestData;
 @property(retain, nonatomic) NSMutableDictionary *consistentABTestDic;
@@ -1133,8 +1136,8 @@ static CGFloat gStartVal = 0.0;
 @end
 
 @interface AWEVideoBSModel : NSObject
-@property (nonatomic) NSNumber *bitrate;
-@property (nonatomic) AWEURLModel *playAddr;
+@property(nonatomic) NSNumber *bitrate;
+@property(nonatomic) AWEURLModel *playAddr;
 @end
 
 @interface AWENormalModeTabBarGeneralPlusButton : UIView

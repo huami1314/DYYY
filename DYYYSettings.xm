@@ -1186,7 +1186,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_eyeslash_outlined_16"},
 		  @{@"identifier" : @"DYYYHideGradient",
-		    @"title" : @"隐藏展开渐变",
+		    @"title" : @"隐藏遮罩效果",
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_eyeslash_outlined_16"}
