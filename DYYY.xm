@@ -357,21 +357,18 @@
 		if (signature.length > 0) {
 			[messageContent appendFormat:@"%@", signature];
 		}
-		if (messageContent.length > 0) {
-			[messageContent appendString:@"\n是否确认关注此用户？"];
-		} else {
-			[messageContent appendString:@"是否确认关注？"];
-		}
 
 		NSString *title = nickname.length > 0 ? nickname : @"关注确认";
 
 		[DYYYBottomAlertView showAlertWithTitle:title
 						message:messageContent
 					      avatarURL:avatarURL
-					   cancelAction:nil
-					  confirmAction:^{
-					    %orig(gesture);
-					  }];
+				   cancelButtonText:@"取消"
+				  confirmButtonText:@"关注"
+				      cancelAction:nil
+				     confirmAction:^{
+				       %orig(gesture);
+				     }];
 	} else {
 		%orig;
 	}

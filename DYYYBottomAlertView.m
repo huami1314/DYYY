@@ -89,8 +89,32 @@
                                avatarURL:(NSString *)avatarURL
                             cancelAction:(DYYYAlertActionHandler)cancelAction
                            confirmAction:(DYYYAlertActionHandler)confirmAction {
+    return [self showAlertWithTitle:title
+                            message:message
+                          avatarURL:avatarURL
+                    cancelButtonText:@"取消"
+                   confirmButtonText:@"确定"
+                        cancelAction:cancelAction
+                       confirmAction:confirmAction];
+}
+
++ (UIViewController *)showAlertWithTitle:(NSString *)title
+                                 message:(NSString *)message
+                               avatarURL:(NSString *)avatarURL
+                         cancelButtonText:(NSString *)cancelButtonText
+                        confirmButtonText:(NSString *)confirmButtonText
+                            cancelAction:(DYYYAlertActionHandler)cancelAction
+                           confirmAction:(DYYYAlertActionHandler)confirmAction {
     
     AFDPrivacyHalfScreenViewController *vc = [NSClassFromString(@"AFDPrivacyHalfScreenViewController") new];
+    
+    if (!cancelButtonText) {
+        cancelButtonText = @"取消";
+    }
+    
+    if (!confirmButtonText) {
+        confirmButtonText = @"确定";
+    }
     
     UIImageView *imageView = nil;
     if (avatarURL.length > 0) {
@@ -147,8 +171,8 @@
            defaultLockState:NO
             titleLabelText:title
           contentLabelText:message
-      leftCancelButtonText:@"取消"
-    rightConfirmButtonText:@"确定"
+      leftCancelButtonText:cancelButtonText
+    rightConfirmButtonText:confirmButtonText
        rightBtnClickedBlock:wrappedConfirmAction
       leftButtonClickedBlock:wrappedCancelAction];
     
