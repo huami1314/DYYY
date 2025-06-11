@@ -7,6 +7,123 @@
 @class AWEFeedCellViewController;
 @class AWEDPlayerFeedPlayerViewController;
 
+static AWEAwemePlayVideoViewController *currentVideoController = nil;
+static AWEDPlayerFeedPlayerViewController *currentFeedVideoController = nil;
+static FloatingSpeedButton *speedButton = nil;
+static BOOL isCommentViewVisible = NO;
+static BOOL showSpeedX = NO;
+static CGFloat speedButtonSize = 32.0;
+static BOOL isFloatSpeedButtonEnabled = NO;
+static BOOL isForceHidden = NO;
+
+NSArray *getSpeedOptions() {
+	NSString *speedConfig = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYSpeedSettings"] ?: @"1.0,1.25,1.5,2.0";
+	return [speedConfig componentsSeparatedByString:@","];
+}
+
+NSInteger getCurrentSpeedIndex() {
+	NSInteger index = [[NSUserDefaults standardUserDefaults] integerForKey:@"DYYYCurrentSpeedIndex"];
+	NSArray *speeds = getSpeedOptions();
+
+	if (index >= speeds.count || index < 0) {
+		index = 0;
+		[[NSUserDefaults standardUserDefaults] setInteger:index forKey:@"DYYYCurrentSpeedIndex"];
+		[[NSUserDefaults standardUserDefaults] synchronize];
+	}
+
+	return index;
+}
+
+float getCurrentSpeed() {
+	NSArray *speeds = getSpeedOptions();
+	NSInteger index = getCurrentSpeedIndex();
+
+	if (speeds.count == 0)
+		return 1.0;
+	float speed = [speeds[index] floatValue];
+	return speed > 0 ? speed : 1.0;
+}
+
+void setCurrentSpeedIndex(NSInteger index) {
+	NSArray *speeds = getSpeedOptions();
+
+	if (speeds.count == 0)
+		return;
+	index = index % speeds.count;
+
+	[[NSUserDefaults standardUserDefaults] setInteger:index forKey:@"DYYYCurrentSpeedIndex"];
+	[[NSUserDefaults standardUserDefaults] synchronize];
+}
+
+void updateSpeedButtonUI() {
+	if (!speedButton)
+		return;
+
+	float currentSpeed = getCurrentSpeed();
+
+	NSString *formattedSpeed;
+	if (fmodf(currentSpeed, 1.0) == 0) {
+		// 整数值 (1.0, 2.0) -> "1", "2"
+		formattedSpeed = [NSString stringWithFormat:@"%.0f", currentSpeed];
+	} else if (fmodf(currentSpeed * 10, 1.0) == 0) {
+		// 一位小数 (1.5) -> "1.5"
+		formattedSpeed = [NSString stringWithFormat:@"%.1f", currentSpeed];
+	} else {
+		// 两位小数 (1.25) -> "1.25"
+		formattedSpeed = [NSString stringWithFormat:@"%.2f", currentSpeed];
+	}
+
+	if (showSpeedX) {
+		formattedSpeed = [formattedSpeed stringByAppendingString:@"x"];
+	}
+
+	[speedButton setTitle:formattedSpeed forState:UIControlStateNormal];
+}
+
+FloatingSpeedButton *getSpeedButton(void) {
+    return speedButton;
+}
+
+void showSpeedButton(void) {
+    isForceHidden = NO;
+    if (speedButton) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            speedButton.hidden = isCommentViewVisible;
+        });
+    }
+}
+
+void hideSpeedButton(void) {
+    isForceHidden = YES;
+    if (speedButton) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            speedButton.hidden = YES;
+        });
+    }
+}
+
+void toggleSpeedButtonVisibility(void) {
+    if (speedButton) {
+        if (speedButton.hidden) {
+            showSpeedButton();
+        } else {
+            hideSpeedButton();
+        }
+    }
+}
+
+@interface AWEAwemePlayVideoViewController (SpeedControl)
+- (void)adjustPlaybackSpeed:(float)speed;
+@end
+
+@interface AWEDPlayerFeedPlayerViewController (SpeedControl)
+- (void)adjustPlaybackSpeed:(float)speed;
+@end
+
+@interface UIView (SpeedHelper)
+- (UIViewController *)firstAvailableUIViewController;
+@end
+
 @implementation FloatingSpeedButton
 
 - (instancetype)initWithFrame:(CGRect)frame {
@@ -248,17 +365,6 @@
 }
 @end
 
-static AWEAwemePlayVideoViewController *currentVideoController = nil;
-static AWEDPlayerFeedPlayerViewController *currentFeedVideoController = nil;
-
-static FloatingSpeedButton *speedButton = nil;
-static BOOL isCommentViewVisible = NO;
-static BOOL showSpeedX = NO;
-static CGFloat speedButtonSize = 32.0;
-static BOOL isFloatSpeedButtonEnabled = NO;
-
-static BOOL isForceHidden = NO;
-
 %hook AWEElementStackView
 
 - (void)setAlpha:(CGFloat)alpha {
@@ -279,74 +385,6 @@ static BOOL isForceHidden = NO;
 }
 
 %end
-
-NSArray *getSpeedOptions() {
-	NSString *speedConfig = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYSpeedSettings"] ?: @"1.0,1.25,1.5,2.0";
-	return [speedConfig componentsSeparatedByString:@","];
-}
-
-NSInteger getCurrentSpeedIndex() {
-	NSInteger index = [[NSUserDefaults standardUserDefaults] integerForKey:@"DYYYCurrentSpeedIndex"];
-	NSArray *speeds = getSpeedOptions();
-
-	if (index >= speeds.count || index < 0) {
-		index = 0;
-		[[NSUserDefaults standardUserDefaults] setInteger:index forKey:@"DYYYCurrentSpeedIndex"];
-		[[NSUserDefaults standardUserDefaults] synchronize];
-	}
-
-	return index;
-}
-
-float getCurrentSpeed() {
-	NSArray *speeds = getSpeedOptions();
-	NSInteger index = getCurrentSpeedIndex();
-
-	if (speeds.count == 0)
-		return 1.0;
-	float speed = [speeds[index] floatValue];
-	return speed > 0 ? speed : 1.0;
-}
-
-void setCurrentSpeedIndex(NSInteger index) {
-	NSArray *speeds = getSpeedOptions();
-
-	if (speeds.count == 0)
-		return;
-	index = index % speeds.count;
-
-	[[NSUserDefaults standardUserDefaults] setInteger:index forKey:@"DYYYCurrentSpeedIndex"];
-	[[NSUserDefaults standardUserDefaults] synchronize];
-}
-
-void updateSpeedButtonUI() {
-	if (!speedButton)
-		return;
-
-	float currentSpeed = getCurrentSpeed();
-
-	NSString *formattedSpeed;
-	if (fmodf(currentSpeed, 1.0) == 0) {
-		// 整数值 (1.0, 2.0) -> "1", "2"
-		formattedSpeed = [NSString stringWithFormat:@"%.0f", currentSpeed];
-	} else if (fmodf(currentSpeed * 10, 1.0) == 0) {
-		// 一位小数 (1.5) -> "1.5"
-		formattedSpeed = [NSString stringWithFormat:@"%.1f", currentSpeed];
-	} else {
-		// 两位小数 (1.25) -> "1.25"
-		formattedSpeed = [NSString stringWithFormat:@"%.2f", currentSpeed];
-	}
-
-	if (showSpeedX) {
-		formattedSpeed = [formattedSpeed stringByAppendingString:@"x"];
-	}
-
-	[speedButton setTitle:formattedSpeed forState:UIControlStateNormal];
-}
-
-@interface AWEAwemePlayVideoViewController (SpeedControl)
-- (void)adjustPlaybackSpeed:(float)speed;
-@end
 
 %hook AWEAwemePlayVideoViewController
 
@@ -388,10 +426,6 @@ void updateSpeedButtonUI() {
 
 %end
 
-@interface AWEDPlayerFeedPlayerViewController (SpeedControl)
-- (void)adjustPlaybackSpeed:(float)speed;
-@end
-
 %hook AWEDPlayerFeedPlayerViewController
 
 - (void)setIsAutoPlay:(BOOL)arg0 {
@@ -430,10 +464,6 @@ void updateSpeedButtonUI() {
 }
 
 %end
-
-@interface UIView (SpeedHelper)
-- (UIViewController *)firstAvailableUIViewController;
-@end
 
 %hook AWEPlayInteractionViewController
 
@@ -626,38 +656,6 @@ void updateSpeedButtonUI() {
 	}
 }
 %end
-
-FloatingSpeedButton *getSpeedButton(void) {
-    return speedButton;
-}
-
-void showSpeedButton(void) {
-    isForceHidden = NO;
-    if (speedButton) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            speedButton.hidden = isCommentViewVisible;
-        });
-    }
-}
-
-void hideSpeedButton(void) {
-    isForceHidden = YES;
-    if (speedButton) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            speedButton.hidden = YES;
-        });
-    }
-}
-
-void toggleSpeedButtonVisibility(void) {
-    if (speedButton) {
-        if (speedButton.hidden) {
-            showSpeedButton();
-        } else {
-            hideSpeedButton();
-        }
-    }
-}
 
 %ctor {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
