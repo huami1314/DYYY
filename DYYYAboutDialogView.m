@@ -17,7 +17,7 @@
         [self addSubview:self.blurView];
         
         // 计算文本高度，动态调整弹窗高度
-        UIFont *messageFont = [UIFont systemFontOfSize:14];
+        UIFont *messageFont = [UIFont systemFontOfSize:15];
         CGSize constraintSize = CGSizeMake(260, CGFLOAT_MAX);
         NSAttributedString *attributedMessage = [[NSAttributedString alloc] initWithString:message attributes:@{NSFontAttributeName: messageFont}];
         CGRect textRect = [attributedMessage boundingRectWithSize:constraintSize 
@@ -25,7 +25,7 @@
                                                          context:nil];
         
         CGFloat textHeight = textRect.size.height;
-        CGFloat maxTextHeight = 280; 
+        CGFloat maxTextHeight = 320; 
         CGFloat titleHeight = 44; 
         CGFloat buttonHeight = 58; 
         CGFloat buttonPadding = 28;
@@ -52,17 +52,15 @@
         [self.contentView addSubview:self.titleLabel];
         
         // 消息内容 - 适配深色模式
-        self.messageTextView = [[UITextView alloc] initWithFrame:CGRectMake(20, 54, 260, actualTextHeight)];
-        self.messageTextView.backgroundColor = [UIColor clearColor];
-        self.messageTextView.textAlignment = NSTextAlignmentCenter;
+        self.messageTextView = [[UITextView alloc] initWithFrame:CGRectMake(20, 54, 260, (contentHeight - buttonHeight - 54))];
+        self.messageTextView.backgroundColor = self.contentView.backgroundColor;
         self.messageTextView.font = messageFont;
         self.messageTextView.editable = NO;
         self.messageTextView.scrollEnabled = needsScrolling;
         self.messageTextView.showsVerticalScrollIndicator = needsScrolling;
         self.messageTextView.dataDetectorTypes = UIDataDetectorTypeLink;
-        self.messageTextView.transform = CGAffineTransformMakeScale(1.05, 1.05);
         self.messageTextView.selectable = YES;
-        
+
         // 创建段落样式并设置居中对齐
         NSMutableParagraphStyle *paragraphStyle = [[NSMutableParagraphStyle alloc] init];
         paragraphStyle.alignment = NSTextAlignmentCenter;
@@ -70,7 +68,10 @@
         [attributedString addAttribute:NSParagraphStyleAttributeName 
                                  value:paragraphStyle 
                                  range:NSMakeRange(0, message.length)];
-        
+        [attributedString addAttribute:NSFontAttributeName
+                                 value:messageFont // 使用自定义的 messageFont
+                                 range:NSMakeRange(0, message.length)];
+
         // 根据模式设置整体文本颜色
         UIColor *messageTextColor = isDarkMode ? [UIColor colorWithRed:180/255.0 green:180/255.0 blue:185/255.0 alpha:1.0] : [UIColor colorWithRed:124/255.0 green:124/255.0 blue:130/255.0 alpha:1.0];
         [attributedString addAttribute:NSForegroundColorAttributeName 
@@ -129,7 +130,6 @@
         [self.confirmButton addTarget:self action:@selector(confirmTapped) forControlEvents:UIControlEventTouchUpInside];
         [self.contentView addSubview:self.confirmButton];
         
-        self.messageTextView.textAlignment = NSTextAlignmentCenter;
     }
     return self;
 }
