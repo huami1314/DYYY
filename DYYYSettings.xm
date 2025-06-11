@@ -864,7 +864,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"title" : @"收藏二次确认",
 		    @"detail" : @"",
 		    @"cellType" : @6,
-		    @"imageName" : @"ic_collection_outlined_20"}
+		    @"imageName" : @"ic_star_outlined_20"}
 	  ];
 
 	  for (NSDictionary *dict in securitySettings) {
@@ -2418,7 +2418,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"title" : @"左侧边栏快捷入口",
 		    @"detail" : @"",
 		    @"cellType" : @6,
-		    @"imageName" : @"ic_gearsimplify_outlined_20"},
+		    @"imageName" : @"ic_circlearrowin_outlined_20"},
 		  @{@"identifier" : @"DYYYVideoGesture",
 		    @"title" : @"横屏视频交互增强",
 		    @"detail" : @"",
@@ -2443,7 +2443,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"title" : @"评论音乐点击复制",
 		    @"detail" : @"",
 		    @"cellType" : @6,
-		    @"imageName" : @"ic_at_outlined_20"},
+		    @"imageName" : @"ic_quaver_outlined_20"},
 		  @{@"identifier" : @"DYYYisAutoSelectOriginalPhoto",
 		    @"title" : @"启用自动勾选原图",
 		    @"detail" : @"",
@@ -2453,12 +2453,12 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"title" : @"启用新版玻璃面板",
 		    @"detail" : @"",
 		    @"cellType" : @6,
-		    @"imageName" : @"ic_gearsimplify_outlined_20"},
+		    @"imageName" : @"ic_squaresplit_outlined_20"},
 		  @{@"identifier" : @"DYYYisEnableModernLight",
 		    @"title" : @"启用新版浅色面板",
 		    @"detail" : @"",
 		    @"cellType" : @6,
-		    @"imageName" : @"ic_gearsimplify_outlined_20"},
+		    @"imageName" : @"ic_moon_outlined"},
 		  @{@"identifier" : @"DYYYModernPanelFollowSystem",
 		    @"title" : @"新版面板跟随系统",
 		    @"detail" : @"",
