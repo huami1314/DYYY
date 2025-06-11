@@ -259,26 +259,23 @@ static BOOL isFloatSpeedButtonEnabled = NO;
 
 static BOOL isForceHidden = NO;
 
-%hook AWECommentContainerViewController
+%hook AWEElementStackView
 
-- (void)viewWillAppear:(BOOL)animated {
-	%orig;
-	isCommentViewVisible = YES;
-	if (speedButton) {
-		dispatch_async(dispatch_get_main_queue(), ^{
-		  speedButton.hidden = YES;
-		});
-	}
-}
-
-- (void)viewDidDisappear:(BOOL)animated {
-	%orig;
-	isCommentViewVisible = NO;
-	if (speedButton) {
-		dispatch_async(dispatch_get_main_queue(), ^{
-		  speedButton.hidden = NO;
-		});
-	}
+- (void)setAlpha:(CGFloat)alpha {
+    %orig;
+    
+    // 当透明度为 0 时隐藏按钮，当透明度为 1 时显示按钮
+    if (speedButton && isFloatSpeedButtonEnabled && !isForceHidden) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (alpha == 0) {
+				isCommentViewVisible = YES;
+                speedButton.hidden = YES;
+            } else if (alpha == 1) {
+				isCommentViewVisible = NO;
+                speedButton.hidden = NO;
+            }
+        });
+    }
 }
 
 %end
@@ -481,8 +478,7 @@ void updateSpeedButtonUI() {
 	}
 
 	if (speedButton) {
-		BOOL isCommentShowing = [self isCommentVCShowing];
-		speedButton.hidden = isCommentShowing || isCommentViewVisible || isForceHidden;
+		speedButton.hidden = isCommentViewVisible || isForceHidden;
 	}
 }
 
@@ -490,8 +486,7 @@ void updateSpeedButtonUI() {
 	%orig;
 	if (speedButton) {
 		dispatch_async(dispatch_get_main_queue(), ^{
-			BOOL isCommentShowing = [self isCommentVCShowing];
-			speedButton.hidden = isCommentShowing || isCommentViewVisible || isForceHidden;
+			speedButton.hidden = isCommentViewVisible || isForceHidden;
 		});
 	}
 }
