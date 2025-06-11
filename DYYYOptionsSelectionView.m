@@ -8,10 +8,23 @@
                        optionsArray:(NSArray<NSString *> *)optionsArray
                          headerText:(NSString *)headerText
                      onPresentingVC:(UIViewController *)presentingVC {
+    
+    return [self showWithPreferenceKey:preferenceKey 
+                          optionsArray:optionsArray 
+                            headerText:headerText 
+                        onPresentingVC:presentingVC 
+                      selectionChanged:nil];
+}
+
++ (NSString *)showWithPreferenceKey:(NSString *)preferenceKey
+                       optionsArray:(NSArray<NSString *> *)optionsArray
+                         headerText:(NSString *)headerText
+                     onPresentingVC:(UIViewController *)presentingVC
+                   selectionChanged:(void (^)(NSString *selectedValue))callback {
 
     NSString *savedPreference = [[NSUserDefaults standardUserDefaults] stringForKey:preferenceKey];
     if (!savedPreference && optionsArray.count > 0) {
-        savedPreference = optionsArray[0]; // 默认使用第一个
+        savedPreference = optionsArray[0];
     }
 
     Class AWESettingItemModelClass = NSClassFromString(@"AWESettingItemModel");
@@ -40,6 +53,11 @@
             NSString *selectedValue = [currentModel title];
             [[NSUserDefaults standardUserDefaults] setObject:selectedValue forKey:preferenceKey];
             [[NSUserDefaults standardUserDefaults] synchronize];
+            
+            // 增加回调
+            if (callback) {
+                callback(selectedValue);
+            }
         }];
     }
 
@@ -80,7 +98,6 @@
 
     [contentSheet showOnViewController:presentingVC completion:nil];
     
-    // 直接返回当前选择的值
     return savedPreference;
 }
 
