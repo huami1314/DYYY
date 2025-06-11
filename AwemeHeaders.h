@@ -1150,6 +1150,10 @@ static CGFloat gStartVal = 0.0;
 @interface AWEMixVideoPanelMoreView : UIView
 @end
 
+@interface AWEPlayInteractionUserAvatarElement : NSObject
+@property(retain, nonatomic) AWEAwemeModel *model;
+@end
+
 @interface AWEPlayInteractionUserAvatarFollowController : UIViewController
 @property(retain, nonatomic) AWEAwemeModel *model;
 @end

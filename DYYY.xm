@@ -302,15 +302,55 @@
 %hook AWEPlayInteractionUserAvatarElement
 - (void)onFollowViewClicked:(UITapGestureRecognizer *)gesture {
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYfollowTips"]) {
+		// 获取用户信息
+		AWEUserModel *author = nil;
+		NSString *nickname = @"";
+		NSString *signature = @"";
+		NSString *avatarURL = @"";
 
-		dispatch_async(dispatch_get_main_queue(), ^{
-		  [DYYYBottomAlertView showAlertWithTitle:@"关注确认"
-						  message:@"是否确认关注？"
-					     cancelAction:nil
-					    confirmAction:^{
-					      %orig(gesture);
-					    }];
-		});
+		if ([self respondsToSelector:@selector(model)]) {
+			id model = [self model];
+			if ([model isKindOfClass:NSClassFromString(@"AWEAwemeModel")]) {
+				author = [model valueForKey:@"author"];
+			}
+		}
+
+		if (author) {
+			// 获取昵称
+			if ([author respondsToSelector:@selector(nickname)]) {
+				nickname = [author valueForKey:@"nickname"] ?: @"";
+			}
+
+			// 获取签名
+			if ([author respondsToSelector:@selector(signature)]) {
+				signature = [author valueForKey:@"signature"] ?: @"";
+			}
+
+			// 获取头像URL
+			if ([author respondsToSelector:@selector(avatarThumb)]) {
+				AWEURLModel *avatarThumb = [author valueForKey:@"avatarThumb"];
+				if (avatarThumb && avatarThumb.originURLList.count > 0) {
+					avatarURL = avatarThumb.originURLList.firstObject;
+				}
+			}
+		}
+
+		NSMutableString *messageContent = [NSMutableString string];
+		if (signature.length > 0) {
+			[messageContent appendFormat:@"%@", signature];
+		}
+
+		NSString *title = nickname.length > 0 ? nickname : @"关注确认";
+
+		[DYYYBottomAlertView showAlertWithTitle:title
+						message:messageContent
+					      avatarURL:avatarURL
+				   cancelButtonText:@"取消"
+				  confirmButtonText:@"关注"
+				      cancelAction:nil
+				     confirmAction:^{
+				       %orig(gesture);
+				     }];
 	} else {
 		%orig;
 	}
