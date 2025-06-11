@@ -52,7 +52,7 @@
         [self.contentView addSubview:self.titleLabel];
         
         // 消息内容 - 适配深色模式
-        self.messageTextView = [[UITextView alloc] initWithFrame:CGRectMake(20, 54, 260, actualTextHeight)];
+        self.messageTextView = [[UITextView alloc] initWithFrame:CGRectMake(20, 54, 260, (contentHeight - buttonHeight - 54))];
         self.messageTextView.backgroundColor = self.contentView.backgroundColor;
         self.messageTextView.font = messageFont;
         self.messageTextView.editable = NO;
@@ -60,7 +60,7 @@
         self.messageTextView.showsVerticalScrollIndicator = needsScrolling;
         self.messageTextView.dataDetectorTypes = UIDataDetectorTypeLink;
         self.messageTextView.selectable = YES;
-        
+
         // 创建段落样式并设置居中对齐
         NSMutableParagraphStyle *paragraphStyle = [[NSMutableParagraphStyle alloc] init];
         paragraphStyle.alignment = NSTextAlignmentCenter;
