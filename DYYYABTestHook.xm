@@ -175,42 +175,6 @@ NSDictionary *getCurrentABTestData(void) {
 }
 
 /**
- * Hook: 获取一致性ABTest值
- * 如果启用了禁止下发但加载了本地配置，优先使用本地配置
- */
-- (id)getValueOfConsistentABTestWithKey:(id)key {
-    if (key) {
-        // 确保本地数据已加载
-        ensureABTestDataLoaded();
-        
-        if (gDataLoaded) {
-            NSString *keyString = (NSString *)key;
-            id localValue = [gFixedABTestData objectForKey:keyString];
-            
-            if (localValue) {
-                // 本地配置中存在该键，返回本地值
-                return localValue;
-            }
-            
-            // 如果启用了覆写模式，但本地配置中没有该键，允许使用原始方法获取
-            if (isPatchMode() && !abTestBlockEnabled) {
-                return %orig;
-            }
-            
-            // 替换模式下，如果本地没有但禁止下发配置未启用，使用原始方法
-            if (!abTestBlockEnabled) {
-                return %orig;
-            }
-            
-            // 替换模式且启用了禁止下发，本地又没有该键，返回nil
-            return nil;
-        }
-    }
-    
-    return %orig;
-}
-
-/**
  * Hook: 保存ABTest数据
  * 在禁止下发模式下阻止保存
  */
