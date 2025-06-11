@@ -2252,10 +2252,10 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 			    NSString *confirmTitle, *confirmMessage;
 			    if (isPatchMode) {
 				    confirmTitle = @"覆写模式";
-				    confirmMessage = @"覆写模式将保留并覆盖原设置，确定要继续吗？";
+				    confirmMessage = @"覆写模式将保留原设置并覆盖同名项\n确定要继续吗？\n";
 			    } else {
 				    confirmTitle = @"替换模式";
-				    confirmMessage = @"替换模式将丢弃并替换原设置，确定要继续吗？";
+				    confirmMessage = @"替换模式将丢弃原设置并替换为新数据\n确定要继续吗？\n";
 			    }
 			    DYYYAboutDialogView *confirmDialog = [[DYYYAboutDialogView alloc] initWithTitle:confirmTitle message:confirmMessage];
 			    confirmDialog.onConfirm = ^{
