@@ -22,26 +22,16 @@
     }
     
     DYYYAlertActionHandler wrappedCancelAction = ^{
-        [self dismissAlertViewController:vc];
         if (cancelAction) {
             cancelAction();
         }
     };
     
     DYYYAlertActionHandler wrappedConfirmAction = ^{
-        [self dismissAlertViewController:vc];
         if (confirmAction) {
             confirmAction();
         }
     };
-    
-    [vc setSlideDismissBlock:^{
-        [self dismissAlertViewController:vc];
-    }];
-    
-    [vc setTapDismissBlock:^{
-        [self dismissAlertViewController:vc];
-    }];
     
     [vc configWithImageView:nil 
                   lockImage:nil 
@@ -64,13 +54,12 @@
     return vc;
 }
 
-+ (void)dismissAlertViewController:(UIViewController *)viewController {
-    if (!viewController) return;
-    
-    if ([NSThread isMainThread]) {
-        [viewController dismissViewControllerAnimated:YES completion:nil];
-    }
-}
+
+typedef NS_ENUM(NSInteger, DYYYAlertDismissType) {
+    DYYYAlertDismissTypeDefault,
+    DYYYAlertDismissTypeSlide,
+    DYYYAlertDismissTypeTap
+};
 
 + (UIViewController *)showAlertWithTitle:(NSString *)title
                                  message:(NSString *)message
@@ -145,26 +134,16 @@
     }
     
     DYYYAlertActionHandler wrappedCancelAction = ^{
-        [self dismissAlertViewController:vc];
         if (cancelAction) {
             cancelAction();
         }
     };
     
     DYYYAlertActionHandler wrappedConfirmAction = ^{
-        [self dismissAlertViewController:vc];
         if (confirmAction) {
             confirmAction();
         }
     };
-    
-    [vc setSlideDismissBlock:^{
-        [self dismissAlertViewController:vc];
-    }];
-    
-    [vc setTapDismissBlock:^{
-        [self dismissAlertViewController:vc];
-    }];
     
     [vc configWithImageView:imageView
                   lockImage:nil

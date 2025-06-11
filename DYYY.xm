@@ -17,6 +17,7 @@
 #import "DYYYSettingViewController.h"
 #import "DYYYToast.h"
 
+// 默认视频流最高画质
 %hook AWEVideoModel
 
 - (AWEURLModel *)playURL {
@@ -4019,10 +4020,8 @@ static AWEIMReusableCommonCell *currentCell;
 	BOOL hideEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTopBarBadge"];
 
 	if (hideEnabled) {
-		// 阻断徽章创建
-		return nil; // 返回 nil 阻止视图生成
+		return nil;
 	} else {
-		// 未启用隐藏功能时正常显示
 		return %orig(style, config, count, text);
 	}
 }
