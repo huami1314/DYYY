@@ -5984,7 +5984,7 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 		NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
 		NSString *dyyyFolderPath = [documentsPath stringByAppendingPathComponent:@"DYYY"];
 
-		NSString *customImagePath = [dyyyFolderPath stringByAppendingPathComponent:@"photograph.png"];
+		NSString *customImagePath = [dyyyFolderPath stringByAppendingPathComponent:@"tab_plus.png"];
 
 		if ([[NSFileManager defaultManager] fileExistsAtPath:customImagePath]) {
 			UIImage *customImage = [UIImage imageWithContentsOfFile:customImagePath];
