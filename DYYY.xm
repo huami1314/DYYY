@@ -345,12 +345,12 @@
 		[DYYYBottomAlertView showAlertWithTitle:title
 						message:messageContent
 					      avatarURL:avatarURL
-				   cancelButtonText:@"取消"
-				  confirmButtonText:@"关注"
-				      cancelAction:nil
-				     confirmAction:^{
-				       %orig(gesture);
-				     }];
+				       cancelButtonText:@"取消"
+				      confirmButtonText:@"关注"
+					   cancelAction:nil
+					  confirmAction:^{
+					    %orig(gesture);
+					  }];
 	} else {
 		%orig;
 	}
@@ -404,12 +404,12 @@
 		[DYYYBottomAlertView showAlertWithTitle:title
 						message:messageContent
 					      avatarURL:avatarURL
-				   cancelButtonText:@"取消"
-				  confirmButtonText:@"关注"
-				      cancelAction:nil
-				     confirmAction:^{
-				       %orig(gesture);
-				     }];
+				       cancelButtonText:@"取消"
+				      confirmButtonText:@"关注"
+					   cancelAction:nil
+					  confirmAction:^{
+					    %orig(gesture);
+					  }];
 	} else {
 		%orig;
 	}
@@ -859,30 +859,6 @@
 
 // 重写全局透明方法
 %hook AWEPlayInteractionViewController
-
-- (UIView *)view {
-	UIView *originalView = %orig;
-
-	NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
-	if (transparentValue.length > 0) {
-		CGFloat alphaValue = transparentValue.floatValue;
-		if (alphaValue >= 0.0 && alphaValue <= 1.0) {
-			for (UIView *subview in originalView.subviews) {
-				if (subview.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG) {
-					if (subview.alpha > 0) {
-						subview.alpha = alphaValue;
-					}
-				}
-			}
-		}
-	}
-
-	return originalView;
-}
-
-%end
-
-%hook AWECommentInputViewController
 
 - (UIView *)view {
 	UIView *originalView = %orig;
@@ -5018,11 +4994,38 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 				} else {
 					for (UIView *innerSubview in subview.subviews) {
 						if ([innerSubview isKindOfClass:[UIView class]]) {
-							float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
-							if (userTransparency <= 0 || userTransparency > 1) {
-								userTransparency = 0.95;
+							if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBarTransparent"]) {
+								// 检查背景颜色
+								UIColor *bgColor = innerSubview.backgroundColor;
+								if (bgColor) {
+									CGFloat red = 0, green = 0, blue = 0, alpha = 0;
+									BOOL isWhite = NO;
+
+									if ([bgColor getRed:&red green:&green blue:&blue alpha:&alpha]) {
+										isWhite = (red > 0.95 && green > 0.95 && blue > 0.95);
+										// 如果背景是透明的，则不处理
+										if (alpha < 0.1) {
+											break;
+										}
+									}
+
+									// 只有当背景是白色时才应用毛玻璃效果
+									if (isWhite) {
+										float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"]
+										    floatValue];
+										if (userTransparency <= 0 || userTransparency > 1) {
+											userTransparency = 0.95;
+										}
+										DYYYAddCustomViewToParent(innerSubview, userTransparency);
+									}
+								}
+							} else {
+								float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
+								if (userTransparency <= 0 || userTransparency > 1) {
+									userTransparency = 0.95;
+								}
+								DYYYAddCustomViewToParent(innerSubview, userTransparency);
 							}
-							DYYYAddCustomViewToParent(innerSubview, userTransparency);
 							break;
 						}
 					}
@@ -5222,6 +5225,15 @@ static CGFloat currentScale = 1.0;
 - (void)layoutSubviews {
 	%orig;
 	UIViewController *vc = [self firstAvailableUIViewController];
+	if ([vc isKindOfClass:%c(AWECommentInputViewController)]) {
+		NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
+		if (transparentValue.length > 0) {
+			CGFloat alphaValue = transparentValue.floatValue;
+			if (alphaValue >= 0.0 && alphaValue <= 1.0) {
+				self.alpha = alphaValue;
+			}
+		}
+	}
 	if ([vc isKindOfClass:%c(AWELiveNewPreStreamViewController)]) {
 		NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
 		if (transparentValue.length > 0) {

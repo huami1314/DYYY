@@ -53,6 +53,7 @@
           @"dependencies" : @{
               // 普通依赖：当源设置开启时，目标设置项可用
               @"DYYYEnableDanmuColor" : @[ @"DYYYdanmuColor" ],
+              @"DYYYisEnableCommentBlur" : @[ @"DYYYisEnableCommentBarTransparent" ],
               @"DYYYisEnableArea" : @[ @"DYYYLabelColor" ],
               @"DYYYisShowScheduleDisplay" : @[ @"DYYYScheduleStyle", @"DYYYProgressLabelColor", @"DYYYTimelineVerticalPosition" ],
               @"DYYYEnableNotificationTransparency" : @[ @"DYYYNotificationCornerRadius" ],
