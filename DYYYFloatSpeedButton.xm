@@ -15,6 +15,7 @@ static BOOL showSpeedX = NO;
 static CGFloat speedButtonSize = 32.0;
 static BOOL isFloatSpeedButtonEnabled = NO;
 static BOOL isForceHidden = NO;
+static BOOL isAppActive = YES;
 
 NSArray *getSpeedOptions() {
 	NSString *speedConfig = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYSpeedSettings"] ?: @"1.0,1.25,1.5,2.0";
@@ -84,13 +85,30 @@ FloatingSpeedButton *getSpeedButton(void) {
     return speedButton;
 }
 
-void showSpeedButton(void) {
-    isForceHidden = NO;
+BOOL isVideoControllerActive() {
+    if (currentVideoController && [currentVideoController isViewLoaded] && currentVideoController.view.window) {
+        return YES;
+    }
+    
+    if (currentFeedVideoController && [currentFeedVideoController isViewLoaded] && currentFeedVideoController.view.window) {
+        return YES;
+    }
+    
+    return NO;
+}
+
+void checkAndUpdateButtonVisibility() {
     if (speedButton) {
         dispatch_async(dispatch_get_main_queue(), ^{
-            speedButton.hidden = isCommentViewVisible;
+            BOOL shouldShow = isAppActive && isVideoControllerActive() && !isCommentViewVisible && !isForceHidden;
+            speedButton.hidden = !shouldShow;
         });
     }
+}
+
+void showSpeedButton(void) {
+    isForceHidden = NO;
+    checkAndUpdateButtonVisibility();
 }
 
 void hideSpeedButton(void) {
@@ -374,11 +392,11 @@ void toggleSpeedButtonVisibility(void) {
     if (speedButton && isFloatSpeedButtonEnabled && !isForceHidden) {
         dispatch_async(dispatch_get_main_queue(), ^{
             if (alpha == 0) {
-				isCommentViewVisible = YES;
-                speedButton.hidden = YES;
+                isCommentViewVisible = YES;
+                checkAndUpdateButtonVisibility();
             } else if (alpha == 1) {
-				isCommentViewVisible = NO;
-                speedButton.hidden = NO;
+                isCommentViewVisible = NO;
+                checkAndUpdateButtonVisibility();
             }
         });
     }
@@ -507,18 +525,12 @@ void toggleSpeedButtonVisibility(void) {
 		[speedButton loadSavedPosition];
 	}
 
-	if (speedButton) {
-		speedButton.hidden = isCommentViewVisible || isForceHidden;
-	}
+	checkAndUpdateButtonVisibility();
 }
 
 - (void)viewWillAppear:(BOOL)animated {
 	%orig;
-	if (speedButton) {
-		dispatch_async(dispatch_get_main_queue(), ^{
-			speedButton.hidden = isCommentViewVisible || isForceHidden;
-		});
-	}
+	checkAndUpdateButtonVisibility();
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
@@ -651,10 +663,28 @@ void toggleSpeedButtonVisibility(void) {
 		dispatch_async(dispatch_get_main_queue(), ^{
 		  [self addSubview:speedButton];
 		  [speedButton loadSavedPosition];
-		  speedButton.hidden = isCommentViewVisible || isForceHidden;
+		  checkAndUpdateButtonVisibility();
 		});
 	}
 }
+%end
+
+%hook UIApplication
+
+- (void)sendEvent:(UIEvent *)event {
+    %orig;
+    if (speedButton && event.type == UIEventTypeTouches && !speedButton.hidden) {
+        for (UITouch *touch in [event allTouches]) {
+            if (touch.phase == UITouchPhaseBegan) {
+                if (!isVideoControllerActive()) {
+                    speedButton.hidden = YES;
+                }
+                break;
+            }
+        }
+    }
+}
+
 %end
 
 %ctor {
@@ -664,5 +694,25 @@ void toggleSpeedButtonVisibility(void) {
 
     if ((defaultSpeed > 0 && defaultSpeed != 1) || isFloatSpeedButtonEnabled) {
         %init;
+        
+        [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationWillEnterForegroundNotification
+                                                          object:nil 
+                                                           queue:[NSOperationQueue mainQueue]
+                                                      usingBlock:^(NSNotification * _Nonnull note) {
+            isAppActive = YES;
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                checkAndUpdateButtonVisibility();
+            });
+        }];
+        
+        [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationDidEnterBackgroundNotification
+                                                          object:nil 
+                                                           queue:[NSOperationQueue mainQueue]
+                                                      usingBlock:^(NSNotification * _Nonnull note) {
+            isAppActive = NO;
+            if (speedButton) {
+                speedButton.hidden = YES;
+            }
+        }];
     }
 }
