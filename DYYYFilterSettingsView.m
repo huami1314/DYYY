@@ -2,12 +2,16 @@
 #import "DYYYManager.h"
 
 static inline UIColor *DYYYAccentColor(void) {
-    return [UIColor colorWithRed:11/255.0 green:223/255.0 blue:154/255.0 alpha:1.0];
+  return [UIColor colorWithRed:11 / 255.0 green:223 / 255.0 blue:154 / 255.0 alpha:1.0];
 }
 
 static inline UIColor *DYYYColor(UIColor *darkColor, UIColor *lightColor, BOOL darkMode) {
-    return darkMode ? darkColor : lightColor;
+  return darkMode ? darkColor : lightColor;
 }
+
+static const CGFloat kDYYYButtonSize = 25.0;
+static const CGFloat kDYYYButtonMargin = 1.0;
+static const int kDYYYButtonsPerRow = 10;
 
 @interface DYYYFilterSettingsView ()
 
@@ -27,6 +31,7 @@ static inline UIColor *DYYYColor(UIColor *darkColor, UIColor *lightColor, BOOL d
 @property(nonatomic, strong) NSMutableString *selectedText;
 @property(nonatomic, assign) BOOL isSelecting;
 @property(nonatomic, assign) BOOL darkMode;
+@property(nonatomic, assign) NSRange selectedRange;
 
 @end
 
@@ -40,6 +45,7 @@ static inline UIColor *DYYYColor(UIColor *darkColor, UIColor *lightColor, BOOL d
     _startIndex = -1;
     _endIndex = -1;
     _isSelecting = NO;
+    _selectedRange = NSMakeRange(NSNotFound, 0);
     
     self.backgroundColor = [UIColor colorWithWhite:0 alpha:0.2];
 
@@ -174,9 +180,9 @@ static inline UIColor *DYYYColor(UIColor *darkColor, UIColor *lightColor, BOOL d
 }
 
 - (void)setupCharacterButtons {
-  const CGFloat buttonSize = 25.0;
-  const CGFloat margin = 1.0;
-  const int buttonsPerRow = 10;
+  const CGFloat buttonSize = kDYYYButtonSize;
+  const CGFloat margin = kDYYYButtonMargin;
+  const int buttonsPerRow = kDYYYButtonsPerRow;
   
   UIColor *buttonBackgroundColor = DYYYColor(
       [UIColor colorWithRed:50/255.0 green:50/255.0 blue:50/255.0 alpha:1.0],
@@ -227,28 +233,20 @@ static inline UIColor *DYYYColor(UIColor *darkColor, UIColor *lightColor, BOOL d
 #pragma mark - Button Selection Handling
 
 - (void)characterTouchMoved:(UIButton *)sender withEvent:(UIEvent *)event {
-    // 确保已经开始选择
-    if (self.isSelecting) {
-        // 获取当前触摸点
-        UITouch *touch = [[event touchesForView:sender] anyObject];
-        CGPoint currentPoint = [touch locationInView:self.charactersScrollView];
-        
-        // 查找当前触摸点下的按钮
-        for (UIButton *button in self.characterButtons) {
-            if (CGRectContainsPoint(button.frame, currentPoint)) {
-                // 如果找到按钮，更新结束索引
-                NSInteger buttonTag = button.tag;
-                if (buttonTag != self.endIndex) {
-                    self.endIndex = buttonTag;
-                    [self updateSelectionWithStartIndex:self.startIndex endIndex:self.endIndex];
-                    
-                    // 自动滚动到可见区域
-                    [self scrollToVisibleButton:button];
-                }
-                break;
-            }
-        }
+  if (self.isSelecting) {
+    UITouch *touch = [[event touchesForView:sender] anyObject];
+    CGPoint currentPoint = [touch locationInView:self.charactersScrollView];
+
+    NSInteger col = floor(currentPoint.x / (kDYYYButtonSize + kDYYYButtonMargin));
+    NSInteger row = floor(currentPoint.y / (kDYYYButtonSize + kDYYYButtonMargin));
+    NSInteger index = row * kDYYYButtonsPerRow + col;
+
+    if (index >= 0 && index < self.characterButtons.count && index != self.endIndex) {
+      self.endIndex = index;
+      [self updateSelectionWithStartIndex:self.startIndex endIndex:self.endIndex];
+      [self scrollToVisibleButton:self.characterButtons[index]];
     }
+  }
 }
 
 - (void)characterTouchDown:(UIButton *)sender {
@@ -342,6 +340,7 @@ static inline UIColor *DYYYColor(UIColor *darkColor, UIColor *lightColor, BOOL d
     self.startIndex = -1;
     self.endIndex = -1;
     self.selectedText = [NSMutableString string];
+    self.selectedRange = NSMakeRange(NSNotFound, 0);
     
     UIColor *buttonBackgroundColor = DYYYColor(
         [UIColor colorWithRed:50/255.0 green:50/255.0 blue:50/255.0 alpha:1.0],
@@ -356,37 +355,38 @@ static inline UIColor *DYYYColor(UIColor *darkColor, UIColor *lightColor, BOOL d
 }
 
 - (void)updateSelectionWithStartIndex:(NSInteger)startIdx endIndex:(NSInteger)endIdx {
-  // 确保有效的开始和结束索引
   NSInteger startIndex = MIN(startIdx, endIdx);
   NSInteger endIndex = MAX(startIdx, endIdx);
-  
+
   UIColor *buttonBackgroundColor = DYYYColor(
-      [UIColor colorWithRed:50/255.0 green:50/255.0 blue:50/255.0 alpha:1.0],
+      [UIColor colorWithRed:50 / 255.0 green:50 / 255.0 blue:50 / 255.0 alpha:1.0],
       [UIColor whiteColor],
       self.darkMode);
-  
-  // 清除所有按钮选中状态
-  for (UIButton *button in self.characterButtons) {
-    button.backgroundColor = buttonBackgroundColor;
-  }
-  
-  // 设置选中范围内按钮的状态
-  NSMutableString *selection = [NSMutableString string];
-  for (NSInteger i = startIndex; i <= endIndex; i++) {
-    if (i < self.characterButtons.count) {
-      UIButton *button = self.characterButtons[i];
-      button.backgroundColor = [DYYYAccentColor() colorWithAlphaComponent:0.2];
-      [selection appendString:button.titleLabel.text];
+
+  NSRange newRange = NSMakeRange(startIndex, endIndex - startIndex + 1);
+  NSRange oldRange = self.selectedRange.location == NSNotFound ? NSMakeRange(0, 0) : self.selectedRange;
+
+  // 取消旧范围中不再选中的按钮
+  NSInteger oldEnd = NSMaxRange(oldRange) - 1;
+  for (NSInteger i = oldRange.location; i <= oldEnd; i++) {
+    if (i < 0 || i >= self.characterButtons.count) continue;
+    if (i < newRange.location || i >= NSMaxRange(newRange)) {
+      self.characterButtons[i].backgroundColor = buttonBackgroundColor;
     }
   }
-  
-  // 更新选中文本和预览标签
-  self.selectedText = selection;
-  if (selection.length > 0) {
-    self.selectionPreviewLabel.text = selection;
-  } else {
-    self.selectionPreviewLabel.text = @"请滑动选择文字";
+
+  // 选中新范围
+  NSMutableString *selection = [NSMutableString string];
+  for (NSInteger i = newRange.location; i < NSMaxRange(newRange); i++) {
+    if (i < 0 || i >= self.characterButtons.count) continue;
+    UIButton *button = self.characterButtons[i];
+    button.backgroundColor = [DYYYAccentColor() colorWithAlphaComponent:0.2];
+    [selection appendString:button.titleLabel.text];
   }
+
+  self.selectedRange = newRange;
+  self.selectedText = selection;
+  self.selectionPreviewLabel.text = selection.length > 0 ? selection : @"请滑动选择文字";
 }
 
 #pragma mark - Show/Dismiss Methods
