@@ -1,6 +1,14 @@
 #import "DYYYFilterSettingsView.h"
 #import "DYYYManager.h"
 
+static inline UIColor *DYYYAccentColor(void) {
+    return [UIColor colorWithRed:11/255.0 green:223/255.0 blue:154/255.0 alpha:1.0];
+}
+
+static inline UIColor *DYYYColor(UIColor *darkColor, UIColor *lightColor, BOOL darkMode) {
+    return darkMode ? darkColor : lightColor;
+}
+
 @interface DYYYFilterSettingsView ()
 
 @property(nonatomic, strong) UIVisualEffectView *blurView;
@@ -18,6 +26,7 @@
 @property(nonatomic, assign) NSInteger endIndex;
 @property(nonatomic, strong) NSMutableString *selectedText;
 @property(nonatomic, assign) BOOL isSelecting;
+@property(nonatomic, assign) BOOL darkMode;
 
 @end
 
@@ -34,24 +43,25 @@
     
     self.backgroundColor = [UIColor colorWithWhite:0 alpha:0.2];
 
-    BOOL isDarkMode = [DYYYManager isDarkMode];
+    self.darkMode = [DYYYManager isDarkMode];
 
     // 创建模糊背景视图
     self.blurView = [[UIVisualEffectView alloc]
-        initWithEffect:[UIBlurEffect effectWithStyle:isDarkMode
+        initWithEffect:[UIBlurEffect effectWithStyle:self.darkMode
                                           ? UIBlurEffectStyleDark
                                           : UIBlurEffectStyleLight]];
     self.blurView.frame = self.bounds;
-    self.blurView.alpha = isDarkMode ? 0.3 : 0.2;
+    self.blurView.alpha = self.darkMode ? 0.3 : 0.2;
     [self addSubview:self.blurView];
 
     // 创建内容视图 - 根据模式设置背景色
     self.contentView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 300, 400)];
     CGFloat screenHeight = UIScreen.mainScreen.bounds.size.height;
     self.contentView.center = CGPointMake(self.frame.size.width / 2, screenHeight / 3);
-    self.contentView.backgroundColor = isDarkMode ?
-        [UIColor colorWithRed:30/255.0 green:30/255.0 blue:30/255.0 alpha:1.0] :
-        [UIColor whiteColor];
+    self.contentView.backgroundColor = DYYYColor(
+        [UIColor colorWithRed:30/255.0 green:30/255.0 blue:30/255.0 alpha:1.0],
+        [UIColor whiteColor],
+        self.darkMode);
     self.contentView.layer.cornerRadius = 12;
     self.contentView.layer.masksToBounds = YES;
     self.contentView.alpha = 0;
@@ -61,9 +71,10 @@
     // 主标题 - 根据模式设置文本颜色
     self.titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(20, 20, 260, 24)];
     self.titleLabel.text = title ?: @"推荐过滤设置";
-    self.titleLabel.textColor = isDarkMode ?
-        [UIColor colorWithRed:230/255.0 green:230/255.0 blue:235/255.0 alpha:1.0] :
-        [UIColor colorWithRed:45/255.0 green:47/255.0 blue:56/255.0 alpha:1.0];
+    self.titleLabel.textColor = DYYYColor(
+        [UIColor colorWithRed:230/255.0 green:230/255.0 blue:235/255.0 alpha:1.0],
+        [UIColor colorWithRed:45/255.0 green:47/255.0 blue:56/255.0 alpha:1.0],
+        self.darkMode);
     self.titleLabel.textAlignment = NSTextAlignmentCenter;
     self.titleLabel.font = [UIFont systemFontOfSize:18 weight:UIFontWeightMedium];
     [self.contentView addSubview:self.titleLabel];
@@ -72,29 +83,31 @@
     self.keywordFilterButton = [UIButton buttonWithType:UIButtonTypeSystem];
     self.keywordFilterButton.frame = CGRectMake(240, 20, 40, 24);
     [self.keywordFilterButton setImage:[UIImage systemImageNamed:@"line.3.horizontal.decrease.circle"] forState:UIControlStateNormal];
-    self.keywordFilterButton.tintColor = [UIColor colorWithRed:11/255.0 green:223/255.0 blue:154/255.0 alpha:1.0]; // #0BDF9A 保持不变
+    self.keywordFilterButton.tintColor = DYYYAccentColor();
     [self.keywordFilterButton addTarget:self action:@selector(keywordFilterTapped) forControlEvents:UIControlEventTouchUpInside];
     [self.contentView addSubview:self.keywordFilterButton];
 
     // 选中预览区域 - 根据模式设置背景色
     self.selectionPreviewLabel = [[UILabel alloc] initWithFrame:CGRectMake(20, 54, 260, 50)];
     self.selectionPreviewLabel.text = @"请滑动选择文字";
-    self.selectionPreviewLabel.textColor = [UIColor colorWithRed:11/255.0 green:223/255.0 blue:154/255.0 alpha:1.0]; // 保持强调色不变
+    self.selectionPreviewLabel.textColor = DYYYAccentColor();
     self.selectionPreviewLabel.textAlignment = NSTextAlignmentCenter;
     self.selectionPreviewLabel.numberOfLines = 2;
     self.selectionPreviewLabel.font = [UIFont systemFontOfSize:16];
-    self.selectionPreviewLabel.backgroundColor = isDarkMode ?
-        [UIColor colorWithRed:45/255.0 green:45/255.0 blue:45/255.0 alpha:1.0] :
-        [UIColor colorWithRed:245/255.0 green:245/255.0 blue:245/255.0 alpha:1.0];
+    self.selectionPreviewLabel.backgroundColor = DYYYColor(
+        [UIColor colorWithRed:45/255.0 green:45/255.0 blue:45/255.0 alpha:1.0],
+        [UIColor colorWithRed:245/255.0 green:245/255.0 blue:245/255.0 alpha:1.0],
+        self.darkMode);
     self.selectionPreviewLabel.layer.cornerRadius = 8;
     self.selectionPreviewLabel.layer.masksToBounds = YES;
     [self.contentView addSubview:self.selectionPreviewLabel];
 
     // 字符滚动视图 - 根据模式设置背景色
     self.charactersScrollView = [[UIScrollView alloc] initWithFrame:CGRectMake(20, 114, 260, 220)];
-    self.charactersScrollView.backgroundColor = isDarkMode ?
-        [UIColor colorWithRed:45/255.0 green:45/255.0 blue:45/255.0 alpha:1.0] :
-        [UIColor colorWithRed:245/255.0 green:245/255.0 blue:245/255.0 alpha:1.0];
+    self.charactersScrollView.backgroundColor = DYYYColor(
+        [UIColor colorWithRed:45/255.0 green:45/255.0 blue:45/255.0 alpha:1.0],
+        [UIColor colorWithRed:245/255.0 green:245/255.0 blue:245/255.0 alpha:1.0],
+        self.darkMode);
     self.charactersScrollView.layer.cornerRadius = 8;
     self.charactersScrollView.bounces = YES;
     self.charactersScrollView.showsVerticalScrollIndicator = YES;
@@ -106,9 +119,10 @@
 
     // 添加内容和按钮之间的分割线 - 根据模式设置颜色
     UIView *contentButtonSeparator = [[UIView alloc] initWithFrame:CGRectMake(0, 344, 300, 0.5)];
-    contentButtonSeparator.backgroundColor = isDarkMode ?
-        [UIColor colorWithRed:60/255.0 green:60/255.0 blue:60/255.0 alpha:1.0] :
-        [UIColor colorWithRed:230/255.0 green:230/255.0 blue:230/255.0 alpha:1.0];
+    contentButtonSeparator.backgroundColor = DYYYColor(
+        [UIColor colorWithRed:60/255.0 green:60/255.0 blue:60/255.0 alpha:1.0],
+        [UIColor colorWithRed:230/255.0 green:230/255.0 blue:230/255.0 alpha:1.0],
+        self.darkMode);
     [self.contentView addSubview:contentButtonSeparator];
 
     // 按钮容器
@@ -120,18 +134,20 @@
     self.cancelButton.frame = CGRectMake(0, 0, 149.5, 55.5);
     self.cancelButton.backgroundColor = [UIColor clearColor];
     [self.cancelButton setTitle:@"取消" forState:UIControlStateNormal];
-    [self.cancelButton setTitleColor:isDarkMode ?
-        [UIColor colorWithRed:160/255.0 green:160/255.0 blue:165/255.0 alpha:1.0] :
-        [UIColor colorWithRed:124/255.0 green:124/255.0 blue:130/255.0 alpha:1.0]
+    [self.cancelButton setTitleColor:DYYYColor(
+        [UIColor colorWithRed:160/255.0 green:160/255.0 blue:165/255.0 alpha:1.0],
+        [UIColor colorWithRed:124/255.0 green:124/255.0 blue:130/255.0 alpha:1.0],
+        self.darkMode)
         forState:UIControlStateNormal];
     [self.cancelButton addTarget:self action:@selector(cancelTapped) forControlEvents:UIControlEventTouchUpInside];
     [buttonContainer addSubview:self.cancelButton];
 
     // 按钮之间的分割线 - 根据模式设置颜色
     UIView *buttonSeparator = [[UIView alloc] initWithFrame:CGRectMake(149.5, 0, 0.5, 55.5)];
-    buttonSeparator.backgroundColor = isDarkMode ?
-        [UIColor colorWithRed:60/255.0 green:60/255.0 blue:60/255.0 alpha:1.0] :
-        [UIColor colorWithRed:230/255.0 green:230/255.0 blue:230/255.0 alpha:1.0];
+    buttonSeparator.backgroundColor = DYYYColor(
+        [UIColor colorWithRed:60/255.0 green:60/255.0 blue:60/255.0 alpha:1.0],
+        [UIColor colorWithRed:230/255.0 green:230/255.0 blue:230/255.0 alpha:1.0],
+        self.darkMode);
     [buttonContainer addSubview:buttonSeparator];
 
     // 确认按钮 - 根据模式设置文本颜色
@@ -139,9 +155,10 @@
     self.confirmButton.frame = CGRectMake(150, 0, 150, 55.5);
     self.confirmButton.backgroundColor = [UIColor clearColor];
     [self.confirmButton setTitle:@"确定" forState:UIControlStateNormal];
-    [self.confirmButton setTitleColor:isDarkMode ?
-        [UIColor colorWithRed:230/255.0 green:230/255.0 blue:235/255.0 alpha:1.0] :
-        [UIColor colorWithRed:45/255.0 green:47/255.0 blue:56/255.0 alpha:1.0]
+    [self.confirmButton setTitleColor:DYYYColor(
+        [UIColor colorWithRed:230/255.0 green:230/255.0 blue:235/255.0 alpha:1.0],
+        [UIColor colorWithRed:45/255.0 green:47/255.0 blue:56/255.0 alpha:1.0],
+        self.darkMode)
         forState:UIControlStateNormal];
     [self.confirmButton addTarget:self action:@selector(confirmTapped) forControlEvents:UIControlEventTouchUpInside];
     [buttonContainer addSubview:self.confirmButton];
@@ -161,23 +178,25 @@
   const CGFloat margin = 1.0;
   const int buttonsPerRow = 10;
   
-  int row = 0;
-  int col = 0;
-  
-  BOOL isDarkMode = [DYYYManager isDarkMode];
-  UIColor *buttonBackgroundColor = isDarkMode ?
-      [UIColor colorWithRed:50/255.0 green:50/255.0 blue:50/255.0 alpha:1.0] :
-      [UIColor whiteColor];
-  UIColor *buttonTextColor = isDarkMode ?
-      [UIColor colorWithRed:230/255.0 green:230/255.0 blue:235/255.0 alpha:1.0] :
-      [UIColor colorWithRed:45/255.0 green:47/255.0 blue:56/255.0 alpha:1.0];
-  UIColor *buttonBorderColor = isDarkMode ?
-      [UIColor colorWithRed:70/255.0 green:70/255.0 blue:70/255.0 alpha:1.0] :
-      [UIColor colorWithRed:230/255.0 green:230/255.0 blue:230/255.0 alpha:1.0];
+  UIColor *buttonBackgroundColor = DYYYColor(
+      [UIColor colorWithRed:50/255.0 green:50/255.0 blue:50/255.0 alpha:1.0],
+      [UIColor whiteColor],
+      self.darkMode);
+  UIColor *buttonTextColor = DYYYColor(
+      [UIColor colorWithRed:230/255.0 green:230/255.0 blue:235/255.0 alpha:1.0],
+      [UIColor colorWithRed:45/255.0 green:47/255.0 blue:56/255.0 alpha:1.0],
+      self.darkMode);
+  UIColor *buttonBorderColor = DYYYColor(
+      [UIColor colorWithRed:70/255.0 green:70/255.0 blue:70/255.0 alpha:1.0],
+      [UIColor colorWithRed:230/255.0 green:230/255.0 blue:230/255.0 alpha:1.0],
+      self.darkMode);
   
   for (NSInteger i = 0; i < self.text.length; i++) {
     NSString *character = [self.text substringWithRange:NSMakeRange(i, 1)];
-    
+
+    NSInteger row = i / buttonsPerRow;
+    NSInteger col = i % buttonsPerRow;
+
     // 创建字符按钮 - 根据模式设置颜色
     UIButton *button = [UIButton buttonWithType:UIButtonTypeSystem];
     button.frame = CGRectMake(col * (buttonSize + margin), row * (buttonSize + margin), buttonSize, buttonSize);
@@ -197,17 +216,12 @@
     [self.charactersScrollView addSubview:button];
     [self.characterButtons addObject:button];
     
-    // 更新行列位置
-    col++;
-    if (col >= buttonsPerRow) {
-      col = 0;
-      row++;
-    }
   }
-  
-  // 设置滚动视图的内容大小
-  CGFloat contentHeight = (row + (col > 0 ? 1 : 0)) * (buttonSize + margin) + 10; // 底部增加一点边距
-  self.charactersScrollView.contentSize = CGSizeMake(self.charactersScrollView.frame.size.width, MAX(contentHeight, self.charactersScrollView.frame.size.height));
+
+  NSInteger rows = (self.text.length + buttonsPerRow - 1) / buttonsPerRow;
+  CGFloat contentHeight = rows * (buttonSize + margin) + 10; // 底部增加一点边距
+  self.charactersScrollView.contentSize = CGSizeMake(self.charactersScrollView.frame.size.width,
+                                                    MAX(contentHeight, self.charactersScrollView.frame.size.height));
 }
 
 #pragma mark - Button Selection Handling
@@ -329,10 +343,10 @@
     self.endIndex = -1;
     self.selectedText = [NSMutableString string];
     
-    BOOL isDarkMode = [DYYYManager isDarkMode];
-    UIColor *buttonBackgroundColor = isDarkMode ?
-        [UIColor colorWithRed:50/255.0 green:50/255.0 blue:50/255.0 alpha:1.0] :
-        [UIColor whiteColor];
+    UIColor *buttonBackgroundColor = DYYYColor(
+        [UIColor colorWithRed:50/255.0 green:50/255.0 blue:50/255.0 alpha:1.0],
+        [UIColor whiteColor],
+        self.darkMode);
     
     for (UIButton *button in self.characterButtons) {
         button.backgroundColor = buttonBackgroundColor;
@@ -346,10 +360,10 @@
   NSInteger startIndex = MIN(startIdx, endIdx);
   NSInteger endIndex = MAX(startIdx, endIdx);
   
-  BOOL isDarkMode = [DYYYManager isDarkMode];
-  UIColor *buttonBackgroundColor = isDarkMode ?
-      [UIColor colorWithRed:50/255.0 green:50/255.0 blue:50/255.0 alpha:1.0] :
-      [UIColor whiteColor];
+  UIColor *buttonBackgroundColor = DYYYColor(
+      [UIColor colorWithRed:50/255.0 green:50/255.0 blue:50/255.0 alpha:1.0],
+      [UIColor whiteColor],
+      self.darkMode);
   
   // 清除所有按钮选中状态
   for (UIButton *button in self.characterButtons) {
@@ -361,7 +375,7 @@
   for (NSInteger i = startIndex; i <= endIndex; i++) {
     if (i < self.characterButtons.count) {
       UIButton *button = self.characterButtons[i];
-      button.backgroundColor = [UIColor colorWithRed:11/255.0 green:223/255.0 blue:154/255.0 alpha:0.2]; // 浅绿色背景，保持一致
+      button.backgroundColor = [DYYYAccentColor() colorWithAlphaComponent:0.2];
       [selection appendString:button.titleLabel.text];
     }
   }
