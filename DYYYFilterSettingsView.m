@@ -246,7 +246,6 @@ static const int kDYYYButtonsPerRow = 10;
     self.isDragging = YES;
 
     if (self.selectedRange.location != NSNotFound) {
-      [self resetSelection];
       self.isSelecting = YES;
       self.startIndex = self.touchDownIndex;
       self.endIndex = self.touchDownIndex;
@@ -360,7 +359,6 @@ static const int kDYYYButtonsPerRow = 10;
     self.startIndex = -1;
     self.endIndex = -1;
     self.selectedText = [NSMutableString string];
-    self.touchDownIndex = -1;
     self.selectedRange = NSMakeRange(NSNotFound, 0);
     
     UIColor *buttonBackgroundColor = DYYYColor(
