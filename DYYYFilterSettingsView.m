@@ -30,6 +30,8 @@ static const int kDYYYButtonsPerRow = 10;
 @property(nonatomic, assign) NSInteger endIndex;
 @property(nonatomic, strong) NSMutableString *selectedText;
 @property(nonatomic, assign) BOOL isSelecting;
+@property(nonatomic, assign) BOOL isDragging;
+@property(nonatomic, assign) NSInteger touchDownIndex;
 @property(nonatomic, assign) BOOL darkMode;
 @property(nonatomic, assign) NSRange selectedRange;
 
@@ -45,6 +47,8 @@ static const int kDYYYButtonsPerRow = 10;
     _startIndex = -1;
     _endIndex = -1;
     _isSelecting = NO;
+    _isDragging = NO;
+    _touchDownIndex = -1;
     _selectedRange = NSMakeRange(NSNotFound, 0);
     
     self.backgroundColor = [UIColor colorWithWhite:0 alpha:0.2];
@@ -216,7 +220,12 @@ static const int kDYYYButtonsPerRow = 10;
     
     // 添加触摸事件
     [button addTarget:self action:@selector(characterTouchDown:) forControlEvents:UIControlEventTouchDown];
-    [button addTarget:self action:@selector(characterTouchMoved:withEvent:) forControlEvents:UIControlEventTouchDragInside | UIControlEventTouchDragEnter | UIControlEventTouchDragExit];
+    [button addTarget:self
+                   action:@selector(characterTouchMoved:withEvent:)
+         forControlEvents:UIControlEventTouchDragInside |
+                          UIControlEventTouchDragEnter |
+                          UIControlEventTouchDragExit |
+                          UIControlEventTouchDragOutside];
     [button addTarget:self action:@selector(characterTouchUp:) forControlEvents:UIControlEventTouchUpInside | UIControlEventTouchUpOutside | UIControlEventTouchCancel];
     
     [self.charactersScrollView addSubview:button];
@@ -233,9 +242,21 @@ static const int kDYYYButtonsPerRow = 10;
 #pragma mark - Button Selection Handling
 
 - (void)characterTouchMoved:(UIButton *)sender withEvent:(UIEvent *)event {
+  if (!self.isDragging) {
+    self.isDragging = YES;
+
+    if (self.selectedRange.location != NSNotFound) {
+      self.isSelecting = YES;
+      self.startIndex = self.touchDownIndex;
+      self.endIndex = self.touchDownIndex;
+      [self updateSelectionWithStartIndex:self.startIndex endIndex:self.endIndex];
+    }
+  }
+
   if (self.isSelecting) {
-    UITouch *touch = [[event touchesForView:sender] anyObject];
+    UITouch *touch = [[event allTouches] anyObject];
     CGPoint currentPoint = [touch locationInView:self.charactersScrollView];
+    currentPoint.y += self.charactersScrollView.contentOffset.y;
 
     NSInteger col = floor(currentPoint.x / (kDYYYButtonSize + kDYYYButtonMargin));
     NSInteger row = floor(currentPoint.y / (kDYYYButtonSize + kDYYYButtonMargin));
@@ -250,60 +271,57 @@ static const int kDYYYButtonsPerRow = 10;
 }
 
 - (void)characterTouchDown:(UIButton *)sender {
-    NSInteger buttonTag = sender.tag;
-    
-    // 检查是否已有选择
-    if (self.isSelecting && self.startIndex != -1 && self.endIndex != -1) {
-        NSInteger startIndex = MIN(self.startIndex, self.endIndex);
-        NSInteger endIndex = MAX(self.startIndex, self.endIndex);
-        
-        // 1. 检查是否点击了已选中的字符
-        if (buttonTag >= startIndex && buttonTag <= endIndex) {
-            // 2. 处理点击已选中字符的情况
-            if (buttonTag == startIndex && buttonTag == endIndex) {
-                // 点击的是唯一选中的字符，取消整个选择
-                [self resetSelection];
-                return;
-            } else if (buttonTag == startIndex) {
-                // 点击的是选择范围的第一个字符
-                self.startIndex = startIndex + 1;
-            } else if (buttonTag == endIndex) {
-                // 点击的是选择范围的最后一个字符
-                self.endIndex = endIndex - 1;
-            } else {
-                // 点击的是选择范围中间的字符
-                // 选择较短的那一边进行调整
-                if (buttonTag - startIndex <= endIndex - buttonTag) {
-                    // 左侧部分较短，保留右侧部分
-                    self.startIndex = buttonTag + 1;
-                } else {
-                    // 右侧部分较短，保留左侧部分
-                    self.endIndex = buttonTag - 1;
-                }
-            }
-            
-            // 更新选择范围
-            if (self.startIndex > self.endIndex) {
-                // 如果结果是无效的选择范围，则重置选择
-                [self resetSelection];
-            } else {
-                [self updateSelectionWithStartIndex:self.startIndex endIndex:self.endIndex];
-            }
-            return;
-        }
-    }
-    
-    // 原有的处理逻辑
-    if (!self.isSelecting || (self.startIndex == -1 && self.endIndex == -1)) {
+    NSInteger idx = sender.tag;
+
+    self.touchDownIndex = idx;
+    self.startIndex = idx;
+    self.endIndex = idx;
+    self.isDragging = NO;
+
+    if (self.selectedRange.location == NSNotFound) {
         self.isSelecting = YES;
-        self.startIndex = buttonTag;
-        self.endIndex = buttonTag;
-    } else {
-        // 已有选择，扩展选择范围
-        self.endIndex = buttonTag;
+        [self updateSelectionWithStartIndex:self.startIndex endIndex:self.endIndex];
+        return;
     }
-    
-    [self updateSelectionWithStartIndex:self.startIndex endIndex:self.endIndex];
+
+    NSInteger rangeStart = self.selectedRange.location;
+    NSInteger rangeEnd = NSMaxRange(self.selectedRange) - 1;
+
+    if (idx >= rangeStart && idx <= rangeEnd) {
+        if (rangeStart == rangeEnd) {
+            [self resetSelection];
+            return;
+        } else if (idx == rangeStart) {
+            rangeStart++;
+        } else if (idx == rangeEnd) {
+            rangeEnd--;
+        } else {
+            if (idx - rangeStart <= rangeEnd - idx) {
+                rangeStart = idx + 1;
+            } else {
+                rangeEnd = idx - 1;
+            }
+        }
+
+        if (rangeStart <= rangeEnd) {
+            self.isSelecting = YES;
+            self.startIndex = rangeStart;
+            self.endIndex = rangeEnd;
+            [self updateSelectionWithStartIndex:self.startIndex endIndex:self.endIndex];
+        } else {
+            [self resetSelection];
+        }
+    } else {
+        self.isSelecting = YES;
+        if (idx < rangeStart) {
+            self.startIndex = idx;
+            self.endIndex = rangeEnd;
+        } else {
+            self.startIndex = rangeStart;
+            self.endIndex = idx;
+        }
+        [self updateSelectionWithStartIndex:self.startIndex endIndex:self.endIndex];
+    }
 }
 
 // 添加新方法实现自动滚动
@@ -331,12 +349,13 @@ static const int kDYYYButtonsPerRow = 10;
 }
 
 - (void)characterTouchUp:(UIButton *)sender {
-    // 不再重置isSelecting状态，这样可以保持选择状态以便单击扩展选择
+    self.isDragging = NO;
 }
 
 // 添加方法重置选择状态
 - (void)resetSelection {
     self.isSelecting = NO;
+    self.isDragging = NO;
     self.startIndex = -1;
     self.endIndex = -1;
     self.selectedText = [NSMutableString string];
