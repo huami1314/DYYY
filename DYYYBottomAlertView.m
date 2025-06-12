@@ -13,7 +13,7 @@
     
     AFDPrivacyHalfScreenViewController *vc = [NSClassFromString(@"AFDPrivacyHalfScreenViewController") new];
     
-    if (!vc) return nil; // 检查实例是否成功
+    if (!vc) return nil;
 
     if (!cancelButtonText) {
         cancelButtonText = @"取消";
@@ -72,13 +72,6 @@
     return vc;
 }
 
-
-typedef NS_ENUM(NSInteger, DYYYAlertDismissType) {
-    DYYYAlertDismissTypeDefault,
-    DYYYAlertDismissTypeSlide,
-    DYYYAlertDismissTypeTap
-};
-
 + (UIViewController *)showAlertWithTitle:(NSString *)title
                                  message:(NSString *)message
                             cancelAction:(DYYYAlertActionHandler)cancelAction
@@ -115,7 +108,7 @@ typedef NS_ENUM(NSInteger, DYYYAlertDismissType) {
     
     AFDPrivacyHalfScreenViewController *vc = [NSClassFromString(@"AFDPrivacyHalfScreenViewController") new];
     
-    if (!vc) return nil; // 检查实例是否成功
+    if (!vc) return nil;
 
     if (!cancelButtonText) {
         cancelButtonText = @"取消";
@@ -204,7 +197,6 @@ typedef NS_ENUM(NSInteger, DYYYAlertDismissType) {
     return vc;
 }
 
-// 优化移除弹窗方法
 + (void)dismissAlertViewController:(UIViewController *)viewController {
     if (!viewController || !viewController.presentingViewController) {
         return;
