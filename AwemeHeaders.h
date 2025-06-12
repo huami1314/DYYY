@@ -94,6 +94,9 @@ static CGFloat gStartVal = 0.0;
 @property(copy, nonatomic) AWEURLModel *avatarMedium;
 @end
 
+@interface AWEAnimatedImageVideoInfo : NSObject
+@end
+
 @interface AWEAwemeModel : NSObject
 @property(nonatomic, strong, readwrite) NSNumber *createTime;
 @property(nonatomic, assign, readwrite) CGFloat videoDuration;
@@ -117,7 +120,7 @@ static CGFloat gStartVal = 0.0;
 @property(nonatomic, copy) NSString *descriptionSimpleString;
 @property(nonatomic, strong) NSString *itemID;
 @property(nonatomic, strong) AWEUserModel *author;
-
+@property(nonatomic, strong) AWEAnimatedImageVideoInfo *animatedImageVideoInfo;
 @property(nonatomic, strong) AWEAwemeStatisticsModel *statistics;
 - (BOOL)isLive;
 - (AWESearchAwemeExtraModel *)searchExtraModel;
