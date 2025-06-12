@@ -4597,28 +4597,6 @@ static AWEIMReusableCommonCell *currentCell;
 			}
 		}
 
-		// 添加保存封面选项
-		if (!isImageContent) {
-			AWEUserSheetAction *saveCoverAction = [NSClassFromString(@"AWEUserSheetAction")
-			    actionWithTitle:@"保存封面"
-				    imgName:nil
-				    handler:^{
-				      AWEVideoModel *videoModel = awemeModel.video;
-				      if (videoModel && videoModel.coverURL && videoModel.coverURL.originURLList.count > 0) {
-					      NSURL *coverURL = [NSURL URLWithString:videoModel.coverURL.originURLList.firstObject];
-					      [DYYYManager downloadMedia:coverURL
-							       mediaType:MediaTypeImage
-							      completion:^(BOOL success) {
-								if (success) {
-								} else {
-									[DYYYManager showToast:@"封面保存已取消"];
-								}
-							      }];
-				      }
-				    }];
-			[actions addObject:saveCoverAction];
-		}
-
 		// 添加下载音频选项
 		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDoubleTapDownloadAudio"] || ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleTapDownloadAudio"]) {
 

@@ -2440,7 +2440,6 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 				    @"imageName" : @"ic_xiaoxihuazhonghua_outlined_20"
 			    }];
 			    [doubleTapItems addObject:enableDoubleTapMenu];
-
 			    NSArray *doubleTapFunctions = @[
 				    @{@"identifier" : @"DYYYDoubleTapDownload",
 				      @"title" : @"保存视频/图片",
@@ -2452,7 +2451,6 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 				      @"detail" : @"",
 				      @"cellType" : @6,
 				      @"imageName" : @"ic_boxarrowdown_outlined"},
-
 				    @{@"identifier" : @"DYYYDoubleInterfaceDownload",
 				      @"title" : @"接口保存",
 				      @"detail" : @"",
@@ -2478,7 +2476,6 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 				      @"detail" : @"",
 				      @"cellType" : @6,
 				      @"imageName" : @"ic_heart_outlined_20"},
-
 				    @{
 					    @"identifier" : @"DYYYDoubleTapshowDislikeOnVideo",
 					    @"title" : @"长按面板",
@@ -2486,7 +2483,6 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 					    @"cellType" : @6,
 					    @"imageName" : @"ic_xiaoxihuazhonghua_outlined_20"
 				    },
-
 				    @{@"identifier" : @"DYYYDoubleTapshowSharePanel",
 				      @"title" : @"分享视频",
 				      @"detail" : @"",
