@@ -913,9 +913,57 @@ static CGFloat gStartVal = 0.0;
 @property(retain, nonatomic) UIImageView *imageView;
 @property(copy, nonatomic) void (^rightBtnClickedBlock)(void);
 @property(copy, nonatomic) void (^leftButtonClickedBlock)(void);
+@property(copy, nonatomic) void (^closeButtonClickedBlock)(void);
+@property(copy, nonatomic) void (^singleTapBlock)(void);
+@property(copy, nonatomic) void (^toggleBlock)(void);
+@property(copy, nonatomic) void (^tapDismissBlock)(void);
+@property(copy, nonatomic) void (^slideDismissBlock)(void);
+@property(copy, nonatomic) void (^afterDismissBlock)(void);
+@property(copy, nonatomic) void (^afterDismissWithSwitchChangedBlock)(void);
+@property(copy, nonatomic) NSString *knownButtonText;
+@property(assign, nonatomic) BOOL shouldShowKnownButton;
+@property(assign, nonatomic) UIEdgeInsets lockImageInset;
+@property(retain, nonatomic) UIImage *lockImage;
+@property(retain, nonatomic) UIImage *closeImage;
+@property(retain, nonatomic) AFDButton *cancelButton; 
+@property(retain, nonatomic) AWEButton *knownButton;
 @property(retain, nonatomic) AWEButton *leftCancelButton;
 @property(retain, nonatomic) AWEButton *rightConfirmButton;
 
+- (void)configWithCloseButtonClickedBlock:(void (^)(void))closeButtonClickedBlock
+                           singleTapBlock:(void (^)(void))singleTapBlock
+                              toggleBlock:(void (^)(void))toggleBlock;
+- (void)configWithImageView:(UIImageView *)imageView
+                  titleText:(NSString *)titleText
+                contentText:(NSString *)contentText
+               settingsText:(NSString *)settingsText
+             singleTapBlock:(void (^)(void))singleTapBlock;
+- (void)configWithImageView:(UIImageView *)imageView
+                  lockImage:(UIImage *)lockImage
+             titleLabelText:(NSString *)titleText
+           contentLabelText:(NSString *)contentText
+            knownButtonText:(NSString *)knownButtonText
+            toggleTitleText:(NSString *)toggleTitleText
+               defaultState:(BOOL)defaultState
+           defaultLockState:(BOOL)defaultLockState;
+- (void)configWithImageView:(UIImageView *)imageView
+                  lockImage:(UIImage *)lockImage
+             lockImageInset:(UIEdgeInsets)lockImageInset
+             titleLabelText:(NSString *)titleLabelText
+           contentLabelText:(NSString *)contentLabelText
+            knownButtonText:(NSString *)knownButtonText
+            toggleTitleText:(NSString *)toggleTitleText
+               defaultState:(BOOL)defaultState
+           defaultLockState:(BOOL)defaultLockState;
+- (void)configWithImageView:(UIImageView *)imageView
+                 closeImage:(UIImage *)closeImage
+                  lockImage:(UIImage *)lockImage
+             titleLabelText:(NSString *)titleLabelText
+           contentLabelText:(NSString *)contentLabelText
+            knownButtonText:(NSString *)knownButtonText
+            toggleTitleText:(NSString *)toggleTitleText
+               defaultState:(BOOL)defaultState
+           defaultLockState:(BOOL)defaultLockState;
 - (void)configWithImageView:(UIImageView *)imageView
                   lockImage:(UIImage *)lockImage
            defaultLockState:(BOOL)defaultLockState
@@ -932,9 +980,10 @@ static CGFloat gStartVal = 0.0;
 - (void)setShouldShowToggle:(BOOL)arg1;
 - (NSUInteger)animationStyle;
 - (NSUInteger)viewStyle;
-- (void)setSlideDismissBlock:(void (^)(void))slideDismissBlock;
-- (void)setTapDismissBlock:(void (^)(void))tapDismissBlock;
-- (void)setAfterDismissBlock:(void (^)(void))afterDismissBlock;
+- (void)cancelButtonTapped;
+- (void)settingsTextTapped;
+- (void)knownButtonClicked;
+- (void)showKnownButton;
 - (void)updateDarkModeAppearance;
 - (void)presentOnViewController:(UIViewController *)presentingViewController;
 @end
