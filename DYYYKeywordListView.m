@@ -246,25 +246,26 @@
     // 删除按钮
     UIButton *deleteButton = [UIButton buttonWithType:UIButtonTypeCustom];
     deleteButton.frame = CGRectMake(0, 0, 30, 30);
-
-    // 使用无填充的圆形 X 图标
-    UIImage *xImage = [[UIImage systemImageNamed:@"xmark"]
-        imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-    [deleteButton setImage:xImage forState:UIControlStateNormal];
     
-    // 设置删除按钮颜色
-    [deleteButton setTintColor:isDarkMode ?
-        [UIColor colorWithRed:160/255.0 green:160/255.0 blue:165/255.0 alpha:1.0] :
-        [UIColor colorWithRed:124/255.0 green:124/255.0 blue:130/255.0 alpha:1.0]];
-
-    // 设置灰色
-    cell.accessoryView = deleteButton;
-    cell.textLabel.textColor = [UIColor colorWithRed:124 / 255.0
-                                             green:124 / 255.0
-                                              blue:130 / 255.0
-                                             alpha:1.0]; // #7c7c82
-
-    // 添加按压效果
+    // 自绘制叉号图标
+    UIGraphicsBeginImageContextWithOptions(CGSizeMake(12, 12), NO, 0);
+    CGContextRef context = UIGraphicsGetCurrentContext();
+    
+    CGContextSetStrokeColorWithColor(context, [UIColor colorWithRed:180/255.0 green:180/255.0 blue:185/255.0 alpha:1.0].CGColor);
+    CGContextSetLineWidth(context, 1.5);
+    
+    CGContextMoveToPoint(context, 1, 1);
+    CGContextAddLineToPoint(context, 11, 11);
+    
+    CGContextMoveToPoint(context, 11, 1);
+    CGContextAddLineToPoint(context, 1, 11);
+    
+    CGContextStrokePath(context);
+    
+    UIImage *xImage = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    
+    [deleteButton setImage:xImage forState:UIControlStateNormal];
     deleteButton.adjustsImageWhenHighlighted = YES;
 
     [deleteButton addTarget:self
@@ -281,7 +282,7 @@
 
   // 配置单元格
   cell.textLabel.text = self.keywords[indexPath.row];
-  cell.accessoryView.tag = indexPath.row; // 用于识别删除哪个过滤项
+  cell.accessoryView.tag = indexPath.row;
   
   // 设置背景色透明，以便表格背景色可见
   cell.backgroundColor = [UIColor clearColor];
