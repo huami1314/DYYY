@@ -4736,7 +4736,7 @@ static AWEIMReusableCommonCell *currentCell;
 			AWEUserSheetAction *showSharePanel = [NSClassFromString(@"AWEUserSheetAction") actionWithTitle:@"分享视频"
 													       imgName:nil
 													       handler:^{
-														 [self showSharePanel]; // 执行分享操作
+														 [self showSharePanel];
 													       }];
 			[actions addObject:showSharePanel];
 		}
@@ -4747,7 +4747,7 @@ static AWEIMReusableCommonCell *currentCell;
 			AWEUserSheetAction *likeAction = [NSClassFromString(@"AWEUserSheetAction") actionWithTitle:@"点赞视频"
 													   imgName:nil
 													   handler:^{
-													     [self performLikeAction]; // 执行点赞操作
+													     [self performLikeAction];
 													   }];
 			[actions addObject:likeAction];
 		}
@@ -4758,7 +4758,7 @@ static AWEIMReusableCommonCell *currentCell;
 			AWEUserSheetAction *showDislikeOnVideo = [NSClassFromString(@"AWEUserSheetAction") actionWithTitle:@"长按面板"
 														   imgName:nil
 														   handler:^{
-														     [self showDislikeOnVideo]; // 执行长按面板操作
+														     [self showDislikeOnVideo];
 														   }];
 			[actions addObject:showDislikeOnVideo];
 		}
