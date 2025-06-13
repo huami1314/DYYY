@@ -3015,8 +3015,6 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 						    }
 					    }
 					    [defaults synchronize];
-
-					    // 显示成功提示
 					    [DYYYManager showToast:@"插件设置已清除，请重启应用"];
 					  }];
 	      }];
