@@ -17,6 +17,23 @@
 #import "DYYYSettingViewController.h"
 #import "DYYYToast.h"
 
+%hook AWEVideoPlayerScreenBrightnessManager
+- (void)setIsHDRVideo:(BOOL)isHDR {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableFeedHDR"]) {
+        %orig(NO);
+    } else {
+        %orig(isHDR);
+    }
+}
+
+- (BOOL)isHDRVideo {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableFeedHDR"]) {
+        return NO;
+    }
+    return %orig;
+}
+%end
+
 // 默认视频流最高画质
 %hook AWEVideoModel
 
