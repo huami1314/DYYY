@@ -720,7 +720,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 								   item.detail = valueString;
 								   [DYYYSettingsHelper refreshTableView];
 							   } else {
-								   DYYYAboutDialogView *errorDialog = [[DYYYAboutDialogView alloc] initWithTitle:@"输入错误" message:@"请输入有效的数字\n\n\n"];
+								   DYYYAboutDialogView *errorDialog = [[DYYYAboutDialogView alloc] initWithTitle:@"输入错误" message:@"\n\n请输入有效的数字\n\n"];
 								   [errorDialog show];
 							   }
 							 }
@@ -2092,13 +2092,13 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		  } else if ([item.identifier isEqualToString:@"DYYYABTestModeString"]) {
 			  // 获取当前的模式
 			  NSString *savedMode = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYABTestModeString"];
-			  BOOL isPatchMode = [savedMode isEqualToString:@"覆写模式：保留原设置，覆盖同名项"];
+			  BOOL isPatchMode = ![savedMode isEqualToString:@"替换模式：忽略原配置，写入新数据"];
 			  item.detail = isPatchMode ? @"覆写模式" : @"替换模式";
 
 			  item.cellTappedBlock = ^{
-			    NSString *currentMode = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYABTestModeString"] ?: @"替换模式：清除原配置，写入新数据";
+			    NSString *currentMode = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYABTestModeString"] ?: @"替换模式：忽略原配置，写入新数据";
 
-			    NSArray *modeOptions = @[ @"覆写模式：保留原设置，覆盖同名项", @"替换模式：清除原配置，写入新数据" ];
+			    NSArray *modeOptions = @[ @"覆写模式：保留原设置，覆盖同名项", @"替换模式：忽略原配置，写入新数据" ];
 
 			    [DYYYOptionsSelectionView showWithPreferenceKey:@"DYYYABTestModeString"
 							       optionsArray:modeOptions
@@ -2252,15 +2252,15 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		  } else if ([item.identifier isEqualToString:@"LoadABTestConfigFile"]) {
 			  item.cellTappedBlock = ^{
 			    NSString *savedMode = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYABTestModeString"];
-			    BOOL isPatchMode = [savedMode isEqualToString:@"覆写模式：保留原设置，覆盖同名项"];
+			    BOOL isPatchMode = ![savedMode isEqualToString:@"替换模式：忽略原配置，写入新数据"];
 
 			    NSString *confirmTitle, *confirmMessage;
 			    if (isPatchMode) {
 				    confirmTitle = @"覆写模式";
-				    confirmMessage = @"覆写模式将保留原设置并覆盖同名项\n确定要继续吗？\n";
+				    confirmMessage = @"\n导入后将保留原设置并覆盖同名项，\n\n点击确定后继续操作。\n";
 			    } else {
 				    confirmTitle = @"替换模式";
-				    confirmMessage = @"替换模式将丢弃原设置并替换为新数据\n确定要继续吗？\n";
+				    confirmMessage = @"\n导入后将忽略原设置并写入新数据，\n\n点击确定后继续操作。\n";
 			    }
 			    DYYYAboutDialogView *confirmDialog = [[DYYYAboutDialogView alloc] initWithTitle:confirmTitle message:confirmMessage];
 			    confirmDialog.onConfirm = ^{
