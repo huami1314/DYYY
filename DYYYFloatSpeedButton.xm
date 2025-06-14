@@ -395,7 +395,10 @@ void toggleSpeedButtonVisibility(void) {
 	if (defaultSpeed > 0 && defaultSpeed != 1) {
 		[self setVideoControllerPlaybackRate:defaultSpeed];
 	}
-
+	float speed = getCurrentSpeed();
+	if (speed != 1.0) {
+		[self adjustPlaybackSpeed:speed];
+	}
 	%orig(arg0);
 }
 
@@ -406,7 +409,6 @@ void toggleSpeedButtonVisibility(void) {
 		setCurrentSpeedIndex(0);
 	}
 	float speed = getCurrentSpeed();
-	NSInteger speedIndex = getCurrentSpeedIndex();
 	if (speed != 1.0) {
 		[self adjustPlaybackSpeed:speed];
 	}
@@ -428,7 +430,10 @@ void toggleSpeedButtonVisibility(void) {
 	if (defaultSpeed > 0 && defaultSpeed != 1) {
 		[self setVideoControllerPlaybackRate:defaultSpeed];
 	}
-
+	float speed = getCurrentSpeed();
+	if (speed != 1.0) {
+		[self adjustPlaybackSpeed:speed];
+	}
 	%orig(arg0);
 }
 
@@ -439,7 +444,6 @@ void toggleSpeedButtonVisibility(void) {
 		setCurrentSpeedIndex(0);
 	}
 	float speed = getCurrentSpeed();
-	NSInteger speedIndex = getCurrentSpeedIndex();
 	if (speed != 1.0) {
 		[self adjustPlaybackSpeed:speed];
 	}
