@@ -452,6 +452,7 @@ void toggleSpeedButtonVisibility(void) {
 	if (defaultSpeed > 0 && defaultSpeed != 1) {
 		[self setVideoControllerPlaybackRate:defaultSpeed];
 	}
+
 	float speed = getCurrentSpeed();
 	NSInteger speedIndex = getCurrentSpeedIndex();
 	currentFeedVideoController = self;

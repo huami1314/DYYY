@@ -106,6 +106,8 @@
 						shouldHide = YES;
 					} else if ([descString isEqualToString:@"听抖音"] && hideListenDouyin) {
 						shouldHide = YES;
+					} else if ([descString isEqualToString:@"听视频"] && hideListenDouyin) {
+						shouldHide = YES;
 					} else if ([descString isEqualToString:@"后台播放设置"] && hideBackgroundPlay) {
 						shouldHide = YES;
 					} else if ([descString isEqualToString:@"首页双列快捷入口"] && hideBiserial) {
@@ -568,7 +570,7 @@
 		  NSString *actionButtonText = userExists ? @"取消过滤" : @"添加过滤";
 		  [DYYYBottomAlertView showAlertWithTitle:@"过滤用户视频"
 		      message:[NSString stringWithFormat:@"用户: %@ (ID: %@)", nickname, shortId]
-			  avatarURL:nil
+		      avatarURL:nil
 		      cancelButtonText:@"管理过滤列表"
 		      confirmButtonText:actionButtonText
 		      cancelAction:^{
@@ -581,7 +583,7 @@
 			};
 			[keywordListView show];
 		      }
-			  closeAction:nil
+		      closeAction:nil
 		      confirmAction:^{
 			// 添加或移除用户过滤
 			NSMutableArray *updatedUsers = [NSMutableArray arrayWithArray:userArray];
@@ -910,6 +912,8 @@
 					} else if ([descString isEqualToString:@"识别图片"] && hideSearchImage) {
 						shouldHide = YES;
 					} else if ([descString isEqualToString:@"听抖音"] && hideListenDouyin) {
+						shouldHide = YES;
+					} else if ([descString isEqualToString:@"听视频"] && hideListenDouyin) {
 						shouldHide = YES;
 					} else if ([descString isEqualToString:@"后台播放设置"] && hideBackgroundPlay) {
 						shouldHide = YES;
@@ -1377,7 +1381,7 @@
 		  NSString *actionButtonText = userExists ? @"取消过滤" : @"添加过滤";
 		  [DYYYBottomAlertView showAlertWithTitle:@"过滤用户视频"
 		      message:[NSString stringWithFormat:@"用户: %@ (ID: %@)", nickname, shortId]
-			  avatarURL:nil
+		      avatarURL:nil
 		      cancelButtonText:@"管理过滤列表"
 		      confirmButtonText:actionButtonText
 		      cancelAction:^{
@@ -1390,7 +1394,7 @@
 			};
 			[keywordListView show];
 		      }
-			  closeAction:nil
+		      closeAction:nil
 		      confirmAction:^{
 			// 添加或移除用户过滤
 			NSMutableArray *updatedUsers = [NSMutableArray arrayWithArray:userArray];
