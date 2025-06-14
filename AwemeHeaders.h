@@ -1205,3 +1205,11 @@ static CGFloat gStartVal = 0.0;
 @interface AWEFeedTemplateAnchorView : UIView
 @property(retain, nonatomic) AWECodeGenCommonAnchorBasicInfoModel *templateAnchorInfo;
 @end
+
+@interface AWEVideoPlayerConfiguration : NSObject
++ (void)setHDRBrightnessStrategy:(id)strategy;
++ (double)getHDRBrightnessOffset:(double)offset brightness:(double)brightness;
+@end
+@interface IESFiltersManager : NSObject
+- (void)setHDRIndensity:(double)intensity;
+@end
