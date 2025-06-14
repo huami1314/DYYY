@@ -4965,7 +4965,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
 		if (self.frame.size.height == tabHeight && tabHeight > 0) {
 			UIViewController *vc = [self firstAvailableUIViewController];
-			if ([vc isKindOfClass:NSClassFromString(@"AWEMixVideoPanelDetailTableViewController")]) {
+			if ([vc isKindOfClass:NSClassFromString(@"AWEMixVideoPanelDetailTableViewController")] || [vc isKindOfClass:NSClassFromString(@"AWECommentInputViewController")]) {
 				self.backgroundColor = [UIColor clearColor];
 			}
 		}
