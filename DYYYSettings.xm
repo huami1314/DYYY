@@ -2070,12 +2070,14 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 			    if (newValue) {
 				    [DYYYBottomAlertView showAlertWithTitle:@"禁止热更新下发配置"
 					message:@"这将暂停接收测试新功能的推送。确定要继续吗？"
+					       avatarURL:nil
 					cancelButtonText:@"取消"
 					confirmButtonText:@"确定"
 					cancelAction:^{
 					  item.isSwitchOn = !newValue;
 					  [DYYYSettingsHelper refreshTableView];
 					}
+					closeAction:nil
 					confirmAction:^{
 					  item.isSwitchOn = newValue;
 					  [DYYYSettingsHelper setUserDefaults:@(newValue) forKey:@"DYYYABTestBlockEnabled"];
@@ -2966,15 +2968,18 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	cleanSettingsItem.cellTappedBlock = ^{
 	  [DYYYBottomAlertView showAlertWithTitle:@"清除设置"
 	      message:@"请选择要清除的设置类型"
+		         avatarURL:nil
 	      cancelButtonText:@"清除抖音设置"
 	      confirmButtonText:@"清除插件设置"
 	      cancelAction:^{
 		// 清除抖音设置的确认对话框
 		[DYYYBottomAlertView showAlertWithTitle:@"清除抖音设置"
 						message:@"确定要清除抖音所有设置吗？\n这将无法恢复，应用会自动退出！"
+						      avatarURL:nil
 				       cancelButtonText:@"取消"
 				      confirmButtonText:@"确定"
 					   cancelAction:nil
+					    closeAction:nil
 					  confirmAction:^{
 					    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
 					    if (paths.count > 0) {
@@ -2997,13 +3002,16 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 					    }
 					  }];
 	      }
+		  closeAction:^{}
 	      confirmAction:^{
 		// 清除插件设置的确认对话框
 		[DYYYBottomAlertView showAlertWithTitle:@"清除插件设置"
 						message:@"确定要清除所有插件设置吗？\n这将无法恢复！"
+						      avatarURL:nil
 				       cancelButtonText:@"取消"
 				      confirmButtonText:@"确定"
 					   cancelAction:nil
+					    closeAction:nil
 					  confirmAction:^{
 					    // 获取所有以DYYY开头的NSUserDefaults键值并清除
 					    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
@@ -3033,9 +3041,11 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	cleanCacheItem.cellTappedBlock = ^{
 	  [DYYYBottomAlertView showAlertWithTitle:@"清理缓存"
 					  message:@"确定要清理缓存吗？\n这将删除临时文件和缓存"
+					    avatarURL:nil
 				 cancelButtonText:@"取消"
 				confirmButtonText:@"确定"
 				     cancelAction:nil
+					  closeAction:nil
 				    confirmAction:^{
 				      NSFileManager *fileManager = [NSFileManager defaultManager];
 				      NSUInteger totalSize = 0;

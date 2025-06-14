@@ -348,6 +348,7 @@
 				       cancelButtonText:@"取消"
 				      confirmButtonText:@"关注"
 					   cancelAction:nil
+					    closeAction:nil
 					  confirmAction:^{
 					    %orig(gesture);
 					  }];
@@ -407,6 +408,7 @@
 				       cancelButtonText:@"取消"
 				      confirmButtonText:@"关注"
 					   cancelAction:nil
+					    closeAction:nil
 					  confirmAction:^{
 					    %orig(gesture);
 					  }];
@@ -914,7 +916,11 @@
 		dispatch_async(dispatch_get_main_queue(), ^{
 		  [DYYYBottomAlertView showAlertWithTitle:@"收藏确认"
 						  message:@"是否确认/取消收藏？"
+					        avatarURL:nil
+				     cancelButtonText:nil
+				    confirmButtonText:nil
 					     cancelAction:nil
+					      closeAction:nil
 					    confirmAction:^{
 					      if (r && [r isKindOfClass:NSClassFromString(@"NSBlock")]) {
 						      ((void (^)(void))r)();

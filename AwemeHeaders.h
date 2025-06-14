@@ -939,14 +939,6 @@ static CGFloat gStartVal = 0.0;
              singleTapBlock:(void (^)(void))singleTapBlock;
 - (void)configWithImageView:(UIImageView *)imageView
                   lockImage:(UIImage *)lockImage
-             titleLabelText:(NSString *)titleText
-           contentLabelText:(NSString *)contentText
-            knownButtonText:(NSString *)knownButtonText
-            toggleTitleText:(NSString *)toggleTitleText
-               defaultState:(BOOL)defaultState
-           defaultLockState:(BOOL)defaultLockState;
-- (void)configWithImageView:(UIImageView *)imageView
-                  lockImage:(UIImage *)lockImage
              lockImageInset:(UIEdgeInsets)lockImageInset
              titleLabelText:(NSString *)titleLabelText
            contentLabelText:(NSString *)contentLabelText

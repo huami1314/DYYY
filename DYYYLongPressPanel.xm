@@ -568,6 +568,7 @@
 		  NSString *actionButtonText = userExists ? @"取消过滤" : @"添加过滤";
 		  [DYYYBottomAlertView showAlertWithTitle:@"过滤用户视频"
 		      message:[NSString stringWithFormat:@"用户: %@ (ID: %@)", nickname, shortId]
+			  avatarURL:nil
 		      cancelButtonText:@"管理过滤列表"
 		      confirmButtonText:actionButtonText
 		      cancelAction:^{
@@ -580,6 +581,7 @@
 			};
 			[keywordListView show];
 		      }
+			  closeAction:nil
 		      confirmAction:^{
 			// 添加或移除用户过滤
 			NSMutableArray *updatedUsers = [NSMutableArray arrayWithArray:userArray];
@@ -1375,6 +1377,7 @@
 		  NSString *actionButtonText = userExists ? @"取消过滤" : @"添加过滤";
 		  [DYYYBottomAlertView showAlertWithTitle:@"过滤用户视频"
 		      message:[NSString stringWithFormat:@"用户: %@ (ID: %@)", nickname, shortId]
+			  avatarURL:nil
 		      cancelButtonText:@"管理过滤列表"
 		      confirmButtonText:actionButtonText
 		      cancelAction:^{
@@ -1387,6 +1390,7 @@
 			};
 			[keywordListView show];
 		      }
+			  closeAction:nil
 		      confirmAction:^{
 			// 添加或移除用户过滤
 			NSMutableArray *updatedUsers = [NSMutableArray arrayWithArray:userArray];
