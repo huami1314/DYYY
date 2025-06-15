@@ -3471,6 +3471,47 @@ static AWEIMReusableCommonCell *currentCell;
 
 %end
 
+%hook AWEFeedPauseRelatedWordComponent
+
+- (id)updateViewWithModel:(id)arg0 {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePauseVideoRelatedWord"]) {
+        return nil;
+    }
+    return %orig;
+}
+
+- (id)pauseContentWithModel:(id)arg0 {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePauseVideoRelatedWord"]) {
+        return nil;
+    }
+    return %orig;
+}
+
+- (id)recommendsWords {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePauseVideoRelatedWord"]) {
+        return nil;
+    }
+    return %orig;
+}
+
+- (void)showRelatedRecommendPanelControllerWithSelectedText:(id)arg0 {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePauseVideoRelatedWord"]) {
+        return;
+    }
+    %orig;
+}
+
+- (void)setupUI {
+    %orig;
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePauseVideoRelatedWord"]) {
+        if (self.relatedView) {
+            self.relatedView.hidden = YES;
+        }
+    }
+}
+
+%end
+
 // 隐藏短剧合集
 %hook AWETemplatePlayletView
 
