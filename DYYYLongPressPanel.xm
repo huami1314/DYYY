@@ -104,9 +104,7 @@
 						shouldHide = YES;
 					} else if ([descString isEqualToString:@"识别图片"] && hideSearchImage) {
 						shouldHide = YES;
-          } else if (([descString isEqualToString:@"听抖音"] || [descString isEqualToString:@"后台听"]) && hideListenDouyin) { 
-            shouldHide = YES;
-					} else if ([descString isEqualToString:@"听视频"] && hideListenDouyin) {
+					} else if (([descString isEqualToString:@"听抖音"] || [descString isEqualToString:@"后台听"] || [descString isEqualToString:@"听视频"]) && hideListenDouyin) {
 						shouldHide = YES;
 					} else if ([descString isEqualToString:@"后台播放设置"] && hideBackgroundPlay) {
 						shouldHide = YES;
@@ -911,9 +909,7 @@
 						shouldHide = YES;
 					} else if ([descString isEqualToString:@"识别图片"] && hideSearchImage) {
 						shouldHide = YES;
-          } else if (([descString isEqualToString:@"听抖音"] || [descString isEqualToString:@"后台听"]) && hideListenDouyin) { 
-            shouldHide = YES;
-					} else if ([descString isEqualToString:@"听视频"] && hideListenDouyin) {
+					} else if (([descString isEqualToString:@"听抖音"] || [descString isEqualToString:@"后台听"] || [descString isEqualToString:@"听视频"]) && hideListenDouyin) {
 						shouldHide = YES;
 					} else if ([descString isEqualToString:@"后台播放设置"] && hideBackgroundPlay) {
 						shouldHide = YES;

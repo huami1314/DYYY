@@ -18,31 +18,31 @@
 #import "DYYYToast.h"
 
 %hook AWEVideoPlayerConfiguration
-+ (void)setHDRBrightnessStrategy:(id)strategy {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableFeedHDR"]) {
-        %orig(nil);
-    } else {
-        %orig;
-    }
-}
+
 + (double)getHDRBrightnessOffset:(double)offset brightness:(double)brightness {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableFeedHDR"]) {
-        return 0.0;
-    }
-    return %orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableFeedHDR"]) {
+		return 0.000000;
+	}
+	return %orig;
 }
 
 %end
 
-%hook IESFiltersManager
-- (void)setHDRIndensity:(double)intensity {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableFeedHDR"]) {
-        %orig(0.0);
-    } else {
-        %orig;
-    }
+%hook AWEVideoPlayerScreenBrightnessManager
+- (void)setIsHDRVideo:(BOOL)isHDR {
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableFeedHDR"]) {
+		%orig(NO);
+		return;
+	}
+	%orig;
 }
 
+- (BOOL)isHDRVideo {
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableFeedHDR"]) {
+		return NO;
+	}
+	return %orig;
+}
 %end
 
 // 默认视频流最高画质
@@ -944,9 +944,9 @@
 		dispatch_async(dispatch_get_main_queue(), ^{
 		  [DYYYBottomAlertView showAlertWithTitle:@"收藏确认"
 						  message:@"是否确认/取消收藏？"
-					        avatarURL:nil
-				     cancelButtonText:nil
-				    confirmButtonText:nil
+						avatarURL:nil
+					 cancelButtonText:nil
+					confirmButtonText:nil
 					     cancelAction:nil
 					      closeAction:nil
 					    confirmAction:^{
@@ -3416,25 +3416,27 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWEFeedTemplateAnchorView
 
 - (void)layoutSubviews {
-    %orig;
-    
-    BOOL hideFeedAnchor = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFeedAnchorContainer"];
-    BOOL hideLocation = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLocation"];
-    
-    if (!hideFeedAnchor && !hideLocation) return;
-    
-    AWECodeGenCommonAnchorBasicInfoModel *anchorInfo = [self valueForKey:@"templateAnchorInfo"];
-    if (!anchorInfo || ![anchorInfo respondsToSelector:@selector(name)]) return;
-    
-    NSString *name = [anchorInfo valueForKey:@"name"];
-    BOOL isPoi = [name isEqualToString:@"poi_poi"];
-    
-    if ((hideFeedAnchor && !isPoi) || (hideLocation && isPoi)) {
-        UIView *parentView = self.superview;
-        if (parentView) {
-            parentView.hidden = YES;
-        }
-    }
+	%orig;
+
+	BOOL hideFeedAnchor = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFeedAnchorContainer"];
+	BOOL hideLocation = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLocation"];
+
+	if (!hideFeedAnchor && !hideLocation)
+		return;
+
+	AWECodeGenCommonAnchorBasicInfoModel *anchorInfo = [self valueForKey:@"templateAnchorInfo"];
+	if (!anchorInfo || ![anchorInfo respondsToSelector:@selector(name)])
+		return;
+
+	NSString *name = [anchorInfo valueForKey:@"name"];
+	BOOL isPoi = [name isEqualToString:@"poi_poi"];
+
+	if ((hideFeedAnchor && !isPoi) || (hideLocation && isPoi)) {
+		UIView *parentView = self.superview;
+		if (parentView) {
+			parentView.hidden = YES;
+		}
+	}
 }
 
 %end
@@ -3495,21 +3497,21 @@ static AWEIMReusableCommonCell *currentCell;
 		return;
 	}
 
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideSearchEntranceIndicator"]) {
-        for (UIView *subview in self.subviews) {
-            if ([subview isKindOfClass:[UIImageView class]] && [NSStringFromClass([((UIImageView *)subview).image class]) isEqualToString:@"_UIResizableImage"]) {
-                ((UIImageView *)subview).hidden = YES;
-            }
-        }
-    }
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideSearchEntranceIndicator"]) {
+		for (UIView *subview in self.subviews) {
+			if ([subview isKindOfClass:[UIImageView class]] && [NSStringFromClass([((UIImageView *)subview).image class]) isEqualToString:@"_UIResizableImage"]) {
+				((UIImageView *)subview).hidden = YES;
+			}
+		}
+	}
 
-    //NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
-    //if (transparentValue.length > 0) {
-    //    CGFloat alphaValue = transparentValue.floatValue;
-    //    if (alphaValue >= 0.0 && alphaValue <= 1.0) {
-    //        self.alpha = alphaValue;
-    //    }
-    //}
+	// NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
+	// if (transparentValue.length > 0) {
+	//     CGFloat alphaValue = transparentValue.floatValue;
+	//     if (alphaValue >= 0.0 && alphaValue <= 1.0) {
+	//         self.alpha = alphaValue;
+	//     }
+	// }
 
 	%orig;
 }
