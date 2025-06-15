@@ -169,4 +169,20 @@
                     progress:(void (^)(NSInteger current, NSInteger total, NSString *status))progressBlock
                   completion:(void (^)(BOOL success, NSString *message))completion;
 
+/**
+ * 将HEIC格式转换为GIF格式
+ * @param heicURL HEIC文件URL
+ * @param completion 完成回调，返回GIF文件URL和是否成功
+ */
++ (void)convertHeicToGif:(NSURL *)heicURL 
+              completion:(void (^)(NSURL *gifURL, BOOL success))completion;
+
+/**
+ * 将WebP格式转换为GIF格式
+ * @param webpURL WebP文件URL
+ * @param completion 完成回调，返回GIF文件URL和是否成功
+ */
++ (void)convertWebpToGifSafely:(NSURL *)webpURL 
+                    completion:(void (^)(NSURL *gifURL, BOOL success))completion;
+
 @end
