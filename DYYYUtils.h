@@ -1,6 +1,9 @@
 #import <UIKit/UIKit.h>
+#import <Photos/Photos.h>
 
 NS_ASSUME_NONNULL_BEGIN
+
+@class YYAnimatedImageView;
 
 @interface DYYYUtils : NSObject
 
@@ -10,7 +13,19 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (UIViewController *)topView;
 
+/**
+ * 清除指定目录的所有内容
+ * @param directoryPath 要清理的目录路径
+ * @return 清理的文件总大小
+ */
 + (NSUInteger)clearDirectoryContents:(NSString *)directoryPath;
+
+/**
+ * 保存动画贴纸到相册
+ * @param targetStickerView 包含动画的YYAnimatedImageView
+ */
++ (void)saveAnimatedSticker:(YYAnimatedImageView *)targetStickerView;
+
 @end
 
 #ifdef __cplusplus

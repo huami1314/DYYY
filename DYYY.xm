@@ -16,6 +16,7 @@
 #import "DYYYConstants.h"
 #import "DYYYSettingViewController.h"
 #import "DYYYToast.h"
+#import "DYYYUtils.h"
 
 %hook AWEVideoPlayerConfiguration
 
@@ -2185,6 +2186,17 @@ static BOOL hasChangedSpeed = NO;
 }
 %end
 
+// 强制启用保存他人头像
+%hook AFDProfileAvatarFunctionManager
+- (BOOL)shouldShowSaveAvatarItem {
+	BOOL shouldEnable = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableSaveAvatar"];
+	if (shouldEnable) {
+		return YES;
+	}
+	return %orig;
+}
+%end
+
 %hook AWECommentMediaDownloadConfigLivePhoto
 
 bool commentLivePhotoNotWaterMark = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYCommentLivePhotoNotWaterMark"];
@@ -2272,15 +2284,71 @@ static BOOL isDownloadFlied = NO;
 }
 %end
 
-// 强制启用保存他人头像
-%hook AFDProfileAvatarFunctionManager
-- (BOOL)shouldShowSaveAvatarItem {
-	BOOL shouldEnable = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableSaveAvatar"];
-	if (shouldEnable) {
-		return YES;
+%group EnableStickerSaveMenu
+static __weak YYAnimatedImageView *targetStickerView = nil;
+
+%hook _TtCV28AWECommentPanelListSwiftImpl6NEWAPI27CommentCellStickerComponent
+
+- (void)handleLongPressWithGes:(UILongPressGestureRecognizer *)gesture {
+	if (gesture.state == UIGestureRecognizerStateBegan) {
+		if ([gesture.view isKindOfClass:%c(YYAnimatedImageView)]) {
+			targetStickerView = (YYAnimatedImageView *)gesture.view;
+			NSLog(@"DYYY 长按表情：%@", targetStickerView);
+		} else {
+			targetStickerView = nil;
+		}
 	}
+
+	%orig;
+}
+
+%end
+
+%hook UIMenu
+
++ (instancetype)menuWithTitle:(NSString *)title image:(UIImage *)image identifier:(UIMenuIdentifier)identifier options:(UIMenuOptions)options children:(NSArray<UIMenuElement *> *)children {
+	BOOL hasAddStickerOption = NO;
+	BOOL hasSaveLocalOption = NO;
+
+	for (UIMenuElement *element in children) {
+		NSString *elementTitle = nil;
+
+		if ([element isKindOfClass:%c(UIAction)]) {
+			elementTitle = [(UIAction *)element title];
+		} else if ([element isKindOfClass:%c(UICommand)]) {
+			elementTitle = [(UICommand *)element title];
+		}
+
+		if ([elementTitle isEqualToString:@"添加到表情"]) {
+			hasAddStickerOption = YES;
+		} else if ([elementTitle isEqualToString:@"保存到本地"]) {
+			hasSaveLocalOption = YES;
+		}
+	}
+
+	if (hasAddStickerOption && !hasSaveLocalOption) {
+		NSMutableArray *newChildren = [children mutableCopy];
+
+		UIAction *saveAction = [%c(UIAction) actionWithTitle:@"保存到本地"
+									 image:nil
+								    identifier:nil
+								       handler:^(__kindof UIAction *_Nonnull action) {
+									 // 使用全局变量 targetStickerView 保存当前长按的表情
+									 if (targetStickerView) {
+										 [DYYYUtils saveAnimatedSticker:targetStickerView];
+									 } else {
+										 [DYYYManager showToast:@"无法获取表情视图"];
+									 }
+								       }];
+
+		[newChildren addObject:saveAction];
+		return %orig(title, image, identifier, options, newChildren);
+	}
+
 	return %orig;
 }
+
+%end
 %end
 
 %hook AWEIMEmoticonPreviewV2
@@ -3471,43 +3539,44 @@ static AWEIMReusableCommonCell *currentCell;
 
 %end
 
+// 隐藏暂停关键词
 %hook AWEFeedPauseRelatedWordComponent
 
 - (id)updateViewWithModel:(id)arg0 {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePauseVideoRelatedWord"]) {
-        return nil;
-    }
-    return %orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePauseVideoRelatedWord"]) {
+		return nil;
+	}
+	return %orig;
 }
 
 - (id)pauseContentWithModel:(id)arg0 {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePauseVideoRelatedWord"]) {
-        return nil;
-    }
-    return %orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePauseVideoRelatedWord"]) {
+		return nil;
+	}
+	return %orig;
 }
 
 - (id)recommendsWords {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePauseVideoRelatedWord"]) {
-        return nil;
-    }
-    return %orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePauseVideoRelatedWord"]) {
+		return nil;
+	}
+	return %orig;
 }
 
 - (void)showRelatedRecommendPanelControllerWithSelectedText:(id)arg0 {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePauseVideoRelatedWord"]) {
-        return;
-    }
-    %orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePauseVideoRelatedWord"]) {
+		return;
+	}
+	%orig;
 }
 
 - (void)setupUI {
-    %orig;
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePauseVideoRelatedWord"]) {
-        if (self.relatedView) {
-            self.relatedView.hidden = YES;
-        }
-    }
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePauseVideoRelatedWord"]) {
+		if (self.relatedView) {
+			self.relatedView.hidden = YES;
+		}
+	}
 }
 
 %end
@@ -6146,6 +6215,9 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 		BOOL isAutoPlayEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableAutoPlay"];
 		if (isAutoPlayEnabled) {
 			%init(AutoPlay);
+		}
+		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYForceDownloadEmotion"]) {
+			%init(EnableStickerSaveMenu);
 		}
 	}
 }

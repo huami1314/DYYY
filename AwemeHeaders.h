@@ -1224,3 +1224,6 @@ static CGFloat gStartVal = 0.0;
 @property (nonatomic, assign) long long pauseContentNum;
 
 @end
+
+@interface YYAnimatedImageView : UIImageView
+@end
