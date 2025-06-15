@@ -2321,7 +2321,7 @@ static __weak YYAnimatedImageView *targetStickerView = nil;
 
 		if ([elementTitle isEqualToString:@"添加到表情"]) {
 			hasAddStickerOption = YES;
-		} else if ([elementTitle isEqualToString:@"保存到本地"]) {
+		} else if ([elementTitle isEqualToString:@"保存到相册"]) {
 			hasSaveLocalOption = YES;
 		}
 	}
@@ -2329,7 +2329,7 @@ static __weak YYAnimatedImageView *targetStickerView = nil;
 	if (hasAddStickerOption && !hasSaveLocalOption) {
 		NSMutableArray *newChildren = [children mutableCopy];
 
-		UIAction *saveAction = [%c(UIAction) actionWithTitle:@"保存到本地"
+		UIAction *saveAction = [%c(UIAction) actionWithTitle:@"保存到相册"
 									 image:nil
 								    identifier:nil
 								       handler:^(__kindof UIAction *_Nonnull action) {
