@@ -664,6 +664,11 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"detail" : @"",
 		    @"cellType" : @26,
 		    @"imageName" : @"ic_playertime_outlined_20"},
+		  @{@"identifier" : @"DYYYfilterFeedHDR",
+		    @"title" : @"推荐过滤HDR",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_sun_outlined"},
 		  @{@"identifier" : @"DYYYNoAds",
 		    @"title" : @"启用屏蔽广告",
 		    @"detail" : @"",
@@ -689,17 +694,12 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_squaretriangletwo_outlined_20"},
-		  @{@"identifier" : @"DYYYDisableFeedHDR",
-		    @"title" : @"屏蔽视频HDR效果",
-		    @"detail" : @"",
-		    @"cellType" : @6,
-		    @"imageName" : @"ic_sun_outlined"},
 		  @{@"identifier" : @"DYYYDisableLivePCDN",
 		    @"title" : @"屏蔽直播PCDN功能",
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_video_outlined_20"}
-	   ];
+	  ];
 
 	  for (NSDictionary *dict in filterSettings) {
 		  AWESettingItemModel *item = [DYYYSettingsHelper createSettingItem:dict cellTapHandlers:cellTapHandlers];
