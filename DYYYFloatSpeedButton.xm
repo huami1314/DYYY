@@ -121,12 +121,10 @@ void updateSpeedButtonVisibility() {
     
     dispatch_async(dispatch_get_main_queue(), ^{
         if (!isInteractionViewVisible) {
-            // 交互控制器不可见时，无论评论状态如何，都隐藏按钮
             speedButton.hidden = YES;
             return;
         }
         
-        // 交互控制器可见时，根据评论状态和强制隐藏状态决定
         speedButton.hidden = isCommentViewVisible || isForceHidden;
     });
 }
@@ -396,10 +394,12 @@ void updateSpeedButtonVisibility() {
 %hook AWEAwemePlayVideoViewController
 
 - (void)setIsAutoPlay:(BOOL)arg0 {
-	float defaultSpeed = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYDefaultSpeed"];
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {
+		float defaultSpeed = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYDefaultSpeed"];
 
-	if (defaultSpeed > 0 && defaultSpeed != 1) {
-		[self setVideoControllerPlaybackRate:defaultSpeed];
+		if (defaultSpeed > 0 && defaultSpeed != 1) {
+			[self setVideoControllerPlaybackRate:defaultSpeed];
+		}
 	}
 	float speed = getCurrentSpeed();
 	if (speed != 1.0) {
@@ -431,10 +431,12 @@ void updateSpeedButtonVisibility() {
 %hook AWEDPlayerFeedPlayerViewController
 
 - (void)setIsAutoPlay:(BOOL)arg0 {
-	float defaultSpeed = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYDefaultSpeed"];
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {
+		float defaultSpeed = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYDefaultSpeed"];
 
-	if (defaultSpeed > 0 && defaultSpeed != 1) {
-		[self setVideoControllerPlaybackRate:defaultSpeed];
+		if (defaultSpeed > 0 && defaultSpeed != 1) {
+			[self setVideoControllerPlaybackRate:defaultSpeed];
+		}
 	}
 	float speed = getCurrentSpeed();
 	if (speed != 1.0) {
@@ -635,46 +637,7 @@ void updateSpeedButtonVisibility() {
 %end
 
 %ctor {
-	NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-	isFloatSpeedButtonEnabled = [defaults boolForKey:@"DYYYEnableFloatSpeedButton"];
-
-	if (isFloatSpeedButtonEnabled) {
-		%init;
-
-		[[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationWillEnterForegroundNotification
-								  object:nil
-								   queue:[NSOperationQueue mainQueue]
-							      usingBlock:^(NSNotification *_Nonnull note) {
-								isAppActive = YES;
-								dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                                  updateSpeedButtonVisibility();
-								  // 重新进入前台时应用当前的播放速度
-								  float speed = getCurrentSpeed();
-								  if (speed != 1.0) {
-									  UIViewController *rootVC = [UIApplication sharedApplication].keyWindow.rootViewController;
-									  while (rootVC.presentedViewController) {
-										  rootVC = rootVC.presentedViewController;
-									  }
-
-									  NSArray *viewControllers = findViewControllersInHierarchy(rootVC);
-									  for (UIViewController *vc in viewControllers) {
-										  if ([vc isKindOfClass:%c(AWEAwemePlayVideoViewController)]) {
-											  [(AWEAwemePlayVideoViewController *)vc setVideoControllerPlaybackRate:speed];
-										  }
-										  if ([vc isKindOfClass:%c(AWEDPlayerFeedPlayerViewController)]) {
-											  [(AWEDPlayerFeedPlayerViewController *)vc setVideoControllerPlaybackRate:speed];
-										  }
-									  }
-								  }
-								});
-							      }];
-
-		[[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationDidEnterBackgroundNotification
-								  object:nil
-								   queue:[NSOperationQueue mainQueue]
-							      usingBlock:^(NSNotification *_Nonnull note) {
-								isAppActive = NO;
-								updateSpeedButtonVisibility();
-							      }];
-	}
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    isFloatSpeedButtonEnabled = [defaults boolForKey:@"DYYYEnableFloatSpeedButton"];
+    %init;
 }
