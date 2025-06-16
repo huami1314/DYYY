@@ -4443,30 +4443,12 @@ static AWEIMReusableCommonCell *currentCell;
         // 过滤包含特定关键词的视频
         if (keywordsList.count > 0) {
             // 检查视频标题
-            if (self.itemTitle.length > 0) {
+            if (self.descriptionString.length > 0) {
                 for (NSString *keyword in keywordsList) {
                     NSString *trimmedKeyword = [keyword stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-                    if (trimmedKeyword.length > 0 && [self.itemTitle containsString:trimmedKeyword]) {
+                    if (trimmedKeyword.length > 0 && [self.descriptionString containsString:trimmedKeyword]) {
                         shouldFilterKeywords = YES;
                         break;
-                    }
-                }
-            }
-
-            // 如果标题中没有关键词，检查标签(textExtras)
-            if (!shouldFilterKeywords && self.textExtras.count > 0) {
-                for (AWEAwemeTextExtraModel *textExtra in self.textExtras) {
-                    NSString *hashtagName = textExtra.hashtagName;
-                    if (hashtagName.length > 0) {
-                        for (NSString *keyword in keywordsList) {
-                            NSString *trimmedKeyword = [keyword stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-                            if (trimmedKeyword.length > 0 && [hashtagName containsString:trimmedKeyword]) {
-                                shouldFilterKeywords = YES;
-                                break;
-                            }
-                        }
-                        if (shouldFilterKeywords)
-                            break;
                     }
                 }
             }
