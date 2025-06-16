@@ -471,8 +471,24 @@ void updateSpeedButtonVisibility() {
 - (void)viewDidAppear:(BOOL)animated {
     %orig;
     isInteractionViewVisible = YES;
-    isCommentViewVisible = NO;
-    updateSpeedButtonVisibility();
+    
+    dispatch_async(dispatch_get_main_queue(), ^{
+        UIView *stackView = nil;
+        for (UIView *subview in self.view.subviews) {
+            if ([subview isKindOfClass:%c(AWEElementStackView)]) {
+                stackView = subview;
+                break;
+            }
+        }
+        
+        if (stackView) {
+            isCommentViewVisible = (stackView.alpha == 0);
+        } else {
+            isCommentViewVisible = NO;
+        }
+        
+        updateSpeedButtonVisibility();
+    });
 }
 
 - (void)viewDidLayoutSubviews {
