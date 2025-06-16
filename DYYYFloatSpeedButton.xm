@@ -466,6 +466,34 @@ void updateSpeedButtonVisibility() {
 
 %end
 
+
+%hook AWECommentContainerViewController
+
+- (void)viewWillAppear:(BOOL)animated {
+    %orig;
+    isCommentViewVisible = YES;
+    updateSpeedButtonVisibility();
+}
+
+- (void)viewDidAppear:(BOOL)animated {
+    %orig;
+    isCommentViewVisible = YES;
+    updateSpeedButtonVisibility();
+}
+
+- (void)viewWillDisappear:(BOOL)animated {
+    %orig;
+    updateSpeedButtonVisibility();
+}
+
+- (void)viewDidDisappear:(BOOL)animated {
+    %orig;
+    isCommentViewVisible = NO;
+    updateSpeedButtonVisibility();
+}
+
+%end
+
 %hook AWEPlayInteractionViewController
 
 - (void)viewDidAppear:(BOOL)animated {

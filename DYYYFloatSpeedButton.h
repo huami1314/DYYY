@@ -15,7 +15,6 @@
 - (void)toggleLockState;
 @end
 
-// 添加全局访问方法
 extern FloatingSpeedButton *getSpeedButton(void);
 extern void showSpeedButton(void);
 extern void hideSpeedButton(void);
