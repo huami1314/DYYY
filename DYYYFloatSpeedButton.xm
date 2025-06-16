@@ -125,7 +125,11 @@ void updateSpeedButtonVisibility() {
             return;
         }
         
-        speedButton.hidden = isCommentViewVisible || isForceHidden;
+        // 在交互界面时，根据评论界面状态决定是否显示
+        BOOL shouldHide = isCommentViewVisible || isForceHidden;
+        if (speedButton.hidden != shouldHide) {
+            speedButton.hidden = shouldHide;
+        }
     });
 }
 
@@ -368,16 +372,13 @@ void updateSpeedButtonVisibility() {
 - (void)setAlpha:(CGFloat)alpha {
 	%orig;
 
-	// 当透明度为 0 时隐藏按钮，当透明度为 1 时显示按钮
 	if (speedButton && isFloatSpeedButtonEnabled) {
-		dispatch_async(dispatch_get_main_queue(), ^{
-		  if (alpha == 0) {
-			  isCommentViewVisible = YES;
-		  } else if (alpha == 1) {
-			  isCommentViewVisible = NO;
-		  }
-		  updateSpeedButtonVisibility();
-		});
+		if (alpha == 0) {
+			isCommentViewVisible = YES;
+		} else if (alpha == 1) {
+			isCommentViewVisible = NO;
+		}
+		updateSpeedButtonVisibility();
 	}
 }
 
@@ -470,6 +471,7 @@ void updateSpeedButtonVisibility() {
 - (void)viewDidAppear:(BOOL)animated {
     %orig;
     isInteractionViewVisible = YES;
+    isCommentViewVisible = NO;
     updateSpeedButtonVisibility();
 }
 
