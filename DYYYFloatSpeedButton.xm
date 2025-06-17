@@ -12,7 +12,6 @@ static BOOL showSpeedX = NO;
 static CGFloat speedButtonSize = 32.0;
 static BOOL isFloatSpeedButtonEnabled = NO;
 static BOOL isForceHidden = NO;
-static BOOL isAppActive = YES;
 static BOOL isInteractionViewVisible = NO;
 
 NSArray *getSpeedOptions() {
@@ -116,7 +115,7 @@ void toggleSpeedButtonVisibility(void) {
 }
 
 void updateSpeedButtonVisibility() {
-    if (!speedButton || !isFloatSpeedButtonEnabled || !isAppActive)
+    if (!speedButton || !isFloatSpeedButtonEnabled)
         return;
     
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -652,7 +651,6 @@ void updateSpeedButtonVisibility() {
 		dispatch_async(dispatch_get_main_queue(), ^{
 		  [self addSubview:speedButton];
 		  [speedButton loadSavedPosition];
-		  updateSpeedButtonVisibility();
 		});
 	}
 }
