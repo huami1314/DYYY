@@ -294,13 +294,7 @@ UIViewController *topView(void) {
   if (!themeManagerClass) {
     return NO;
   }
-  id themeManager = [themeManagerClass respondsToSelector:@selector(sharedInstance)] ? [themeManagerClass performSelector:@selector(sharedInstance)] : nil;
-  if (!themeManager) return NO;
-  BOOL isLight = NO;
-  @try {
-    isLight = [[themeManager valueForKey:@"isLightTheme"] boolValue];
-  } @catch (__unused NSException *e) {}
-  return isLight ? NO : YES;
+  return [themeManagerClass isLightTheme] ? NO : YES;
 }
 
 @end
