@@ -2426,112 +2426,163 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
               return;
             }
 
-            NSString *singleVideoURL = dataDict[@"url"];
-            if (singleVideoURL && singleVideoURL.length > 0) {
-              [self handleSingleVideoFormat:dataDict];
-              return;
-            }
-
-            NSArray *videos = dataDict[@"videos"];
-            NSArray *images = dataDict[@"images"];
-            NSArray *videoList = dataDict[@"video_list"];
-            BOOL hasVideos =
-                [videos isKindOfClass:[NSArray class]] && videos.count > 0;
-            BOOL hasImages =
-                [images isKindOfClass:[NSArray class]] && images.count > 0;
-            BOOL hasVideoList = [videoList isKindOfClass:[NSArray class]] &&
-                                videoList.count > 0;
-            BOOL shouldShowQualityOptions =
-                [[NSUserDefaults standardUserDefaults]
-                    boolForKey:@"DYYYShowAllVideoQuality"];
-
-            // 如果启用了显示清晰度选项，并且存在 videoList，则弹出选择面板
-            if (shouldShowQualityOptions && hasVideoList) {
-              AWEUserActionSheetView *actionSheet =
-                  [[NSClassFromString(@"AWEUserActionSheetView") alloc] init];
-              NSMutableArray *actions = [NSMutableArray array];
-
-              for (NSDictionary *videoDict in videoList) {
-                NSString *url = videoDict[@"url"];
-                NSString *level = videoDict[@"level"];
-                if (url.length > 0 && level.length > 0) {
-                  AWEUserSheetAction *qualityAction = [NSClassFromString(
-                      @"AWEUserSheetAction")
-                      actionWithTitle:level
-                              imgName:nil
-                              handler:^{
-                                NSURL *videoDownloadUrl =
-                                    [NSURL URLWithString:url];
-                                [self
-                                    downloadMedia:videoDownloadUrl
-                                        mediaType:MediaTypeVideo
-                                       completion:^(BOOL success) {
-                                         if (success) {
-                                         } else {
-                                           [self showToast:
-                                                     [NSString
-                                                         stringWithFormat:
-                                                             @"已取消保存 (%@)",
-                                                             level]];
-                                         }
-                                       }];
-                              }];
-                  [actions addObject:qualityAction];
-                }
-              }
-
-              // 附加批量下载选项（如果开启清晰度选项 + 有视频/图片）
-              if (hasVideos || hasImages) {
-                AWEUserSheetAction *batchDownloadAction =
-                    [NSClassFromString(@"AWEUserSheetAction")
-                        actionWithTitle:@"批量下载所有资源"
-                                imgName:nil
-                                handler:^{
-                                  [self batchDownloadResources:videos
-                                                        images:images];
-                                }];
-                [actions addObject:batchDownloadAction];
-              }
-
-              if (actions.count > 0) {
-                [actionSheet setActions:actions];
-                [actionSheet show];
-                return;
-              }
-            }
-
-            // 如果未开启清晰度选项，但有 video_list，自动下载第一个清晰度
-            if (!shouldShowQualityOptions && hasVideoList) {
-              NSDictionary *firstVideo = videoList.firstObject;
-              NSString *url = firstVideo[@"url"];
-              NSString *level = firstVideo[@"level"] ?: @"默认清晰度";
-
-              if (url.length > 0) {
-                NSURL *videoDownloadUrl = [NSURL URLWithString:url];
-                [self downloadMedia:videoDownloadUrl
-                          mediaType:MediaTypeVideo
-                         completion:^(BOOL success) {
-                           if (success) {
-                           } else {
-                             [self showToast:[NSString stringWithFormat:
-                                                           @"已取消保存 (%@)",
-                                                           level]];
-                           }
-                         }];
-                return;
-              }
-            }
-
-            [self batchDownloadResources:videos images:images];
+            // 检测接口格式并处理
+            [self handleVideoData:dataDict];
           });
         }];
 
   [dataTask resume];
 }
 
++ (void)handleVideoData:(NSDictionary *)dataDict {
+    // 尝试获取视频URL
+    NSString *singleVideoURL = nil;
+    if (dataDict[@"url"] && [dataDict[@"url"] length] > 0) {
+        singleVideoURL = dataDict[@"url"];
+    } else if (dataDict[@"video"] && [dataDict[@"video"] length] > 0) {
+        singleVideoURL = dataDict[@"video"];
+    } else if (dataDict[@"video_url"] && [dataDict[@"video_url"] length] > 0) {
+        singleVideoURL = dataDict[@"video_url"];
+    }
+    
+    // 尝试获取封面URL
+    NSString *coverURL = nil;
+    if (dataDict[@"cover"] && [dataDict[@"cover"] length] > 0) {
+        coverURL = dataDict[@"cover"];
+    } else if (dataDict[@"pics"] && [dataDict[@"pics"] length] > 0) {
+        coverURL = dataDict[@"pics"];
+    }
+    
+    // 尝试获取音乐URL
+    NSString *musicURL = nil;
+    if (dataDict[@"music"] && [dataDict[@"music"] length] > 0) {
+        musicURL = dataDict[@"music"];
+    } else if (dataDict[@"music_url"] && [dataDict[@"music_url"] length] > 0) {
+        musicURL = dataDict[@"music_url"];
+    }
+    
+    // 获取其他信息
+    NSString *title = dataDict[@"title"];
+    NSString *author = dataDict[@"author"];
+    
+    // 如果有单一视频URL，处理单视频格式
+    if (singleVideoURL && singleVideoURL.length > 0) {
+        [self handleSingleVideoFormat:@{
+            @"url": singleVideoURL,
+            @"cover": coverURL ?: @"",
+            @"music": musicURL ?: @"",
+            @"title": title ?: @"",
+            @"author": author ?: @""
+        }];
+        return;
+    }
+    
+    // 处理多媒体格式（原有逻辑）
+    NSArray *videos = dataDict[@"videos"];
+    NSArray *images = dataDict[@"images"];
+    NSArray *videoList = dataDict[@"video_list"];
+    NSArray *imgArray = dataDict[@"img"];
+    
+    BOOL hasVideos = [videos isKindOfClass:[NSArray class]] && videos.count > 0;
+    BOOL hasImages = [images isKindOfClass:[NSArray class]] && images.count > 0;
+    BOOL hasImgArray = [imgArray isKindOfClass:[NSArray class]] && imgArray.count > 0;
+    BOOL hasVideoList = [videoList isKindOfClass:[NSArray class]] && videoList.count > 0;
+    BOOL shouldShowQualityOptions = [[NSUserDefaults standardUserDefaults]
+                                      boolForKey:@"DYYYShowAllVideoQuality"];
+
+    // 如果启用了显示清晰度选项，并且存在 videoList，则弹出选择面板
+    if (shouldShowQualityOptions && hasVideoList) {
+        AWEUserActionSheetView *actionSheet =
+            [[NSClassFromString(@"AWEUserActionSheetView") alloc] init];
+        NSMutableArray *actions = [NSMutableArray array];
+
+        for (NSDictionary *videoDict in videoList) {
+            NSString *url = videoDict[@"url"];
+            NSString *level = videoDict[@"level"];
+            if (url.length > 0 && level.length > 0) {
+                AWEUserSheetAction *qualityAction = [NSClassFromString(
+                    @"AWEUserSheetAction")
+                    actionWithTitle:level
+                            imgName:nil
+                            handler:^{
+                              NSURL *videoDownloadUrl =
+                                  [NSURL URLWithString:url];
+                              [self
+                                  downloadMedia:videoDownloadUrl
+                                      mediaType:MediaTypeVideo
+                                     completion:^(BOOL success) {
+                                       if (success) {
+                                       } else {
+                                         [self showToast:
+                                                   [NSString
+                                                       stringWithFormat:
+                                                           @"已取消保存 (%@)",
+                                                           level]];
+                                       }
+                                     }];
+                            }];
+                [actions addObject:qualityAction];
+            }
+        }
+
+        // 附加批量下载选项（如果开启清晰度选项 + 有视频/图片）
+        if (hasVideos || hasImages || hasImgArray) {
+            AWEUserSheetAction *batchDownloadAction =
+                [NSClassFromString(@"AWEUserSheetAction")
+                    actionWithTitle:@"批量下载所有资源"
+                            imgName:nil
+                            handler:^{
+                              // 合并图片数组
+                              NSMutableArray *allImages = [NSMutableArray array];
+                              if (hasImages) [allImages addObjectsFromArray:images];
+                              if (hasImgArray) [allImages addObjectsFromArray:imgArray];
+                              
+                              [self batchDownloadResources:videos images:allImages];
+                            }];
+            [actions addObject:batchDownloadAction];
+        }
+
+        if (actions.count > 0) {
+            [actionSheet setActions:actions];
+            [actionSheet show];
+            return;
+        }
+    }
+
+    // 如果未开启清晰度选项，但有 video_list，自动下载第一个清晰度
+    if (!shouldShowQualityOptions && hasVideoList) {
+        NSDictionary *firstVideo = videoList.firstObject;
+        NSString *url = firstVideo[@"url"];
+        NSString *level = firstVideo[@"level"] ?: @"默认清晰度";
+
+        if (url.length > 0) {
+            NSURL *videoDownloadUrl = [NSURL URLWithString:url];
+            [self downloadMedia:videoDownloadUrl
+                      mediaType:MediaTypeVideo
+                     completion:^(BOOL success) {
+                       if (success) {
+                       } else {
+                         [self showToast:[NSString stringWithFormat:
+                                                       @"已取消保存 (%@)",
+                                                       level]];
+                       }
+                     }];
+            return;
+        }
+    }
+
+    // 合并所有图片数组进行批量下载
+    NSMutableArray *allImages = [NSMutableArray array];
+    if (hasImages) [allImages addObjectsFromArray:images];
+    if (hasImgArray) [allImages addObjectsFromArray:imgArray];
+    
+    [self batchDownloadResources:videos images:allImages];
+}
+
 + (void)handleSingleVideoFormat:(NSDictionary *)dataDict {
   NSString *videoURL = dataDict[@"url"];
   NSString *coverURL = dataDict[@"cover"];
+  NSString *musicURL = dataDict[@"music"]; // 新增音乐URL支持
   NSString *title = dataDict[@"title"];
   NSString *author = dataDict[@"author"];
   
@@ -2578,21 +2629,64 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
                              }];
                   }];
       [actions addObject:coverAction];
-      
-      AWEUserSheetAction *bothAction = [NSClassFromString(@"AWEUserSheetAction")
-          actionWithTitle:@"下载视频和封面"
+    }
+    
+    // 下载背景音乐
+    if (musicURL && musicURL.length > 0) {
+      AWEUserSheetAction *musicAction = [NSClassFromString(@"AWEUserSheetAction")
+          actionWithTitle:@"下载背景音乐"
                   imgName:nil
                   handler:^{
+                    NSURL *downloadURL = [NSURL URLWithString:musicURL];
+                    [self downloadMedia:downloadURL
+                              mediaType:MediaTypeAudio
+                             completion:^(BOOL success) {
+                               if (!success) {
+                                 [self showToast:@"背景音乐下载失败"];
+                               }
+                             }];
+                  }];
+      [actions addObject:musicAction];
+    }
+    
+    // 下载全部选
+    if ((coverURL && coverURL.length > 0) || (musicURL && musicURL.length > 0)) {
+      NSMutableString *allTitle = [NSMutableString stringWithString:@"下载"];
+      [allTitle appendString:@"视频"];
+      if (coverURL && coverURL.length > 0) {
+        [allTitle appendString:@"和封面"];
+      }
+      if (musicURL && musicURL.length > 0) {
+        [allTitle appendString:@"和背景音乐"];
+      }
+      
+      AWEUserSheetAction *allAction = [NSClassFromString(@"AWEUserSheetAction")
+          actionWithTitle:allTitle
+                  imgName:nil
+                  handler:^{
+                    // 下载视频
                     NSURL *videoDownloadURL = [NSURL URLWithString:videoURL];
                     [self downloadMedia:videoDownloadURL
                               mediaType:MediaTypeVideo
                              completion:nil];
-                    NSURL *coverDownloadURL = [NSURL URLWithString:coverURL];
-                    [self downloadMedia:coverDownloadURL
-                              mediaType:MediaTypeImage
-                             completion:nil];
+                    
+                    // 下载封面
+                    if (coverURL && coverURL.length > 0) {
+                      NSURL *coverDownloadURL = [NSURL URLWithString:coverURL];
+                      [self downloadMedia:coverDownloadURL
+                                mediaType:MediaTypeImage
+                               completion:nil];
+                    }
+                    
+                    // 下载背景音乐
+                    if (musicURL && musicURL.length > 0) {
+                      NSURL *musicDownloadURL = [NSURL URLWithString:musicURL];
+                      [self downloadMedia:musicDownloadURL
+                                mediaType:MediaTypeAudio
+                               completion:nil];
+                    }
                   }];
-      [actions addObject:bothAction];
+      [actions addObject:allAction];
     }
     
     if (actions.count > 0) {
@@ -2610,6 +2704,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
              }];
   }
 }
+
 + (void)batchDownloadResources:(NSArray *)videos images:(NSArray *)images {
   BOOL hasVideos = [videos isKindOfClass:[NSArray class]] && videos.count > 0;
   BOOL hasImages = [images isKindOfClass:[NSArray class]] && images.count > 0;
