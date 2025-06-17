@@ -1,5 +1,5 @@
 #import "DYYYIconOptionsDialogView.h"
-#import "DYYYManager.h" 
+#import "DYYYUtils.h" 
 
 @implementation DYYYIconOptionsDialogView
 
@@ -8,7 +8,7 @@
         self.backgroundColor = [UIColor colorWithWhite:0 alpha:0.2];
         
         // 判断当前是否为深色模式
-        BOOL isDarkMode = [DYYYManager isDarkMode];
+        BOOL isDarkMode = [DYYYUtils isDarkMode];
         
         // 创建模糊效果视图 - 根据模式调整样式
         self.blurView = [[UIVisualEffectView alloc] initWithEffect:[UIBlurEffect effectWithStyle:isDarkMode ? UIBlurEffectStyleDark : UIBlurEffectStyleLight]];

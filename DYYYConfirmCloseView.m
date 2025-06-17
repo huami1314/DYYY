@@ -1,5 +1,5 @@
 #import <UIKit/UIKit.h>
-#import "DYYYManager.h"
+#import "DYYYUtils.h"
 
 // 自定义确认关闭弹窗类
 @interface DYYYConfirmCloseView : UIView
@@ -26,7 +26,7 @@
         self.backgroundColor = [UIColor colorWithWhite:0 alpha:0.2];
         
         // 创建模糊效果
-        BOOL isDarkMode = [DYYYManager isDarkMode];
+        BOOL isDarkMode = [DYYYUtils isDarkMode];
         
         self.blurView = [[UIVisualEffectView alloc] initWithEffect:[UIBlurEffect effectWithStyle:isDarkMode ? UIBlurEffectStyleDark : UIBlurEffectStyleLight]];
         self.blurView.frame = self.bounds;

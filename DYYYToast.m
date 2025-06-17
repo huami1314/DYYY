@@ -1,5 +1,5 @@
 #import "DYYYToast.h"
-#import "DYYYManager.h"
+#import "DYYYUtils.h"
 
 @interface DYYYToast ()
 
@@ -7,11 +7,10 @@
 @property(nonatomic, strong) UILabel *percentLabel;
 @property(nonatomic, assign) CGFloat progress;
 @property(nonatomic, strong) UIVisualEffectView *blurEffectView;
-// 新增属性
 @property(nonatomic, strong) CAShapeLayer *checkmarkLayer;
 @property(nonatomic, strong) UIView *progressView;
 @property(nonatomic, assign)
-    BOOL isShowingSuccessAnimation; // 新增属性，标记是否正在显示成功动画
+    BOOL isShowingSuccessAnimation;
 
 @end
 
@@ -25,7 +24,7 @@
     self.userInteractionEnabled = YES;
     self.isCancelled = NO;
 
-    BOOL isDarkMode = [DYYYManager isDarkMode];
+    BOOL isDarkMode = [DYYYUtils isDarkMode];
 
     CGFloat containerWidth = 160;
     CGFloat containerHeight = 40;
@@ -204,7 +203,7 @@
 }
 // 下载成功动画方法
 - (void)showSuccessAnimation:(void (^)(void))completion {
-  BOOL isDarkMode = [DYYYManager isDarkMode];
+  BOOL isDarkMode = [DYYYUtils isDarkMode];
 
   UIColor *successColor = isDarkMode ? [UIColor colorWithRed:48 / 255.0
                                                        green:209 / 255.0
@@ -331,7 +330,7 @@
 
 // 下载取消动画方法
 - (void)showCancelAnimation:(void (^)(void))completion {
-  BOOL isDarkMode = [DYYYManager isDarkMode];
+  BOOL isDarkMode = [DYYYUtils isDarkMode];
 
   UIColor *cancelColor = isDarkMode ? [UIColor colorWithRed:52/255.0 green:152/255.0 blue:219/255.0 alpha:1.0] 
                                     : [UIColor colorWithRed:41/255.0 green:128/255.0 blue:185/255.0 alpha:1.0];
@@ -461,7 +460,7 @@
 }
 
 - (void)directlyShowSuccessAnimation:(void (^)(void))completion {
-    BOOL isDarkMode = [DYYYManager isDarkMode];
+    BOOL isDarkMode = [DYYYUtils isDarkMode];
 
     UIColor *successColor = isDarkMode ? [UIColor colorWithRed:48/255.0 green:209/255.0 blue:151/255.0 alpha:1.0] 
                                       : [UIColor colorWithRed:11/255.0 green:195/255.0 blue:139/255.0 alpha:1.0];

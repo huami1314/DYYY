@@ -1,5 +1,5 @@
 #import "DYYYCustomInputView.h"
-#import "DYYYManager.h"
+#import "DYYYUtils.h"
 
 @implementation DYYYCustomInputView
 
@@ -9,7 +9,7 @@
         self.placeholderText = placeholder;
         self.backgroundColor = [UIColor colorWithWhite:0 alpha:0.2];
         
-        BOOL isDarkMode = [DYYYManager isDarkMode];
+        BOOL isDarkMode = [DYYYUtils isDarkMode];
         
         self.blurView = [[UIVisualEffectView alloc] initWithEffect:[UIBlurEffect effectWithStyle:isDarkMode ? UIBlurEffectStyleDark : UIBlurEffectStyleLight]];
         self.blurView.frame = self.bounds;

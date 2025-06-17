@@ -1,6 +1,6 @@
 #import "AwemeHeaders.h"
 #import "DYYYFloatSpeedButton.h"
-#import "DYYYManager.h"
+#import "DYYYUtils.h"
 #import <UIKit/UIKit.h>
 #import <objc/runtime.h>
 
@@ -253,7 +253,7 @@ void updateSpeedButtonVisibility() {
 	self.justToggledLock = YES;
 
 	NSString *toastMessage = self.isLocked ? @"按钮已锁定" : @"按钮已解锁";
-	[DYYYManager showToast:toastMessage];
+	[DYYYUtils showToast:toastMessage];
 
 	if (self.isLocked) {
 		[self saveButtonPosition];
@@ -469,20 +469,9 @@ void updateSpeedButtonVisibility() {
 
 %hook AWECommentContainerViewController
 
-- (void)viewWillAppear:(BOOL)animated {
-    %orig;
-    isCommentViewVisible = YES;
-    updateSpeedButtonVisibility();
-}
-
 - (void)viewDidAppear:(BOOL)animated {
     %orig;
     isCommentViewVisible = YES;
-    updateSpeedButtonVisibility();
-}
-
-- (void)viewWillDisappear:(BOOL)animated {
-    %orig;
     updateSpeedButtonVisibility();
 }
 
@@ -627,7 +616,7 @@ void updateSpeedButtonVisibility() {
 	}
 
 	if (!speedApplied) {
-		[DYYYManager showToast:@"无法找到视频控制器"];
+		[DYYYUtils showToast:@"无法找到视频控制器"];
 	}
 }
 

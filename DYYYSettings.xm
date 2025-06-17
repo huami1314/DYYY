@@ -403,12 +403,12 @@ static void showUserAgreementAlert() {
 	      if ([text isEqualToString:@"我已阅读并同意继续使用"]) {
 		      [DYYYSettingsHelper setUserDefaults:@"YES" forKey:@"DYYYUserAgreementAccepted"];
 	      } else {
-		      [DYYYManager showToast:@"请正确输入内容"];
+		      [DYYYUtils showToast:@"请正确输入内容"];
 		      showUserAgreementAlert();
 	      }
 	    }
 	    onCancel:^(void) {
-	      [DYYYManager showToast:@"请立即卸载本插件"];
+	      [DYYYUtils showToast:@"请立即卸载本插件"];
 	      dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
 		exit(0);
 	      });
@@ -2184,7 +2184,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 			    NSDictionary *currentData = getCurrentABTestData();
 
 			    if (!currentData) {
-				    [DYYYManager showToast:@"ABTest配置获取失败"];
+				    [DYYYUtils showToast:@"ABTest配置获取失败"];
 				    return;
 			    }
 
@@ -2192,7 +2192,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 			    NSData *sortedJsonData = [NSJSONSerialization dataWithJSONObject:currentData options:NSJSONWritingPrettyPrinted | NSJSONWritingSortedKeys error:&error];
 
 			    if (error) {
-				    [DYYYManager showToast:@"ABTest配置序列化失败"];
+				    [DYYYUtils showToast:@"ABTest配置序列化失败"];
 				    return;
 			    }
 
@@ -2205,7 +2205,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 			    BOOL success = [sortedJsonData writeToFile:tempFilePath atomically:YES];
 
 			    if (!success) {
-				    [DYYYManager showToast:@"临时文件创建失败"];
+				    [DYYYUtils showToast:@"临时文件创建失败"];
 				    return;
 			    }
 
@@ -2215,7 +2215,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 			    DYYYBackupPickerDelegate *pickerDelegate = [[DYYYBackupPickerDelegate alloc] init];
 			    pickerDelegate.tempFilePath = tempFilePath;
 			    pickerDelegate.completionBlock = ^(NSURL *url) {
-			      [DYYYManager showToast:@"ABTest配置已保存"];
+			      [DYYYUtils showToast:@"ABTest配置已保存"];
 			    };
 
 			    static char kABTestPickerDelegateKey;
@@ -2240,20 +2240,20 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 
 			    NSData *jsonData = [NSData dataWithContentsOfFile:jsonFilePath];
 			    if (!jsonData) {
-				    [DYYYManager showToast:@"本地配置获取失败"];
+				    [DYYYUtils showToast:@"本地配置获取失败"];
 				    return;
 			    }
 
 			    NSError *error;
 			    NSDictionary *originalData = [NSJSONSerialization JSONObjectWithData:jsonData options:0 error:&error];
 			    if (error || ![originalData isKindOfClass:[NSDictionary class]]) {
-				    [DYYYManager showToast:@"本地配置序列化失败"];
+				    [DYYYUtils showToast:@"本地配置序列化失败"];
 				    return;
 			    }
 
 			    NSData *sortedJsonData = [NSJSONSerialization dataWithJSONObject:originalData options:NSJSONWritingPrettyPrinted | NSJSONWritingSortedKeys error:&error];
 			    if (error || !sortedJsonData) {
-				    [DYYYManager showToast:@"排序数据序列化失败"];
+				    [DYYYUtils showToast:@"排序数据序列化失败"];
 				    return;
 			    }
 
@@ -2265,7 +2265,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 			    NSString *tempFilePath = [NSTemporaryDirectory() stringByAppendingPathComponent:tempFile];
 
 			    if (![sortedJsonData writeToFile:tempFilePath atomically:YES]) {
-				    [DYYYManager showToast:@"临时文件创建失败"];
+				    [DYYYUtils showToast:@"临时文件创建失败"];
 				    return;
 			    }
 
@@ -2275,7 +2275,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 			    DYYYBackupPickerDelegate *pickerDelegate = [[DYYYBackupPickerDelegate alloc] init];
 			    pickerDelegate.tempFilePath = tempFilePath;
 			    pickerDelegate.completionBlock = ^(NSURL *url) {
-			      [DYYYManager showToast:@"本地配置已保存"];
+			      [DYYYUtils showToast:@"本地配置已保存"];
 			    };
 
 			    static char kABTestConfigPickerDelegateKey;
@@ -2323,7 +2323,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 				BOOL success = [[NSFileManager defaultManager] copyItemAtPath:sourcePath toPath:destPath error:&error];
 
 				NSString *message = success ? @"配置已导入，重启抖音生效" : [NSString stringWithFormat:@"导入失败: %@", error.localizedDescription];
-				[DYYYManager showToast:message];
+				[DYYYUtils showToast:message];
 
 				if (success) {
 					gFixedABTestData = nil;
@@ -2355,7 +2355,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 				    BOOL success = [[NSFileManager defaultManager] removeItemAtPath:configPath error:&error];
 
 				    NSString *message = success ? @"本地配置已删除成功" : [NSString stringWithFormat:@"删除失败: %@", error.localizedDescription];
-				    [DYYYManager showToast:message];
+				    [DYYYUtils showToast:message];
 
 				    if (success) {
 					    gFixedABTestData = nil;
@@ -2366,7 +2366,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 					    [DYYYSettingsHelper refreshTableView];
 				    }
 			    } else {
-				    [DYYYManager showToast:@"本地配置不存在"];
+				    [DYYYUtils showToast:@"本地配置不存在"];
 			    }
 			  };
 		  }
@@ -2673,7 +2673,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 						   buttonSizeItem.detail = [NSString stringWithFormat:@"%.0f", (CGFloat)size];
 						   [DYYYSettingsHelper refreshTableView];
 					   } else {
-						   [DYYYManager showToast:@"请输入20-60之间的有效数值"];
+						   [DYYYUtils showToast:@"请输入20-60之间的有效数值"];
 					   }
 					 }
 					  onCancel:nil];
@@ -2722,7 +2722,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 						   clearButtonSizeItem.detail = [NSString stringWithFormat:@"%.0f", (CGFloat)size];
 						   [DYYYSettingsHelper refreshTableView];
 					   } else {
-						   [DYYYManager showToast:@"请输入20-60之间的有效数值"];
+						   [DYYYUtils showToast:@"请输入20-60之间的有效数值"];
 					   }
 					 }
 					  onCancel:nil];
@@ -2866,7 +2866,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	  NSData *sortedJsonData = [NSJSONSerialization dataWithJSONObject:dyyySettings options:NSJSONWritingPrettyPrinted | NSJSONWritingSortedKeys error:&error];
 
 	  if (error) {
-		  [DYYYManager showToast:@"备份失败：无法序列化设置数据"];
+		  [DYYYUtils showToast:@"备份失败：无法序列化设置数据"];
 		  return;
 	  }
 
@@ -2880,7 +2880,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	  BOOL success = [sortedJsonData writeToFile:tempFilePath atomically:YES];
 
 	  if (!success) {
-		  [DYYYManager showToast:@"备份失败：无法创建临时文件"];
+		  [DYYYUtils showToast:@"备份失败：无法创建临时文件"];
 		  return;
 	  }
 
@@ -2892,7 +2892,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	  pickerDelegate.tempFilePath = tempFilePath; // 设置临时文件路径
 	  pickerDelegate.completionBlock = ^(NSURL *url) {
 	    // 备份成功
-	    [DYYYManager showToast:@"备份成功"];
+	    [DYYYUtils showToast:@"备份成功"];
 	  };
 
 	  static char kDYYYBackupPickerDelegateKey;
@@ -2924,7 +2924,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	    NSData *jsonData = [NSData dataWithContentsOfURL:url];
 
 	    if (!jsonData) {
-		    [DYYYManager showToast:@"无法读取备份文件"];
+		    [DYYYUtils showToast:@"无法读取备份文件"];
 		    return;
 	    }
 
@@ -2932,7 +2932,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	    NSDictionary *dyyySettings = [NSJSONSerialization JSONObjectWithData:jsonData options:0 error:&jsonError];
 
 	    if (jsonError || ![dyyySettings isKindOfClass:[NSDictionary class]]) {
-		    [DYYYManager showToast:@"备份文件格式错误"];
+		    [DYYYUtils showToast:@"备份文件格式错误"];
 		    return;
 	    }
 
@@ -2971,7 +2971,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	    }
 	    [defaults synchronize];
 
-	    [DYYYManager showToast:@"设置已恢复，请重启应用以应用所有更改"];
+	    [DYYYUtils showToast:@"设置已恢复，请重启应用以应用所有更改"];
 
 	    [DYYYSettingsHelper refreshTableView];
 	  };
@@ -3027,13 +3027,13 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 						    [[NSFileManager defaultManager] removeItemAtPath:plistPath error:&error];
 
 						    if (!error) {
-							    [DYYYManager showToast:@"抖音设置已清除，应用即将退出"];
+							    [DYYYUtils showToast:@"抖音设置已清除，应用即将退出"];
 
 							    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
 							      exit(0);
 							    });
 						    } else {
-							    [DYYYManager showToast:[NSString stringWithFormat:@"清除失败: %@", error.localizedDescription]];
+							    [DYYYUtils showToast:[NSString stringWithFormat:@"清除失败: %@", error.localizedDescription]];
 						    }
 					    }
 					  }];
@@ -3060,7 +3060,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 						    }
 					    }
 					    [defaults synchronize];
-					    [DYYYManager showToast:@"插件设置已清除，请重启应用"];
+					    [DYYYUtils showToast:@"插件设置已清除，请重启应用"];
 					  }];
 	      }];
 	};
@@ -3109,7 +3109,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 
 				      float sizeInMB = totalSize / 1024.0 / 1024.0;
 				      NSString *toastMsg = [NSString stringWithFormat:@"已清理 %.2f MB 的缓存", sizeInMB];
-				      [DYYYManager showToast:toastMsg];
+				      [DYYYUtils showToast:toastMsg];
 				    }];
 	};
 	[cleanupItems addObject:cleanCacheItem];

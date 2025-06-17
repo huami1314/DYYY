@@ -22,32 +22,6 @@
 + (instancetype)shared;
 
 #pragma mark - UI相关方法
-/**
- * 获取当前活动窗口
- */
-+ (UIWindow *)getActiveWindow;
-
-/**
- * 获取当前顶层控制器
- */
-+ (UIViewController *)getActiveTopController;
-
-/**
- * 根据十六进制字符串创建颜色对象
- * @param hexString 十六进制颜色字符串
- */
-+ (UIColor *)colorWithHexString:(NSString *)hexString;
-
-/**
- * 显示提示信息
- * @param text 要显示的文本
- */
-+ (void)showToast:(NSString *)text;
-
-/**
- * 检查当前是否为暗黑模式
- */
-+ (BOOL)isDarkMode;
 
 #pragma mark - 媒体保存方法
 /**
@@ -184,5 +158,14 @@
  */
 + (void)convertWebpToGifSafely:(NSURL *)webpURL 
                     completion:(void (^)(NSURL *gifURL, BOOL success))completion;
+
+// 动画贴纸和GIF相关方法
++ (void)saveAnimatedSticker:(YYAnimatedImageView *)targetStickerView;
++ (BOOL)isBDImageWithHeifURL:(UIImage *)image;
++ (void)saveHeifSticker:(YYAnimatedImageView *)stickerView;
++ (NSArray *)getImagesFromYYAnimatedImageView:(YYAnimatedImageView *)imageView;
++ (CGFloat)getDurationFromYYAnimatedImageView:(YYAnimatedImageView *)imageView;
++ (BOOL)createGIFWithImages:(NSArray *)images duration:(CGFloat)duration path:(NSString *)path progress:(void(^)(float progress))progressBlock;
++ (void)saveGIFToPhotoLibrary:(NSString *)path completion:(void(^)(BOOL success, NSError *error))completion;
 
 @end

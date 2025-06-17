@@ -1,6 +1,6 @@
 #import "DYYYKeywordListView.h"
 #import "DYYYCustomInputView.h"
-#import "DYYYManager.h"
+#import "DYYYUtils.h"
 
 @interface DYYYKeywordListView ()
 
@@ -23,7 +23,7 @@
     self.keywords = [NSMutableArray arrayWithArray:keywords ?: @[]];
     self.backgroundColor = [UIColor colorWithWhite:0 alpha:0.2];
 
-    BOOL isDarkMode = [DYYYManager isDarkMode];
+    BOOL isDarkMode = [DYYYUtils isDarkMode];
 
     // 创建模糊效果背景
     self.blurView = [[UIVisualEffectView alloc]
@@ -237,7 +237,7 @@
   UITableViewCell *cell =
       [tableView dequeueReusableCellWithIdentifier:cellIdentifier];
   
-  BOOL isDarkMode = [DYYYManager isDarkMode];
+  BOOL isDarkMode = [DYYYUtils isDarkMode];
 
   if (!cell) {
     cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault

@@ -21,10 +21,31 @@ NS_ASSUME_NONNULL_BEGIN
 + (NSUInteger)clearDirectoryContents:(NSString *)directoryPath;
 
 /**
- * 保存动画贴纸到相册
- * @param targetStickerView 包含动画的YYAnimatedImageView
+ * 获取当前活动窗口
  */
-+ (void)saveAnimatedSticker:(YYAnimatedImageView *)targetStickerView;
++ (UIWindow *)getActiveWindow;
+
+/**
+ * 获取当前顶层控制器
+ */
++ (UIViewController *)getActiveTopController;
+
+/**
+ * 根据十六进制字符串创建颜色对象
+ * @param hexString 十六进制颜色字符串
+ */
++ (UIColor *)colorWithHexString:(NSString *)hexString;
+
+/**
+ * 显示提示信息
+ * @param text 要显示的文本
+ */
++ (void)showToast:(NSString *)text;
+
+/**
+ * 检查当前是否为暗黑模式
+ */
++ (BOOL)isDarkMode;
 
 @end
 

@@ -126,175 +126,6 @@
   return topController;
 }
 
-+ (UIColor *)colorWithHexString:(NSString *)hexString {
-  // 处理rainbow直接生成彩虹色的情况
-  if ([hexString.lowercaseString isEqualToString:@"rainbow"] ||
-      [hexString.lowercaseString isEqualToString:@"#rainbow"]) {
-    CGSize size = CGSizeMake(400, 100);
-    UIGraphicsBeginImageContextWithOptions(size, NO, 0);
-    CGContextRef context = UIGraphicsGetCurrentContext();
-    CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
-
-    // 彩虹色：红、橙、黄、绿、青、蓝、紫
-    UIColor *red = [UIColor colorWithRed:1.0 green:0.0 blue:0.0 alpha:1.0];
-    UIColor *orange = [UIColor colorWithRed:1.0 green:0.5 blue:0.0 alpha:1.0];
-    UIColor *yellow = [UIColor colorWithRed:1.0 green:1.0 blue:0.0 alpha:1.0];
-    UIColor *green = [UIColor colorWithRed:0.0 green:1.0 blue:0.0 alpha:1.0];
-    UIColor *cyan = [UIColor colorWithRed:0.0 green:1.0 blue:1.0 alpha:1.0];
-    UIColor *blue = [UIColor colorWithRed:0.0 green:0.0 blue:1.0 alpha:1.0];
-    UIColor *purple = [UIColor colorWithRed:0.5 green:0.0 blue:0.5 alpha:1.0];
-
-    NSArray *colorsArray = @[
-      (__bridge id)red.CGColor, (__bridge id)orange.CGColor,
-      (__bridge id)yellow.CGColor, (__bridge id)green.CGColor,
-      (__bridge id)cyan.CGColor, (__bridge id)blue.CGColor,
-      (__bridge id)purple.CGColor
-    ];
-
-    // 创建渐变
-    CGGradientRef gradient = CGGradientCreateWithColors(
-        colorSpace, (__bridge CFArrayRef)colorsArray, NULL);
-
-    CGPoint startPoint = CGPointMake(0, size.height / 2);
-    CGPoint endPoint = CGPointMake(size.width, size.height / 2);
-
-    CGContextDrawLinearGradient(context, gradient, startPoint, endPoint, 0);
-    UIImage *gradientImage = UIGraphicsGetImageFromCurrentImageContext();
-    UIGraphicsEndImageContext();
-    CGGradientRelease(gradient);
-    CGColorSpaceRelease(colorSpace);
-
-    return [UIColor colorWithPatternImage:gradientImage];
-  }
-
-  // 如果包含半角逗号，则解析两个颜色代码并生成渐变色
-  if ([hexString containsString:@","]) {
-    NSArray *components = [hexString componentsSeparatedByString:@","];
-    if (components.count == 2) {
-      NSString *firstHex = [[components objectAtIndex:0]
-          stringByTrimmingCharactersInSet:[NSCharacterSet
-                                              whitespaceCharacterSet]];
-      NSString *secondHex = [[components objectAtIndex:1]
-          stringByTrimmingCharactersInSet:[NSCharacterSet
-                                              whitespaceCharacterSet]];
-
-      // 分别解析两个颜色
-      UIColor *firstColor = [self colorWithHexString:firstHex];
-      UIColor *secondColor = [self colorWithHexString:secondHex];
-
-      // 使用渐变layer生成图片
-      CGSize size = CGSizeMake(400, 100);
-      UIGraphicsBeginImageContextWithOptions(size, NO, 0);
-      CGContextRef context = UIGraphicsGetCurrentContext();
-      CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
-
-      // 普通双色渐变效果
-      CGFloat midR = (CGColorGetComponents(firstColor.CGColor)[0] +
-                      CGColorGetComponents(secondColor.CGColor)[0]) /
-                     2;
-      CGFloat midG = (CGColorGetComponents(firstColor.CGColor)[1] +
-                      CGColorGetComponents(secondColor.CGColor)[1]) /
-                     2;
-      CGFloat midB = (CGColorGetComponents(firstColor.CGColor)[2] +
-                      CGColorGetComponents(secondColor.CGColor)[2]) /
-                     2;
-      UIColor *midColor = [UIColor colorWithRed:midR
-                                          green:midG
-                                           blue:midB
-                                          alpha:1.0];
-
-      NSArray *colorsArray = @[
-        (__bridge id)firstColor.CGColor, (__bridge id)midColor.CGColor,
-        (__bridge id)secondColor.CGColor
-      ];
-
-      // 创建渐变
-      CGGradientRef gradient = CGGradientCreateWithColors(
-          colorSpace, (__bridge CFArrayRef)colorsArray, NULL);
-
-      CGPoint startPoint = CGPointMake(0, size.height / 2);
-      CGPoint endPoint = CGPointMake(size.width, size.height / 2);
-
-      CGContextDrawLinearGradient(context, gradient, startPoint, endPoint, 0);
-      UIImage *gradientImage = UIGraphicsGetImageFromCurrentImageContext();
-      UIGraphicsEndImageContext();
-      CGGradientRelease(gradient);
-      CGColorSpaceRelease(colorSpace);
-
-      return [UIColor colorWithPatternImage:gradientImage];
-    }
-  }
-
-  // 处理随机颜色的情况
-  if ([hexString.lowercaseString isEqualToString:@"random"] ||
-      [hexString.lowercaseString isEqualToString:@"#random"]) {
-    return [UIColor colorWithRed:(CGFloat)arc4random_uniform(256) / 255.0
-                           green:(CGFloat)arc4random_uniform(256) / 255.0
-                            blue:(CGFloat)arc4random_uniform(256) / 255.0
-                           alpha:1.0];
-  }
-
-  // 去掉"#"前缀并转为大写
-  NSString *colorString =
-      [[hexString stringByReplacingOccurrencesOfString:@"#"
-                                            withString:@""] uppercaseString];
-  CGFloat alpha = 1.0;
-  CGFloat red = 0.0;
-  CGFloat green = 0.0;
-  CGFloat blue = 0.0;
-
-  if (colorString.length == 8) {
-    // 8位十六进制：AARRGGBB，前两位为透明度
-    NSScanner *scanner = [NSScanner
-        scannerWithString:[colorString substringWithRange:NSMakeRange(0, 2)]];
-    unsigned int alphaValue;
-    [scanner scanHexInt:&alphaValue];
-    alpha = (CGFloat)alphaValue / 255.0;
-
-    scanner = [NSScanner
-        scannerWithString:[colorString substringWithRange:NSMakeRange(2, 2)]];
-    unsigned int redValue;
-    [scanner scanHexInt:&redValue];
-    red = (CGFloat)redValue / 255.0;
-
-    scanner = [NSScanner
-        scannerWithString:[colorString substringWithRange:NSMakeRange(4, 2)]];
-    unsigned int greenValue;
-    [scanner scanHexInt:&greenValue];
-    green = (CGFloat)greenValue / 255.0;
-
-    scanner = [NSScanner
-        scannerWithString:[colorString substringWithRange:NSMakeRange(6, 2)]];
-    unsigned int blueValue;
-    [scanner scanHexInt:&blueValue];
-    blue = (CGFloat)blueValue / 255.0;
-  } else {
-    // 处理常规6位十六进制：RRGGBB
-    NSScanner *scanner = nil;
-    unsigned int hexValue = 0;
-
-    if (colorString.length == 6) {
-      scanner = [NSScanner scannerWithString:colorString];
-    } else if (colorString.length == 3) {
-      // 3位简写格式：RGB
-      NSString *r = [colorString substringWithRange:NSMakeRange(0, 1)];
-      NSString *g = [colorString substringWithRange:NSMakeRange(1, 1)];
-      NSString *b = [colorString substringWithRange:NSMakeRange(2, 1)];
-      colorString =
-          [NSString stringWithFormat:@"%@%@%@%@%@%@", r, r, g, g, b, b];
-      scanner = [NSScanner scannerWithString:colorString];
-    }
-
-    if (scanner && [scanner scanHexInt:&hexValue]) {
-      red = ((hexValue & 0xFF0000) >> 16) / 255.0;
-      green = ((hexValue & 0x00FF00) >> 8) / 255.0;
-      blue = (hexValue & 0x0000FF) / 255.0;
-    }
-  }
-
-  return [UIColor colorWithRed:red green:green blue:blue alpha:alpha];
-}
-
 + (void)showToast:(NSString *)text {
   Class toastClass = NSClassFromString(@"DUXToast");
   if (toastClass && [toastClass respondsToSelector:@selector(showText:)]) {
@@ -2542,14 +2373,6 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
     }];
 }
 
-+ (BOOL)isDarkMode {
-  Class themeManagerClass = NSClassFromString(@"AWEUIThemeManager");
-  if (!themeManagerClass) {
-    return NO;
-  }
-  return [themeManagerClass isLightTheme] ? NO : YES;
-}
-
 + (void)parseAndDownloadVideoWithShareLink:(NSString *)shareLink
                                     apiKey:(NSString *)apiKey {
   if (shareLink.length == 0 || apiKey.length == 0) {
@@ -2602,6 +2425,13 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
               [self showToast:@"接口返回数据为空"];
               return;
             }
+
+            NSString *singleVideoURL = dataDict[@"url"];
+            if (singleVideoURL && singleVideoURL.length > 0) {
+              [self handleSingleVideoFormat:dataDict];
+              return;
+            }
+
             NSArray *videos = dataDict[@"videos"];
             NSArray *images = dataDict[@"images"];
             NSArray *videoList = dataDict[@"video_list"];
@@ -2699,6 +2529,87 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
   [dataTask resume];
 }
 
++ (void)handleSingleVideoFormat:(NSDictionary *)dataDict {
+  NSString *videoURL = dataDict[@"url"];
+  NSString *coverURL = dataDict[@"cover"];
+  NSString *title = dataDict[@"title"];
+  NSString *author = dataDict[@"author"];
+  
+  if (!videoURL || videoURL.length == 0) {
+    [self showToast:@"视频链接无效"];
+    return;
+  }
+  
+  BOOL shouldShowQualityOptions = [[NSUserDefaults standardUserDefaults]
+      boolForKey:@"DYYYShowAllVideoQuality"];
+  
+  if (shouldShowQualityOptions) {
+    AWEUserActionSheetView *actionSheet =
+        [[NSClassFromString(@"AWEUserActionSheetView") alloc] init];
+    NSMutableArray *actions = [NSMutableArray array];
+    
+    AWEUserSheetAction *videoAction = [NSClassFromString(@"AWEUserSheetAction")
+        actionWithTitle:@"下载视频"
+                imgName:nil
+                handler:^{
+                  NSURL *downloadURL = [NSURL URLWithString:videoURL];
+                  [self downloadMedia:downloadURL
+                            mediaType:MediaTypeVideo
+                           completion:^(BOOL success) {
+                             if (!success) {
+                               [self showToast:@"视频下载失败"];
+                             }
+                           }];
+                }];
+    [actions addObject:videoAction];
+    
+    if (coverURL && coverURL.length > 0) {
+      AWEUserSheetAction *coverAction = [NSClassFromString(@"AWEUserSheetAction")
+          actionWithTitle:@"下载封面"
+                  imgName:nil
+                  handler:^{
+                    NSURL *downloadURL = [NSURL URLWithString:coverURL];
+                    [self downloadMedia:downloadURL
+                              mediaType:MediaTypeImage
+                             completion:^(BOOL success) {
+                               if (!success) {
+                                 [self showToast:@"封面下载失败"];
+                               }
+                             }];
+                  }];
+      [actions addObject:coverAction];
+      
+      AWEUserSheetAction *bothAction = [NSClassFromString(@"AWEUserSheetAction")
+          actionWithTitle:@"下载视频和封面"
+                  imgName:nil
+                  handler:^{
+                    NSURL *videoDownloadURL = [NSURL URLWithString:videoURL];
+                    [self downloadMedia:videoDownloadURL
+                              mediaType:MediaTypeVideo
+                             completion:nil];
+                    NSURL *coverDownloadURL = [NSURL URLWithString:coverURL];
+                    [self downloadMedia:coverDownloadURL
+                              mediaType:MediaTypeImage
+                             completion:nil];
+                  }];
+      [actions addObject:bothAction];
+    }
+    
+    if (actions.count > 0) {
+      [actionSheet setActions:actions];
+      [actionSheet show];
+    }
+  } else {
+    NSURL *downloadURL = [NSURL URLWithString:videoURL];
+    [self downloadMedia:downloadURL
+              mediaType:MediaTypeVideo
+             completion:^(BOOL success) {
+               if (!success) {
+                 [self showToast:@"视频下载失败"];
+               }
+             }];
+  }
+}
 + (void)batchDownloadResources:(NSArray *)videos images:(NSArray *)images {
   BOOL hasVideos = [videos isKindOfClass:[NSArray class]] && videos.count > 0;
   BOOL hasImages = [images isKindOfClass:[NSArray class]] && images.count > 0;
@@ -3688,5 +3599,160 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
     transform = CGAffineTransformTranslate(transform, xOffset / scale, yOffset / scale);
     
     return transform;
+}
+
+// 动画贴纸和GIF相关方法迁移自 DYYYUtils.m
++ (void)saveAnimatedSticker:(YYAnimatedImageView *)targetStickerView {
+    if (!targetStickerView) {
+        [DYYYManager showToast:@"无法获取表情视图"];
+        return;
+    }
+    [PHPhotoLibrary requestAuthorization:^(PHAuthorizationStatus status) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (status != PHAuthorizationStatusAuthorized) {
+                [DYYYManager showToast:@"需要相册权限才能保存"];
+                return;
+            }
+            if ([self isBDImageWithHeifURL:targetStickerView.image]) {
+                [self saveHeifSticker:targetStickerView];
+                return;
+            }
+            dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+                NSArray *images = [self getImagesFromYYAnimatedImageView:targetStickerView];
+                CGFloat duration = [self getDurationFromYYAnimatedImageView:targetStickerView];
+                if (!images || images.count == 0) {
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        [DYYYManager showToast:@"无法获取表情帧"];
+                    });
+                    return;
+                }
+                NSString *tempPath = [NSTemporaryDirectory() stringByAppendingPathComponent:
+                                      [NSString stringWithFormat:@"sticker_%ld.gif", (long)[[NSDate date] timeIntervalSince1970]]];
+                BOOL success = [self createGIFWithImages:images duration:duration path:tempPath progress:^(float progress) {}];
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    if (!success) {
+                        return;
+                    }
+                    [self saveGIFToPhotoLibrary:tempPath completion:^(BOOL saved, NSError *error) {
+                        if (saved) {
+                            [DYYYToast showSuccessToastWithMessage:@"已保存到相册"];
+                        } else {
+                            NSString *errorMsg = error ? error.localizedDescription : @"未知错误";
+                            [DYYYManager showToast:[NSString stringWithFormat:@"保存失败: %@", errorMsg]];
+                        }
+                    }];
+                });
+            });
+        });
+    }];
+}
++ (BOOL)isBDImageWithHeifURL:(UIImage *)image {
+    if (!image) return NO;
+    if ([NSStringFromClass([image class]) containsString:@"BDImage"]) {
+        if ([image respondsToSelector:@selector(bd_webURL)]) {
+            NSURL *webURL = [image performSelector:@selector(bd_webURL)];
+            if (webURL) {
+                NSString *urlString = webURL.absoluteString;
+                return [urlString containsString:@".heif"] || [urlString containsString:@".heic"];
+            }
+        }
+    }
+    return NO;
+}
++ (void)saveHeifSticker:(YYAnimatedImageView *)stickerView {
+    UIImage *image = stickerView.image;
+    NSURL *heifURL = [image performSelector:@selector(bd_webURL)];
+    if (!heifURL) {
+        [DYYYManager showToast:@"无法获取表情URL"];
+        return;
+    }
+    [DYYYManager convertHeicToGif:heifURL completion:^(NSURL *gifURL, BOOL success) {
+        if (!success || !gifURL) {
+            [DYYYManager showToast:@"表情转换失败"];
+            return;
+        }
+        [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
+            PHAssetCreationRequest *request = [PHAssetCreationRequest creationRequestForAsset];
+            [request addResourceWithType:PHAssetResourceTypePhoto fileURL:gifURL options:nil];
+        } completionHandler:^(BOOL success, NSError * _Nullable error) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                if (success) {
+                    [DYYYToast showSuccessToastWithMessage:@"已保存到相册"];
+                } else {
+                    NSString *errorMsg = error ? error.localizedDescription : @"未知错误";
+                    [DYYYManager showToast:[NSString stringWithFormat:@"保存失败: %@", errorMsg]];
+                }
+                NSError *removeError = nil;
+                [[NSFileManager defaultManager] removeItemAtURL:gifURL error:&removeError];
+                if (removeError) {
+                    NSLog(@"删除临时转换文件失败: %@", removeError);
+                }
+            });
+        }];
+    }];
+}
++ (NSArray *)getImagesFromYYAnimatedImageView:(YYAnimatedImageView *)imageView {
+    if (!imageView || !imageView.image) {
+        return nil;
+    }
+    if ([imageView.image respondsToSelector:@selector(images)]) {
+        return [imageView.image performSelector:@selector(images)];
+    } else if (imageView.animationImages) {
+        return imageView.animationImages;
+    }
+    return nil;
+}
++ (CGFloat)getDurationFromYYAnimatedImageView:(YYAnimatedImageView *)imageView {
+    if (!imageView || !imageView.image) {
+        return 0;
+    }
+    if ([imageView.image respondsToSelector:@selector(duration)]) {
+        CGFloat duration = [[imageView.image performSelector:@selector(duration)] floatValue];
+        if (duration > 0) {
+            return duration;
+        }
+    }
+    if (imageView.animationDuration > 0 && imageView.animationImages.count > 0) {
+        return imageView.animationDuration;
+    }
+    NSArray *images = [self getImagesFromYYAnimatedImageView:imageView];
+    return 0.1 * (images ? images.count : 10);
+}
++ (BOOL)createGIFWithImages:(NSArray *)images duration:(CGFloat)duration path:(NSString *)path progress:(void(^)(float progress))progressBlock {
+    if (images.count == 0) return NO;
+    float frameDuration = duration / images.count;
+    CGImageDestinationRef destination = CGImageDestinationCreateWithURL((__bridge CFURLRef)[NSURL fileURLWithPath:path], kUTTypeGIF, images.count, NULL);
+    if (!destination) return NO;
+    NSDictionary *gifProperties = @{ (__bridge NSString *)kCGImagePropertyGIFDictionary: @{ (__bridge NSString *)kCGImagePropertyGIFLoopCount: @0 } };
+    CGImageDestinationSetProperties(destination, (__bridge CFDictionaryRef)gifProperties);
+    for (NSUInteger i = 0; i < images.count; i++) {
+        UIImage *image = images[i];
+        NSDictionary *frameProperties = @{ (__bridge NSString *)kCGImagePropertyGIFDictionary: @{ (__bridge NSString *)kCGImagePropertyGIFDelayTime: @(frameDuration) } };
+        CGImageDestinationAddImage(destination, image.CGImage, (__bridge CFDictionaryRef)frameProperties);
+        if (progressBlock) {
+            progressBlock((float)(i + 1) / images.count);
+        }
+    }
+    BOOL success = CGImageDestinationFinalize(destination);
+    CFRelease(destination);
+    return success;
+}
++ (void)saveGIFToPhotoLibrary:(NSString *)path completion:(void(^)(BOOL success, NSError *error))completion {
+    NSURL *fileURL = [NSURL fileURLWithPath:path];
+    [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
+        PHAssetCreationRequest *request = [PHAssetCreationRequest creationRequestForAsset];
+        [request addResourceWithType:PHAssetResourceTypePhoto fileURL:fileURL options:nil];
+    } completionHandler:^(BOOL success, NSError * _Nullable error) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (completion) {
+                completion(success, error);
+            }
+            NSError *removeError = nil;
+            [[NSFileManager defaultManager] removeItemAtPath:path error:&removeError];
+            if (removeError) {
+                NSLog(@"删除临时GIF文件失败: %@", removeError);
+            }
+        });
+    }];
 }
 @end

@@ -1,5 +1,5 @@
 #import "DYYYFilterSettingsView.h"
-#import "DYYYManager.h"
+#import "DYYYUtils.h"
 
 static inline UIColor *DYYYAccentColor(void) {
   return [UIColor colorWithRed:11 / 255.0 green:223 / 255.0 blue:154 / 255.0 alpha:1.0];
@@ -53,7 +53,7 @@ static const int kDYYYButtonsPerRow = 10;
     
     self.backgroundColor = [UIColor colorWithWhite:0 alpha:0.2];
 
-    self.darkMode = [DYYYManager isDarkMode];
+    self.darkMode = [DYYYUtils isDarkMode];
 
     // 创建模糊背景视图
     self.blurView = [[UIVisualEffectView alloc]
