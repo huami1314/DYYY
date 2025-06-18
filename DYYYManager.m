@@ -12,6 +12,7 @@
 #import <objc/runtime.h>
 
 #import "DYYYToast.h"
+#import "DYYYUtils.h"
 
 @interface DYYYManager () {
   AVAssetExportSession *session;
@@ -93,46 +94,6 @@
   return self;
 }
 
-+ (UIWindow *)getActiveWindow {
-  if (@available(iOS 15.0, *)) {
-    for (UIScene *scene in [UIApplication sharedApplication].connectedScenes) {
-      if ([scene isKindOfClass:[UIWindowScene class]] &&
-          scene.activationState == UISceneActivationStateForegroundActive) {
-        for (UIWindow *w in ((UIWindowScene *)scene).windows) {
-          if (w.isKeyWindow)
-            return w;
-        }
-      }
-    }
-    return nil;
-  } else {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    return [UIApplication sharedApplication].windows.firstObject;
-#pragma clang diagnostic pop
-  }
-}
-
-+ (UIViewController *)getActiveTopController {
-  UIWindow *window = [self getActiveWindow];
-  if (!window)
-    return nil;
-
-  UIViewController *topController = window.rootViewController;
-  while (topController.presentedViewController) {
-    topController = topController.presentedViewController;
-  }
-
-  return topController;
-}
-
-+ (void)showToast:(NSString *)text {
-  Class toastClass = NSClassFromString(@"DUXToast");
-  if (toastClass && [toastClass respondsToSelector:@selector(showText:)]) {
-    [toastClass performSelector:@selector(showText:) withObject:text];
-  }
-}
-
 + (void)saveMedia:(NSURL *)mediaURL
         mediaType:(MediaType)mediaType
        completion:(void (^)(void))completion {
@@ -166,7 +127,7 @@
                                                  }
                                                }];
                               } else {
-                                [self showToast:@"转换失败"];
+                                [DYYYUtils showToast:@"转换失败"];
                                 // 清理临时文件
                                 [[NSFileManager defaultManager]
                                     removeItemAtPath:mediaURL.path
@@ -194,7 +155,7 @@
                                              }
                                            }];
                         } else {
-                          [self showToast:@"转换失败"];
+                          [DYYYUtils showToast:@"转换失败"];
                           // 清理临时文件
                           [[NSFileManager defaultManager]
                               removeItemAtPath:mediaURL.path
@@ -225,7 +186,7 @@
                     completion();
                   }
                 } else {
-                  [self showToast:@"保存失败"];
+                  [DYYYUtils showToast:@"保存失败"];
                 }
                 // 不管成功失败都清理临时文件
                 [[NSFileManager defaultManager] removeItemAtPath:mediaURL.path
@@ -254,7 +215,7 @@
                   completion();
                 }
               } else {
-                [self showToast:@"保存失败"];
+                [DYYYUtils showToast:@"保存失败"];
               }
               // 不管成功失败都清理临时文件
               [[NSFileManager defaultManager] removeItemAtPath:mediaURL.path
@@ -350,7 +311,7 @@
             completion();
           }
         } else {
-          [self showToast:@"保存失败"];
+          [DYYYUtils showToast:@"保存失败"];
         }
         // 不管成功失败都清理临时文件
         [[NSFileManager defaultManager] removeItemAtPath:gifURL.path error:nil];
@@ -1046,7 +1007,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
           [[NSFileManager defaultManager] removeItemAtPath:imagePath error:nil];
           [[NSFileManager defaultManager] removeItemAtPath:videoPath error:nil];
           [manager.fileLinks removeObjectForKey:uniqueKey];
-          [DYYYManager showToast:@"保存实况照片失败"];
+          [DYYYUtils showToast:@"保存实况照片失败"];
         }
       } else {
         // 清理不完整的文件
@@ -1055,7 +1016,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
         if (videoExists)
           [[NSFileManager defaultManager] removeItemAtPath:videoPath error:nil];
         [manager.fileLinks removeObjectForKey:uniqueKey];
-        [DYYYManager showToast:@"下载实况照片失败"];
+        [DYYYUtils showToast:@"下载实况照片失败"];
       }
 
       if (completion) {
@@ -1630,7 +1591,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
       [self.mediaTypeMap removeObjectForKey:downloadIDForTask];
 
       if (error.code != NSURLErrorCancelled) {
-        [DYYYManager showToast:@"下载失败"];
+        [DYYYUtils showToast:@"下载失败"];
       }
 
       if (completionBlock) {
@@ -1702,8 +1663,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
     }];
   } else {
     dispatch_async(dispatch_get_main_queue(), ^{
-      [DYYYManager
-          showToast:@"当前iOS版本不支持实况照片，将分别保存图片和视频"];
+      [DYYYUtils showToast:@"当前iOS版本不支持实况照片，将分别保存图片和视频"];
     });
   }
 }
@@ -1949,7 +1909,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
 
     if (!supportsLivePhoto) {
         dispatch_async(dispatch_get_main_queue(), ^{
-            [self showToast:@"当前iOS版本不支持实况照片"];
+            [DYYYUtils showToast:@"当前iOS版本不支持实况照片"];
             if (completion) {
                 completion(0, livePhotos.count);
             }
@@ -2135,7 +2095,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
                     // 没有相册权限
                     dispatch_async(dispatch_get_main_queue(), ^{
                         [progressView dismiss];
-                        [self showToast:@"没有相册权限，无法保存实况照片"];
+                        [DYYYUtils showToast:@"没有相册权限，无法保存实况照片"];
                         
                         [fileManager removeItemAtPath:livePhotoPath error:nil];
                         
@@ -2371,6 +2331,67 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
             }
         }
     }];
+}
+
++ (void)parseAndDownloadVideoWithShareLink:(NSString *)shareLink
+                                    apiKey:(NSString *)apiKey {
+  if (shareLink.length == 0 || apiKey.length == 0) {
+    [DYYYUtils showToast:@"分享链接或API密钥无效"];
+    return;
+  }
+
+  NSString *apiUrl = [NSString
+      stringWithFormat:@"%@%@", apiKey,
+                       [shareLink
+                           stringByAddingPercentEncodingWithAllowedCharacters:
+                               [NSCharacterSet URLQueryAllowedCharacterSet]]];
+
+  NSURL *url = [NSURL URLWithString:apiUrl];
+  NSURLRequest *request = [NSURLRequest requestWithURL:url];
+  NSURLSession *session = [NSURLSession sharedSession];
+
+  NSURLSessionDataTask *dataTask = [session
+      dataTaskWithRequest:request
+        completionHandler:^(NSData *data, NSURLResponse *response,
+                            NSError *error) {
+          dispatch_async(dispatch_get_main_queue(), ^{
+            if (error) {
+              [DYYYUtils showToast:[NSString
+                                  stringWithFormat:@"接口请求失败: %@",
+                                                   error.localizedDescription]];
+              return;
+            }
+
+            NSError *jsonError;
+            NSDictionary *json =
+                [NSJSONSerialization JSONObjectWithData:data
+                                                options:0
+                                                  error:&jsonError];
+            if (jsonError) {
+              [DYYYUtils showToast:@"解析接口返回数据失败"];
+              return;
+            }
+
+            NSInteger code = [json[@"code"] integerValue];
+            if (code != 0 && code != 200) {
+              [DYYYUtils showToast:[NSString stringWithFormat:@"接口返回错误: %@",
+                                                         json[@"msg"]
+                                                             ?: @"未知错误"]];
+              return;
+            }
+
+            NSDictionary *dataDict = json[@"data"];
+            if (!dataDict) {
+              [DYYYUtils showToast:@"接口返回数据为空"];
+              return;
+            }
+            
+            // 交给handleVideoData处理数据
+            [self handleVideoData:dataDict];
+          });
+        }];
+
+  [dataTask resume];
 }
 
 + (void)parseAndDownloadVideoWithShareLink:(NSString *)shareLink
@@ -3546,13 +3567,13 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
 // 动画贴纸和GIF相关方法迁移自 DYYYUtils.m
 + (void)saveAnimatedSticker:(YYAnimatedImageView *)targetStickerView {
     if (!targetStickerView) {
-        [DYYYManager showToast:@"无法获取表情视图"];
+        [DYYYUtils showToast:@"无法获取表情视图"];
         return;
     }
     [PHPhotoLibrary requestAuthorization:^(PHAuthorizationStatus status) {
         dispatch_async(dispatch_get_main_queue(), ^{
             if (status != PHAuthorizationStatusAuthorized) {
-                [DYYYManager showToast:@"需要相册权限才能保存"];
+                [DYYYUtils showToast:@"需要相册权限才能保存"];
                 return;
             }
             if ([self isBDImageWithHeifURL:targetStickerView.image]) {
@@ -3564,7 +3585,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
                 CGFloat duration = [self getDurationFromYYAnimatedImageView:targetStickerView];
                 if (!images || images.count == 0) {
                     dispatch_async(dispatch_get_main_queue(), ^{
-                        [DYYYManager showToast:@"无法获取表情帧"];
+                        [DYYYUtils showToast:@"无法获取表情帧"];
                     });
                     return;
                 }
@@ -3580,7 +3601,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
                             [DYYYToast showSuccessToastWithMessage:@"已保存到相册"];
                         } else {
                             NSString *errorMsg = error ? error.localizedDescription : @"未知错误";
-                            [DYYYManager showToast:[NSString stringWithFormat:@"保存失败: %@", errorMsg]];
+                            [DYYYUtils showToast:[NSString stringWithFormat:@"保存失败: %@", errorMsg]];
                         }
                     }];
                 });
@@ -3605,12 +3626,12 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
     UIImage *image = stickerView.image;
     NSURL *heifURL = [image performSelector:@selector(bd_webURL)];
     if (!heifURL) {
-        [DYYYManager showToast:@"无法获取表情URL"];
+        [DYYYUtils showToast:@"无法获取表情URL"];
         return;
     }
     [DYYYManager convertHeicToGif:heifURL completion:^(NSURL *gifURL, BOOL success) {
         if (!success || !gifURL) {
-            [DYYYManager showToast:@"表情转换失败"];
+            [DYYYUtils showToast:@"表情转换失败"];
             return;
         }
         [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
@@ -3622,7 +3643,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
                     [DYYYToast showSuccessToastWithMessage:@"已保存到相册"];
                 } else {
                     NSString *errorMsg = error ? error.localizedDescription : @"未知错误";
-                    [DYYYManager showToast:[NSString stringWithFormat:@"保存失败: %@", errorMsg]];
+                    [DYYYUtils showToast:[NSString stringWithFormat:@"保存失败: %@", errorMsg]];
                 }
                 NSError *removeError = nil;
                 [[NSFileManager defaultManager] removeItemAtURL:gifURL error:&removeError];
