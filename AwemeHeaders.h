@@ -369,6 +369,9 @@ static CGFloat gStartVal = 0.0;
 @interface AFDRecommendToFriendTagView : UIView
 @end
 
+@interface AFDRecommendToFriendEntranceLabel : UILabel
+@end
+
 @interface AWEStoryContainerCollectionView : UIView
 @end
 

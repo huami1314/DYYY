@@ -3740,7 +3740,7 @@ static AWEIMReusableCommonCell *currentCell;
 
 %end
 
-%hook AFDRecommendToFriendTagView
+%hook AFDRecommendToFriendEntranceLabel
 - (void)layoutSubviews {
 	%orig;
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideRecommendTips"]) {
