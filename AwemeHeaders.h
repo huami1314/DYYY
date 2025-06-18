@@ -762,9 +762,6 @@ static CGFloat gStartVal = 0.0;
 @interface AWESearchFeedTagView : UIView
 @end
 
-@interface AFDRecommendToFriendTagView : UIView
-@end
-
 @interface AFDAIbumFolioView : UIView
 @end
 
