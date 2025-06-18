@@ -76,7 +76,7 @@
 					BOOL shouldHide = NO;
 					if ([descString isEqualToString:@"转发到日常"] && hideDaily) {
 						shouldHide = YES;
-					} else if ([descString isEqualToString:@"推荐"] && hideRecommend) {
+					} else if (([descString isEqualToString:@"推荐"] || [descString isEqualToString:@"取消推荐"]) && hideRecommend) {
 						shouldHide = YES;
 					} else if ([descString isEqualToString:@"不感兴趣"] && hideNotInterested) {
 						shouldHide = YES;
