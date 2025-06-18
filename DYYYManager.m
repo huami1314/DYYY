@@ -2394,67 +2394,6 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
   [dataTask resume];
 }
 
-+ (void)parseAndDownloadVideoWithShareLink:(NSString *)shareLink
-                                    apiKey:(NSString *)apiKey {
-  if (shareLink.length == 0 || apiKey.length == 0) {
-    [self showToast:@"分享链接或API密钥无效"];
-    return;
-  }
-
-  NSString *apiUrl = [NSString
-      stringWithFormat:@"%@%@", apiKey,
-                       [shareLink
-                           stringByAddingPercentEncodingWithAllowedCharacters:
-                               [NSCharacterSet URLQueryAllowedCharacterSet]]];
-
-  NSURL *url = [NSURL URLWithString:apiUrl];
-  NSURLRequest *request = [NSURLRequest requestWithURL:url];
-  NSURLSession *session = [NSURLSession sharedSession];
-
-  NSURLSessionDataTask *dataTask = [session
-      dataTaskWithRequest:request
-        completionHandler:^(NSData *data, NSURLResponse *response,
-                            NSError *error) {
-          dispatch_async(dispatch_get_main_queue(), ^{
-            if (error) {
-              [self showToast:[NSString
-                                  stringWithFormat:@"接口请求失败: %@",
-                                                   error.localizedDescription]];
-              return;
-            }
-
-            NSError *jsonError;
-            NSDictionary *json =
-                [NSJSONSerialization JSONObjectWithData:data
-                                                options:0
-                                                  error:&jsonError];
-            if (jsonError) {
-              [self showToast:@"解析接口返回数据失败"];
-              return;
-            }
-
-            NSInteger code = [json[@"code"] integerValue];
-            if (code != 0 && code != 200) {
-              [self showToast:[NSString stringWithFormat:@"接口返回错误: %@",
-                                                         json[@"msg"]
-                                                             ?: @"未知错误"]];
-              return;
-            }
-
-            NSDictionary *dataDict = json[@"data"];
-            if (!dataDict) {
-              [self showToast:@"接口返回数据为空"];
-              return;
-            }
-            
-            // 交给handleVideoData处理数据
-            [self handleVideoData:dataDict];
-          });
-        }];
-
-  [dataTask resume];
-}
-
 + (void)handleVideoData:(NSDictionary *)dataDict {
     // 首先检查videos和images数组
     NSArray *videoList = dataDict[@"video_list"];
@@ -2546,7 +2485,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
                           mediaType:MediaTypeImage
                          completion:^(BOOL success) {
                              if (!success) {
-                                 [self showToast:@"图片下载失败"];
+                                 [DYYYUtils showToast:@"图片下载失败"];
                              }
                          }];
             } else {
@@ -2659,7 +2598,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
     if (allImages.count > 0 || hasVideos) {
         [self batchDownloadResources:videos images:allImages];
     } else {
-        [self showToast:@"没有找到可下载的资源"];
+        [DYYYUtils showToast:@"没有找到可下载的资源"];
     }
 }
 
