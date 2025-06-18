@@ -30,12 +30,12 @@
     NSMutableDictionary<NSString *, DYYYToast *> *progressViews;
 @property(nonatomic, strong) NSOperationQueue *downloadQueue;
 @property(nonatomic, strong) NSMutableDictionary<NSString *, NSNumber *>
-    *taskProgressMap; // 添加进度映射
+    *taskProgressMap;
 @property(nonatomic, strong)
     NSMutableDictionary<NSString *, void (^)(BOOL success, NSURL *fileURL)>
-        *completionBlocks; // 添加完成回调存储
+        *completionBlocks;
 @property(nonatomic, strong) NSMutableDictionary<NSString *, NSNumber *>
-    *mediaTypeMap; // 添加媒体类型映射
+    *mediaTypeMap;
 
 // 批量下载相关属性
 @property(nonatomic, strong) NSMutableDictionary<NSString *, NSString *>
@@ -74,13 +74,13 @@
     _progressViews = [NSMutableDictionary dictionary];
     _downloadQueue = [[NSOperationQueue alloc] init];
     _downloadQueue.maxConcurrentOperationCount =
-        3; // A maximum of 3 concurrent downloads
+        3;
     _taskProgressMap =
-        [NSMutableDictionary dictionary]; // Initialize progress mapping
+        [NSMutableDictionary dictionary];
     _completionBlocks =
-        [NSMutableDictionary dictionary]; // Initialize completion blocks
+        [NSMutableDictionary dictionary];
     _mediaTypeMap =
-        [NSMutableDictionary dictionary]; // Initialize media type mapping
+        [NSMutableDictionary dictionary];
 
     // 初始化批量下载相关字典
     _downloadToBatchMap = [NSMutableDictionary dictionary];
