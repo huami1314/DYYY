@@ -22,37 +22,37 @@
 %hook AWEProfileMentionLabel
 
 - (void)layoutSubviews {
-    %orig;
-    
-    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYBioCopyText"]) {
-        return;
-    }
-    
-    BOOL hasLongPressGesture = NO;
-    for (UIGestureRecognizer *gesture in self.gestureRecognizers) {
-        if ([gesture isKindOfClass:[UILongPressGestureRecognizer class]]) {
-            hasLongPressGesture = YES;
-            break;
-        }
-    }
-    
-    if (!hasLongPressGesture) {
-        UILongPressGestureRecognizer *longPressGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handleLongPress:)];
-        longPressGesture.minimumPressDuration = 0.5;
-        [self addGestureRecognizer:longPressGesture];
-        self.userInteractionEnabled = YES;
-    }
+	%orig;
+
+	if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYBioCopyText"]) {
+		return;
+	}
+
+	BOOL hasLongPressGesture = NO;
+	for (UIGestureRecognizer *gesture in self.gestureRecognizers) {
+		if ([gesture isKindOfClass:[UILongPressGestureRecognizer class]]) {
+			hasLongPressGesture = YES;
+			break;
+		}
+	}
+
+	if (!hasLongPressGesture) {
+		UILongPressGestureRecognizer *longPressGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handleLongPress:)];
+		longPressGesture.minimumPressDuration = 0.5;
+		[self addGestureRecognizer:longPressGesture];
+		self.userInteractionEnabled = YES;
+	}
 }
 
 %new
 - (void)handleLongPress:(UILongPressGestureRecognizer *)gesture {
-    if (gesture.state == UIGestureRecognizerStateBegan) {
-        NSString *bioText = self.text;
-        if (bioText && bioText.length > 0) {
-            [[UIPasteboard generalPasteboard] setString:bioText];
-            [DYYYToast showSuccessToastWithMessage:@"个人简介已复制"];
-        }
-    }
+	if (gesture.state == UIGestureRecognizerStateBegan) {
+		NSString *bioText = self.text;
+		if (bioText && bioText.length > 0) {
+			[[UIPasteboard generalPasteboard] setString:bioText];
+			[DYYYToast showSuccessToastWithMessage:@"个人简介已复制"];
+		}
+	}
 }
 
 %end
@@ -481,7 +481,7 @@
 			timer = nil;
 		}
 		void (^tryFindAndSetPureMode)(void) = ^{
-		  UIWindow *keyWindow = [DYYYUtils  getActiveWindow];
+		  UIWindow *keyWindow = [DYYYUtils getActiveWindow];
 		  if (keyWindow && keyWindow.rootViewController) {
 			  UIViewController *feedVC = [self findViewController:keyWindow.rootViewController ofClass:NSClassFromString(@"AWEFeedTableViewController")];
 			  if (feedVC) {
@@ -1171,12 +1171,12 @@ static CGFloat rightLabelRightMargin = -1;
 		NSString *labelColorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYProgressLabelColor"];
 		UIColor *labelColor = [UIColor whiteColor];
 		if (labelColorHex && labelColorHex.length > 0) {
-			SEL colorSelector = NSSelectorFromString(@"colorWithHexString:");
-			Class dyyyManagerClass = NSClassFromString(@"DYYYManager");
-			if (dyyyManagerClass && [dyyyManagerClass respondsToSelector:colorSelector]) {
-				labelColor = [dyyyManagerClass performSelector:colorSelector withObject:labelColorHex];
+			UIColor *customColor = [DYYYUtils colorWithHexString:labelColorHex];
+			if (customColor) {
+				labelColor = customColor;
 			}
 		}
+
 		NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
 		BOOL showRemainingTime = [scheduleStyle isEqualToString:@"进度条右侧剩余"];
 		BOOL showCompleteTime = [scheduleStyle isEqualToString:@"进度条右侧完整"];
@@ -1493,59 +1493,56 @@ static CGFloat rightLabelRightMargin = -1;
 
 		label.font = originalFont;
 	}
-    // ------------- 颜色应用逻辑 (完全ARC管理，调用Utils) -------------
-    NSString *labelColorConfig = nil;
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnabsuijiyanse"]) {
-        labelColorConfig = @"random_rainbow";
-    } else {
-        labelColorConfig = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYLabelColor"];
-    }
+	// ------------- 颜色应用逻辑 (完全ARC管理，调用Utils) -------------
+	NSString *labelColorConfig = nil;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnabsuijiyanse"]) {
+		labelColorConfig = @"random_rainbow";
+	} else {
+		labelColorConfig = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYLabelColor"];
+	}
 
-    if (labelColorConfig.length > 0 && label.text.length > 0) {
-        UIColor *(^colorScheme)(CGFloat) = [DYYYUtils colorSchemeBlockWithHexString:labelColorConfig];
+	if (labelColorConfig.length > 0 && label.text.length > 0) {
+		UIColor * (^colorScheme)(CGFloat) = [DYYYUtils colorSchemeBlockWithHexString:labelColorConfig];
 
-        NSMutableAttributedString *attributedText = [[NSMutableAttributedString alloc] initWithString:label.text];
+		NSMutableAttributedString *attributedText = [[NSMutableAttributedString alloc] initWithString:label.text];
 
-        CFIndex length = [attributedText length];
-        if (length > 0) {
-             for (CFIndex i = 0; i < length; i++) {
-                CGFloat progress = (length > 1) ? (CGFloat)i / (length - 1) : 0.0;
+		CFIndex length = [attributedText length];
+		if (length > 0) {
+			for (CFIndex i = 0; i < length; i++) {
+				CGFloat progress = (length > 1) ? (CGFloat)i / (length - 1) : 0.0;
 
-                UIColor *currentColor = colorScheme(progress);
+				UIColor *currentColor = colorScheme(progress);
 
-                NSMutableDictionary *attributes = [NSMutableDictionary dictionary];
-                if (currentColor) {
-                    attributes[NSForegroundColorAttributeName] = currentColor;
-                } else {
-                    attributes[NSForegroundColorAttributeName] = [UIColor blackColor];
-                }
+				NSMutableDictionary *attributes = [NSMutableDictionary dictionary];
+				if (currentColor) {
+					attributes[NSForegroundColorAttributeName] = currentColor;
+				} else {
+					attributes[NSForegroundColorAttributeName] = [UIColor blackColor];
+				}
 
-                attributes[NSStrokeColorAttributeName] = [UIColor blackColor]; // 描边颜色
-                attributes[NSStrokeWidthAttributeName] = @(-2.0); // 描边宽度（负值表示同时填充和描边）
+				attributes[NSStrokeColorAttributeName] = [UIColor blackColor]; // 描边颜色
+				attributes[NSStrokeWidthAttributeName] = @(-2.0);	       // 描边宽度（负值表示同时填充和描边）
 
-                [attributedText addAttributes:attributes range:NSMakeRange(i, 1)];
-            }
-            label.attributedText = attributedText;
-        } else {
-            label.attributedText = nil;
-        }
-    } else {
-        NSMutableAttributedString *attributedText;
-        if ([label.attributedText isKindOfClass:[NSAttributedString class]]) {
-            attributedText = [[NSMutableAttributedString alloc] initWithAttributedString:label.attributedText];
-            [attributedText removeAttribute:NSForegroundColorAttributeName range:NSMakeRange(0, attributedText.length)];
-        } else {
-            attributedText = [[NSMutableAttributedString alloc] initWithString:label.text ?: @""];
-        }
+				[attributedText addAttributes:attributes range:NSMakeRange(i, 1)];
+			}
+			label.attributedText = attributedText;
+		} else {
+			label.attributedText = nil;
+		}
+	} else {
+		NSMutableAttributedString *attributedText;
+		if ([label.attributedText isKindOfClass:[NSAttributedString class]]) {
+			attributedText = [[NSMutableAttributedString alloc] initWithAttributedString:label.attributedText];
+			[attributedText removeAttribute:NSForegroundColorAttributeName range:NSMakeRange(0, attributedText.length)];
+		} else {
+			attributedText = [[NSMutableAttributedString alloc] initWithString:label.text ?: @""];
+		}
 
-         if (attributedText.length > 0) {
-              [attributedText addAttributes:@{
-                  NSStrokeColorAttributeName : [UIColor blackColor],
-                  NSStrokeWidthAttributeName : @(-2.0)
-              } range:NSMakeRange(0, attributedText.length)];
-         }
-         label.attributedText = attributedText;
-    }
+		if (attributedText.length > 0) {
+			[attributedText addAttributes:@{NSStrokeColorAttributeName : [UIColor blackColor], NSStrokeWidthAttributeName : @(-2.0)} range:NSMakeRange(0, attributedText.length)];
+		}
+		label.attributedText = attributedText;
+	}
 	return label;
 }
 
@@ -2347,7 +2344,7 @@ static __weak YYAnimatedImageView *targetStickerView = nil;
 									 if (targetStickerView) {
 										 [DYYYManager saveAnimatedSticker:targetStickerView];
 									 } else {
-										 [DYYYUtils  showToast:@"无法获取表情视图"];
+										 [DYYYUtils showToast:@"无法获取表情视图"];
 									 }
 								       }];
 
@@ -3782,7 +3779,7 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 	%orig;
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideRecommendTips"]) {
-		if(self.accessibilityLabel) {
+		if (self.accessibilityLabel) {
 			[self removeFromSuperview];
 		}
 	}
@@ -4254,250 +4251,250 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWEAwemeModel
 
 - (id)initWithDictionary:(id)arg1 error:(id *)arg2 {
-    id orig = %orig;
+	id orig = %orig;
 
-    BOOL noAds = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYNoAds"];
-    BOOL skipLive = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipLive"];
-    BOOL skipHotSpot = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipHotSpot"];
-    BOOL filterHDR = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYfilterFeedHDR"];
+	BOOL noAds = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYNoAds"];
+	BOOL skipLive = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipLive"];
+	BOOL skipHotSpot = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipHotSpot"];
+	BOOL filterHDR = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYfilterFeedHDR"];
 
-    BOOL shouldFilterAds = noAds && (self.hotSpotLynxCardModel || self.isAds);
-    BOOL shouldFilterRec = skipLive && (self.liveReason != nil);
-    BOOL shouldFilterHotSpot = skipHotSpot && self.hotSpotLynxCardModel;
-    BOOL shouldFilterHDR = NO;
-    BOOL shouldFilterLowLikes = NO;
-    BOOL shouldFilterKeywords = NO;
-    BOOL shouldFilterTime = NO;
-    BOOL shouldFilterUser = NO;
-    BOOL shouldFilterProp = NO;
+	BOOL shouldFilterAds = noAds && (self.hotSpotLynxCardModel || self.isAds);
+	BOOL shouldFilterRec = skipLive && (self.liveReason != nil);
+	BOOL shouldFilterHotSpot = skipHotSpot && self.hotSpotLynxCardModel;
+	BOOL shouldFilterHDR = NO;
+	BOOL shouldFilterLowLikes = NO;
+	BOOL shouldFilterKeywords = NO;
+	BOOL shouldFilterTime = NO;
+	BOOL shouldFilterUser = NO;
+	BOOL shouldFilterProp = NO;
 
-    // 获取用户设置的需要过滤的关键词
-    NSString *filterKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterKeywords"];
-    NSArray *keywordsList = nil;
+	// 获取用户设置的需要过滤的关键词
+	NSString *filterKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterKeywords"];
+	NSArray *keywordsList = nil;
 
-    if (filterKeywords.length > 0) {
-        keywordsList = [filterKeywords componentsSeparatedByString:@","];
-    }
+	if (filterKeywords.length > 0) {
+		keywordsList = [filterKeywords componentsSeparatedByString:@","];
+	}
 
-    // 获取需要过滤的道具关键词
-    NSString *filterProp = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterProp"];
-    NSArray *propKeywordsList = nil;
-    
-    if (filterProp.length > 0) {
-        propKeywordsList = [filterProp componentsSeparatedByString:@","];
-    }
+	// 获取需要过滤的道具关键词
+	NSString *filterProp = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterProp"];
+	NSArray *propKeywordsList = nil;
 
-    // 获取需要过滤的用户列表
-    NSString *filterUsers = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterUsers"];
+	if (filterProp.length > 0) {
+		propKeywordsList = [filterProp componentsSeparatedByString:@","];
+	}
 
-    // 检查是否需要过滤特定用户
-    if (self.shareRecExtra && filterUsers.length > 0 && self.author) {
-        NSArray *usersList = [filterUsers componentsSeparatedByString:@","];
-        NSString *currentShortID = self.author.shortID;
-        NSString *currentNickname = self.author.nickname;
+	// 获取需要过滤的用户列表
+	NSString *filterUsers = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterUsers"];
 
-        if (currentShortID.length > 0) {
-            for (NSString *userInfo in usersList) {
-                // 解析"昵称-id"格式
-                NSArray *components = [userInfo componentsSeparatedByString:@"-"];
-                if (components.count >= 2) {
-                    NSString *userId = [components lastObject];
-                    NSString *userNickname = [[components subarrayWithRange:NSMakeRange(0, components.count - 1)] componentsJoinedByString:@"-"];
+	// 检查是否需要过滤特定用户
+	if (self.shareRecExtra && filterUsers.length > 0 && self.author) {
+		NSArray *usersList = [filterUsers componentsSeparatedByString:@","];
+		NSString *currentShortID = self.author.shortID;
+		NSString *currentNickname = self.author.nickname;
 
-                    if ([userId isEqualToString:currentShortID]) {
-                        shouldFilterUser = YES;
-                        break;
-                    }
-                }
-            }
-        }
-    }
+		if (currentShortID.length > 0) {
+			for (NSString *userInfo in usersList) {
+				// 解析"昵称-id"格式
+				NSArray *components = [userInfo componentsSeparatedByString:@"-"];
+				if (components.count >= 2) {
+					NSString *userId = [components lastObject];
+					NSString *userNickname = [[components subarrayWithRange:NSMakeRange(0, components.count - 1)] componentsJoinedByString:@"-"];
 
-    NSInteger filterLowLikesThreshold = [[NSUserDefaults standardUserDefaults] integerForKey:@"DYYYfilterLowLikes"];
+					if ([userId isEqualToString:currentShortID]) {
+						shouldFilterUser = YES;
+						break;
+					}
+				}
+			}
+		}
+	}
 
-    // 只有当shareRecExtra不为空时才过滤点赞量低的视频和关键词
-    if (self.shareRecExtra && ![self.shareRecExtra isEqual:@""]) {
-        // 过滤低点赞量视频
-        if (filterLowLikesThreshold > 0) {
-            AWESearchAwemeExtraModel *searchExtraModel = [self searchExtraModel];
-            if (!searchExtraModel) {
-                AWEAwemeStatisticsModel *statistics = self.statistics;
-                if (statistics && statistics.diggCount) {
-                    shouldFilterLowLikes = statistics.diggCount.integerValue < filterLowLikesThreshold;
-                }
-            }
-        }
+	NSInteger filterLowLikesThreshold = [[NSUserDefaults standardUserDefaults] integerForKey:@"DYYYfilterLowLikes"];
 
-        // 过滤包含特定关键词的视频
-        if (keywordsList.count > 0) {
-            // 检查视频标题
-            if (self.descriptionString.length > 0) {
-                for (NSString *keyword in keywordsList) {
-                    NSString *trimmedKeyword = [keyword stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-                    if (trimmedKeyword.length > 0 && [self.descriptionString containsString:trimmedKeyword]) {
-                        shouldFilterKeywords = YES;
-                        break;
-                    }
-                }
-            }
-        }
-        
-        // 过滤包含指定拍同款的视频
-        if (propKeywordsList.count > 0 && self.propGuideV2) {
-            NSString *propName = self.propGuideV2.propName;
-            if (propName.length > 0) {
-                for (NSString *propKeyword in propKeywordsList) {
-                    NSString *trimmedKeyword = [propKeyword stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-                    if (trimmedKeyword.length > 0 && [propName containsString:trimmedKeyword]) {
-                        shouldFilterProp = YES;
-                        break;
-                    }
-                }
-            }
-        }
+	// 只有当shareRecExtra不为空时才过滤点赞量低的视频和关键词
+	if (self.shareRecExtra && ![self.shareRecExtra isEqual:@""]) {
+		// 过滤低点赞量视频
+		if (filterLowLikesThreshold > 0) {
+			AWESearchAwemeExtraModel *searchExtraModel = [self searchExtraModel];
+			if (!searchExtraModel) {
+				AWEAwemeStatisticsModel *statistics = self.statistics;
+				if (statistics && statistics.diggCount) {
+					shouldFilterLowLikes = statistics.diggCount.integerValue < filterLowLikesThreshold;
+				}
+			}
+		}
 
-        // 过滤视频发布时间
-        long long currentTimestamp = (long long)[[NSDate date] timeIntervalSince1970];
-        NSInteger daysThreshold = [[NSUserDefaults standardUserDefaults] integerForKey:@"DYYYfiltertimelimit"];
-        if (daysThreshold > 0) {
-            NSTimeInterval videoTimestamp = [self.createTime doubleValue];
-            if (videoTimestamp > 0) {
-                NSTimeInterval threshold = daysThreshold * 86400.0;
-                NSTimeInterval current = (NSTimeInterval)currentTimestamp;
-                NSTimeInterval timeDifference = current - videoTimestamp;
-                shouldFilterTime = (timeDifference > threshold);
-            }
-        }
-    }
-    // 检查是否为HDR视频
-    if (filterHDR && self.video && self.video.bitrateModels) {
-        for (id bitrateModel in self.video.bitrateModels) {
-            NSNumber *hdrType = [bitrateModel valueForKey:@"hdrType"];
-            NSNumber *hdrBit = [bitrateModel valueForKey:@"hdrBit"];
+		// 过滤包含特定关键词的视频
+		if (keywordsList.count > 0) {
+			// 检查视频标题
+			if (self.descriptionString.length > 0) {
+				for (NSString *keyword in keywordsList) {
+					NSString *trimmedKeyword = [keyword stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+					if (trimmedKeyword.length > 0 && [self.descriptionString containsString:trimmedKeyword]) {
+						shouldFilterKeywords = YES;
+						break;
+					}
+				}
+			}
+		}
 
-            // 如果hdrType=1且hdrBit=10，则视为HDR视频
-            if (hdrType && [hdrType integerValue] == 1 && hdrBit && [hdrBit integerValue] == 10) {
-                shouldFilterHDR = YES;
-                break;
-            }
-        }
-    }
-    if (shouldFilterAds || shouldFilterRec || shouldFilterHotSpot || shouldFilterHDR || shouldFilterLowLikes || shouldFilterKeywords || shouldFilterTime || shouldFilterUser || shouldFilterProp) {
-        return nil;
-    }
+		// 过滤包含指定拍同款的视频
+		if (propKeywordsList.count > 0 && self.propGuideV2) {
+			NSString *propName = self.propGuideV2.propName;
+			if (propName.length > 0) {
+				for (NSString *propKeyword in propKeywordsList) {
+					NSString *trimmedKeyword = [propKeyword stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+					if (trimmedKeyword.length > 0 && [propName containsString:trimmedKeyword]) {
+						shouldFilterProp = YES;
+						break;
+					}
+				}
+			}
+		}
 
-    return orig;
+		// 过滤视频发布时间
+		long long currentTimestamp = (long long)[[NSDate date] timeIntervalSince1970];
+		NSInteger daysThreshold = [[NSUserDefaults standardUserDefaults] integerForKey:@"DYYYfiltertimelimit"];
+		if (daysThreshold > 0) {
+			NSTimeInterval videoTimestamp = [self.createTime doubleValue];
+			if (videoTimestamp > 0) {
+				NSTimeInterval threshold = daysThreshold * 86400.0;
+				NSTimeInterval current = (NSTimeInterval)currentTimestamp;
+				NSTimeInterval timeDifference = current - videoTimestamp;
+				shouldFilterTime = (timeDifference > threshold);
+			}
+		}
+	}
+	// 检查是否为HDR视频
+	if (filterHDR && self.video && self.video.bitrateModels) {
+		for (id bitrateModel in self.video.bitrateModels) {
+			NSNumber *hdrType = [bitrateModel valueForKey:@"hdrType"];
+			NSNumber *hdrBit = [bitrateModel valueForKey:@"hdrBit"];
+
+			// 如果hdrType=1且hdrBit=10，则视为HDR视频
+			if (hdrType && [hdrType integerValue] == 1 && hdrBit && [hdrBit integerValue] == 10) {
+				shouldFilterHDR = YES;
+				break;
+			}
+		}
+	}
+	if (shouldFilterAds || shouldFilterRec || shouldFilterHotSpot || shouldFilterHDR || shouldFilterLowLikes || shouldFilterKeywords || shouldFilterTime || shouldFilterUser || shouldFilterProp) {
+		return nil;
+	}
+
+	return orig;
 }
 
 - (id)init {
-    id orig = %orig;
+	id orig = %orig;
 
-    BOOL noAds = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYNoAds"];
-    BOOL skipLive = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipLive"];
-    BOOL skipHotSpot = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipHotSpot"];
-    BOOL filterHDR = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYfilterFeedHDR"];
+	BOOL noAds = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYNoAds"];
+	BOOL skipLive = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipLive"];
+	BOOL skipHotSpot = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipHotSpot"];
+	BOOL filterHDR = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYfilterFeedHDR"];
 
-    BOOL shouldFilterAds = noAds && (self.hotSpotLynxCardModel || self.isAds);
-    BOOL shouldFilterRec = skipLive && (self.liveReason != nil);
-    BOOL shouldFilterHotSpot = skipHotSpot && self.hotSpotLynxCardModel;
-    BOOL shouldFilterHDR = NO;
-    BOOL shouldFilterLowLikes = NO;
-    BOOL shouldFilterKeywords = NO;
-    BOOL shouldFilterProp = NO;
-    BOOL shouldFilterTime = NO;
+	BOOL shouldFilterAds = noAds && (self.hotSpotLynxCardModel || self.isAds);
+	BOOL shouldFilterRec = skipLive && (self.liveReason != nil);
+	BOOL shouldFilterHotSpot = skipHotSpot && self.hotSpotLynxCardModel;
+	BOOL shouldFilterHDR = NO;
+	BOOL shouldFilterLowLikes = NO;
+	BOOL shouldFilterKeywords = NO;
+	BOOL shouldFilterProp = NO;
+	BOOL shouldFilterTime = NO;
 
-    // 获取用户设置的需要过滤的关键词
-    NSString *filterKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterKeywords"];
-    NSArray *keywordsList = nil;
+	// 获取用户设置的需要过滤的关键词
+	NSString *filterKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterKeywords"];
+	NSArray *keywordsList = nil;
 
-    if (filterKeywords.length > 0) {
-        keywordsList = [filterKeywords componentsSeparatedByString:@","];
-    }
-    
-    // 过滤包含指定拍同款的视频
-    NSString *filterProp = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterProp"];
-    NSArray *propKeywordsList = nil;
-    
-    if (filterProp.length > 0) {
-        propKeywordsList = [filterProp componentsSeparatedByString:@","];
-    }
+	if (filterKeywords.length > 0) {
+		keywordsList = [filterKeywords componentsSeparatedByString:@","];
+	}
 
-    NSInteger filterLowLikesThreshold = [[NSUserDefaults standardUserDefaults] integerForKey:@"DYYYfilterLowLikes"];
+	// 过滤包含指定拍同款的视频
+	NSString *filterProp = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterProp"];
+	NSArray *propKeywordsList = nil;
 
-    // 只有当shareRecExtra不为空时才过滤
-    if (self.shareRecExtra && ![self.shareRecExtra isEqual:@""]) {
-        // 过滤低点赞量视频
-        if (filterLowLikesThreshold > 0) {
-            AWESearchAwemeExtraModel *searchExtraModel = [self searchExtraModel];
-            if (!searchExtraModel) {
-                AWEAwemeStatisticsModel *statistics = self.statistics;
-                if (statistics && statistics.diggCount) {
-                    shouldFilterLowLikes = statistics.diggCount.integerValue < filterLowLikesThreshold;
-                }
-            }
-        }
+	if (filterProp.length > 0) {
+		propKeywordsList = [filterProp componentsSeparatedByString:@","];
+	}
 
-        // 过滤包含特定关键词的视频
-        if (keywordsList.count > 0) {
-            // 检查视频标题
-            if (self.descriptionString.length > 0) {
-                for (NSString *keyword in keywordsList) {
-                    NSString *trimmedKeyword = [keyword stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-                    if (trimmedKeyword.length > 0 && [self.descriptionString containsString:trimmedKeyword]) {
-                        shouldFilterKeywords = YES;
-                        break;
-                    }
-                }
-            }
-        }
-        
-        // 过滤包含特定道具的视频
-        if (propKeywordsList.count > 0 && self.propGuideV2) {
-            NSString *propName = self.propGuideV2.propName;
-            if (propName.length > 0) {
-                for (NSString *propKeyword in propKeywordsList) {
-                    NSString *trimmedKeyword = [propKeyword stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-                    if (trimmedKeyword.length > 0 && [propName containsString:trimmedKeyword]) {
-                        shouldFilterProp = YES;
-                        break;
-                    }
-                }
-            }
-        }
+	NSInteger filterLowLikesThreshold = [[NSUserDefaults standardUserDefaults] integerForKey:@"DYYYfilterLowLikes"];
 
-        // 过滤视频发布时间
-        long long currentTimestamp = (long long)[[NSDate date] timeIntervalSince1970];
-        NSInteger daysThreshold = [[NSUserDefaults standardUserDefaults] integerForKey:@"DYYYfiltertimelimit"];
-        if (daysThreshold > 0) {
-            NSTimeInterval videoTimestamp = [self.createTime doubleValue];
-            if (videoTimestamp > 0) {
-                NSTimeInterval threshold = daysThreshold * 86400.0;
-                NSTimeInterval current = (NSTimeInterval)currentTimestamp;
-                NSTimeInterval timeDifference = current - videoTimestamp;
-                shouldFilterTime = (timeDifference > threshold);
-            }
-        }
-    }
+	// 只有当shareRecExtra不为空时才过滤
+	if (self.shareRecExtra && ![self.shareRecExtra isEqual:@""]) {
+		// 过滤低点赞量视频
+		if (filterLowLikesThreshold > 0) {
+			AWESearchAwemeExtraModel *searchExtraModel = [self searchExtraModel];
+			if (!searchExtraModel) {
+				AWEAwemeStatisticsModel *statistics = self.statistics;
+				if (statistics && statistics.diggCount) {
+					shouldFilterLowLikes = statistics.diggCount.integerValue < filterLowLikesThreshold;
+				}
+			}
+		}
 
-    // 检查是否为HDR视频
-    if (filterHDR && self.video && self.video.bitrateModels) {
-        for (id bitrateModel in self.video.bitrateModels) {
-            NSNumber *hdrType = [bitrateModel valueForKey:@"hdrType"];
-            NSNumber *hdrBit = [bitrateModel valueForKey:@"hdrBit"];
+		// 过滤包含特定关键词的视频
+		if (keywordsList.count > 0) {
+			// 检查视频标题
+			if (self.descriptionString.length > 0) {
+				for (NSString *keyword in keywordsList) {
+					NSString *trimmedKeyword = [keyword stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+					if (trimmedKeyword.length > 0 && [self.descriptionString containsString:trimmedKeyword]) {
+						shouldFilterKeywords = YES;
+						break;
+					}
+				}
+			}
+		}
 
-            // 如果hdrType=1且hdrBit=10，则视为HDR视频
-            if (hdrType && [hdrType integerValue] == 1 && hdrBit && [hdrBit integerValue] == 10) {
-                shouldFilterHDR = YES;
-                break;
-            }
-        }
-    }
+		// 过滤包含特定道具的视频
+		if (propKeywordsList.count > 0 && self.propGuideV2) {
+			NSString *propName = self.propGuideV2.propName;
+			if (propName.length > 0) {
+				for (NSString *propKeyword in propKeywordsList) {
+					NSString *trimmedKeyword = [propKeyword stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+					if (trimmedKeyword.length > 0 && [propName containsString:trimmedKeyword]) {
+						shouldFilterProp = YES;
+						break;
+					}
+				}
+			}
+		}
 
-    if (shouldFilterAds || shouldFilterRec || shouldFilterHotSpot || shouldFilterHDR || shouldFilterLowLikes || shouldFilterKeywords || shouldFilterProp || shouldFilterTime) {
-        return nil;
-    }
+		// 过滤视频发布时间
+		long long currentTimestamp = (long long)[[NSDate date] timeIntervalSince1970];
+		NSInteger daysThreshold = [[NSUserDefaults standardUserDefaults] integerForKey:@"DYYYfiltertimelimit"];
+		if (daysThreshold > 0) {
+			NSTimeInterval videoTimestamp = [self.createTime doubleValue];
+			if (videoTimestamp > 0) {
+				NSTimeInterval threshold = daysThreshold * 86400.0;
+				NSTimeInterval current = (NSTimeInterval)currentTimestamp;
+				NSTimeInterval timeDifference = current - videoTimestamp;
+				shouldFilterTime = (timeDifference > threshold);
+			}
+		}
+	}
 
-    return orig;
+	// 检查是否为HDR视频
+	if (filterHDR && self.video && self.video.bitrateModels) {
+		for (id bitrateModel in self.video.bitrateModels) {
+			NSNumber *hdrType = [bitrateModel valueForKey:@"hdrType"];
+			NSNumber *hdrBit = [bitrateModel valueForKey:@"hdrBit"];
+
+			// 如果hdrType=1且hdrBit=10，则视为HDR视频
+			if (hdrType && [hdrType integerValue] == 1 && hdrBit && [hdrBit integerValue] == 10) {
+				shouldFilterHDR = YES;
+				break;
+			}
+		}
+	}
+
+	if (shouldFilterAds || shouldFilterRec || shouldFilterHotSpot || shouldFilterHDR || shouldFilterLowLikes || shouldFilterKeywords || shouldFilterProp || shouldFilterTime) {
+		return nil;
+	}
+
+	return orig;
 }
 
 - (bool)preventDownload {

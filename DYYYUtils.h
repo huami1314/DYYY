@@ -14,13 +14,6 @@ NS_ASSUME_NONNULL_BEGIN
 + (UIViewController *)topView;
 
 /**
- * 清除指定目录的所有内容
- * @param directoryPath 要清理的目录路径
- * @return 清理的文件总大小
- */
-+ (NSUInteger)clearDirectoryContents:(NSString *)directoryPath;
-
-/**
  * 获取当前活动窗口
  */
 + (UIWindow *)getActiveWindow;
@@ -59,6 +52,15 @@ NS_ASSUME_NONNULL_BEGIN
  * 检查当前是否为暗黑模式
  */
 + (BOOL)isDarkMode;
+
+/**
+ * 递归统计目录大小
+ */
++ (unsigned long long)directorySizeAtPath:(NSString *)directoryPath;
+/**
+ * 递归删除目录下所有内容
+ */
++ (void)removeAllContentsAtPath:(NSString *)directoryPath;
 
 @end
 

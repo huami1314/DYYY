@@ -35,51 +35,6 @@ UIViewController *topView(void) {
     return topViewController;
 }
 
-+ (NSUInteger)clearDirectoryContents:(NSString *)directoryPath {
-    NSFileManager *fileManager = [NSFileManager defaultManager];
-    NSUInteger totalSize = 0;
-    
-    if (![fileManager fileExistsAtPath:directoryPath]) {
-        return 0;
-    }
-    
-    NSError *error = nil;
-    NSArray<NSString *> *contents = [fileManager contentsOfDirectoryAtPath:directoryPath error:&error];
-    
-    if (error) {
-        NSLog(@"获取目录内容失败 %@: %@", directoryPath, error);
-        return 0;
-    }
-    
-    for (NSString *item in contents) {
-        if ([item hasPrefix:@"."]) {
-            continue;
-        }
-        
-        NSString *fullPath = [directoryPath stringByAppendingPathComponent:item];
-        
-        NSDictionary<NSFileAttributeKey, id> *attrs = [fileManager attributesOfItemAtPath:fullPath error:nil];
-        NSUInteger fileSize = attrs ? [attrs fileSize] : 0;
-        
-        BOOL isDirectory;
-        if ([fileManager fileExistsAtPath:fullPath isDirectory:&isDirectory]) {
-            if (isDirectory) {
-                fileSize += [self clearDirectoryContents:fullPath];
-            }
-            
-            NSError *delError = nil;
-            [fileManager removeItemAtPath:fullPath error:&delError];
-            if (delError) {
-                NSLog(@"删除失败 %@: %@", fullPath, delError);
-            } else {
-                totalSize += fileSize;
-            }
-        }
-    }
-    
-    return totalSize;
-}
-
 + (UIWindow *)getActiveWindow {
   if (@available(iOS 15.0, *)) {
     for (UIScene *scene in [UIApplication sharedApplication].connectedScenes) {
@@ -454,6 +409,57 @@ UIViewController *topView(void) {
     return NO;
   }
   return [themeManagerClass isLightTheme] ? NO : YES;
+}
+
++ (unsigned long long)directorySizeAtPath:(NSString *)directoryPath {
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    unsigned long long totalSize = 0;
+    BOOL isDir = NO;
+    if (![fileManager fileExistsAtPath:directoryPath isDirectory:&isDir] || !isDir) {
+        return 0;
+    }
+    NSError *error = nil;
+    NSArray<NSString *> *contents = [fileManager contentsOfDirectoryAtPath:directoryPath error:&error];
+    if (error) return 0;
+    for (NSString *item in contents) {
+        if ([item hasPrefix:@"."]) continue;
+        NSString *fullPath = [directoryPath stringByAppendingPathComponent:item];
+        BOOL isSubDir = NO;
+        if ([fileManager fileExistsAtPath:fullPath isDirectory:&isSubDir]) {
+            if (isSubDir) {
+                totalSize += [self directorySizeAtPath:fullPath];
+            } else {
+                NSDictionary *attrs = [fileManager attributesOfItemAtPath:fullPath error:nil];
+                totalSize += attrs ? [attrs fileSize] : 0;
+            }
+        }
+    }
+    return totalSize;
+}
+
++ (void)removeAllContentsAtPath:(NSString *)directoryPath {
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    BOOL isDir = NO;
+    if (![fileManager fileExistsAtPath:directoryPath isDirectory:&isDir] || !isDir) {
+        return;
+    }
+    NSError *error = nil;
+    NSArray<NSString *> *contents = [fileManager contentsOfDirectoryAtPath:directoryPath error:&error];
+    if (error) return;
+    for (NSString *item in contents) {
+        if ([item hasPrefix:@"."]) continue;
+        NSString *fullPath = [directoryPath stringByAppendingPathComponent:item];
+        BOOL isSubDir = NO;
+        if ([fileManager fileExistsAtPath:fullPath isDirectory:&isSubDir]) {
+            if (isSubDir) {
+                [self removeAllContentsAtPath:fullPath];
+                // 删除空文件夹本身
+                [fileManager removeItemAtPath:fullPath error:nil];
+            } else {
+                [fileManager removeItemAtPath:fullPath error:nil];
+            }
+        }
+    }
 }
 
 @end
