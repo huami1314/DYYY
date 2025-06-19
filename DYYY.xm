@@ -1470,8 +1470,6 @@ static CGFloat rightLabelRightMargin = -1;
                         label.text = [NSString stringWithFormat:@"%@  IP属地：%@", originalText, cityName];
                     }
                 }
-
-                [DYYYUtils applyColorSettingsToLabel:label];
             }
         }
     }
