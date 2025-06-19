@@ -97,6 +97,12 @@ UIViewController *topView(void) {
                     attributes[NSForegroundColorAttributeName] = [UIColor blackColor];
                 }
 
+                // 检查当前的 labelColorConfig 是否是需要描边的类型
+                if ([labelColorConfig isEqualToString:@"random_rainbow"] || [labelColorConfig isEqualToString:@"rainbow"]) {
+                    attributes[NSStrokeColorAttributeName] = [UIColor whiteColor];  // 设置描边为白色
+                    attributes[NSStrokeWidthAttributeName] = @(-1.0);               // 设置描边宽度
+                }
+
                 [attributedText addAttributes:attributes range:NSMakeRange(i, 1)];
             }
             label.attributedText = attributedText;
@@ -108,6 +114,8 @@ UIViewController *topView(void) {
         if ([label.attributedText isKindOfClass:[NSAttributedString class]]) {
             attributedText = [[NSMutableAttributedString alloc] initWithAttributedString:label.attributedText];
             [attributedText removeAttribute:NSForegroundColorAttributeName range:NSMakeRange(0, attributedText.length)];
+            [attributedText removeAttribute:NSStrokeColorAttributeName range:NSMakeRange(0, attributedText.length)];
+            [attributedText removeAttribute:NSStrokeWidthAttributeName range:NSMakeRange(0, attributedText.length)];
         } else {
             attributedText = [[NSMutableAttributedString alloc] initWithString:label.text ?: @""];
         }
