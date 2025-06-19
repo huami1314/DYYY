@@ -1071,10 +1071,9 @@ static CGFloat rightLabelRightMargin = -1;
 		NSString *labelColorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYProgressLabelColor"];
 		UIColor *labelColor = [UIColor whiteColor];
 		if (labelColorHex && labelColorHex.length > 0) {
-			SEL colorSelector = NSSelectorFromString(@"colorWithHexString:");
-			Class dyyyManagerClass = NSClassFromString(@"DYYYManager");
-			if (dyyyManagerClass && [dyyyManagerClass respondsToSelector:colorSelector]) {
-				labelColor = [dyyyManagerClass performSelector:colorSelector withObject:labelColorHex];
+			UIColor *customColor = [DYYYUtils colorWithHexString:labelColorHex];
+			if (customColor) {
+				labelColor = customColor;
 			}
 		}
 
