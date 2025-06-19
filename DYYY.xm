@@ -1493,60 +1493,59 @@ static CGFloat rightLabelRightMargin = -1;
 
 		label.font = originalFont;
 	}
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnabsuijiyanse"]) {
-		UIColor *color1 = [UIColor colorWithRed:(CGFloat)arc4random_uniform(256) / 255.0
-						  green:(CGFloat)arc4random_uniform(256) / 255.0
-						   blue:(CGFloat)arc4random_uniform(256) / 255.0
-						  alpha:1.0];
-		UIColor *color2 = [UIColor colorWithRed:(CGFloat)arc4random_uniform(256) / 255.0
-						  green:(CGFloat)arc4random_uniform(256) / 255.0
-						   blue:(CGFloat)arc4random_uniform(256) / 255.0
-						  alpha:1.0];
-		UIColor *color3 = [UIColor colorWithRed:(CGFloat)arc4random_uniform(256) / 255.0
-						  green:(CGFloat)arc4random_uniform(256) / 255.0
-						   blue:(CGFloat)arc4random_uniform(256) / 255.0
-						  alpha:1.0];
+    // ------------- 颜色应用逻辑 (完全ARC管理，调用Utils) -------------
+    NSString *labelColorConfig = nil;
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnabsuijiyanse"]) {
+        labelColorConfig = @"random_rainbow";
+    } else {
+        labelColorConfig = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYLabelColor"];
+    }
 
-		NSMutableAttributedString *attributedText = [[NSMutableAttributedString alloc] initWithString:label.text];
-		CFIndex length = [attributedText length];
-		for (CFIndex i = 0; i < length; i++) {
-			CGFloat progress = (CGFloat)i / (length == 0 ? 1 : length - 1);
+    if (labelColorConfig.length > 0 && label.text.length > 0) {
+        UIColor *(^colorScheme)(CGFloat) = [DYYYUtils colorSchemeBlockWithHexString:labelColorConfig];
 
-			UIColor *startColor;
-			UIColor *endColor;
-			CGFloat subProgress;
+        NSMutableAttributedString *attributedText = [[NSMutableAttributedString alloc] initWithString:label.text];
 
-			if (progress < 0.5) {
-				startColor = color1;
-				endColor = color2;
-				subProgress = progress * 2;
-			} else {
-				startColor = color2;
-				endColor = color3;
-				subProgress = (progress - 0.5) * 2;
-			}
+        CFIndex length = [attributedText length];
+        if (length > 0) {
+             for (CFIndex i = 0; i < length; i++) {
+                CGFloat progress = (length > 1) ? (CGFloat)i / (length - 1) : 0.0;
 
-			CGFloat startRed, startGreen, startBlue, startAlpha;
-			CGFloat endRed, endGreen, endBlue, endAlpha;
-			[startColor getRed:&startRed green:&startGreen blue:&startBlue alpha:&startAlpha];
-			[endColor getRed:&endRed green:&endGreen blue:&endBlue alpha:&endAlpha];
+                UIColor *currentColor = colorScheme(progress);
 
-			CGFloat red = startRed + (endRed - startRed) * subProgress;
-			CGFloat green = startGreen + (endGreen - startGreen) * subProgress;
-			CGFloat blue = startBlue + (endBlue - startBlue) * subProgress;
-			CGFloat alpha = startAlpha + (endAlpha - startAlpha) * subProgress;
+                NSMutableDictionary *attributes = [NSMutableDictionary dictionary];
+                if (currentColor) {
+                    attributes[NSForegroundColorAttributeName] = currentColor;
+                } else {
+                    attributes[NSForegroundColorAttributeName] = [UIColor blackColor];
+                }
 
-			UIColor *currentColor = [UIColor colorWithRed:red green:green blue:blue alpha:alpha];
-			[attributedText addAttribute:NSForegroundColorAttributeName value:currentColor range:NSMakeRange(i, 1)];
-		}
+                attributes[NSStrokeColorAttributeName] = [UIColor blackColor]; // 描边颜色
+                attributes[NSStrokeWidthAttributeName] = @(-2.0); // 描边宽度（负值表示同时填充和描边）
 
-		label.attributedText = attributedText;
-	} else {
-		NSString *labelColor = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYLabelColor"];
-		if (labelColor.length > 0) {
-			label.textColor = [DYYYUtils colorWithHexString:labelColor];
-		}
-	}
+                [attributedText addAttributes:attributes range:NSMakeRange(i, 1)];
+            }
+            label.attributedText = attributedText;
+        } else {
+            label.attributedText = nil;
+        }
+    } else {
+        NSMutableAttributedString *attributedText;
+        if ([label.attributedText isKindOfClass:[NSAttributedString class]]) {
+            attributedText = [[NSMutableAttributedString alloc] initWithAttributedString:label.attributedText];
+            [attributedText removeAttribute:NSForegroundColorAttributeName range:NSMakeRange(0, attributedText.length)];
+        } else {
+            attributedText = [[NSMutableAttributedString alloc] initWithString:label.text ?: @""];
+        }
+
+         if (attributedText.length > 0) {
+              [attributedText addAttributes:@{
+                  NSStrokeColorAttributeName : [UIColor blackColor],
+                  NSStrokeWidthAttributeName : @(-2.0)
+              } range:NSMakeRange(0, attributedText.length)];
+         }
+         label.attributedText = attributedText;
+    }
 	return label;
 }
 
