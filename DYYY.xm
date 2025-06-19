@@ -1493,57 +1493,60 @@ static CGFloat rightLabelRightMargin = -1;
 
 		label.font = originalFont;
 	}
-	// ------------- 颜色应用逻辑 (完全ARC管理，调用Utils) -------------
-	NSString *labelColorConfig = nil;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnabsuijiyanse"]) {
-		labelColorConfig = @"random_rainbow";
-	} else {
-		labelColorConfig = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYLabelColor"];
-	}
+ 	// ------------- 颜色应用逻辑 (完全ARC管理，调用Utils) -------------
+    NSString *labelColorConfig = nil;
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnabsuijiyanse"]) {
+        labelColorConfig = @"random_rainbow";
+    } else {
+        labelColorConfig = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYLabelColor"];
+    }
 
-	if (labelColorConfig.length > 0 && label.text.length > 0) {
-		UIColor * (^colorScheme)(CGFloat) = [DYYYUtils colorSchemeBlockWithHexString:labelColorConfig];
+    if (labelColorConfig.length > 0 && label.text.length > 0) {
+        BOOL isGradientOrRainbow = [labelColorConfig isEqualToString:@"random_rainbow"] || 
+                                   [labelColorConfig containsString:@","] ||
+                                   [labelColorConfig containsString:@"rainbow"];
+        
+        UIColor * (^colorScheme)(CGFloat) = [DYYYUtils colorSchemeBlockWithHexString:labelColorConfig];
 
-		NSMutableAttributedString *attributedText = [[NSMutableAttributedString alloc] initWithString:label.text];
+        NSMutableAttributedString *attributedText = [[NSMutableAttributedString alloc] initWithString:label.text];
 
-		CFIndex length = [attributedText length];
-		if (length > 0) {
-			for (CFIndex i = 0; i < length; i++) {
-				CGFloat progress = (length > 1) ? (CGFloat)i / (length - 1) : 0.0;
+        CFIndex length = [attributedText length];
+        if (length > 0) {
+            for (CFIndex i = 0; i < length; i++) {
+                CGFloat progress = (length > 1) ? (CGFloat)i / (length - 1) : 0.0;
 
-				UIColor *currentColor = colorScheme(progress);
+                UIColor *currentColor = colorScheme(progress);
 
-				NSMutableDictionary *attributes = [NSMutableDictionary dictionary];
-				if (currentColor) {
-					attributes[NSForegroundColorAttributeName] = currentColor;
-				} else {
-					attributes[NSForegroundColorAttributeName] = [UIColor blackColor];
-				}
+                NSMutableDictionary *attributes = [NSMutableDictionary dictionary];
+                if (currentColor) {
+                    attributes[NSForegroundColorAttributeName] = currentColor;
+                } else {
+                    attributes[NSForegroundColorAttributeName] = [UIColor blackColor];
+                }
 
-				attributes[NSStrokeColorAttributeName] = [UIColor blackColor]; // 描边颜色
-				attributes[NSStrokeWidthAttributeName] = @(-2.0);	       // 描边宽度（负值表示同时填充和描边）
+                if (isGradientOrRainbow) {
+                    attributes[NSStrokeColorAttributeName] = [UIColor blackColor]; // 描边颜色
+                    attributes[NSStrokeWidthAttributeName] = @(-2.0);	       // 描边宽度（负值表示同时填充和描边）
+                }
 
-				[attributedText addAttributes:attributes range:NSMakeRange(i, 1)];
-			}
-			label.attributedText = attributedText;
-		} else {
-			label.attributedText = nil;
-		}
-	} else {
-		NSMutableAttributedString *attributedText;
-		if ([label.attributedText isKindOfClass:[NSAttributedString class]]) {
-			attributedText = [[NSMutableAttributedString alloc] initWithAttributedString:label.attributedText];
-			[attributedText removeAttribute:NSForegroundColorAttributeName range:NSMakeRange(0, attributedText.length)];
-		} else {
-			attributedText = [[NSMutableAttributedString alloc] initWithString:label.text ?: @""];
-		}
+                [attributedText addAttributes:attributes range:NSMakeRange(i, 1)];
+            }
+            label.attributedText = attributedText;
+        } else {
+            label.attributedText = nil;
+        }
+    } else {
+        NSMutableAttributedString *attributedText;
+        if ([label.attributedText isKindOfClass:[NSAttributedString class]]) {
+            attributedText = [[NSMutableAttributedString alloc] initWithAttributedString:label.attributedText];
+            [attributedText removeAttribute:NSForegroundColorAttributeName range:NSMakeRange(0, attributedText.length)];
+        } else {
+            attributedText = [[NSMutableAttributedString alloc] initWithString:label.text ?: @""];
+        }
 
-		if (attributedText.length > 0) {
-			[attributedText addAttributes:@{NSStrokeColorAttributeName : [UIColor blackColor], NSStrokeWidthAttributeName : @(-2.0)} range:NSMakeRange(0, attributedText.length)];
-		}
-		label.attributedText = attributedText;
-	}
-	return label;
+        label.attributedText = attributedText;
+    }
+    return label;
 }
 
 + (BOOL)shouldActiveWithData:(id)arg1 context:(id)arg2 {
