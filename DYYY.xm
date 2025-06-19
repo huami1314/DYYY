@@ -1069,13 +1069,6 @@ static CGFloat rightLabelRightMargin = -1;
 		BOOL showLeftCompleteTime = [scheduleStyle isEqualToString:@"进度条左侧完整"];
 
 		NSString *labelColorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYProgressLabelColor"];
-		UIColor *labelColor = [UIColor whiteColor];
-		if (labelColorHex && labelColorHex.length > 0) {
-			UIColor *customColor = [DYYYUtils colorWithHexString:labelColorHex];
-			if (customColor) {
-				labelColor = customColor;
-			}
-		}
 
 		CGFloat labelYPosition = sliderOriginalFrameInParent.origin.y + verticalOffset;
 		CGFloat labelHeight = 15.0;
@@ -1084,7 +1077,6 @@ static CGFloat rightLabelRightMargin = -1;
 		if (!showRemainingTime && !showCompleteTime) {
 			UILabel *leftLabel = [[UILabel alloc] init];
 			leftLabel.backgroundColor = [UIColor clearColor];
-			leftLabel.textColor = labelColor;
 			leftLabel.font = labelFont;
 			leftLabel.tag = 10001;
 			if (showLeftRemainingTime)
@@ -1102,12 +1094,13 @@ static CGFloat rightLabelRightMargin = -1;
 
 			leftLabel.frame = CGRectMake(leftLabelLeftMargin, labelYPosition, leftLabel.frame.size.width, labelHeight);
 			[parentView addSubview:leftLabel];
+
+			[DYYYUtils applyColorSettingsToLabel:leftLabel colorHexString:labelColorHex];
 		}
 
 		if (!showLeftRemainingTime && !showLeftCompleteTime) {
 			UILabel *rightLabel = [[UILabel alloc] init];
 			rightLabel.backgroundColor = [UIColor clearColor];
-			rightLabel.textColor = labelColor;
 			rightLabel.font = labelFont;
 			rightLabel.tag = 10002;
 			if (showRemainingTime)
@@ -1125,6 +1118,8 @@ static CGFloat rightLabelRightMargin = -1;
 
 			rightLabel.frame = CGRectMake(rightLabelRightMargin, labelYPosition, rightLabel.frame.size.width, labelHeight);
 			[parentView addSubview:rightLabel];
+
+			[DYYYUtils applyColorSettingsToLabel:rightLabel colorHexString:labelColorHex];
 		}
 
 		[self setNeedsLayout];
@@ -1168,13 +1163,6 @@ static CGFloat rightLabelRightMargin = -1;
 		UILabel *rightLabel = [parentView viewWithTag:10002];
 
 		NSString *labelColorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYProgressLabelColor"];
-		UIColor *labelColor = [UIColor whiteColor];
-		if (labelColorHex && labelColorHex.length > 0) {
-			UIColor *customColor = [DYYYUtils colorWithHexString:labelColorHex];
-			if (customColor) {
-				labelColor = customColor;
-			}
-		}
 
 		NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
 		BOOL showRemainingTime = [scheduleStyle isEqualToString:@"进度条右侧剩余"];
@@ -1203,7 +1191,7 @@ static CGFloat rightLabelRightMargin = -1;
 				leftFrame.size.height = 15.0;
 				leftLabel.frame = leftFrame;
 			}
-			leftLabel.textColor = labelColor;
+			[DYYYUtils applyColorSettingsToLabel:leftLabel colorHexString:labelColorHex];
 		}
 
 		// 更新右标签
@@ -1227,7 +1215,7 @@ static CGFloat rightLabelRightMargin = -1;
 				rightFrame.size.height = 15.0;
 				rightLabel.frame = rightFrame;
 			}
-			rightLabel.textColor = labelColor;
+			[DYYYUtils applyColorSettingsToLabel:leftLabel colorHexString:labelColorHex];
 		}
 	}
 }
@@ -1308,6 +1296,10 @@ static CGFloat rightLabelRightMargin = -1;
 
 - (id)timestampLabel {
     UILabel *label = %orig;
+    NSString *labelColorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYLabelColor"];
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnabsuijiyanse"]) {
+		labelColorHex = @"random_rainbow";
+	}
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableArea"]) {
         NSString *originalText = label.text ?: @"";
         NSString *cityCode = self.model.cityCode;
@@ -1387,7 +1379,7 @@ static CGFloat rightLabelRightMargin = -1;
                           }
                       }
                       
-                      [DYYYUtils applyColorSettingsToLabel:label];
+                      [DYYYUtils applyColorSettingsToLabel:label colorHexString:labelColorHex];;
                     });
                 } else {
                     [CityManager
@@ -1446,7 +1438,7 @@ static CGFloat rightLabelRightMargin = -1;
                                          }
                                      }
                                      
-                                     [DYYYUtils applyColorSettingsToLabel:label];
+                                     [DYYYUtils applyColorSettingsToLabel:label colorHexString:labelColorHex];;
                                    });
                                }
                              }];
@@ -1490,7 +1482,7 @@ static CGFloat rightLabelRightMargin = -1;
         label.font = originalFont;
     }
     
-    [DYYYUtils applyColorSettingsToLabel:label];
+    [DYYYUtils applyColorSettingsToLabel:label colorHexString:labelColorHex];;
     
     return label;
 }

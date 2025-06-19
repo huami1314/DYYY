@@ -24,9 +24,11 @@ NS_ASSUME_NONNULL_BEGIN
 + (UIViewController *)getActiveTopController;
 
 /**
- * 应用颜色到 label
+ * 将指定的颜色字符串应用到UILabel上
+ * @param label 要应用颜色的UILabel
+ * @param colorHexString 颜色的十六进制字符串，用法见 colorSchemeBlockWithHexString
  */
-+ (void)applyColorSettingsToLabel:(UILabel *)label;
++ (void)applyColorSettingsToLabel:(UILabel *)label colorHexString:(NSString *)colorHexString;
 
 /**
  * 根据颜色字符串配置，返回一个用于计算文本颜色方案的Block。
