@@ -533,13 +533,14 @@ void updateSpeedButtonVisibility() {
 		[keyWindow addSubview:speedButton];
 		[speedButton loadSavedPosition];
 	}
-    
+    isCommentViewVisible = self.isCommentVCShowing;
     updateSpeedButtonVisibility();
 }
 
-- (void)viewWillDisappear:(BOOL)animated {
+- (void)viewDidDisappear:(BOOL)animated {
 	%orig;
 	isInteractionViewVisible = NO;
+	isCommentViewVisible = self.isCommentVCShowing;
     updateSpeedButtonVisibility();
 }
 
