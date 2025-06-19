@@ -24,6 +24,11 @@ NS_ASSUME_NONNULL_BEGIN
 + (UIViewController *)getActiveTopController;
 
 /**
+ * 应用颜色到 label
+ */
++ (void)applyColorSettingsToLabel:(UILabel *)label;
+
+/**
  * 根据颜色字符串配置，返回一个用于计算文本颜色方案的Block。
  * 支持的颜色配置字符串:
  * - "random_rainbow" 或 "#random_rainbow": 返回一个随机三色渐变方案（每次调用colorSchemeBlockWithHexString时随机）。

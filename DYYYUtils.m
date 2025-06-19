@@ -68,6 +68,54 @@ UIViewController *topView(void) {
   return topController;
 }
 
++ (void)applyColorSettingsToLabel:(UILabel *)label {
+    NSString *labelColorConfig = nil;
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnabsuijiyanse"]) {
+        labelColorConfig = @"random_rainbow";
+    } else {
+        labelColorConfig = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYLabelColor"];
+    }
+
+    if (labelColorConfig.length > 0 && label.text.length > 0) {
+        BOOL isGradientOrRainbow = [labelColorConfig isEqualToString:@"random_rainbow"] || [labelColorConfig containsString:@","] || [labelColorConfig containsString:@"rainbow"];
+
+        UIColor * (^colorScheme)(CGFloat) = [DYYYUtils colorSchemeBlockWithHexString:labelColorConfig];
+
+        NSMutableAttributedString *attributedText = [[NSMutableAttributedString alloc] initWithString:label.text];
+
+        CFIndex length = [attributedText length];
+        if (length > 0) {
+            for (CFIndex i = 0; i < length; i++) {
+                CGFloat progress = (length > 1) ? (CGFloat)i / (length - 1) : 0.0;
+
+                UIColor *currentColor = colorScheme(progress);
+
+                NSMutableDictionary *attributes = [NSMutableDictionary dictionary];
+                if (currentColor) {
+                    attributes[NSForegroundColorAttributeName] = currentColor;
+                } else {
+                    attributes[NSForegroundColorAttributeName] = [UIColor blackColor];
+                }
+
+                [attributedText addAttributes:attributes range:NSMakeRange(i, 1)];
+            }
+            label.attributedText = attributedText;
+        } else {
+            label.attributedText = nil;
+        }
+    } else {
+        NSMutableAttributedString *attributedText;
+        if ([label.attributedText isKindOfClass:[NSAttributedString class]]) {
+            attributedText = [[NSMutableAttributedString alloc] initWithAttributedString:label.attributedText];
+            [attributedText removeAttribute:NSForegroundColorAttributeName range:NSMakeRange(0, attributedText.length)];
+        } else {
+            attributedText = [[NSMutableAttributedString alloc] initWithString:label.text ?: @""];
+        }
+
+        label.attributedText = attributedText;
+    }
+}
+
 // 私有辅助方法：只解析单个十六进制颜色字符串，不处理渐变或彩虹
 + (UIColor *)_colorFromHexString:(NSString *)hexString {
     NSString *colorString =
