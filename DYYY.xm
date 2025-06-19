@@ -1540,28 +1540,100 @@ static CGFloat rightLabelRightMargin = -1;
 // 对新版文案的偏移（33.0以上）
 %hook AWEPlayInteractionDescriptionLabel
 
+static char kLongPressGestureKey;
+static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEnabled";
+
+- (void)didMoveToWindow {
+    %orig;
+    
+    BOOL longPressCopyEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:kDYYYLongPressCopyEnabledKey];
+	
+    if (![[NSUserDefaults standardUserDefaults] objectForKey:kDYYYLongPressCopyEnabledKey]) {
+        longPressCopyEnabled = NO;
+        [[NSUserDefaults standardUserDefaults] setBool:NO forKey:kDYYYLongPressCopyEnabledKey];
+        [[NSUserDefaults standardUserDefaults] synchronize];
+    }
+    
+    UIGestureRecognizer *existingGesture = objc_getAssociatedObject(self, &kLongPressGestureKey);
+    if (existingGesture && !longPressCopyEnabled) {
+        [self removeGestureRecognizer:existingGesture];
+        objc_setAssociatedObject(self, &kLongPressGestureKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        return;
+    }
+    
+    if (longPressCopyEnabled && !objc_getAssociatedObject(self, &kLongPressGestureKey)) {
+        UILongPressGestureRecognizer *highPriorityLongPress = [[UILongPressGestureRecognizer alloc] 
+            initWithTarget:self action:@selector(handleHighPriorityLongPress:)];
+        highPriorityLongPress.minimumPressDuration = 0.3;
+        
+        [self addGestureRecognizer:highPriorityLongPress];
+        
+        UIView *currentView = self;
+        while (currentView.superview) {
+            currentView = currentView.superview;
+            
+            for (UIGestureRecognizer *recognizer in currentView.gestureRecognizers) {
+                if ([recognizer isKindOfClass:[UILongPressGestureRecognizer class]] ||
+                    [recognizer isKindOfClass:[UIPinchGestureRecognizer class]]) {
+                    [recognizer requireGestureRecognizerToFail:highPriorityLongPress];
+                }
+            }
+        }
+        
+        objc_setAssociatedObject(self, &kLongPressGestureKey, highPriorityLongPress, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    }
+}
+
+%new
+- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
+    if ([gestureRecognizer.view isEqual:self] && [gestureRecognizer isKindOfClass:[UILongPressGestureRecognizer class]]) {
+        return NO;
+    }
+    return YES;
+}
+
+%new
+- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldBeRequiredToFailByGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
+    if ([gestureRecognizer.view isEqual:self] && [gestureRecognizer isKindOfClass:[UILongPressGestureRecognizer class]]) {
+        return YES;
+    }
+    return NO;
+}
+
+%new
+- (void)handleHighPriorityLongPress:(UILongPressGestureRecognizer *)gestureRecognizer {
+    if (gestureRecognizer.state == UIGestureRecognizerStateBegan) {
+        
+        NSString *description = self.text;
+        
+        if (description.length > 0) {
+            [[UIPasteboard generalPasteboard] setString:description];
+            [DYYYToast showSuccessToastWithMessage:@"视频文案已复制"];
+        }
+    }
+}
+
 - (void)layoutSubviews {
-	%orig;
+    %orig;
+    self.transform = CGAffineTransformIdentity;
 
-	self.transform = CGAffineTransformIdentity;
+    NSString *descriptionOffsetValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDescriptionVerticalOffset"];
+    CGFloat verticalOffset = 0;
+    if (descriptionOffsetValue.length > 0) {
+        verticalOffset = [descriptionOffsetValue floatValue];
+    }
 
-	NSString *descriptionOffsetValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDescriptionVerticalOffset"];
-	CGFloat verticalOffset = 0;
-	if (descriptionOffsetValue.length > 0) {
-		verticalOffset = [descriptionOffsetValue floatValue];
-	}
+    UIView *parentView = self.superview;
+    UIView *grandParentView = nil;
 
-	UIView *parentView = self.superview;
-	UIView *grandParentView = nil;
+    if (parentView) {
+        grandParentView = parentView.superview;
+    }
 
-	if (parentView) {
-		grandParentView = parentView.superview;
-	}
-
-	if (grandParentView && verticalOffset != 0) {
-		CGAffineTransform translationTransform = CGAffineTransformMakeTranslation(0, verticalOffset);
-		grandParentView.transform = translationTransform;
-	}
+    if (grandParentView && verticalOffset != 0) {
+        CGAffineTransform translationTransform = CGAffineTransformMakeTranslation(0, verticalOffset);
+        grandParentView.transform = translationTransform;
+    }
 }
 
 %end

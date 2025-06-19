@@ -91,24 +91,7 @@ NSArray *findViewControllersInHierarchy(UIViewController *rootViewController) {
 	return viewControllers;
 }
 
-void updateSpeedButtonVisibility() {
-	if (!isFloatSpeedButtonEnabled)
-		return;
-
-	if (!isInteractionViewVisible) {
-		speedButton.hidden = YES;
-		return;
-	}
-
-	// 在交互界面时，根据评论界面状态决定是否显示
-	BOOL shouldHide = isCommentViewVisible || isForceHidden;
-	speedButton.hidden = shouldHide;
-}
-
-void showSpeedButton(void) {
-	isForceHidden = NO;
-	speedButton.hidden = NO;
-}
+void showSpeedButton(void) { isForceHidden = NO; }
 
 void hideSpeedButton(void) {
 	isForceHidden = YES;
@@ -117,6 +100,24 @@ void hideSpeedButton(void) {
 		  speedButton.hidden = YES;
 		});
 	}
+}
+
+void updateSpeedButtonVisibility() {
+	if (!speedButton || !isFloatSpeedButtonEnabled)
+		return;
+
+	dispatch_async(dispatch_get_main_queue(), ^{
+	  if (!isInteractionViewVisible) {
+		  speedButton.hidden = YES;
+		  return;
+	  }
+
+	  // 在交互界面时，根据评论界面状态决定是否显示
+	  BOOL shouldHide = isCommentViewVisible || isForceHidden;
+	  if (speedButton.hidden != shouldHide) {
+		  speedButton.hidden = shouldHide;
+	  }
+	});
 }
 
 @interface UIView (SpeedHelper)
@@ -452,28 +453,29 @@ void hideSpeedButton(void) {
 
 %end
 
-%hook AWEPlayInteractionViewController
+%hook AWECommentContainerViewController
 
-- (void)performCommentAction {
+- (void)viewDidAppear:(BOOL)animated {
 	%orig;
 	isCommentViewVisible = YES;
 	updateSpeedButtonVisibility();
 }
 
-- (void)commentVCDidDismiss {
+- (void)viewDidDisappear:(BOOL)animated {
 	%orig;
 	isCommentViewVisible = NO;
 	updateSpeedButtonVisibility();
 }
 
+%end
+
+%hook AWEPlayInteractionViewController
+
 - (void)viewDidAppear:(BOOL)animated {
 	%orig;
 	isInteractionViewVisible = YES;
-
-	dispatch_async(dispatch_get_main_queue(), ^{
-	  isCommentViewVisible = self.isCommentVCShowing;
-	  updateSpeedButtonVisibility();
-	});
+	isCommentViewVisible = self.isCommentVCShowing;
+	updateSpeedButtonVisibility();
 }
 
 - (void)viewDidLayoutSubviews {

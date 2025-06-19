@@ -472,14 +472,25 @@ UIViewController *topView(void) {
     for (NSString *item in contents) {
         if ([item hasPrefix:@"."]) continue;
         NSString *fullPath = [directoryPath stringByAppendingPathComponent:item];
+        // 跳过符号链接，防止递归死循环
+        NSDictionary *lstatAttrs = [fileManager attributesOfItemAtPath:fullPath error:nil];
+        NSString *fileType = lstatAttrs[NSFileType];
+        if ([fileType isEqualToString:NSFileTypeSymbolicLink]) {
+            continue;
+        }
         BOOL isSubDir = NO;
-        if ([fileManager fileExistsAtPath:fullPath isDirectory:&isSubDir]) {
-            if (isSubDir) {
-                totalSize += [self directorySizeAtPath:fullPath];
-            } else {
-                NSDictionary *attrs = [fileManager attributesOfItemAtPath:fullPath error:nil];
-                totalSize += attrs ? [attrs fileSize] : 0;
+        @try {
+            if ([fileManager fileExistsAtPath:fullPath isDirectory:&isSubDir]) {
+                if (isSubDir) {
+                    totalSize += [self directorySizeAtPath:fullPath];
+                } else {
+                    NSDictionary *attrs = [fileManager attributesOfItemAtPath:fullPath error:nil];
+                    totalSize += attrs ? [attrs fileSize] : 0;
+                }
             }
+        } @catch (__unused NSException *exception) {
+            // 忽略异常，防止递归卡死
+            continue;
         }
     }
     return totalSize;

@@ -589,18 +589,34 @@ static void initTargetClassNames(void) {
 }
 %end
 
-%hook AWEPlayInteractionViewController
+%hook AWECommentContainerViewController
 
-- (void)performCommentAction {
+- (void)viewWillAppear:(BOOL)animated {
     %orig;
     isCommentViewVisible = YES;
+    updateClearButtonVisibility();
 }
 
-- (void)commentVCDidDismiss {
+- (void)viewDidAppear:(BOOL)animated {
+    %orig;
+    isCommentViewVisible = YES;
+    updateClearButtonVisibility();
+}
+
+- (void)viewWillDisappear:(BOOL)animated {
+    %orig;
+    updateClearButtonVisibility();
+}
+
+- (void)viewDidDisappear:(BOOL)animated {
     %orig;
     isCommentViewVisible = NO;
+    updateClearButtonVisibility();
 }
 
+%end
+
+%hook AWEPlayInteractionViewController
 - (void)loadView {
     %orig;
     if (hideButton) {

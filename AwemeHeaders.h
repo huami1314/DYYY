@@ -209,6 +209,7 @@ static CGFloat gStartVal = 0.0;
 
 @interface AWEPlayInteractionViewController : UIViewController
 @property(nonatomic, strong) UIView *view;
+@property (nonatomic, strong) AWEAwemeModel *model;
 @property(nonatomic, strong) NSString *referString;
 @property(nonatomic, assign) BOOL isCommentVCShowing;
 - (void)performCommentAction;
