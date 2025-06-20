@@ -68,52 +68,63 @@ UIViewController *topView(void) {
   return topController;
 }
 
-+ (void)applyColorSettingsToLabel:(UILabel *)label {
-    NSString *labelColorConfig = nil;
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnabsuijiyanse"]) {
-        labelColorConfig = @"random_rainbow";
-    } else {
-        labelColorConfig = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYLabelColor"];
-    }
-
-    if (labelColorConfig.length > 0 && label.text.length > 0) {
-        BOOL isGradientOrRainbow = [labelColorConfig isEqualToString:@"random_rainbow"] || [labelColorConfig containsString:@","] || [labelColorConfig containsString:@"rainbow"];
-
-        UIColor * (^colorScheme)(CGFloat) = [DYYYUtils colorSchemeBlockWithHexString:labelColorConfig];
-
-        NSMutableAttributedString *attributedText = [[NSMutableAttributedString alloc] initWithString:label.text];
-
-        CFIndex length = [attributedText length];
-        if (length > 0) {
-            for (CFIndex i = 0; i < length; i++) {
-                CGFloat progress = (length > 1) ? (CGFloat)i / (length - 1) : 0.0;
-
-                UIColor *currentColor = colorScheme(progress);
-
-                NSMutableDictionary *attributes = [NSMutableDictionary dictionary];
-                if (currentColor) {
-                    attributes[NSForegroundColorAttributeName] = currentColor;
-                } else {
-                    attributes[NSForegroundColorAttributeName] = [UIColor blackColor];
-                }
-
-                [attributedText addAttributes:attributes range:NSMakeRange(i, 1)];
-            }
-            label.attributedText = attributedText;
-        } else {
-            label.attributedText = nil;
-        }
-    } else {
++ (void)applyColorSettingsToLabel:(UILabel *)label colorHexString:(NSString *)colorHexString {
+    if (!label || !label.text || label.text.length == 0) {
         NSMutableAttributedString *attributedText;
         if ([label.attributedText isKindOfClass:[NSAttributedString class]]) {
             attributedText = [[NSMutableAttributedString alloc] initWithAttributedString:label.attributedText];
             [attributedText removeAttribute:NSForegroundColorAttributeName range:NSMakeRange(0, attributedText.length)];
+            [attributedText removeAttribute:NSStrokeColorAttributeName range:NSMakeRange(0, attributedText.length)];
+            [attributedText removeAttribute:NSStrokeWidthAttributeName range:NSMakeRange(0, attributedText.length)];
         } else {
             attributedText = [[NSMutableAttributedString alloc] initWithString:label.text ?: @""];
         }
-
         label.attributedText = attributedText;
+        return;
     }
+
+    if (!colorHexString || colorHexString.length == 0) {
+        NSMutableAttributedString *attributedText;
+        if ([label.attributedText isKindOfClass:[NSAttributedString class]]) {
+            attributedText = [[NSMutableAttributedString alloc] initWithAttributedString:label.attributedText];
+            [attributedText removeAttribute:NSStrokeColorAttributeName range:NSMakeRange(0, attributedText.length)];
+            [attributedText removeAttribute:NSStrokeWidthAttributeName range:NSMakeRange(0, attributedText.length)];
+        } else {
+            attributedText = [[NSMutableAttributedString alloc] initWithString:label.text ?: @""];
+        }
+        [attributedText addAttribute:NSForegroundColorAttributeName value:[UIColor whiteColor] range:NSMakeRange(0, attributedText.length)];
+        label.attributedText = attributedText;
+        return;
+    }
+
+    NSString *trimmedHexString = [colorHexString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    NSString *lowercaseHexString = [trimmedHexString lowercaseString];
+
+    UIColor * (^colorScheme)(CGFloat) = [self colorSchemeBlockWithHexString:lowercaseHexString];
+
+    NSMutableAttributedString *attributedText = [[NSMutableAttributedString alloc] initWithString:label.text];
+
+    CFIndex length = [attributedText length];
+    for (CFIndex i = 0; i < length; i++) {
+        CGFloat progress = (length > 1) ? (CGFloat)i / (length - 1) : 0.0;
+
+        UIColor *currentColor = colorScheme(progress);
+
+        NSMutableDictionary *attributes = [NSMutableDictionary dictionary];
+        if (currentColor) {
+            attributes[NSForegroundColorAttributeName] = currentColor;
+        } else {
+            attributes[NSForegroundColorAttributeName] = [UIColor whiteColor]; // 默认白色
+        }
+
+        if ([lowercaseHexString isEqualToString:@"random_rainbow"] || [lowercaseHexString isEqualToString:@"rainbow"]) {
+            attributes[NSStrokeColorAttributeName] = [UIColor whiteColor];  // 设置描边为白色
+            attributes[NSStrokeWidthAttributeName] = @(-1.0);               // 设置描边宽度，-1.0表示描边和填充
+        }
+
+        [attributedText addAttributes:attributes range:NSMakeRange(i, 1)];
+    }
+    label.attributedText = attributedText;
 }
 
 // 私有辅助方法：只解析单个十六进制颜色字符串，不处理渐变或彩虹
