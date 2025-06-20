@@ -5710,13 +5710,13 @@ static CGFloat currentScale = 1.0;
 	%orig(hidden);
 
 	Class generalButtonClass = %c(AWENormalModeTabBarGeneralButton);
+	BOOL disableHomeRefresh = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHomeRefresh"];
+
 	for (UIView *subview in self.subviews) {
 		if ([subview isKindOfClass:generalButtonClass]) {
 			AWENormalModeTabBarGeneralButton *button = (AWENormalModeTabBarGeneralButton *)subview;
-			if ([button.accessibilityLabel isEqualToString:@"首页"] && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHomeRefresh"] && button.status == 2) {
-				button.userInteractionEnabled = NO;
-			} else if ([button.accessibilityLabel isEqualToString:@"首页"] && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHomeRefresh"] && button.status == 1) {
-				button.userInteractionEnabled = YES;
+			if ([button.accessibilityLabel isEqualToString:@"首页"] && disableHomeRefresh) {
+				button.userInteractionEnabled = (button.status != 2);
 			}
 		}
 	}
