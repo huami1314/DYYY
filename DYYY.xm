@@ -4449,6 +4449,25 @@ static AWEIMReusableCommonCell *currentCell;
 	%orig;
 }
 
+// 固定设置为 1，启用自定义背景色
+- (NSUInteger)awe_playerBackgroundViewShowType {
+    if ([[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYVideoBGColor"]) {
+        return 1;
+    }
+    return %orig;
+}
+
+- (UIColor *)awe_smartBackgroundColor {
+    NSString *colorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYVideoBGColor"];
+    if (colorHex && colorHex.length > 0) {
+        UIColor *customColor = [DYYYUtils colorWithHexString:colorHex];
+        if (customColor) {
+            return customColor;
+        }
+    }
+    return %orig;
+}
+
 %end
 
 // 拦截开屏广告

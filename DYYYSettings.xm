@@ -487,6 +487,11 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	  // 【视频播放设置】分类
 	  NSMutableArray<AWESettingItemModel *> *videoItems = [NSMutableArray array];
 	  NSArray *videoSettings = @[
+		  @{@"identifier" : @"DYYYVideoBGColor",
+		    @"title" : @"视频背景颜色",
+		    @"detail" : @"",
+		    @"cellType" : @26,
+		    @"imageName" : @"ic_tv_outlined_20"},
 		  @{@"identifier" : @"DYYYisShowScheduleDisplay",
 		    @"title" : @"显示进度时长",
 		    @"detail" : @"",
