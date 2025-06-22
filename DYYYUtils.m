@@ -470,6 +470,20 @@ UIViewController *topView(void) {
   return [themeManagerClass isLightTheme] ? NO : YES;
 }
 
++ (NSString *)formattedSize:(unsigned long long)size {
+    NSString *dataSizeString;
+    if (size < 1024) {
+        dataSizeString = [NSString stringWithFormat:@"%llu B", size];
+    } else if (size < 1024 * 1024) {
+        dataSizeString = [NSString stringWithFormat:@"%.2f KB", (double)size / 1024.0];
+    } else if (size < 1024 * 1024 * 1024) {
+        dataSizeString = [NSString stringWithFormat:@"%.2f MB", (double)size / (1024.0 * 1024.0)];
+    } else {
+        dataSizeString = [NSString stringWithFormat:@"%.2f GB", (double)size / (1024.0 * 1024.0 * 1024.0)];
+    }
+    return dataSizeString;
+}
+
 + (unsigned long long)directorySizeAtPath:(NSString *)directoryPath {
     NSFileManager *fileManager = [NSFileManager defaultManager];
     unsigned long long totalSize = 0;

@@ -60,6 +60,13 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (BOOL)isDarkMode;
 
+/**格式化大小
+ * 将大小转换为易读的格式
+ * @param size 文件大小（字节数）
+ * @return 格式化后的字符串，例如 "1.5 MB"
+ */
++ (NSString *)formattedSize:(unsigned long long)size;
+
 /**
  * 递归统计目录大小
  */

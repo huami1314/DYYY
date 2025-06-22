@@ -825,7 +825,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	  ];
 
 	  for (NSDictionary *dict in securitySettings) {
-		  AWESettingItemModel *item = [DYYYSettingsHelper createSettingItem:dict cellTapHandlers:cellTapHandlers];
+		  AWESettingItemModel *item = [DYYYSettingsHelper createSettingItem:dict];
 		  [securityItems addObject:item];
 	  }
 
@@ -2083,15 +2083,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    NSDictionary *attributes = [fileManager attributesOfItemAtPath:jsonFilePath error:&attributesError];
 		    if (!attributesError && attributes) {
 			    jsonFileSize = [attributes fileSize];
-			    NSString *dataSizeString;
-			    if (jsonFileSize < 1024) {
-				    dataSizeString = [NSString stringWithFormat:@"%llu B", jsonFileSize];
-			    } else if (jsonFileSize < 1024 * 1024) {
-				    dataSizeString = [NSString stringWithFormat:@"%.2f KB", (double)jsonFileSize / 1024.0];
-			    } else {
-				    dataSizeString = [NSString stringWithFormat:@"%.2f MB", (double)jsonFileSize / (1024.0 * 1024.0)];
-			    }
-			    saveABTestConfigFileItemRef.detail = [NSString stringWithFormat:@"%@ %@", loadingStatus, dataSizeString];
+			    saveABTestConfigFileItemRef.detail = [NSString stringWithFormat:@"%@ %@", loadingStatus, [DYYYUtils formattedSize:jsonFileSize]];
 			    saveABTestConfigFileItemRef.isEnable = YES;
 		    } else {
 			    saveABTestConfigFileItemRef.detail = [NSString stringWithFormat:@"%@ (读取失败: %@)", loadingStatus, attributesError.localizedDescription ?: @"未知错误"];
@@ -2169,16 +2161,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 				  NSError *serializationError = nil;
 				  NSData *jsonData = [NSJSONSerialization dataWithJSONObject:currentData options:NSJSONWritingPrettyPrinted error:&serializationError];
 				  if (!serializationError && jsonData) {
-					  unsigned long long dataSize = jsonData.length;
-					  NSString *dataSizeString;
-					  if (dataSize < 1024) {
-						  dataSizeString = [NSString stringWithFormat:@"%llu B", dataSize];
-					  } else if (dataSize < 1024 * 1024) {
-						  dataSizeString = [NSString stringWithFormat:@"%.2f KB", (double)dataSize / 1024.0];
-					  } else {
-						  dataSizeString = [NSString stringWithFormat:@"%.2f MB", (double)dataSize / (1024.0 * 1024.0)];
-					  }
-					  item.detail = dataSizeString;
+					  item.detail = [DYYYUtils formattedSize:jsonData.length];
 				  } else {
 					  item.detail = [NSString stringWithFormat:@"(序列化失败: %@)", serializationError.localizedDescription ?: @"未知错误"];
 					  item.isEnable = NO;
@@ -3079,49 +3062,72 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 					  }];
 	      }];
 	};
-
 	[cleanupItems addObject:cleanSettingsItem];
+
+	NSArray<NSString *> *customDirs = @[ @"Application Support/gurd_cache", @"Caches", @"BDByteCast", @"kitelog" ];
+	NSString *libraryDir = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES).firstObject;
+	NSMutableArray<NSString *> *allPaths = [NSMutableArray arrayWithObject:NSTemporaryDirectory()];
+	for (NSString *sub in customDirs) {
+	  NSString *fullPath = [libraryDir stringByAppendingPathComponent:sub];
+	  if ([[NSFileManager defaultManager] fileExistsAtPath:fullPath]) {
+		  [allPaths addObject:fullPath];
+	  }
+	}
+
 	AWESettingItemModel *cleanCacheItem = [[%c(AWESettingItemModel) alloc] init];
+	__weak AWESettingItemModel *weakCleanCacheItem = cleanCacheItem;
 	cleanCacheItem.identifier = @"DYYYCleanCache";
 	cleanCacheItem.title = @"清理缓存";
 	cleanCacheItem.type = 0;
 	cleanCacheItem.svgIconImageName = @"ic_broom_outlined";
 	cleanCacheItem.cellType = 26;
 	cleanCacheItem.colorStyle = 0;
-	cleanCacheItem.isEnable = YES;
-	cleanCacheItem.cellTappedBlock = ^{
-	  NSString *tempDir = NSTemporaryDirectory();
-	  NSArray<NSString *> *customDirs = @[ @"Caches", @"BDByteCast", @"kitelog" ];
-	  NSString *libraryDir = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES).firstObject;
-	  NSMutableArray<NSString *> *allPaths = [NSMutableArray arrayWithObject:tempDir];
-	  for (NSString *sub in customDirs) {
-		  NSString *fullPath = [libraryDir stringByAppendingPathComponent:sub];
-		  if ([[NSFileManager defaultManager] fileExistsAtPath:fullPath]) {
-			  [allPaths addObject:fullPath];
-		  }
-	  }
-
-	  unsigned long long beforeSize = 0;
+	cleanCacheItem.isEnable = NO;
+    cleanCacheItem.detail = @"计算中...";
+	__block unsigned long long initialSize = 0;
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
 	  for (NSString *basePath in allPaths) {
-		  beforeSize += [DYYYUtils directorySizeAtPath:basePath];
+	    initialSize += [DYYYUtils directorySizeAtPath:basePath];
 	  }
-	  float beforeMB = beforeSize / 1024.0 / 1024.0;
-	  cleanCacheItem.detail = [NSString stringWithFormat:@"%.2f MB", beforeMB];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            __strong AWESettingItemModel *strongCleanCacheItem = weakCleanCacheItem;
+            if (strongCleanCacheItem) {
+                strongCleanCacheItem.detail = [DYYYUtils formattedSize:initialSize];
+                strongCleanCacheItem.isEnable = YES;
+                [DYYYSettingsHelper refreshTableView];
+            }
+        });
+    });
+	cleanCacheItem.cellTappedBlock = ^{
+	  __strong AWESettingItemModel *strongCleanCacheItem = weakCleanCacheItem;
+	  if (!strongCleanCacheItem || !strongCleanCacheItem.isEnable) {
+		  return;
+	  }
+	  // Disable the button to prevent multiple triggers
+	  strongCleanCacheItem.isEnable = NO;
 	  [DYYYSettingsHelper refreshTableView];
 
-	  for (NSString *basePath in allPaths) {
-		  [DYYYUtils removeAllContentsAtPath:basePath];
-	  }
+	  dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+		  for (NSString *basePath in allPaths) {
+			  [DYYYUtils removeAllContentsAtPath:basePath];
+		  }
 
-	  unsigned long long afterSize = 0;
-	  for (NSString *basePath in allPaths) {
-		  afterSize += [DYYYUtils directorySizeAtPath:basePath];
-	  }
-	  float afterMB = afterSize / 1024.0 / 1024.0;
-	  float clearedMB = beforeMB - afterMB;
-	  if (clearedMB < 0)
-		  clearedMB = 0;
-	  [DYYYUtils showToast:[NSString stringWithFormat:@"已清理 %.2f MB 缓存", clearedMB]];
+		  unsigned long long afterSize = 0;
+		  for (NSString *basePath in allPaths) {
+			  afterSize += [DYYYUtils directorySizeAtPath:basePath];
+		  }
+
+		  unsigned long long clearedSize = (initialSize > afterSize) ? (initialSize - afterSize) : 0;
+
+		  dispatch_async(dispatch_get_main_queue(), ^{
+			  [DYYYUtils showToast:[NSString stringWithFormat:@"已清理 %@ 缓存", [DYYYUtils formattedSize:clearedSize]]];
+
+			  strongCleanCacheItem.detail = [DYYYUtils formattedSize:afterSize];
+			  // Re-enable the button after cleaning is done
+			  strongCleanCacheItem.isEnable = YES;
+			  [DYYYSettingsHelper refreshTableView];
+		  });
+	  });
 	};
 	[cleanupItems addObject:cleanCacheItem];
 
