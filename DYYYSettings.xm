@@ -3062,8 +3062,22 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 					  }];
 	      }];
 	};
-
 	[cleanupItems addObject:cleanSettingsItem];
+
+	NSArray<NSString *> *customDirs = @[ @"Application Support/gurd_cache", @"Caches", @"BDByteCast", @"kitelog" ];
+	NSString *libraryDir = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES).firstObject;
+	NSMutableArray<NSString *> *allPaths = [NSMutableArray arrayWithObject:NSTemporaryDirectory()];
+	for (NSString *sub in customDirs) {
+	  NSString *fullPath = [libraryDir stringByAppendingPathComponent:sub];
+	  if ([[NSFileManager defaultManager] fileExistsAtPath:fullPath]) {
+		  [allPaths addObject:fullPath];
+	  }
+	}
+	unsigned long long initialSize = 0;
+	for (NSString *basePath in allPaths) {
+	  initialSize += [DYYYUtils directorySizeAtPath:basePath];
+	}
+
 	AWESettingItemModel *cleanCacheItem = [[%c(AWESettingItemModel) alloc] init];
 	cleanCacheItem.identifier = @"DYYYCleanCache";
 	cleanCacheItem.title = @"清理缓存";
@@ -3072,24 +3086,8 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	cleanCacheItem.cellType = 26;
 	cleanCacheItem.colorStyle = 0;
 	cleanCacheItem.isEnable = YES;
+	cleanCacheItem.detail = [DYYYUtils formattedSize:initialSize];
 	cleanCacheItem.cellTappedBlock = ^{
-	  NSString *tempDir = NSTemporaryDirectory();
-	  NSArray<NSString *> *customDirs = @[ @"Caches", @"BDByteCast", @"kitelog" ];
-	  NSString *libraryDir = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES).firstObject;
-	  NSMutableArray<NSString *> *allPaths = [NSMutableArray arrayWithObject:tempDir];
-	  for (NSString *sub in customDirs) {
-		  NSString *fullPath = [libraryDir stringByAppendingPathComponent:sub];
-		  if ([[NSFileManager defaultManager] fileExistsAtPath:fullPath]) {
-			  [allPaths addObject:fullPath];
-		  }
-	  }
-
-	  unsigned long long beforeSize = 0;
-	  for (NSString *basePath in allPaths) {
-		  beforeSize += [DYYYUtils directorySizeAtPath:basePath];
-	  }
-	  cleanCacheItem.detail = [DYYYUtils formattedSize:beforeSize];
-	  [DYYYSettingsHelper refreshTableView];
 
 	  for (NSString *basePath in allPaths) {
 		  [DYYYUtils removeAllContentsAtPath:basePath];
@@ -3099,8 +3097,12 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	  for (NSString *basePath in allPaths) {
 		  afterSize += [DYYYUtils directorySizeAtPath:basePath];
 	  }
-	  unsigned long long clearedSize = (beforeSize > afterSize) ? (beforeSize - afterSize) : 0;
+
+	  unsigned long long clearedSize = (initialSize > afterSize) ? (initialSize - afterSize) : 0;
 	  [DYYYUtils showToast:[NSString stringWithFormat:@"已清理 %@ 缓存", [DYYYUtils formattedSize:clearedSize]]];
+
+	  cleanCacheItem.detail = [DYYYUtils formattedSize:afterSize];
+	  [DYYYSettingsHelper refreshTableView];
 	};
 	[cleanupItems addObject:cleanCacheItem];
 
