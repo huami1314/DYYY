@@ -825,7 +825,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	  ];
 
 	  for (NSDictionary *dict in securitySettings) {
-		  AWESettingItemModel *item = [DYYYSettingsHelper createSettingItem:dict cellTapHandlers:cellTapHandlers];
+		  AWESettingItemModel *item = [DYYYSettingsHelper createSettingItem:dict];
 		  [securityItems addObject:item];
 	  }
 
@@ -2083,15 +2083,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		    NSDictionary *attributes = [fileManager attributesOfItemAtPath:jsonFilePath error:&attributesError];
 		    if (!attributesError && attributes) {
 			    jsonFileSize = [attributes fileSize];
-			    NSString *dataSizeString;
-			    if (jsonFileSize < 1024) {
-				    dataSizeString = [NSString stringWithFormat:@"%llu B", jsonFileSize];
-			    } else if (jsonFileSize < 1024 * 1024) {
-				    dataSizeString = [NSString stringWithFormat:@"%.2f KB", (double)jsonFileSize / 1024.0];
-			    } else {
-				    dataSizeString = [NSString stringWithFormat:@"%.2f MB", (double)jsonFileSize / (1024.0 * 1024.0)];
-			    }
-			    saveABTestConfigFileItemRef.detail = [NSString stringWithFormat:@"%@ %@", loadingStatus, dataSizeString];
+			    saveABTestConfigFileItemRef.detail = [NSString stringWithFormat:@"%@ %@", loadingStatus, [DYYYUtils formattedSize:jsonFileSize]];
 			    saveABTestConfigFileItemRef.isEnable = YES;
 		    } else {
 			    saveABTestConfigFileItemRef.detail = [NSString stringWithFormat:@"%@ (读取失败: %@)", loadingStatus, attributesError.localizedDescription ?: @"未知错误"];
@@ -2169,16 +2161,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 				  NSError *serializationError = nil;
 				  NSData *jsonData = [NSJSONSerialization dataWithJSONObject:currentData options:NSJSONWritingPrettyPrinted error:&serializationError];
 				  if (!serializationError && jsonData) {
-					  unsigned long long dataSize = jsonData.length;
-					  NSString *dataSizeString;
-					  if (dataSize < 1024) {
-						  dataSizeString = [NSString stringWithFormat:@"%llu B", dataSize];
-					  } else if (dataSize < 1024 * 1024) {
-						  dataSizeString = [NSString stringWithFormat:@"%.2f KB", (double)dataSize / 1024.0];
-					  } else {
-						  dataSizeString = [NSString stringWithFormat:@"%.2f MB", (double)dataSize / (1024.0 * 1024.0)];
-					  }
-					  item.detail = dataSizeString;
+					  item.detail = [DYYYUtils formattedSize:jsonData.length];
 				  } else {
 					  item.detail = [NSString stringWithFormat:@"(序列化失败: %@)", serializationError.localizedDescription ?: @"未知错误"];
 					  item.isEnable = NO;
@@ -3105,8 +3088,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	  for (NSString *basePath in allPaths) {
 		  beforeSize += [DYYYUtils directorySizeAtPath:basePath];
 	  }
-	  float beforeMB = beforeSize / 1024.0 / 1024.0;
-	  cleanCacheItem.detail = [NSString stringWithFormat:@"%.2f MB", beforeMB];
+	  cleanCacheItem.detail = [DYYYUtils formattedSize:beforeSize];
 	  [DYYYSettingsHelper refreshTableView];
 
 	  for (NSString *basePath in allPaths) {
@@ -3117,11 +3099,8 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	  for (NSString *basePath in allPaths) {
 		  afterSize += [DYYYUtils directorySizeAtPath:basePath];
 	  }
-	  float afterMB = afterSize / 1024.0 / 1024.0;
-	  float clearedMB = beforeMB - afterMB;
-	  if (clearedMB < 0)
-		  clearedMB = 0;
-	  [DYYYUtils showToast:[NSString stringWithFormat:@"已清理 %.2f MB 缓存", clearedMB]];
+	  unsigned long long clearedSize = (beforeSize > afterSize) ? (beforeSize - afterSize) : 0;
+	  [DYYYUtils showToast:[NSString stringWithFormat:@"已清理 %@ 缓存", [DYYYUtils formattedSize:clearedSize]]];
 	};
 	[cleanupItems addObject:cleanCacheItem];
 
