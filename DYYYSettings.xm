@@ -3073,36 +3073,61 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 		  [allPaths addObject:fullPath];
 	  }
 	}
-	unsigned long long initialSize = 0;
-	for (NSString *basePath in allPaths) {
-	  initialSize += [DYYYUtils directorySizeAtPath:basePath];
-	}
 
 	AWESettingItemModel *cleanCacheItem = [[%c(AWESettingItemModel) alloc] init];
+	__weak AWESettingItemModel *weakCleanCacheItem = cleanCacheItem;
 	cleanCacheItem.identifier = @"DYYYCleanCache";
 	cleanCacheItem.title = @"清理缓存";
 	cleanCacheItem.type = 0;
 	cleanCacheItem.svgIconImageName = @"ic_broom_outlined";
 	cleanCacheItem.cellType = 26;
 	cleanCacheItem.colorStyle = 0;
-	cleanCacheItem.isEnable = YES;
-	cleanCacheItem.detail = [DYYYUtils formattedSize:initialSize];
+	cleanCacheItem.isEnable = NO;
+    cleanCacheItem.detail = @"计算中...";
+	__block unsigned long long initialSize = 0;
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+	  for (NSString *basePath in allPaths) {
+	    initialSize += [DYYYUtils directorySizeAtPath:basePath];
+	  }
+        dispatch_async(dispatch_get_main_queue(), ^{
+            __strong AWESettingItemModel *strongCleanCacheItem = weakCleanCacheItem;
+            if (strongCleanCacheItem) {
+                strongCleanCacheItem.detail = [DYYYUtils formattedSize:initialSize];
+                strongCleanCacheItem.isEnable = YES;
+                [DYYYSettingsHelper refreshTableView];
+            }
+        });
+    });
 	cleanCacheItem.cellTappedBlock = ^{
-
-	  for (NSString *basePath in allPaths) {
-		  [DYYYUtils removeAllContentsAtPath:basePath];
+	  __strong AWESettingItemModel *strongCleanCacheItem = weakCleanCacheItem;
+	  if (!strongCleanCacheItem || !strongCleanCacheItem.isEnable) {
+		  return;
 	  }
-
-	  unsigned long long afterSize = 0;
-	  for (NSString *basePath in allPaths) {
-		  afterSize += [DYYYUtils directorySizeAtPath:basePath];
-	  }
-
-	  unsigned long long clearedSize = (initialSize > afterSize) ? (initialSize - afterSize) : 0;
-	  [DYYYUtils showToast:[NSString stringWithFormat:@"已清理 %@ 缓存", [DYYYUtils formattedSize:clearedSize]]];
-
-	  cleanCacheItem.detail = [DYYYUtils formattedSize:afterSize];
+	  // Disable the button to prevent multiple triggers
+	  strongCleanCacheItem.isEnable = NO;
 	  [DYYYSettingsHelper refreshTableView];
+
+	  dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+		  for (NSString *basePath in allPaths) {
+			  [DYYYUtils removeAllContentsAtPath:basePath];
+		  }
+
+		  unsigned long long afterSize = 0;
+		  for (NSString *basePath in allPaths) {
+			  afterSize += [DYYYUtils directorySizeAtPath:basePath];
+		  }
+
+		  unsigned long long clearedSize = (initialSize > afterSize) ? (initialSize - afterSize) : 0;
+
+		  dispatch_async(dispatch_get_main_queue(), ^{
+			  [DYYYUtils showToast:[NSString stringWithFormat:@"已清理 %@ 缓存", [DYYYUtils formattedSize:clearedSize]]];
+
+			  strongCleanCacheItem.detail = [DYYYUtils formattedSize:afterSize];
+			  // Re-enable the button after cleaning is done
+			  strongCleanCacheItem.isEnable = YES;
+			  [DYYYSettingsHelper refreshTableView];
+		  });
+	  });
 	};
 	[cleanupItems addObject:cleanCacheItem];
 
