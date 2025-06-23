@@ -546,4 +546,22 @@ UIViewController *topView(void) {
     }
 }
 
++ (NSString *)cacheDirectory {
+    NSString *tmp = NSTemporaryDirectory();
+    NSString *cacheDir = [tmp stringByAppendingPathComponent:@"DYYY"];
+    NSFileManager *fm = [NSFileManager defaultManager];
+    if (![fm fileExistsAtPath:cacheDir]) {
+        [fm createDirectoryAtPath:cacheDir withIntermediateDirectories:YES attributes:nil error:nil];
+    }
+    return cacheDir;
+}
+
++ (void)clearCacheDirectory {
+    [self removeAllContentsAtPath:[self cacheDirectory]];
+}
+
++ (NSString *)cachePathForFilename:(NSString *)filename {
+    return [[self cacheDirectory] stringByAppendingPathComponent:filename];
+}
+
 @end
