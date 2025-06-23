@@ -1237,3 +1237,6 @@ static CGFloat gStartVal = 0.0;
 @interface AWEProfileMentionLabel : UILabel
 @property(copy, nonatomic) NSString *text;
 @end
+
+@interface MTKView : UIView
+@end
