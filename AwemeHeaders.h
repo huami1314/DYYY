@@ -787,7 +787,6 @@ static CGFloat gStartVal = 0.0;
 - (void)applyCustomProgressStyle;
 @end
 
-// 添加 DUXContentSheet 相关声明
 @protocol IESIMContentSheetVCProtocol
 , AWEMRGlobalAlertTrackProtocol;
 @interface DUXBasicSheet : UIViewController

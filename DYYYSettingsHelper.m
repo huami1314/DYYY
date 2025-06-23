@@ -383,7 +383,6 @@
     NSString *placeholder = dict[@"detail"];
     item.detail = savedDetail ?: @"";
 
-    item.type = 1000;
     item.svgIconImageName = dict[@"imageName"];
     item.cellType = [dict[@"cellType"] integerValue];
     item.colorStyle = 0;
@@ -391,7 +390,7 @@
     item.isSwitchOn = [self getUserDefaults:item.identifier];
 
     [self applyDependencyRulesForItem:item];
-    if ((item.cellType == 26 || item.cellType == 18) && cellTapHandlers != nil) {
+    if ((item.cellType == 18 || item.cellType == 26) && cellTapHandlers != nil) {
         cellTapHandlers[item.identifier] = ^{
           if (!item.isEnable)
               return;
@@ -411,7 +410,7 @@
           } onCancel:nil];
         };
         item.cellTappedBlock = cellTapHandlers[item.identifier];
-    } else if (item.cellType == 6) {
+    } else if (item.cellType == 6 || item.cellType == 37) {
         __weak AWESettingItemModel *weakItem = item;
         item.switchChangedBlock = ^{
           __strong AWESettingItemModel *strongItem = weakItem;
