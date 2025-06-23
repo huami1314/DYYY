@@ -66,7 +66,13 @@ static void showIconOptionsDialog(NSString *title, UIImage *previewImage, NSStri
 @end
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 void *kViewModelKey = &kViewModelKey;
+#ifdef __cplusplus
+}
+#endif
 %hook AWESettingBaseViewController
 - (bool)useCardUIStyle {
 	return YES;
@@ -170,6 +176,9 @@ void *kViewModelKey = &kViewModelKey;
 %end
 
 
+#ifdef __cplusplus
+extern "C"
+#endif
 void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	AWESettingBaseViewController *settingsVC = [[%c(AWESettingBaseViewController) alloc] init];
 	if (!hasAgreed) {
