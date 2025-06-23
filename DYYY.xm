@@ -2016,6 +2016,8 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 	BOOL disablePCDN = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableLivePCDN"];
 	if (!disablePCDN) {
 		%orig;
+	} else {
+		NSLog(@"[DYYY] HTSLiveStreamPcdnManager start blocked");
 	}
 }
 
@@ -2023,7 +2025,23 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 	BOOL disablePCDN = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableLivePCDN"];
 	if (!disablePCDN) {
 		%orig;
+	} else {
+		NSLog(@"[DYYY] HTSLiveStreamPcdnManager configAndStartLiveIO blocked");
 	}
+}
+
+%end
+
+// PCDN启动任务hook
+%hook IESLiveLaunchTaskPcdn
+
+- (void)excute {
+	BOOL disablePCDN = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableLivePCDN"];
+	if (disablePCDN) {
+		NSLog(@"[DYYY] IESLiveLaunchTaskPcdn excute blocked");
+		return;
+	}
+	%orig;
 }
 
 %end
@@ -6270,7 +6288,7 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 - (void)layoutSubviews {
 	%orig;
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePendantGroup"]) {
-		[self removeFromSuperview]; // 移除视图
+		[self removeFromSuperview];
 	}
 }
 %end

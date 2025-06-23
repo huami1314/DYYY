@@ -847,12 +847,6 @@ static CGFloat gStartVal = 0.0;
 - (id)initWithIdentifier:(id)arg1;
 - (void)setIsSelect:(BOOL)arg1;
 - (BOOL)isSelect;
-- (void)setCellTappedBlock:(id)arg1;
-- (AWESettingItemModel *)createSettingItem:(NSDictionary *)dict;
-- (AWESettingItemModel *)createSettingItem:(NSDictionary *)dict cellTapHandlers:(NSMutableDictionary *)cellTapHandlers;
-- (void)applyDependencyRulesForItem:(AWESettingItemModel *)item;
-- (void)handleConflictsAndDependenciesForSetting:(NSString *)identifier isEnabled:(BOOL)isEnabled;
-- (void)updateDependentItemsForSetting:(NSString *)identifier value:(id)value;
 @end
 
 @interface AWEPrivacySettingActionSheetConfig : NSObject
