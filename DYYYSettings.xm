@@ -191,8 +191,9 @@ extern "C"
 		    @"imageName" : @"ic_dansquare_outlined_20"},
 		  @{@"identifier" : @"DYYYdanmuColor",
 		    @"title" : @"自定弹幕颜色",
+			@"subTitle" : @"填入 random 使用随机颜色弹幕",
 		    @"detail" : @"十六进制",
-		    @"cellType" : @26,
+		    @"cellType" : @18,
 		    @"imageName" : @"ic_dansquarenut_outlined_20"},
 	  ];
 
@@ -740,8 +741,9 @@ extern "C"
 	  NSArray *mainUiSettings = @[
 		  @{@"identifier" : @"DYYYisHiddenBottomBg",
 		    @"title" : @"隐藏底栏背景",
+			@"subTitle" : @"完全透明化底栏，可能需要配合首页全屏使用",
 		    @"detail" : @"",
-		    @"cellType" : @6,
+		    @"cellType" : @37,
 		    @"imageName" : @"ic_eyeslash_outlined_16"},
 		  @{@"identifier" : @"DYYYisHiddenBottomDot",
 		    @"title" : @"隐藏底栏红点",
@@ -1433,8 +1435,8 @@ extern "C"
 	  [sections addObject:[DYYYSettingsHelper createSectionWithTitle:@"消息页与我的页" items:messageAndMineItems]];
 	  [sections addObject:[DYYYSettingsHelper createSectionWithTitle:@"提示与位置信息" items:infoItems]];
 	  [sections addObject:[DYYYSettingsHelper createSectionWithTitle:@"直播间界面" items:livestreamItems]];
-	  [sections addObject:[DYYYSettingsHelper createSectionWithTitle:@"隐藏面板功能" items:modernpanels]];
-	  [sections addObject:[DYYYSettingsHelper createSectionWithTitle:@"隐藏长按评论功能" items:commentpanel]];
+	  [sections addObject:[DYYYSettingsHelper createSectionWithTitle:@"隐藏面板功能" footerTitle:@"隐藏视频长按面板中的功能" items:modernpanels]];
+	  [sections addObject:[DYYYSettingsHelper createSectionWithTitle:@"隐藏长按评论功能" footerTitle:@"隐藏评论长按面板中的功能" items:commentpanel]];
 	  // 创建并推入二级设置页面
 	  AWESettingBaseViewController *subVC = [DYYYSettingsHelper createSubSettingsViewController:@"隐藏设置" sections:sections];
 	  [rootVC.navigationController pushViewController:(UIViewController *)subVC animated:YES];
@@ -1702,8 +1704,9 @@ extern "C"
 		    @"imageName" : @"ic_removeimage_outlined_20"},
 		  @{@"identifier" : @"DYYYForceDownloadEmotion",
 		    @"title" : @"保存评论区表情包",
+			@"subTitle" : @"iOS 17+的用户请长按表情本身保存",
 		    @"detail" : @"",
-		    @"cellType" : @6,
+		    @"cellType" : @37,
 		    @"imageName" : @"ic_emoji_outlined"},
 		  @{@"identifier" : @"DYYYForceDownloadPreviewEmotion",
 		    @"title" : @"保存预览页表情包",
