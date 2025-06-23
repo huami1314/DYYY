@@ -790,13 +790,12 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
               [[NSFileManager defaultManager] fileExistsAtPath:videoPath];
 
           dispatch_async(dispatch_get_main_queue(), ^{
-            if (imageExists && videoExists) {
-              [[DYYYManager shared] saveLivePhoto:imagePath videoUrl:videoPath];
-              if (completion) {
-                completion();
-              }
-              [DYYYUtils clearCacheDirectory];
-              return;
+              if (imageExists && videoExists) {
+                [[DYYYManager shared] saveLivePhoto:imagePath videoUrl:videoPath];
+                if (completion) {
+                  completion();
+                }
+                return;
             } else {
               // 文件不完整，需要重新下载
               [self startDownloadLivePhotoProcess:imageURL
@@ -1020,7 +1019,6 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
         if (completion) {
           completion();
         }
-        [DYYYUtils clearCacheDirectory];
       });
   });
 }
