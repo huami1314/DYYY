@@ -118,6 +118,11 @@
 + (AWESettingSectionModel *)createSectionWithTitle:(NSString *)title items:(NSArray *)items;
 
 /**
+ * 创建设置分区，带 footer
+ */
++ (AWESettingSectionModel *)createSectionWithTitle:(NSString *)title footerTitle:(NSString *)footerTitle items:(NSArray *)items;
+
+/**
  * 创建子设置页面控制器
  */
 + (AWESettingBaseViewController *)createSubSettingsViewController:(NSString *)title

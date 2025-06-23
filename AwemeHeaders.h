@@ -829,15 +829,6 @@ static CGFloat gStartVal = 0.0;
 
 - (AWESettingItemModel *)createSettingItem:(NSDictionary *)dict;
 - (AWESettingItemModel *)createSettingItem:(NSDictionary *)dict cellTapHandlers:(NSMutableDictionary *)cellTapHandlers;
-
-- (void)refreshTableView;
-- (void)updateSectionDataArray;
-- (void)handleConflictsAndDependenciesForSetting:(NSString *)identifier isEnabled:(BOOL)isEnabled;
-- (void)updateDependentItemsForSetting:(NSString *)identifier value:(id)value;
-- (void)handleConflictsAndDependenciesForSetting:(NSString *)identifier isEnabled:(BOOL)isEnabled;
-- (void)applyDependencyRulesForItem:(AWESettingItemModel *)item;
-- (void)updateConflictingItemUIState:(NSString *)identifier withValue:(BOOL)value;
-- (NSDictionary *)settingsDependencyConfig;
 @end
 
 @interface AWENavigationBar : UIView
@@ -848,6 +839,8 @@ static CGFloat gStartVal = 0.0;
 @property(nonatomic, assign) NSInteger type;
 @property(nonatomic, assign) CGFloat sectionHeaderHeight;
 @property(nonatomic, copy) NSString *sectionHeaderTitle;
+@property(nonatomic, copy) NSString *sectionFooterTitle;
+@property (nonatomic, assign) BOOL useNewFooterLayout;
 @property(nonatomic, strong) NSArray *itemArray;
 @property(retain, nonatomic) NSString *identifier;
 @property(copy, nonatomic) NSString *title;

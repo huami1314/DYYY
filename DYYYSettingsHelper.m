@@ -431,7 +431,7 @@
     return item;
 }
 
-#pragma mark - 新增工具方法
+#pragma mark
 
 extern void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed);
 extern void *kViewModelKey;
@@ -534,9 +534,15 @@ static void showIconOptionsDialog(NSString *title, UIImage *previewImage, NSStri
 }
 
 + (AWESettingSectionModel *)createSectionWithTitle:(NSString *)title items:(NSArray *)items {
+    return [self createSectionWithTitle:title footerTitle:nil items:items];
+}
+
++ (AWESettingSectionModel *)createSectionWithTitle:(NSString *)title footerTitle:(NSString *)footerTitle items:(NSArray *)items {
     AWESettingSectionModel *section = [[NSClassFromString(@"AWESettingSectionModel") alloc] init];
     section.sectionHeaderTitle = title;
     section.sectionHeaderHeight = 40;
+    section.sectionFooterTitle = footerTitle;
+    section.useNewFooterLayout = YES;
     section.type = 0;
     section.itemArray = items;
     return section;
