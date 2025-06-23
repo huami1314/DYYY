@@ -547,10 +547,14 @@ static void showIconOptionsDialog(NSString *title, UIImage *previewImage, NSStri
     AWESettingBaseViewController *settingsVC = [[NSClassFromString(@"AWESettingBaseViewController") alloc] init];
     dispatch_async(dispatch_get_main_queue(), ^{
         if ([settingsVC.view isKindOfClass:[UIView class]]) {
+            Class navBarClass = NSClassFromString(@"AWENavigationBar");
             for (UIView *subview in settingsVC.view.subviews) {
-                if ([subview isKindOfClass:[AWENavigationBar class]]) {
-                    AWENavigationBar *navigationBar = (AWENavigationBar *)subview;
-                    navigationBar.titleLabel.text = title;
+                if (navBarClass && [subview isKindOfClass:navBarClass]) {
+                    id navigationBar = subview;
+                    if ([navigationBar respondsToSelector:@selector(titleLabel)]) {
+                        UILabel *label = [navigationBar valueForKey:@"titleLabel"];
+                        label.text = title;
+                    }
                     break;
                 }
             }

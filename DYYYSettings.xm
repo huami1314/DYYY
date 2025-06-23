@@ -66,7 +66,7 @@ static void showIconOptionsDialog(NSString *title, UIImage *previewImage, NSStri
 @end
 
 
-static void *kViewModelKey = &kViewModelKey;
+void *kViewModelKey = &kViewModelKey;
 %hook AWESettingBaseViewController
 - (bool)useCardUIStyle {
 	return YES;
