@@ -809,6 +809,7 @@ static CGFloat gStartVal = 0.0;
 @property(nonatomic, assign) BOOL isSwitchOn;
 @property(nonatomic, copy) void (^cellTappedBlock)(void);
 @property(nonatomic, copy) void (^switchChangedBlock)(void);
+- (void)refreshCell;
 @end
 
 @interface AWESettingBaseViewModel : NSObject
