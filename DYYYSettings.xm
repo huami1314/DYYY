@@ -108,8 +108,8 @@ static AWESettingItemModel *createIconCustomizationItem(NSString *identifier, NS
 			NSError *error = nil;
 			[[NSFileManager defaultManager] removeItemAtPath:imagePath error:&error];
 			if (!error) {
-				item.detail = @"默认";
-				[DYYYSettingsHelper refreshTableView];
+                                item.detail = @"默认";
+                                [item refreshCell];
 			}
 		}
 	      },
@@ -149,8 +149,8 @@ static AWESettingItemModel *createIconCustomizationItem(NSString *identifier, NS
 
 			  // 延迟执行UI更新，确保图片选择器已完全消失且视图已恢复
 			  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-			    item.detail = @"已设置";
-			    [DYYYSettingsHelper refreshTableView];
+                            item.detail = @"已设置";
+                            [item refreshCell];
 			  });
 		  }
 		};
@@ -516,7 +516,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 							     onPresentingVC:topView()
 							   selectionChanged:^(NSString *selectedValue) {
 							     item.detail = selectedValue;
-							     [DYYYSettingsHelper refreshTableView];
+                                                               [item refreshCell];
 							   }];
 			  };
 		  }
@@ -534,7 +534,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 							     onPresentingVC:topView()
 							   selectionChanged:^(NSString *selectedValue) {
 							     item.detail = selectedValue;
-							     [DYYYSettingsHelper refreshTableView];
+                                                             [item refreshCell];
 							   }];
 			  };
 		  }
@@ -551,7 +551,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 							     onPresentingVC:topView()
 							   selectionChanged:^(NSString *selectedValue) {
 							     item.detail = selectedValue;
-							     [DYYYSettingsHelper refreshTableView];
+                                                               [item refreshCell];
 							   }];
 			  };
 		  }
@@ -679,7 +679,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 								   [DYYYSettingsHelper setUserDefaults:valueString forKey:@"DYYYfilterLowLikes"];
 
 								   item.detail = valueString;
-								   [DYYYSettingsHelper refreshTableView];
+                                                                     [item refreshCell];
 							   } else {
 								   DYYYAboutDialogView *errorDialog = [[DYYYAboutDialogView alloc] initWithTitle:@"输入错误" message:@"\n\n请输入有效的数字\n\n"];
 								   [errorDialog show];
@@ -699,7 +699,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 			      NSString *keywordString = [keywords componentsJoinedByString:@","];
 			      [DYYYSettingsHelper setUserDefaults:keywordString forKey:@"DYYYfilterUsers"];
 			      item.detail = keywordString;
-			      [DYYYSettingsHelper refreshTableView];
+                                [item refreshCell];
 			    };
 
 			    [keywordListView show];
@@ -716,7 +716,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 
 			      [DYYYSettingsHelper setUserDefaults:keywordString forKey:@"DYYYfilterKeywords"];
 			      item.detail = keywordString;
-			      [DYYYSettingsHelper refreshTableView];
+                                [item refreshCell];
 			    };
 			    [keywordListView show];
 			  };
@@ -731,7 +731,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 							   NSString *trimmedText = [text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
 							   [DYYYSettingsHelper setUserDefaults:trimmedText forKey:@"DYYYfiltertimelimit"];
 							   item.detail = trimmedText ?: @"";
-							   [DYYYSettingsHelper refreshTableView];
+                                                             [item refreshCell];
 							 }
 							  onCancel:nil];
 			  };
@@ -747,7 +747,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 
 			      [DYYYSettingsHelper setUserDefaults:keywordString forKey:@"DYYYfilterProp"];
 			      item.detail = keywordString;
-			      [DYYYSettingsHelper refreshTableView];
+                                [item refreshCell];
 			    };
 			    [keywordListView show];
 			  };
@@ -1787,7 +1787,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 			      NSString *keywordString = [keywords componentsJoinedByString:@","];
 			      [DYYYSettingsHelper setUserDefaults:keywordString forKey:@"DYYYHideOtherChannel"];
 			      item.detail = keywordString;
-			      [DYYYSettingsHelper refreshTableView];
+                                [item refreshCell];
 			    };
 
 			    // 显示关键词列表视图
@@ -1964,7 +1964,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 
 							   item.detail = trimmedText.length > 0 ? trimmedText : @"不填关闭";
 
-							   [DYYYSettingsHelper refreshTableView];
+                                                             [item refreshCell];
 							 }
 							  onCancel:nil];
 			  };
@@ -2037,7 +2037,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 			    saveABTestConfigFileItemRef.isEnable = NO;
 		    }
 	    }
-	    [DYYYSettingsHelper refreshTableView];
+              [saveABTestConfigFileItemRef refreshCell];
 	  };
 
 	  for (NSDictionary *dict in hotUpdateSettings) {
@@ -2055,7 +2055,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 					confirmButtonText:@"确定"
 					cancelAction:^{
 					  item.isSwitchOn = !newValue;
-					  [DYYYSettingsHelper refreshTableView];
+                                            [item refreshCell];
 					}
 					closeAction:nil
 					confirmAction:^{
@@ -2093,7 +2093,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 								     onceToken = 0;
 								     ensureABTestDataLoaded();
 							     }
-							     [DYYYSettingsHelper refreshTableView];
+                                                               [item refreshCell];
 							   }];
 			  };
 		  } else if ([item.identifier isEqualToString:@"SaveCurrentABTestData"]) {
@@ -2298,7 +2298,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 					    // 删除成功后修改 SaveABTestConfigFile item 的状态
 					    saveABTestConfigFileItemRef.detail = @"(文件已删除)";
 					    saveABTestConfigFileItemRef.isEnable = NO;
-					    [DYYYSettingsHelper refreshTableView];
+                                              [saveABTestConfigFileItemRef refreshCell];
 				    }
 			    } else {
 				    [DYYYUtils showToast:@"本地配置不存在"];
@@ -2552,7 +2552,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 					   [[NSUserDefaults standardUserDefaults] setObject:trimmedText forKey:@"DYYYSpeedSettings"];
 					   [[NSUserDefaults standardUserDefaults] synchronize];
 					   speedSettingsItem.detail = trimmedText;
-					   [DYYYSettingsHelper refreshTableView];
+                                             [speedSettingsItem refreshCell];
 					 }
 					  onCancel:nil];
 	  };
@@ -2616,7 +2616,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 						   [[NSUserDefaults standardUserDefaults] setFloat:size forKey:@"DYYYSpeedButtonSize"];
 						   [[NSUserDefaults standardUserDefaults] synchronize];
 						   buttonSizeItem.detail = [NSString stringWithFormat:@"%.0f", (CGFloat)size];
-						   [DYYYSettingsHelper refreshTableView];
+                                                     [buttonSizeItem refreshCell];
 					   } else {
 						   [DYYYUtils showToast:@"请输入20-60之间的有效数值"];
 					   }
@@ -2665,7 +2665,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 						   [[NSUserDefaults standardUserDefaults] setFloat:size forKey:@"DYYYEnableFloatClearButtonSize"];
 						   [[NSUserDefaults standardUserDefaults] synchronize];
 						   clearButtonSizeItem.detail = [NSString stringWithFormat:@"%.0f", (CGFloat)size];
-						   [DYYYSettingsHelper refreshTableView];
+                                                     [clearButtonSizeItem refreshCell];
 					   } else {
 						   [DYYYUtils showToast:@"请输入20-60之间的有效数值"];
 					   }
@@ -2918,7 +2918,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 
 	    [DYYYUtils showToast:@"设置已恢复，请重启应用以应用所有更改"];
 
-	    [DYYYSettingsHelper refreshTableView];
+              [restoreItem refreshCell];
 	  };
 
 	  static char kDYYYRestorePickerDelegateKey;
@@ -3041,7 +3041,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
             if (strongCleanCacheItem) {
                 strongCleanCacheItem.detail = [DYYYUtils formattedSize:initialSize];
                 strongCleanCacheItem.isEnable = YES;
-                [DYYYSettingsHelper refreshTableView];
+                  [strongCleanCacheItem refreshCell];
             }
         });
     });
@@ -3053,7 +3053,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	  // Disable the button to prevent multiple triggers
 	  strongCleanCacheItem.isEnable = NO;
       strongCleanCacheItem.detail = @"清理中...";
-	  [DYYYSettingsHelper refreshTableView];
+            [strongCleanCacheItem refreshCell];
 
 	  dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
 		  for (NSString *basePath in allPaths) {
@@ -3073,7 +3073,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 			  strongCleanCacheItem.detail = [DYYYUtils formattedSize:afterSize];
 			  // Re-enable the button after cleaning is done
 			  strongCleanCacheItem.isEnable = YES;
-			  [DYYYSettingsHelper refreshTableView];
+                            [strongCleanCacheItem refreshCell];
 		  });
 	  });
 	};
