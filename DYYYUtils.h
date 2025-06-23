@@ -76,6 +76,21 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (void)removeAllContentsAtPath:(NSString *)directoryPath;
 
+/**
+ * 返回插件缓存目录路径，默认为 tmp/DYYY
+ */
++ (NSString *)cacheDirectory;
+
+/**
+ * 清理插件缓存目录
+ */
++ (void)clearCacheDirectory;
+
+/**
+ * 在缓存目录下生成指定文件名的完整路径
+ */
++ (NSString *)cachePathForFilename:(NSString *)filename;
+
 @end
 
 #ifdef __cplusplus

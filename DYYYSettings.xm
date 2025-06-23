@@ -1955,7 +1955,7 @@ extern "C"
 			    [formatter setDateFormat:@"yyyyMMdd_HHmmss"];
 			    NSString *timestamp = [formatter stringFromDate:[NSDate date]];
 			    NSString *tempFile = [NSString stringWithFormat:@"ABTest_Config_%@.json", timestamp];
-			    NSString *tempFilePath = [NSTemporaryDirectory() stringByAppendingPathComponent:tempFile];
+                            NSString *tempFilePath = [DYYYUtils cachePathForFilename:tempFile];
 
 			    BOOL success = [sortedJsonData writeToFile:tempFilePath atomically:YES];
 
@@ -2017,7 +2017,7 @@ extern "C"
 			    [formatter setDateFormat:@"yyyyMMdd_HHmmss"];
 			    NSString *timestamp = [formatter stringFromDate:[NSDate date]];
 			    NSString *tempFile = [NSString stringWithFormat:@"abtest_data_fixed_%@.json", timestamp];
-			    NSString *tempFilePath = [NSTemporaryDirectory() stringByAppendingPathComponent:tempFile];
+                            NSString *tempFilePath = [DYYYUtils cachePathForFilename:tempFile];
 
 			    if (![sortedJsonData writeToFile:tempFilePath atomically:YES]) {
 				    [DYYYUtils showToast:@"临时文件创建失败"];
@@ -2642,8 +2642,7 @@ extern "C"
 	  [formatter setDateFormat:@"yyyyMMdd_HHmmss"];
 	  NSString *timestamp = [formatter stringFromDate:[NSDate date]];
 	  NSString *backupFileName = [NSString stringWithFormat:@"DYYY_Backup_%@.json", timestamp];
-	  NSString *tempDir = NSTemporaryDirectory();
-	  NSString *tempFilePath = [tempDir stringByAppendingPathComponent:backupFileName];
+          NSString *tempFilePath = [DYYYUtils cachePathForFilename:backupFileName];
 
 	  BOOL success = [sortedJsonData writeToFile:tempFilePath atomically:YES];
 
@@ -2836,7 +2835,7 @@ extern "C"
 
 	NSArray<NSString *> *customDirs = @[ @"Application Support/gurd_cache", @"Caches", @"BDByteCast", @"kitelog" ];
 	NSString *libraryDir = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES).firstObject;
-	NSMutableArray<NSString *> *allPaths = [NSMutableArray arrayWithObject:NSTemporaryDirectory()];
+        NSMutableArray<NSString *> *allPaths = [NSMutableArray arrayWithObject:[DYYYUtils cacheDirectory]];
 	for (NSString *sub in customDirs) {
 		NSString *fullPath = [libraryDir stringByAppendingPathComponent:sub];
 		if ([[NSFileManager defaultManager] fileExistsAtPath:fullPath]) {
@@ -2879,9 +2878,10 @@ extern "C"
 	  [strongCleanCacheItem refreshCell];
 
 	  dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-	    for (NSString *basePath in allPaths) {
-		    [DYYYUtils removeAllContentsAtPath:basePath];
-	    }
+            [DYYYUtils clearCacheDirectory];
+            for (NSString *basePath in allPaths) {
+                    [DYYYUtils removeAllContentsAtPath:basePath];
+            }
 
 	    unsigned long long afterSize = 0;
 	    for (NSString *basePath in allPaths) {
