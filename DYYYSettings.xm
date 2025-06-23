@@ -3105,6 +3105,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 	  }
 	  // Disable the button to prevent multiple triggers
 	  strongCleanCacheItem.isEnable = NO;
+      strongCleanCacheItem.detail = @"清理中...";
 	  [DYYYSettingsHelper refreshTableView];
 
 	  dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
