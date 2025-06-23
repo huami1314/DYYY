@@ -548,11 +548,9 @@ static void showIconOptionsDialog(NSString *title, UIImage *previewImage, NSStri
     dispatch_async(dispatch_get_main_queue(), ^{
         if ([settingsVC.view isKindOfClass:[UIView class]]) {
             for (UIView *subview in settingsVC.view.subviews) {
-                if ([subview isKindOfClass:NSClassFromString(@"AWENavigationBar")]) {
-                    id navigationBar = subview;
-                    if ([navigationBar respondsToSelector:@selector(titleLabel)]) {
-                        navigationBar.titleLabel.text = title;
-                    }
+                if ([subview isKindOfClass:[AWENavigationBar class]]) {
+                    AWENavigationBar *navigationBar = (AWENavigationBar *)subview;
+                    navigationBar.titleLabel.text = title;
                     break;
                 }
             }
