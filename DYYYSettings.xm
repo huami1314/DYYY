@@ -21,49 +21,8 @@
 static void showIconOptionsDialog(NSString *title, UIImage *previewImage, NSString *saveFilename, void (^onClear)(void), void (^onSelect)(void));
 
 #import "DYYYImagePickerDelegate.h"
+#import "DYYYBackupPickerDelegate.h"
 
-@implementation DYYYImagePickerDelegate
-- (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info {
-	if (self.completionBlock) {
-		self.completionBlock(info);
-	}
-	[picker dismissViewControllerAnimated:YES completion:nil];
-}
-
-- (void)imagePickerControllerDidCancel:(UIImagePickerController *)picker {
-	[picker dismissViewControllerAnimated:YES completion:nil];
-}
-@end
-
-@interface DYYYBackupPickerDelegate : NSObject <UIDocumentPickerDelegate>
-@property(nonatomic, copy) void (^completionBlock)(NSURL *url);
-@property(nonatomic, copy) NSString *tempFilePath;
-@end
-
-@implementation DYYYBackupPickerDelegate
-- (void)documentPicker:(UIDocumentPickerViewController *)controller didPickDocumentsAtURLs:(NSArray<NSURL *> *)urls {
-	if (urls.count > 0 && self.completionBlock) {
-		self.completionBlock(urls.firstObject);
-	}
-
-	[self cleanupTempFile];
-}
-
-- (void)documentPickerWasCancelled:(UIDocumentPickerViewController *)controller {
-	[self cleanupTempFile];
-}
-
-// 添加清理临时文件的方法
-- (void)cleanupTempFile {
-	if (self.tempFilePath && [[NSFileManager defaultManager] fileExistsAtPath:self.tempFilePath]) {
-		NSError *error = nil;
-		[[NSFileManager defaultManager] removeItemAtPath:self.tempFilePath error:&error];
-		if (error) {
-			NSLog(@"[DYYY] 清理临时文件失败: %@", error.localizedDescription);
-		}
-	}
-}
-@end
 
 #ifdef __cplusplus
 extern "C" {
