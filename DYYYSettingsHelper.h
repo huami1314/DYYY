@@ -104,4 +104,48 @@
  */
 + (AWESettingItemModel *)createSettingItem:(NSDictionary *)dict cellTapHandlers:(NSMutableDictionary *)cellTapHandlers;
 
+/**
+ * 创建自定义图标设置项
+ */
++ (AWESettingItemModel *)createIconCustomizationItemWithIdentifier:(NSString *)identifier
+                                  title:(NSString *)title
+                               svgIcon:(NSString *)svgIconName
+                            saveFile:(NSString *)saveFilename;
+
+/**
+ * 创建设置分区
+ */
++ (AWESettingSectionModel *)createSectionWithTitle:(NSString *)title items:(NSArray *)items;
+
+/**
+ * 创建子设置页面控制器
+ */
++ (AWESettingBaseViewController *)createSubSettingsViewController:(NSString *)title
+                                                        sections:(NSArray *)sectionsArray;
+
+/**
+ * 查找视图所在控制器
+ */
++ (UIViewController *)findViewController:(UIResponder *)responder;
+
+/**
+ * 打开设置页
+ */
++ (void)openSettingsWithViewController:(UIViewController *)vc;
+
+/**
+ * 从视图打开设置页
+ */
++ (void)openSettingsFromView:(UIView *)view;
+
+/**
+ * 为视图添加打开设置页的点击手势
+ */
++ (void)addTapGestureToView:(UIView *)view target:(id)target;
+
+/**
+ * 显示用户协议输入弹窗
+ */
++ (void)showUserAgreementAlert;
+
 @end
