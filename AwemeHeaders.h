@@ -799,6 +799,7 @@ static CGFloat gStartVal = 0.0;
 @interface AWESettingItemModel : NSObject
 @property(nonatomic, copy) NSString *identifier;
 @property(nonatomic, copy) NSString *title;
+@property(nonatomic, copy) NSString *subTitle;
 @property(nonatomic, copy) NSString *detail;
 @property(nonatomic, assign) NSInteger type;
 @property(nonatomic, copy) NSString *iconImageName;
