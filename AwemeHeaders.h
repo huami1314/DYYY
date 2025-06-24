@@ -1058,16 +1058,6 @@ static CGFloat gStartVal = 0.0;
 @interface AWELiveAutoEnterStyleAView : UIView
 @end
 
-@interface AWEABTestManager : NSObject
-@property(retain, nonatomic) NSDictionary *abTestData;
-@property(retain, nonatomic) NSMutableDictionary *consistentABTestDic;
-@property(copy, nonatomic) NSDictionary *performanceReversalDic;
-- (void)setAbTestData:(id)arg1;
-- (void)_saveABTestData:(id)arg1;
-- (id)abTestData;
-+ (id)sharedManager;
-@end
-
 @interface IESLiveRoomComponent : NSObject
 @end
 

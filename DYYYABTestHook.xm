@@ -2,8 +2,8 @@
 #import <objc/runtime.h>
 
 @interface AWEABTestManager : NSObject
-@property(retain, nonatomic) NSDictionary *abTestData;
 @property(retain, nonatomic) NSMutableDictionary *consistentABTestDic;
+@property(copy, nonatomic) NSDictionary *abTestData;
 @property(copy, nonatomic) NSDictionary *performanceReversalDic;
 @property(nonatomic) BOOL performanceReversalEnabled;
 @property(nonatomic) BOOL handledNetFirstBackNotification;
