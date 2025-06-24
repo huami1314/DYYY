@@ -157,10 +157,11 @@ static dispatch_once_t s_loadOnceToken;
         dataToApply = [s_localABTestData copy];
     }
 
+    // 记录下这个被应用的数据实例，供 Hook 中判断使用
+    // 先设置变量再调用接口，避免被 Hook 的拦截逻辑误阻止
+    s_appliedFixedABTestData = dataToApply;
     // 应用数据到 Manager
     [manager setAbTestData:dataToApply];
-    // 记录下这个被应用的数据实例，供 Hook 中判断使用
-    s_appliedFixedABTestData = dataToApply;
 
     NSLog(@"[DYYY] ABTest本地配置已应用");
 }
