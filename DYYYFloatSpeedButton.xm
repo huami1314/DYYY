@@ -29,6 +29,9 @@ static BOOL showSpeedX = NO;
 static CGFloat speedButtonSize = 32.0;
 static BOOL isFloatSpeedButtonEnabled = NO;
 
+// Forward declarations
+void updateSpeedButtonVisibility(void);
+
 NSArray *getSpeedOptions() {
 	NSString *speedConfig = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYSpeedSettings"] ?: @"1.0,1.25,1.5,2.0";
 	return [speedConfig componentsSeparatedByString:@","];
