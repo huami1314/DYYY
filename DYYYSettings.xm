@@ -1802,7 +1802,7 @@ extern "C"
 	    NSString *dyyyFolderPath = [documentsDirectory stringByAppendingPathComponent:@"DYYY"];
 	    NSString *jsonFilePath = [dyyyFolderPath stringByAppendingPathComponent:@"abtest_data_fixed.json"];
 
-	    NSString *loadingStatus = [DYYYABTestHook isFixedDataLoaded] ? @"已加载：" : @"未加载：";
+	    NSString *loadingStatus = [DYYYABTestHook isLocalConfigLoaded] ? @"已加载：" : @"未加载：";
 
 	    if (![fileManager fileExistsAtPath:jsonFilePath]) {
 		    saveABTestConfigFileItemRef.detail = [NSString stringWithFormat:@"%@ (文件不存在)", loadingStatus];
@@ -1871,8 +1871,7 @@ extern "C"
 							     item.detail = isPatchMode ? @"覆写模式" : @"替换模式";
 
 							     if (![selectedValue isEqualToString:currentMode]) {
-								     [DYYYABTestHook cleanFixedABTestData];
-								     [DYYYABTestHook ensureABTestDataLoaded];
+								     [DYYYABTestHook applyFixedABTestData];
 							     }
 							     [item refreshCell];
 							   }];
@@ -2019,33 +2018,34 @@ extern "C"
 
 			      DYYYBackupPickerDelegate *pickerDelegate = [[DYYYBackupPickerDelegate alloc] init];
 			      pickerDelegate.completionBlock = ^(NSURL *url) {
-				NSString *sourcePath = [url path];
+				    NSString *sourcePath = [url path];
 
-				NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-				NSString *documentsDirectory = [paths firstObject];
-				NSString *dyyyFolderPath = [documentsDirectory stringByAppendingPathComponent:@"DYYY"];
-				NSString *destPath = [dyyyFolderPath stringByAppendingPathComponent:@"abtest_data_fixed.json"];
+				    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+				    NSString *documentsDirectory = [paths firstObject];
+				    NSString *dyyyFolderPath = [documentsDirectory stringByAppendingPathComponent:@"DYYY"];
+				    NSString *destPath = [dyyyFolderPath stringByAppendingPathComponent:@"abtest_data_fixed.json"];
 
-				if (![[NSFileManager defaultManager] fileExistsAtPath:dyyyFolderPath]) {
-					[[NSFileManager defaultManager] createDirectoryAtPath:dyyyFolderPath withIntermediateDirectories:YES attributes:nil error:nil];
-				}
+				    if (![[NSFileManager defaultManager] fileExistsAtPath:dyyyFolderPath]) {
+						[[NSFileManager defaultManager] createDirectoryAtPath:dyyyFolderPath withIntermediateDirectories:YES attributes:nil error:nil];
+				    }
 
-				NSError *error;
-				if ([[NSFileManager defaultManager] fileExistsAtPath:destPath]) {
-					[[NSFileManager defaultManager] removeItemAtPath:destPath error:&error];
-				}
+				    NSError *error;
+				    if ([[NSFileManager defaultManager] fileExistsAtPath:destPath]) {
+						[[NSFileManager defaultManager] removeItemAtPath:destPath error:&error];
+				    }
 
-				BOOL success = [[NSFileManager defaultManager] copyItemAtPath:sourcePath toPath:destPath error:&error];
+				    BOOL success = [[NSFileManager defaultManager] copyItemAtPath:sourcePath toPath:destPath error:&error];
 
-				NSString *message = success ? @"配置已导入，重启抖音生效" : [NSString stringWithFormat:@"导入失败: %@", error.localizedDescription];
-				[DYYYUtils showToast:message];
+				    NSString *message = success ? @"配置已导入，若没生效请重启抖音" : [NSString stringWithFormat:@"导入失败: %@", error.localizedDescription];
+				    [DYYYUtils showToast:message];
 
-				if (success) {
-					[DYYYABTestHook cleanFixedABTestData];
-					[DYYYABTestHook ensureABTestDataLoaded];
-					// 导入成功后更新 SaveABTestConfigFile item 的状态
-					refreshSaveABTestConfigFileItem();
-				}
+				    if (success) {
+						[DYYYABTestHook cleanLocalABTestData];
+						[DYYYABTestHook loadLocalABTestConfig];
+						[DYYYABTestHook applyFixedABTestData];
+						// 导入成功后更新 SaveABTestConfigFile item 的状态
+						refreshSaveABTestConfigFileItem();
+				    }
 			      };
 
 			      static char kPickerDelegateKey;
@@ -2072,7 +2072,7 @@ extern "C"
 				    [DYYYUtils showToast:message];
 
 				    if (success) {
-					    [DYYYABTestHook cleanFixedABTestData];
+					    [DYYYABTestHook cleanLocalABTestData];
 					    // 删除成功后修改 SaveABTestConfigFile item 的状态
 					    saveABTestConfigFileItemRef.detail = @"(文件已删除)";
 					    saveABTestConfigFileItemRef.isEnable = NO;

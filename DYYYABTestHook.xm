@@ -20,10 +20,11 @@
 + (id)sharedManager;
 @end
 
-static NSDictionary *s_fixedABTestData = nil;
-static BOOL s_abTestBlockEnabled = NO;
 static BOOL s_dataLoaded = NO;
-static dispatch_once_t s_onceToken;
+static BOOL s_abTestBlockEnabled = NO;
+static NSDictionary *s_localABTestData = nil;
+static NSDictionary *s_appliedFixedABTestData = nil;
+static dispatch_once_t s_loadOnceToken;
 
 @implementation DYYYABTestHook
 
@@ -38,10 +39,10 @@ static dispatch_once_t s_onceToken;
 }
 
 /**
- * 获取本地固定数据是否已加载的状态
+ * 获取本地文件是否已加载的状态
  * 转换为类方法
  */
-+ (BOOL)isFixedDataLoaded {
++ (BOOL)isLocalConfigLoaded {
     return s_dataLoaded;
 }
 
@@ -62,23 +63,25 @@ static dispatch_once_t s_onceToken;
 }
 
 /**
- * 清除本地加载的固定ABTest数据，为下次调用 ensureABTestDataLoaded 做准备
+ * 清除本地加载的ABTest数据，为下次调用 loadLocalABTestConfig 做准备
  * 新增类方法
  */
-+ (void)cleanFixedABTestData {
-    s_fixedABTestData = nil;
++ (void)cleanLocalABTestData {
+    s_appliedFixedABTestData = nil;
+    s_localABTestData = nil;
     s_dataLoaded = NO;
-    s_onceToken = 0;
-    NSLog(@"[DYYY] 本地ABTest固定配置已清除");
+    s_loadOnceToken = 0;
+    NSLog(@"[DYYY] 本地ABTest配置已清除");
 }
 
 /**
- * 加载本地ABTest配置数据
- * 根据不同模式（覆写/替换）处理配置数据
+ * 加载本地ABTest配置文件
+ * 只加载文件和处理数据，不负责应用
+ * 使用 dispatch_once 确保只加载一次
  * 转换为类方法
  */
-+ (void)ensureABTestDataLoaded {
-    dispatch_once(&s_onceToken, ^{
++ (void)loadLocalABTestConfig {
+    dispatch_once(&s_loadOnceToken, ^{
         // 获取存储路径
         NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
         NSString *documentsDirectory = [paths firstObject];
@@ -102,23 +105,9 @@ static dispatch_once_t s_onceToken;
         if (jsonData) {
             NSDictionary *loadedData = [NSJSONSerialization JSONObjectWithData:jsonData options:0 error:&error];
             if (loadedData && !error) {
-                // 成功加载数据，根据应用方式处理
-                AWEABTestManager *manager = [%c(AWEABTestManager) sharedManager];
-                BOOL usingPatchMode = [self isPatchMode];
-                
-                if (manager && usingPatchMode) {
-                    // 覆写模式：合并现有配置和本地配置
-                    NSDictionary *currentABTestData = [manager abTestData];
-                    NSMutableDictionary *mergedData = [NSMutableDictionary dictionaryWithDictionary:currentABTestData ?: @{}];
-                    [mergedData addEntriesFromDictionary:loadedData];
-                    s_fixedABTestData = [mergedData copy];
-                    NSLog(@"[DYYY] ABTest本地配置已加载(覆写模式)");
-                } else {
-                    // 替换模式：直接使用本地配置
-                    s_fixedABTestData = [loadedData copy];
-                    NSLog(@"[DYYY] ABTest本地配置已加载(替换模式)");
-                }
+                s_localABTestData = [loadedData copy];
                 s_dataLoaded = YES;
+                NSLog(@"[DYYY] ABTest本地配置已从文件加载成功");
                 return;
             } else {
                 NSLog(@"[DYYY] ABTest本地配置解析失败: %@", error.localizedDescription);
@@ -128,9 +117,52 @@ static dispatch_once_t s_onceToken;
         }
         
         // 加载失败时的处理
-        s_fixedABTestData = nil;
+        s_localABTestData = nil;
         s_dataLoaded = NO;
     });
+}
+
+/**
+ * 应用本地ABTest配置数据 (负责根据模式处理并应用到 Manager)
+ * 包含是否应该应用的条件判断
+ * 新增类方法
+ */
++ (void)applyFixedABTestData {
+    if (!s_abTestBlockEnabled || !s_dataLoaded) {
+        NSLog(@"[DYYY] 不满足应用本地配置的条件 (禁止下发=%@, 数据加载=%@, 数据是否为空=%@)",
+            s_abTestBlockEnabled ? @"开启" : @"关闭",
+            s_dataLoaded ? @"成功" : @"失败",
+            s_localABTestData ? @"否" : @"是");
+        s_appliedFixedABTestData = nil;
+        return;
+    }
+
+    AWEABTestManager *manager = [%c(AWEABTestManager) sharedManager];
+    if (!manager) {
+        NSLog(@"[DYYY] 无法应用本地配置：AWEABTestManager 实例不可用");
+        s_appliedFixedABTestData = nil;
+        return;
+    }
+
+    BOOL usingPatchMode = [self isPatchMode];
+    NSDictionary *dataToApply = nil;
+
+    if (usingPatchMode) {
+        // 覆写模式：本地配置合并现有配置
+        NSMutableDictionary *mergedData = [NSMutableDictionary dictionaryWithDictionary:[manager abTestData] ?: @{}];
+        [mergedData addEntriesFromDictionary:s_localABTestData];
+        dataToApply = [mergedData copy];
+    } else {
+        // 替换模式：直接使用本地配置
+        dataToApply = [s_localABTestData copy];
+    }
+
+    // 应用数据到 Manager
+    [manager setAbTestData:dataToApply];
+    // 记录下这个被应用的数据实例，供 Hook 中判断使用
+    s_appliedFixedABTestData = dataToApply;
+
+    NSLog(@"[DYYY] ABTest本地配置已应用");
 }
 
 /**
@@ -151,7 +183,7 @@ static dispatch_once_t s_onceToken;
  * 阻止在禁止下发模式下更新数据，除非数据来自本地配置
  */
 - (void)setAbTestData:(id)data {
-    if (s_abTestBlockEnabled && data != s_fixedABTestData) {
+    if (s_abTestBlockEnabled && data != s_appliedFixedABTestData) {
         NSLog(@"[DYYY] 阻止ABTest数据更新 (启用了禁止下发配置)");
         return;
     }
@@ -236,12 +268,7 @@ static dispatch_once_t s_onceToken;
           currentMode);
     
     dispatch_async(dispatch_get_main_queue(), ^{
-        AWEABTestManager *manager = [%c(AWEABTestManager) sharedManager];
-        [DYYYABTestHook ensureABTestDataLoaded];
-        
-        if (manager && s_dataLoaded && s_abTestBlockEnabled) {
-            [manager setAbTestData:s_fixedABTestData];
-            NSLog(@"[DYYY] 应用本地配置固定ABTest数据");
-        }
+        [DYYYABTestHook loadLocalABTestConfig];
+        [DYYYABTestHook applyFixedABTestData];
     });
 }
