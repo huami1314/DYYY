@@ -33,6 +33,14 @@ static inline void updateFlag(SpeedButtonVisibilityFlag flag, BOOL enabled) {
   setVisibilityFlag(flag, enabled);
   updateSpeedButtonVisibility();
 }
+
+static inline void runOnMainThread(void (^block)(void)) {
+  if ([NSThread isMainThread]) {
+    block();
+  } else {
+    dispatch_async(dispatch_get_main_queue(), block);
+  }
+}
 static BOOL showSpeedX = NO;
 static CGFloat speedButtonSize = 32.0;
 static BOOL isFloatSpeedButtonEnabled = NO;
@@ -127,7 +135,7 @@ void updateSpeedButtonVisibility() {
 	if (!speedButton || !isFloatSpeedButtonEnabled)
 		return;
 
-        dispatch_async(dispatch_get_main_queue(), ^{
+        runOnMainThread(^{
           if (!isFlagEnabled(SpeedButtonVisibilityFlagInteraction)) {
                   speedButton.hidden = YES;
                   return;
@@ -365,9 +373,9 @@ static void ensureSpeedButtonForStackView(UIView *stackView) {
 }
 
 - (void)resetToggleLockFlag {
-	dispatch_async(dispatch_get_main_queue(), ^{
-	  self.justToggledLock = NO;
-	});
+        runOnMainThread(^{
+          self.justToggledLock = NO;
+        });
 }
 
 - (void)resetButtonState {
@@ -594,12 +602,12 @@ static void ensureSpeedButtonForStackView(UIView *stackView) {
 	if (!isFloatSpeedButtonEnabled)
 		return;
 
-	if (speedButton && ![speedButton isDescendantOfView:self]) {
-		dispatch_async(dispatch_get_main_queue(), ^{
-		  [self addSubview:speedButton];
-		  [speedButton loadSavedPosition];
-		});
-	}
+        if (speedButton && ![speedButton isDescendantOfView:self]) {
+                runOnMainThread(^{
+                  [self addSubview:speedButton];
+                  [speedButton loadSavedPosition];
+                });
+        }
 }
 %end
 
