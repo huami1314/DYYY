@@ -152,18 +152,11 @@ static void ensureSpeedButtonForStackView(UIView *stackView) {
 
                 speedButton = [[FloatingSpeedButton alloc] initWithFrame:initialFrame];
 
-                speedButton.interactionController = [stackView firstAvailableUIViewController];
-
                 showSpeedX = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYSpeedButtonShowX"];
 
                 updateSpeedButtonUI();
         } else {
                 [speedButton resetButtonState];
-
-                UIViewController *vc = [stackView firstAvailableUIViewController];
-                if (speedButton.interactionController == nil || speedButton.interactionController != vc) {
-                        speedButton.interactionController = vc;
-                }
 
                 if (speedButton.frame.size.width != speedButtonSize) {
                         CGPoint center = speedButton.center;
@@ -246,7 +239,12 @@ static void ensureSpeedButtonForStackView(UIView *stackView) {
 }
 
 - (void)handleTouchDown:(UIButton *)sender {
-	self.isResponding = YES;
+        self.isResponding = YES;
+        [UIView animateWithDuration:0.1
+                         animations:^{
+                           sender.alpha = 0.7;
+                           sender.transform = CGAffineTransformMakeScale(0.95, 0.95);
+                         }];
 }
 
 - (void)handleTouchUpInside:(UIButton *)sender {
@@ -255,30 +253,76 @@ static void ensureSpeedButtonForStackView(UIView *stackView) {
 		return;
 	}
 
-	[UIView animateWithDuration:0.1
-	    animations:^{
-	      self.transform = CGAffineTransformMakeScale(1.2, 1.2);
-	    }
-	    completion:^(BOOL finished) {
-	      [UIView animateWithDuration:0.1
-			       animations:^{
-				 self.transform = CGAffineTransformIdentity;
-			       }];
-	    }];
+        [UIView animateWithDuration:0.1
+                         animations:^{
+                           self.alpha = 1.0;
+                           self.transform = CGAffineTransformMakeScale(1.2, 1.2);
+                         }
+                         completion:^(BOOL finished) {
+                           [UIView animateWithDuration:0.1
+                                            animations:^{
+                                              self.transform = CGAffineTransformIdentity;
+                                            }];
+                         }];
 
-	if (self.interactionController) {
-		@try {
-			[self.interactionController speedButtonTapped:self];
-		} @catch (NSException *exception) {
-			self.isResponding = NO;
-		}
-	} else {
-		self.isResponding = NO;
-	}
+        NSArray *speeds = getSpeedOptions();
+        if (speeds.count == 0) {
+                self.isResponding = NO;
+                return;
+        }
+
+        NSInteger currentIndex = getCurrentSpeedIndex();
+        NSInteger newIndex = (currentIndex + 1) % speeds.count;
+        setCurrentSpeedIndex(newIndex);
+
+        float newSpeed = [speeds[newIndex] floatValue];
+
+        NSString *formattedSpeed;
+        if (fmodf(newSpeed, 1.0) == 0) {
+                formattedSpeed = [NSString stringWithFormat:@"%.0f", newSpeed];
+        } else if (fmodf(newSpeed * 10, 1.0) == 0) {
+                formattedSpeed = [NSString stringWithFormat:@"%.1f", newSpeed];
+        } else {
+                formattedSpeed = [NSString stringWithFormat:@"%.2f", newSpeed];
+        }
+
+        if (showSpeedX) {
+                formattedSpeed = [formattedSpeed stringByAppendingString:@"x"];
+        }
+
+        [self setTitle:formattedSpeed forState:UIControlStateNormal];
+
+        BOOL speedApplied = NO;
+
+        UIViewController *rootVC = [UIApplication sharedApplication].keyWindow.rootViewController;
+        while (rootVC.presentedViewController) {
+                rootVC = rootVC.presentedViewController;
+        }
+
+        NSArray *viewControllers = findViewControllersInHierarchy(rootVC);
+        for (UIViewController *vc in viewControllers) {
+                if ([vc isKindOfClass:%c(AWEAwemePlayVideoViewController)]) {
+                        [(AWEAwemePlayVideoViewController *)vc setVideoControllerPlaybackRate:newSpeed];
+                        speedApplied = YES;
+                }
+                if ([vc isKindOfClass:%c(AWEDPlayerFeedPlayerViewController)]) {
+                        [(AWEDPlayerFeedPlayerViewController *)vc setVideoControllerPlaybackRate:newSpeed];
+                        speedApplied = YES;
+                }
+        }
+
+        if (!speedApplied) {
+                [DYYYUtils showToast:@"无法找到视频控制器"];
+        }
 }
 
 - (void)handleTouchUpOutside:(UIButton *)sender {
-	self.justToggledLock = NO;
+        self.justToggledLock = NO;
+        [UIView animateWithDuration:0.1
+                         animations:^{
+                           sender.alpha = 1.0;
+                           sender.transform = CGAffineTransformIdentity;
+                         }];
 }
 
 - (void)handleLongPress:(UILongPressGestureRecognizer *)gesture {
@@ -390,19 +434,6 @@ static void ensureSpeedButtonForStackView(UIView *stackView) {
 		self.isResponding = YES;
 	}
 
-	if (!self.interactionController) {
-		UIViewController *topVC = [UIApplication sharedApplication].keyWindow.rootViewController;
-		while (topVC.presentedViewController) {
-			topVC = topVC.presentedViewController;
-		}
-
-		for (UIViewController *vc in findViewControllersInHierarchy(topVC)) {
-			if ([vc isKindOfClass:%c(AWEPlayInteractionViewController)]) {
-				self.interactionController = (AWEPlayInteractionViewController *)vc;
-				break;
-			}
-		}
-	}
 }
 
 - (void)dealloc {
@@ -458,11 +489,6 @@ static void ensureSpeedButtonForStackView(UIView *stackView) {
 - (void)adjustPlaybackSpeed:(float)speed;
 @end
 
-@interface AWEPlayInteractionViewController (SpeedButtonActions)
-- (void)speedButtonTapped:(UIButton *)sender;
-- (void)buttonTouchDown:(UIButton *)sender;
-- (void)buttonTouchUp:(UIButton *)sender;
-@end
 
 %hook AWEAwemePlayVideoViewController
 
@@ -540,98 +566,6 @@ static void ensureSpeedButtonForStackView(UIView *stackView) {
 
 
 
-@implementation AWEPlayInteractionViewController (SpeedButtonActions)
-
-- (UIViewController *)firstAvailableUIViewController {
-        UIResponder *responder = [self.view nextResponder];
-        while (responder != nil) {
-                if ([responder isKindOfClass:[UIViewController class]]) {
-                        return (UIViewController *)responder;
-                }
-                responder = [responder nextResponder];
-        }
-        return nil;
-}
-
-- (void)speedButtonTapped:(UIButton *)sender {
-        NSArray *speeds = getSpeedOptions();
-        if (speeds.count == 0)
-                return;
-
-	NSInteger currentIndex = getCurrentSpeedIndex();
-	NSInteger newIndex = (currentIndex + 1) % speeds.count;
-
-	setCurrentSpeedIndex(newIndex);
-
-	float newSpeed = [speeds[newIndex] floatValue];
-
-	NSString *formattedSpeed;
-	if (fmodf(newSpeed, 1.0) == 0) {
-		formattedSpeed = [NSString stringWithFormat:@"%.0f", newSpeed];
-	} else if (fmodf(newSpeed * 10, 1.0) == 0) {
-		formattedSpeed = [NSString stringWithFormat:@"%.1f", newSpeed];
-	} else {
-		formattedSpeed = [NSString stringWithFormat:@"%.2f", newSpeed];
-	}
-
-	if (showSpeedX) {
-		formattedSpeed = [formattedSpeed stringByAppendingString:@"x"];
-	}
-
-	[sender setTitle:formattedSpeed forState:UIControlStateNormal];
-
-	[UIView animateWithDuration:0.15
-	    animations:^{
-	      sender.transform = CGAffineTransformMakeScale(1.2, 1.2);
-	    }
-	    completion:^(BOOL finished) {
-	      [UIView animateWithDuration:0.15
-			       animations:^{
-				 sender.transform = CGAffineTransformIdentity;
-			       }];
-	    }];
-
-	BOOL speedApplied = NO;
-
-	UIViewController *rootVC = [UIApplication sharedApplication].keyWindow.rootViewController;
-	while (rootVC.presentedViewController) {
-		rootVC = rootVC.presentedViewController;
-	}
-
-	NSArray *viewControllers = findViewControllersInHierarchy(rootVC);
-
-	for (UIViewController *vc in viewControllers) {
-		if ([vc isKindOfClass:%c(AWEAwemePlayVideoViewController)]) {
-			[(AWEAwemePlayVideoViewController *)vc setVideoControllerPlaybackRate:newSpeed];
-			speedApplied = YES;
-		}
-		if ([vc isKindOfClass:%c(AWEDPlayerFeedPlayerViewController)]) {
-			[(AWEDPlayerFeedPlayerViewController *)vc setVideoControllerPlaybackRate:newSpeed];
-			speedApplied = YES;
-		}
-	}
-
-        if (!speedApplied) {
-                [DYYYUtils showToast:@"无法找到视频控制器"];
-        }
-}
-
-- (void)buttonTouchDown:(UIButton *)sender {
-        [UIView animateWithDuration:0.1
-                         animations:^{
-                           sender.alpha = 0.7;
-                           sender.transform = CGAffineTransformMakeScale(0.95, 0.95);
-                         }];
-}
-
-- (void)buttonTouchUp:(UIButton *)sender {
-        [UIView animateWithDuration:0.1
-                         animations:^{
-                           sender.alpha = 1.0;
-                           sender.transform = CGAffineTransformIdentity;
-                         }];
-}
-@end
 
 %hook UIWindow
 

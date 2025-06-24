@@ -2,7 +2,6 @@
 
 @interface FloatingSpeedButton : UIButton
 @property(nonatomic, assign) CGPoint lastLocation;
-@property(nonatomic, weak) id interactionController;
 @property(nonatomic, assign) BOOL isLocked;
 @property(nonatomic, strong) NSTimer *firstStageTimer;
 @property(nonatomic, assign) BOOL justToggledLock;
