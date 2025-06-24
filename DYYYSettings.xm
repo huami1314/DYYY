@@ -1802,7 +1802,8 @@ extern "C"
 	    NSString *dyyyFolderPath = [documentsDirectory stringByAppendingPathComponent:@"DYYY"];
 	    NSString *jsonFilePath = [dyyyFolderPath stringByAppendingPathComponent:@"abtest_data_fixed.json"];
 
-	    NSString *loadingStatus = gDataLoaded ? @"已加载：" : @"未加载：";
+	    NSString *loadingStatus = [DYYYABTestHook isFixedDataLoaded] ? @"已加载：" : @"未加载：";
+
 	    if (![fileManager fileExistsAtPath:jsonFilePath]) {
 		    saveABTestConfigFileItemRef.detail = [NSString stringWithFormat:@"%@ (文件不存在)", loadingStatus];
 		    saveABTestConfigFileItemRef.isEnable = NO;
@@ -1844,7 +1845,7 @@ extern "C"
 					  item.isSwitchOn = newValue;
 					  [DYYYSettingsHelper setUserDefaults:@(newValue) forKey:@"DYYYABTestBlockEnabled"];
 
-					  abTestBlockEnabled = newValue;
+					  [DYYYABTestHook setABTestBlockEnabled:newValue];
 					}];
 			    } else {
 				    item.isSwitchOn = newValue;
@@ -1852,9 +1853,8 @@ extern "C"
 			    }
 			  };
 		  } else if ([item.identifier isEqualToString:@"DYYYABTestModeString"]) {
-			  // 获取当前的模式
-			  NSString *savedMode = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYABTestModeString"];
-			  BOOL isPatchMode = ![savedMode isEqualToString:@"替换模式：忽略原配置，写入新数据"];
+			  // 使用 DYYYABTestHook 的类方法获取当前的模式
+			  BOOL isPatchMode = [DYYYABTestHook isPatchMode];
 			  item.detail = isPatchMode ? @"覆写模式" : @"替换模式";
 
 			  item.cellTappedBlock = ^{
@@ -1867,13 +1867,12 @@ extern "C"
 								 headerText:@"选择本地配置的应用方式"
 							     onPresentingVC:topView()
 							   selectionChanged:^(NSString *selectedValue) {
-							     BOOL isPatchMode = [selectedValue isEqualToString:@"覆写模式：保留原设置，覆盖同名项"];
+							     BOOL isPatchMode = [DYYYABTestHook isPatchMode];
 							     item.detail = isPatchMode ? @"覆写模式" : @"替换模式";
 
 							     if (![selectedValue isEqualToString:currentMode]) {
-								     gFixedABTestData = nil;
-								     onceToken = 0;
-								     ensureABTestDataLoaded();
+								     [DYYYABTestHook cleanFixedABTestData];
+								     [DYYYABTestHook ensureABTestDataLoaded];
 							     }
 							     [item refreshCell];
 							   }];
@@ -1881,7 +1880,7 @@ extern "C"
 		  } else if ([item.identifier isEqualToString:@"SaveCurrentABTestData"]) {
 			  item.detail = @"(获取中...)";
 
-			  NSDictionary *currentData = getCurrentABTestData();
+			  NSDictionary *currentData = [DYYYABTestHook getCurrentABTestData];
 
 			  if (!currentData) {
 				  item.detail = @"(获取失败)";
@@ -1898,7 +1897,7 @@ extern "C"
 			  }
 
 			  item.cellTappedBlock = ^{
-			    NSDictionary *currentData = getCurrentABTestData();
+			    NSDictionary *currentData = [DYYYABTestHook getCurrentABTestData];
 
 			    if (!currentData) {
 				    [DYYYUtils showToast:@"ABTest配置获取失败"];
@@ -2004,8 +2003,7 @@ extern "C"
 			  };
 		  } else if ([item.identifier isEqualToString:@"LoadABTestConfigFile"]) {
 			  item.cellTappedBlock = ^{
-			    NSString *savedMode = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYABTestModeString"];
-			    BOOL isPatchMode = ![savedMode isEqualToString:@"替换模式：忽略原配置，写入新数据"];
+			    BOOL isPatchMode = [DYYYABTestHook isPatchMode];
 
 			    NSString *confirmTitle, *confirmMessage;
 			    if (isPatchMode) {
@@ -2043,9 +2041,8 @@ extern "C"
 				[DYYYUtils showToast:message];
 
 				if (success) {
-					gFixedABTestData = nil;
-					onceToken = 0;
-					ensureABTestDataLoaded();
+					[DYYYABTestHook cleanFixedABTestData];
+					[DYYYABTestHook ensureABTestDataLoaded];
 					// 导入成功后更新 SaveABTestConfigFile item 的状态
 					refreshSaveABTestConfigFileItem();
 				}
@@ -2075,8 +2072,7 @@ extern "C"
 				    [DYYYUtils showToast:message];
 
 				    if (success) {
-					    gFixedABTestData = nil;
-					    onceToken = 0;
+					    [DYYYABTestHook cleanFixedABTestData];
 					    // 删除成功后修改 SaveABTestConfigFile item 的状态
 					    saveABTestConfigFileItemRef.detail = @"(文件已删除)";
 					    saveABTestConfigFileItemRef.isEnable = NO;
