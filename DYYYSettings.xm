@@ -1802,7 +1802,8 @@ extern "C"
 	    NSString *dyyyFolderPath = [documentsDirectory stringByAppendingPathComponent:@"DYYY"];
 	    NSString *jsonFilePath = [dyyyFolderPath stringByAppendingPathComponent:@"abtest_data_fixed.json"];
 
-	    NSString *loadingStatus = gDataLoaded ? @"已加载：" : @"未加载：";
+	    NSString *loadingStatus = [DYYYABTestHook isLocalConfigLoaded] ? @"已加载：" : @"未加载：";
+
 	    if (![fileManager fileExistsAtPath:jsonFilePath]) {
 		    saveABTestConfigFileItemRef.detail = [NSString stringWithFormat:@"%@ (文件不存在)", loadingStatus];
 		    saveABTestConfigFileItemRef.isEnable = NO;
@@ -1844,7 +1845,7 @@ extern "C"
 					  item.isSwitchOn = newValue;
 					  [DYYYSettingsHelper setUserDefaults:@(newValue) forKey:@"DYYYABTestBlockEnabled"];
 
-					  abTestBlockEnabled = newValue;
+					  [DYYYABTestHook setABTestBlockEnabled:newValue];
 					}];
 			    } else {
 				    item.isSwitchOn = newValue;
@@ -1852,9 +1853,8 @@ extern "C"
 			    }
 			  };
 		  } else if ([item.identifier isEqualToString:@"DYYYABTestModeString"]) {
-			  // 获取当前的模式
-			  NSString *savedMode = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYABTestModeString"];
-			  BOOL isPatchMode = ![savedMode isEqualToString:@"替换模式：忽略原配置，写入新数据"];
+			  // 使用 DYYYABTestHook 的类方法获取当前的模式
+			  BOOL isPatchMode = [DYYYABTestHook isPatchMode];
 			  item.detail = isPatchMode ? @"覆写模式" : @"替换模式";
 
 			  item.cellTappedBlock = ^{
@@ -1867,13 +1867,11 @@ extern "C"
 								 headerText:@"选择本地配置的应用方式"
 							     onPresentingVC:topView()
 							   selectionChanged:^(NSString *selectedValue) {
-							     BOOL isPatchMode = [selectedValue isEqualToString:@"覆写模式：保留原设置，覆盖同名项"];
+							     BOOL isPatchMode = [DYYYABTestHook isPatchMode];
 							     item.detail = isPatchMode ? @"覆写模式" : @"替换模式";
 
 							     if (![selectedValue isEqualToString:currentMode]) {
-								     gFixedABTestData = nil;
-								     onceToken = 0;
-								     ensureABTestDataLoaded();
+								     [DYYYABTestHook applyFixedABTestData];
 							     }
 							     [item refreshCell];
 							   }];
@@ -1881,7 +1879,7 @@ extern "C"
 		  } else if ([item.identifier isEqualToString:@"SaveCurrentABTestData"]) {
 			  item.detail = @"(获取中...)";
 
-			  NSDictionary *currentData = getCurrentABTestData();
+			  NSDictionary *currentData = [DYYYABTestHook getCurrentABTestData];
 
 			  if (!currentData) {
 				  item.detail = @"(获取失败)";
@@ -1898,7 +1896,7 @@ extern "C"
 			  }
 
 			  item.cellTappedBlock = ^{
-			    NSDictionary *currentData = getCurrentABTestData();
+			    NSDictionary *currentData = [DYYYABTestHook getCurrentABTestData];
 
 			    if (!currentData) {
 				    [DYYYUtils showToast:@"ABTest配置获取失败"];
@@ -2004,8 +2002,7 @@ extern "C"
 			  };
 		  } else if ([item.identifier isEqualToString:@"LoadABTestConfigFile"]) {
 			  item.cellTappedBlock = ^{
-			    NSString *savedMode = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYABTestModeString"];
-			    BOOL isPatchMode = ![savedMode isEqualToString:@"替换模式：忽略原配置，写入新数据"];
+			    BOOL isPatchMode = [DYYYABTestHook isPatchMode];
 
 			    NSString *confirmTitle, *confirmMessage;
 			    if (isPatchMode) {
@@ -2021,34 +2018,34 @@ extern "C"
 
 			      DYYYBackupPickerDelegate *pickerDelegate = [[DYYYBackupPickerDelegate alloc] init];
 			      pickerDelegate.completionBlock = ^(NSURL *url) {
-				NSString *sourcePath = [url path];
+				    NSString *sourcePath = [url path];
 
-				NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-				NSString *documentsDirectory = [paths firstObject];
-				NSString *dyyyFolderPath = [documentsDirectory stringByAppendingPathComponent:@"DYYY"];
-				NSString *destPath = [dyyyFolderPath stringByAppendingPathComponent:@"abtest_data_fixed.json"];
+				    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+				    NSString *documentsDirectory = [paths firstObject];
+				    NSString *dyyyFolderPath = [documentsDirectory stringByAppendingPathComponent:@"DYYY"];
+				    NSString *destPath = [dyyyFolderPath stringByAppendingPathComponent:@"abtest_data_fixed.json"];
 
-				if (![[NSFileManager defaultManager] fileExistsAtPath:dyyyFolderPath]) {
-					[[NSFileManager defaultManager] createDirectoryAtPath:dyyyFolderPath withIntermediateDirectories:YES attributes:nil error:nil];
-				}
+				    if (![[NSFileManager defaultManager] fileExistsAtPath:dyyyFolderPath]) {
+						[[NSFileManager defaultManager] createDirectoryAtPath:dyyyFolderPath withIntermediateDirectories:YES attributes:nil error:nil];
+				    }
 
-				NSError *error;
-				if ([[NSFileManager defaultManager] fileExistsAtPath:destPath]) {
-					[[NSFileManager defaultManager] removeItemAtPath:destPath error:&error];
-				}
+				    NSError *error;
+				    if ([[NSFileManager defaultManager] fileExistsAtPath:destPath]) {
+						[[NSFileManager defaultManager] removeItemAtPath:destPath error:&error];
+				    }
 
-				BOOL success = [[NSFileManager defaultManager] copyItemAtPath:sourcePath toPath:destPath error:&error];
+				    BOOL success = [[NSFileManager defaultManager] copyItemAtPath:sourcePath toPath:destPath error:&error];
 
-				NSString *message = success ? @"配置已导入，重启抖音生效" : [NSString stringWithFormat:@"导入失败: %@", error.localizedDescription];
-				[DYYYUtils showToast:message];
+				    NSString *message = success ? @"配置已导入，若没生效请重启抖音" : [NSString stringWithFormat:@"导入失败: %@", error.localizedDescription];
+				    [DYYYUtils showToast:message];
 
-				if (success) {
-					gFixedABTestData = nil;
-					onceToken = 0;
-					ensureABTestDataLoaded();
-					// 导入成功后更新 SaveABTestConfigFile item 的状态
-					refreshSaveABTestConfigFileItem();
-				}
+				    if (success) {
+						[DYYYABTestHook cleanLocalABTestData];
+						[DYYYABTestHook loadLocalABTestConfig];
+						[DYYYABTestHook applyFixedABTestData];
+						// 导入成功后更新 SaveABTestConfigFile item 的状态
+						refreshSaveABTestConfigFileItem();
+				    }
 			      };
 
 			      static char kPickerDelegateKey;
@@ -2075,8 +2072,7 @@ extern "C"
 				    [DYYYUtils showToast:message];
 
 				    if (success) {
-					    gFixedABTestData = nil;
-					    onceToken = 0;
+					    [DYYYABTestHook cleanLocalABTestData];
 					    // 删除成功后修改 SaveABTestConfigFile item 的状态
 					    saveABTestConfigFileItemRef.detail = @"(文件已删除)";
 					    saveABTestConfigFileItemRef.isEnable = NO;
