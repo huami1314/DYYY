@@ -25,6 +25,11 @@ static inline void setVisibilityFlag(SpeedButtonVisibilityFlag flag, BOOL enable
 static inline BOOL isFlagEnabled(SpeedButtonVisibilityFlag flag) {
   return (visibilityFlags & flag) != 0;
 }
+
+static inline void updateFlag(SpeedButtonVisibilityFlag flag, BOOL enabled) {
+  setVisibilityFlag(flag, enabled);
+  updateSpeedButtonVisibility();
+}
 static BOOL showSpeedX = NO;
 static CGFloat speedButtonSize = 32.0;
 static BOOL isFloatSpeedButtonEnabled = NO;
@@ -110,26 +115,16 @@ NSArray *findViewControllersInHierarchy(UIViewController *rootViewController) {
 }
 
 void showSpeedButton(void) {
-  setVisibilityFlag(SpeedButtonVisibilityFlagForceHidden, NO);
-  updateSpeedButtonVisibility();
+  updateFlag(SpeedButtonVisibilityFlagForceHidden, NO);
 }
 
 void hideSpeedButton(void) {
-  setVisibilityFlag(SpeedButtonVisibilityFlagForceHidden, YES);
-  if (speedButton) {
-    dispatch_async(dispatch_get_main_queue(), ^{
-      speedButton.hidden = YES;
-    });
-  }
+  updateFlag(SpeedButtonVisibilityFlagForceHidden, YES);
 }
 
 void toggleSpeedButtonVisibility(void) {
   BOOL hidden = isFlagEnabled(SpeedButtonVisibilityFlagForceHidden);
-  if (hidden) {
-    showSpeedButton();
-  } else {
-    hideSpeedButton();
-  }
+  updateFlag(SpeedButtonVisibilityFlagForceHidden, !hidden);
 }
 
 void updateSpeedButtonVisibility() {
@@ -466,11 +461,10 @@ static void ensureSpeedButtonForStackView(UIView *stackView) {
 
         if (isRightInteractionStack(self) && speedButton && isFloatSpeedButtonEnabled) {
                 if (alpha == 0) {
-                        setVisibilityFlag(SpeedButtonVisibilityFlagComment, YES);
+                        updateFlag(SpeedButtonVisibilityFlagComment, YES);
                 } else if (alpha == 1) {
-                        setVisibilityFlag(SpeedButtonVisibilityFlagComment, NO);
+                        updateFlag(SpeedButtonVisibilityFlagComment, NO);
                 }
-                updateSpeedButtonVisibility();
         }
 }
 
@@ -480,11 +474,10 @@ static void ensureSpeedButtonForStackView(UIView *stackView) {
                 return;
         if (self.window) {
                 ensureSpeedButtonForStackView(self);
-                setVisibilityFlag(SpeedButtonVisibilityFlagInteraction, YES);
+                updateFlag(SpeedButtonVisibilityFlagInteraction, YES);
         } else {
-                setVisibilityFlag(SpeedButtonVisibilityFlagInteraction, NO);
+                updateFlag(SpeedButtonVisibilityFlagInteraction, NO);
         }
-        updateSpeedButtonVisibility();
 }
 
 - (void)layoutSubviews {
