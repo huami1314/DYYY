@@ -108,6 +108,7 @@ NSArray *findViewControllersInHierarchy(UIViewController *rootViewController) {
 
 void showSpeedButton(void) {
   setVisibilityFlag(SpeedButtonVisibilityFlagForceHidden, NO);
+  updateSpeedButtonVisibility();
 }
 
 void hideSpeedButton(void) {
@@ -116,6 +117,15 @@ void hideSpeedButton(void) {
     dispatch_async(dispatch_get_main_queue(), ^{
       speedButton.hidden = YES;
     });
+  }
+}
+
+void toggleSpeedButtonVisibility(void) {
+  BOOL hidden = isFlagEnabled(SpeedButtonVisibilityFlagForceHidden);
+  if (hidden) {
+    showSpeedButton();
+  } else {
+    hideSpeedButton();
   }
 }
 
