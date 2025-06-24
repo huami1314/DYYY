@@ -26,6 +26,9 @@ static inline BOOL isFlagEnabled(SpeedButtonVisibilityFlag flag) {
   return (visibilityFlags & flag) != 0;
 }
 
+// Forward declarations
+void updateSpeedButtonVisibility(void);
+
 static inline void updateFlag(SpeedButtonVisibilityFlag flag, BOOL enabled) {
   setVisibilityFlag(flag, enabled);
   updateSpeedButtonVisibility();
@@ -33,9 +36,6 @@ static inline void updateFlag(SpeedButtonVisibilityFlag flag, BOOL enabled) {
 static BOOL showSpeedX = NO;
 static CGFloat speedButtonSize = 32.0;
 static BOOL isFloatSpeedButtonEnabled = NO;
-
-// Forward declarations
-void updateSpeedButtonVisibility(void);
 
 NSArray *getSpeedOptions() {
 	NSString *speedConfig = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYSpeedSettings"] ?: @"1.0,1.25,1.5,2.0";
@@ -122,10 +122,6 @@ void hideSpeedButton(void) {
   updateFlag(SpeedButtonVisibilityFlagForceHidden, YES);
 }
 
-void toggleSpeedButtonVisibility(void) {
-  BOOL hidden = isFlagEnabled(SpeedButtonVisibilityFlagForceHidden);
-  updateFlag(SpeedButtonVisibilityFlagForceHidden, !hidden);
-}
 
 void updateSpeedButtonVisibility() {
 	if (!speedButton || !isFloatSpeedButtonEnabled)

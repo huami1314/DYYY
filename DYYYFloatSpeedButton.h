@@ -17,4 +17,3 @@
 extern FloatingSpeedButton *getSpeedButton(void);
 extern void showSpeedButton(void);
 extern void hideSpeedButton(void);
-extern void toggleSpeedButtonVisibility(void);
