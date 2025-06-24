@@ -7,12 +7,27 @@
 @class AWEFeedCellViewController;
 
 static FloatingSpeedButton *speedButton = nil;
-static BOOL isCommentViewVisible = NO;
+typedef NS_OPTIONS(NSUInteger, SpeedButtonVisibilityFlag) {
+  SpeedButtonVisibilityFlagInteraction = 1 << 0,
+  SpeedButtonVisibilityFlagComment = 1 << 1,
+  SpeedButtonVisibilityFlagForceHidden = 1 << 2,
+};
+
+static SpeedButtonVisibilityFlag visibilityFlags = 0;
+static inline void setVisibilityFlag(SpeedButtonVisibilityFlag flag, BOOL enabled) {
+  if (enabled) {
+    visibilityFlags |= flag;
+  } else {
+    visibilityFlags &= ~flag;
+  }
+}
+
+static inline BOOL isFlagEnabled(SpeedButtonVisibilityFlag flag) {
+  return (visibilityFlags & flag) != 0;
+}
 static BOOL showSpeedX = NO;
 static CGFloat speedButtonSize = 32.0;
 static BOOL isFloatSpeedButtonEnabled = NO;
-static BOOL isForceHidden = NO;
-static BOOL isInteractionViewVisible = NO;
 
 NSArray *getSpeedOptions() {
 	NSString *speedConfig = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYSpeedSettings"] ?: @"1.0,1.25,1.5,2.0";
@@ -91,33 +106,79 @@ NSArray *findViewControllersInHierarchy(UIViewController *rootViewController) {
 	return viewControllers;
 }
 
-void showSpeedButton(void) { isForceHidden = NO; }
+void showSpeedButton(void) {
+  setVisibilityFlag(SpeedButtonVisibilityFlagForceHidden, NO);
+}
 
 void hideSpeedButton(void) {
-	isForceHidden = YES;
-	if (speedButton) {
-		dispatch_async(dispatch_get_main_queue(), ^{
-		  speedButton.hidden = YES;
-		});
-	}
+  setVisibilityFlag(SpeedButtonVisibilityFlagForceHidden, YES);
+  if (speedButton) {
+    dispatch_async(dispatch_get_main_queue(), ^{
+      speedButton.hidden = YES;
+    });
+  }
 }
 
 void updateSpeedButtonVisibility() {
 	if (!speedButton || !isFloatSpeedButtonEnabled)
 		return;
 
-	dispatch_async(dispatch_get_main_queue(), ^{
-	  if (!isInteractionViewVisible) {
-		  speedButton.hidden = YES;
-		  return;
-	  }
+        dispatch_async(dispatch_get_main_queue(), ^{
+          if (!isFlagEnabled(SpeedButtonVisibilityFlagInteraction)) {
+                  speedButton.hidden = YES;
+                  return;
+          }
 
-	  // 在交互界面时，根据评论界面状态决定是否显示
-	  BOOL shouldHide = isCommentViewVisible || isForceHidden;
-	  if (speedButton.hidden != shouldHide) {
-		  speedButton.hidden = shouldHide;
-	  }
-	});
+          BOOL shouldHide =
+              isFlagEnabled(SpeedButtonVisibilityFlagComment) ||
+              isFlagEnabled(SpeedButtonVisibilityFlagForceHidden);
+          if (speedButton.hidden != shouldHide) {
+                  speedButton.hidden = shouldHide;
+          }
+        });
+}
+
+static void ensureSpeedButtonForStackView(UIView *stackView) {
+        if (!isFloatSpeedButtonEnabled)
+                return;
+
+        if (speedButton == nil) {
+                speedButtonSize = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYSpeedButtonSize"] ?: 32.0;
+
+                CGRect screenBounds = [UIScreen mainScreen].bounds;
+                CGRect initialFrame = CGRectMake((screenBounds.size.width - speedButtonSize) / 2,
+                                                (screenBounds.size.height - speedButtonSize) / 2,
+                                                speedButtonSize, speedButtonSize);
+
+                speedButton = [[FloatingSpeedButton alloc] initWithFrame:initialFrame];
+
+                speedButton.interactionController = [stackView firstAvailableUIViewController];
+
+                showSpeedX = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYSpeedButtonShowX"];
+
+                updateSpeedButtonUI();
+        } else {
+                [speedButton resetButtonState];
+
+                UIViewController *vc = [stackView firstAvailableUIViewController];
+                if (speedButton.interactionController == nil || speedButton.interactionController != vc) {
+                        speedButton.interactionController = vc;
+                }
+
+                if (speedButton.frame.size.width != speedButtonSize) {
+                        CGPoint center = speedButton.center;
+                        CGRect newFrame = CGRectMake(0, 0, speedButtonSize, speedButtonSize);
+                        speedButton.frame = newFrame;
+                        speedButton.center = center;
+                        speedButton.layer.cornerRadius = speedButtonSize / 2;
+                }
+        }
+
+        UIWindow *keyWindow = [UIApplication sharedApplication].keyWindow;
+        if (keyWindow && ![speedButton isDescendantOfView:keyWindow]) {
+                [keyWindow addSubview:speedButton];
+                [speedButton loadSavedPosition];
+        }
 }
 
 @interface UIView (SpeedHelper)
@@ -357,16 +418,34 @@ void updateSpeedButtonVisibility() {
 %hook AWEElementStackView
 
 - (void)setAlpha:(CGFloat)alpha {
-	%orig;
+        %orig;
 
-	if (speedButton && isFloatSpeedButtonEnabled) {
-		if (alpha == 0) {
-			isCommentViewVisible = YES;
-		} else if (alpha == 1) {
-			isCommentViewVisible = NO;
-		}
-		updateSpeedButtonVisibility();
-	}
+        if (speedButton && isFloatSpeedButtonEnabled) {
+                if (alpha == 0) {
+                        setVisibilityFlag(SpeedButtonVisibilityFlagComment, YES);
+                } else if (alpha == 1) {
+                        setVisibilityFlag(SpeedButtonVisibilityFlagComment, NO);
+                }
+                updateSpeedButtonVisibility();
+        }
+}
+
+- (void)didMoveToWindow {
+        %orig;
+        if (self.window) {
+                ensureSpeedButtonForStackView(self);
+                setVisibilityFlag(SpeedButtonVisibilityFlagInteraction, YES);
+        } else {
+                setVisibilityFlag(SpeedButtonVisibilityFlagInteraction, NO);
+        }
+        updateSpeedButtonVisibility();
+}
+
+- (void)layoutSubviews {
+        %orig;
+        if (self.window) {
+                ensureSpeedButtonForStackView(self);
+        }
 }
 
 %end
@@ -377,6 +456,12 @@ void updateSpeedButtonVisibility() {
 
 @interface AWEDPlayerFeedPlayerViewController (SpeedControl)
 - (void)adjustPlaybackSpeed:(float)speed;
+@end
+
+@interface AWEPlayInteractionViewController (SpeedButtonActions)
+- (void)speedButtonTapped:(UIButton *)sender;
+- (void)buttonTouchDown:(UIButton *)sender;
+- (void)buttonTouchUp:(UIButton *)sender;
 @end
 
 %hook AWEAwemePlayVideoViewController
@@ -453,98 +538,25 @@ void updateSpeedButtonVisibility() {
 
 %end
 
-%hook AWECommentContainerViewController
 
-- (void)viewDidAppear:(BOOL)animated {
-	%orig;
-	isCommentViewVisible = YES;
-	updateSpeedButtonVisibility();
-}
 
-- (void)viewDidDisappear:(BOOL)animated {
-	%orig;
-	isCommentViewVisible = NO;
-	updateSpeedButtonVisibility();
-}
+@implementation AWEPlayInteractionViewController (SpeedButtonActions)
 
-%end
-
-%hook AWEPlayInteractionViewController
-
-- (void)viewDidAppear:(BOOL)animated {
-	%orig;
-	isInteractionViewVisible = YES;
-	isCommentViewVisible = self.isCommentVCShowing;
-	updateSpeedButtonVisibility();
-}
-
-- (void)viewDidLayoutSubviews {
-	%orig;
-
-	if (!isFloatSpeedButtonEnabled)
-		return;
-	if (speedButton == nil) {
-		speedButtonSize = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYSpeedButtonSize"] ?: 32.0;
-
-		CGRect screenBounds = [UIScreen mainScreen].bounds;
-		CGRect initialFrame = CGRectMake((screenBounds.size.width - speedButtonSize) / 2, (screenBounds.size.height - speedButtonSize) / 2, speedButtonSize, speedButtonSize);
-
-		speedButton = [[FloatingSpeedButton alloc] initWithFrame:initialFrame];
-
-		speedButton.interactionController = self;
-
-		showSpeedX = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYSpeedButtonShowX"];
-
-		updateSpeedButtonUI();
-	} else {
-		[speedButton resetButtonState];
-
-		if (speedButton.interactionController == nil || speedButton.interactionController != self) {
-			speedButton.interactionController = self;
-		}
-
-		if (speedButton.frame.size.width != speedButtonSize) {
-			CGPoint center = speedButton.center;
-			CGRect newFrame = CGRectMake(0, 0, speedButtonSize, speedButtonSize);
-			speedButton.frame = newFrame;
-			speedButton.center = center;
-			speedButton.layer.cornerRadius = speedButtonSize / 2;
-		}
-	}
-
-	UIWindow *keyWindow = [UIApplication sharedApplication].keyWindow;
-	if (keyWindow && ![speedButton isDescendantOfView:keyWindow]) {
-		[keyWindow addSubview:speedButton];
-		[speedButton loadSavedPosition];
-	}
-	isCommentViewVisible = self.isCommentVCShowing;
-	updateSpeedButtonVisibility();
-}
-
-- (void)viewDidDisappear:(BOOL)animated {
-	%orig;
-	isInteractionViewVisible = NO;
-	isCommentViewVisible = self.isCommentVCShowing;
-	updateSpeedButtonVisibility();
-}
-
-%new
 - (UIViewController *)firstAvailableUIViewController {
-	UIResponder *responder = [self.view nextResponder];
-	while (responder != nil) {
-		if ([responder isKindOfClass:[UIViewController class]]) {
-			return (UIViewController *)responder;
-		}
-		responder = [responder nextResponder];
-	}
-	return nil;
+        UIResponder *responder = [self.view nextResponder];
+        while (responder != nil) {
+                if ([responder isKindOfClass:[UIViewController class]]) {
+                        return (UIViewController *)responder;
+                }
+                responder = [responder nextResponder];
+        }
+        return nil;
 }
 
-%new
 - (void)speedButtonTapped:(UIButton *)sender {
-	NSArray *speeds = getSpeedOptions();
-	if (speeds.count == 0)
-		return;
+        NSArray *speeds = getSpeedOptions();
+        if (speeds.count == 0)
+                return;
 
 	NSInteger currentIndex = getCurrentSpeedIndex();
 	NSInteger newIndex = (currentIndex + 1) % speeds.count;
@@ -599,30 +611,27 @@ void updateSpeedButtonVisibility() {
 		}
 	}
 
-	if (!speedApplied) {
-		[DYYYUtils showToast:@"无法找到视频控制器"];
-	}
+        if (!speedApplied) {
+                [DYYYUtils showToast:@"无法找到视频控制器"];
+        }
 }
 
-%new
 - (void)buttonTouchDown:(UIButton *)sender {
-	[UIView animateWithDuration:0.1
-			 animations:^{
-			   sender.alpha = 0.7;
-			   sender.transform = CGAffineTransformMakeScale(0.95, 0.95);
-			 }];
+        [UIView animateWithDuration:0.1
+                         animations:^{
+                           sender.alpha = 0.7;
+                           sender.transform = CGAffineTransformMakeScale(0.95, 0.95);
+                         }];
 }
 
-%new
 - (void)buttonTouchUp:(UIButton *)sender {
-	[UIView animateWithDuration:0.1
-			 animations:^{
-			   sender.alpha = 1.0;
-			   sender.transform = CGAffineTransformIdentity;
-			 }];
+        [UIView animateWithDuration:0.1
+                         animations:^{
+                           sender.alpha = 1.0;
+                           sender.transform = CGAffineTransformIdentity;
+                         }];
 }
-
-%end
+@end
 
 %hook UIWindow
 
