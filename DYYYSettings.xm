@@ -193,7 +193,7 @@ extern "C"
 			  @"title" : @"自定弹幕颜色",
 			  @"subTitle" : @"填入 random 使用随机颜色弹幕",
 			  @"detail" : @"十六进制",
-			  @"cellType" : @18,
+			  @"cellType" : @20,
 			  @"imageName" : @"ic_dansquarenut_outlined_20"
 		  },
 	  ];
@@ -211,7 +211,7 @@ extern "C"
 			  @"title" : @"视频背景颜色",
 			  @"subTitle" : @"可以自定义部分横屏视频的背景颜色",
 			  @"detail" : @"",
-			  @"cellType" : @18,
+			  @"cellType" : @20,
 			  @"imageName" : @"ic_tv_outlined_20"
 		  },
 		  @{@"identifier" : @"DYYYisShowScheduleDisplay",
@@ -265,7 +265,7 @@ extern "C"
 			  @"title" : @"国外解析账号",
 			  @"subTitle" : @"使用 Geonames.org 账号解析国外 IP 属地",
 			  @"detail" : @"",
-			  @"cellType" : @18,
+			  @"cellType" : @20,
 			  @"imageName" : @"ic_location_outlined_20"
 		  },
 		  @{@"identifier" : @"DYYYLabelColor",
@@ -2196,7 +2196,7 @@ extern "C"
 		    @"title" : @"启用双击打开菜单",
 			@"subTitle" : @"无法与双击打开评论同时启用",
 		    @"detail" : @"",
-		    @"cellType" : @18,
+		    @"cellType" : @20,
 		    @"imageName" : @"ic_xiaoxihuazhonghua_outlined_20"}
 	  ];
 

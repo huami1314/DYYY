@@ -393,7 +393,7 @@
     item.isSwitchOn = [self getUserDefaults:item.identifier];
 
     [self applyDependencyRulesForItem:item];
-    if ((item.cellType == 18 || item.cellType == 26) && cellTapHandlers != nil) {
+    if ((item.cellType == 20 || item.cellType == 26) && cellTapHandlers != nil) {
         cellTapHandlers[item.identifier] = ^{
           if (!item.isEnable)
               return;
