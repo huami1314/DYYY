@@ -20,9 +20,8 @@
 @class DYYYIconOptionsDialogView;
 static void showIconOptionsDialog(NSString *title, UIImage *previewImage, NSString *saveFilename, void (^onClear)(void), void (^onSelect)(void));
 
-#import "DYYYImagePickerDelegate.h"
 #import "DYYYBackupPickerDelegate.h"
-
+#import "DYYYImagePickerDelegate.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -189,12 +188,14 @@ extern "C"
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_dansquare_outlined_20"},
-		  @{@"identifier" : @"DYYYdanmuColor",
-		    @"title" : @"自定弹幕颜色",
-			@"subTitle" : @"填入 random 使用随机颜色弹幕",
-		    @"detail" : @"十六进制",
-		    @"cellType" : @18,
-		    @"imageName" : @"ic_dansquarenut_outlined_20"},
+		  @{
+			  @"identifier" : @"DYYYdanmuColor",
+			  @"title" : @"自定弹幕颜色",
+			  @"subTitle" : @"填入 random 使用随机颜色弹幕",
+			  @"detail" : @"十六进制",
+			  @"cellType" : @18,
+			  @"imageName" : @"ic_dansquarenut_outlined_20"
+		  },
 	  ];
 
 	  for (NSDictionary *dict in appearanceSettings) {
@@ -240,8 +241,9 @@ extern "C"
 		    @"imageName" : @"ic_playertime_outlined_20"},
 		  @{@"identifier" : @"DYYYisEnableAutoPlay",
 		    @"title" : @"启用自动播放",
+			@"subTitle" : @"暂时仅支持推荐、搜索和个人主页的自动连播",
 		    @"detail" : @"",
-		    @"cellType" : @6,
+		    @"cellType" : @37,
 		    @"imageName" : @"ic_play_outlined_12"},
 		  @{@"identifier" : @"DYYYDefaultSpeed",
 		    @"title" : @"设置默认倍速",
@@ -405,8 +407,9 @@ extern "C"
 		    @"imageName" : @"ic_playertime_outlined_20"},
 		  @{@"identifier" : @"DYYYfilterFeedHDR",
 		    @"title" : @"推荐过滤HDR",
+			@"subTitle" : @"开启后推荐流会屏蔽 HDR 视频",
 		    @"detail" : @"",
-		    @"cellType" : @6,
+		    @"cellType" : @37,
 		    @"imageName" : @"ic_sun_outlined"},
 		  @{@"identifier" : @"DYYYfilterProp",
 		    @"title" : @"推荐过滤拍同款",
@@ -739,12 +742,14 @@ extern "C"
 	  // 【主界面元素】分类
 	  NSMutableArray<AWESettingItemModel *> *mainUiItems = [NSMutableArray array];
 	  NSArray *mainUiSettings = @[
-		  @{@"identifier" : @"DYYYisHiddenBottomBg",
-		    @"title" : @"隐藏底栏背景",
-			@"subTitle" : @"完全透明化底栏，可能需要配合首页全屏使用",
-		    @"detail" : @"",
-		    @"cellType" : @37,
-		    @"imageName" : @"ic_eyeslash_outlined_16"},
+		  @{
+			  @"identifier" : @"DYYYisHiddenBottomBg",
+			  @"title" : @"隐藏底栏背景",
+			  @"subTitle" : @"完全透明化底栏，可能需要配合首页全屏使用",
+			  @"detail" : @"",
+			  @"cellType" : @37,
+			  @"imageName" : @"ic_eyeslash_outlined_16"
+		  },
 		  @{@"identifier" : @"DYYYisHiddenBottomDot",
 		    @"title" : @"隐藏底栏红点",
 		    @"detail" : @"",
@@ -1148,9 +1153,10 @@ extern "C"
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_eyeslash_outlined_16"},
 		  @{@"identifier" : @"DYYYHideLiveCapsuleView",
-		    @"title" : @"隐藏直播胶囊",
+		    @"title" : @"隐藏直播红点",
+			@"subTitle" : @"隐藏顶栏的直播中提示",
 		    @"detail" : @"",
-		    @"cellType" : @6,
+		    @"cellType" : @37,
 		    @"imageName" : @"ic_eyeslash_outlined_16"},
 		  @{@"identifier" : @"DYYYHideStoryProgressSlide",
 		    @"title" : @"隐藏视频滑条",
@@ -1184,13 +1190,9 @@ extern "C"
 		    @"imageName" : @"ic_eyeslash_outlined_16"},
 		  @{@"identifier" : @"DYYYHidePendantGroup",
 		    @"title" : @"隐藏红包悬浮",
+			@"subTitle" : @"隐藏抖音极速版的红包悬浮按钮，可能失效，不修复。",
 		    @"detail" : @"",
-		    @"cellType" : @6,
-		    @"imageName" : @"ic_eyeslash_outlined_16"},
-		  @{@"identifier" : @"DYYYHidekeyboardai",
-		    @"title" : @"隐藏键盘AI",
-		    @"detail" : @"",
-		    @"cellType" : @6,
+		    @"cellType" : @37,
 		    @"imageName" : @"ic_eyeslash_outlined_16"},
 		  @{@"identifier" : @"DYYYHideScancode",
 		    @"title" : @"隐藏输入扫码",
@@ -1206,6 +1208,12 @@ extern "C"
 		    @"title" : @"隐藏暂停相关",
 		    @"detail" : @"",
 		    @"cellType" : @6,
+		    @"imageName" : @"ic_eyeslash_outlined_16"},
+		  @{@"identifier" : @"DYYYHidekeyboardai",
+		    @"title" : @"隐藏键盘 AI",
+			@"subTitle" : @"隐藏搜索下方的 AI 和语音搜索按钮",
+		    @"detail" : @"",
+		    @"cellType" : @37,
 		    @"imageName" : @"ic_eyeslash_outlined_16"}
 	  ];
 
@@ -1702,12 +1710,14 @@ extern "C"
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_removeimage_outlined_20"},
-		  @{@"identifier" : @"DYYYForceDownloadEmotion",
-		    @"title" : @"保存评论区表情包",
-			@"subTitle" : @"iOS 17+的用户请长按表情本身保存",
-		    @"detail" : @"",
-		    @"cellType" : @37,
-		    @"imageName" : @"ic_emoji_outlined"},
+		  @{
+			  @"identifier" : @"DYYYForceDownloadEmotion",
+			  @"title" : @"保存评论区表情包",
+			  @"subTitle" : @"iOS 17+的用户请长按表情本身保存",
+			  @"detail" : @"",
+			  @"cellType" : @37,
+			  @"imageName" : @"ic_emoji_outlined"
+		  },
 		  @{@"identifier" : @"DYYYForceDownloadPreviewEmotion",
 		    @"title" : @"保存预览页表情包",
 		    @"detail" : @"",
@@ -1915,7 +1925,7 @@ extern "C"
 			    [formatter setDateFormat:@"yyyyMMdd_HHmmss"];
 			    NSString *timestamp = [formatter stringFromDate:[NSDate date]];
 			    NSString *tempFile = [NSString stringWithFormat:@"ABTest_Config_%@.json", timestamp];
-                            NSString *tempFilePath = [DYYYUtils cachePathForFilename:tempFile];
+			    NSString *tempFilePath = [DYYYUtils cachePathForFilename:tempFile];
 
 			    BOOL success = [sortedJsonData writeToFile:tempFilePath atomically:YES];
 
@@ -1977,7 +1987,7 @@ extern "C"
 			    [formatter setDateFormat:@"yyyyMMdd_HHmmss"];
 			    NSString *timestamp = [formatter stringFromDate:[NSDate date]];
 			    NSString *tempFile = [NSString stringWithFormat:@"abtest_data_fixed_%@.json", timestamp];
-                            NSString *tempFilePath = [DYYYUtils cachePathForFilename:tempFile];
+			    NSString *tempFilePath = [DYYYUtils cachePathForFilename:tempFile];
 
 			    if (![sortedJsonData writeToFile:tempFilePath atomically:YES]) {
 				    [DYYYUtils showToast:@"临时文件创建失败"];
@@ -2018,34 +2028,34 @@ extern "C"
 
 			      DYYYBackupPickerDelegate *pickerDelegate = [[DYYYBackupPickerDelegate alloc] init];
 			      pickerDelegate.completionBlock = ^(NSURL *url) {
-				    NSString *sourcePath = [url path];
+				NSString *sourcePath = [url path];
 
-				    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-				    NSString *documentsDirectory = [paths firstObject];
-				    NSString *dyyyFolderPath = [documentsDirectory stringByAppendingPathComponent:@"DYYY"];
-				    NSString *destPath = [dyyyFolderPath stringByAppendingPathComponent:@"abtest_data_fixed.json"];
+				NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+				NSString *documentsDirectory = [paths firstObject];
+				NSString *dyyyFolderPath = [documentsDirectory stringByAppendingPathComponent:@"DYYY"];
+				NSString *destPath = [dyyyFolderPath stringByAppendingPathComponent:@"abtest_data_fixed.json"];
 
-				    if (![[NSFileManager defaultManager] fileExistsAtPath:dyyyFolderPath]) {
-						[[NSFileManager defaultManager] createDirectoryAtPath:dyyyFolderPath withIntermediateDirectories:YES attributes:nil error:nil];
-				    }
+				if (![[NSFileManager defaultManager] fileExistsAtPath:dyyyFolderPath]) {
+					[[NSFileManager defaultManager] createDirectoryAtPath:dyyyFolderPath withIntermediateDirectories:YES attributes:nil error:nil];
+				}
 
-				    NSError *error;
-				    if ([[NSFileManager defaultManager] fileExistsAtPath:destPath]) {
-						[[NSFileManager defaultManager] removeItemAtPath:destPath error:&error];
-				    }
+				NSError *error;
+				if ([[NSFileManager defaultManager] fileExistsAtPath:destPath]) {
+					[[NSFileManager defaultManager] removeItemAtPath:destPath error:&error];
+				}
 
-				    BOOL success = [[NSFileManager defaultManager] copyItemAtPath:sourcePath toPath:destPath error:&error];
+				BOOL success = [[NSFileManager defaultManager] copyItemAtPath:sourcePath toPath:destPath error:&error];
 
-				    NSString *message = success ? @"配置已导入，若没生效请重启抖音" : [NSString stringWithFormat:@"导入失败: %@", error.localizedDescription];
-				    [DYYYUtils showToast:message];
+				NSString *message = success ? @"配置已导入，若没生效请重启抖音" : [NSString stringWithFormat:@"导入失败: %@", error.localizedDescription];
+				[DYYYUtils showToast:message];
 
-				    if (success) {
-						[DYYYABTestHook cleanLocalABTestData];
-						[DYYYABTestHook loadLocalABTestConfig];
-						[DYYYABTestHook applyFixedABTestData];
-						// 导入成功后更新 SaveABTestConfigFile item 的状态
-						refreshSaveABTestConfigFileItem();
-				    }
+				if (success) {
+					[DYYYABTestHook cleanLocalABTestData];
+					[DYYYABTestHook loadLocalABTestConfig];
+					[DYYYABTestHook applyFixedABTestData];
+					// 导入成功后更新 SaveABTestConfigFile item 的状态
+					refreshSaveABTestConfigFileItem();
+				}
 			      };
 
 			      static char kPickerDelegateKey;
@@ -2092,8 +2102,9 @@ extern "C"
 	  NSArray *interactionSettings = @[
 		  @{@"identifier" : @"DYYYentrance",
 		    @"title" : @"左侧边栏快捷入口",
+			@"subTitle" : @"将侧边栏替换为 DYYY 快捷入口",
 		    @"detail" : @"",
-		    @"cellType" : @6,
+		    @"cellType" : @37,
 		    @"imageName" : @"ic_circlearrowin_outlined_20"},
 		  @{@"identifier" : @"DYYYDisableSidebarGesture",
 		    @"title" : @"禁止侧滑进入边栏",
@@ -2102,13 +2113,15 @@ extern "C"
 		    @"imageName" : @"ic_circlearrowin_outlined_20"},
 		  @{@"identifier" : @"DYYYVideoGesture",
 		    @"title" : @"横屏视频交互增强",
+			@"subTitle" : @"启用横屏视频的手势功能",
 		    @"detail" : @"",
-		    @"cellType" : @6,
+		    @"cellType" : @37,
 		    @"imageName" : @"ic_phonearrowdown_outlined_20"},
 		  @{@"identifier" : @"DYYYDisableAutoEnterLive",
 		    @"title" : @"禁用自动进入直播",
+			@"subTitle" : @"禁止顶栏-直播下自动进入直播间",
 		    @"detail" : @"",
-		    @"cellType" : @6,
+		    @"cellType" : @37,
 		    @"imageName" : @"ic_video_outlined_20"},
 		  @{@"identifier" : @"DYYYEnableSaveAvatar",
 		    @"title" : @"启用保存他人头像",
@@ -2116,19 +2129,21 @@ extern "C"
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_personcircleclean_outlined_20"},
 		  @{@"identifier" : @"DYYYCommentCopyText",
-		    @"title" : @"长按评论复制评论",
+		    @"title" : @"复制评论移除昵称",
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_at_outlined_20"},
 		  @{@"identifier" : @"DYYYBioCopyText",
 		    @"title" : @"长按简介复制简介",
+			@"subTitle" : @"长按个人主页的简介复制",
 		    @"detail" : @"",
-		    @"cellType" : @6,
+		    @"cellType" : @37,
 		    @"imageName" : @"ic_rectangleonrectangleup_outlined_20"},
 		  @{@"identifier" : @"DYYYLongPressCopyTextEnabled",
 		    @"title" : @"长按文案复制文案",
+			@"subTitle" : @"长按视频左下角的文案复制",
 		    @"detail" : @"",
-		    @"cellType" : @6,
+		    @"cellType" : @37,
 		    @"imageName" : @"ic_rectangleonrectangleup_outlined_20"},
 		  @{@"identifier" : @"DYYYMusicCopyText",
 		    @"title" : @"评论音乐点击复制",
@@ -2142,8 +2157,9 @@ extern "C"
 		    @"imageName" : @"ic_image_outlined_20"},
 		  @{@"identifier" : @"DYYYisEnableModern",
 		    @"title" : @"启用新版玻璃面板",
+			@"subTitle" : @"启用抖音灰度测试的长按毛玻璃面板功能",
 		    @"detail" : @"",
-		    @"cellType" : @6,
+		    @"cellType" : @37,
 		    @"imageName" : @"ic_moon_outlined"},
 		  @{@"identifier" : @"DYYYisEnableModernLight",
 		    @"title" : @"启用新版浅色面板",
@@ -2172,13 +2188,15 @@ extern "C"
 		    @"imageName" : @"ic_comment_outlined_20"},
 		  @{@"identifier" : @"DYYYDefaultEnterWorks",
 		    @"title" : @"资料默认进入作品",
+			@"subTitle" : @"禁止个人资料页自动进入橱窗等页面",
 		    @"detail" : @"",
-		    @"cellType" : @6,
+		    @"cellType" : @37,
 		    @"imageName" : @"ic_playsquarestack_outlined_20"},
 		  @{@"identifier" : @"DYYYEnableDoubleOpenAlertController",
 		    @"title" : @"启用双击打开菜单",
+			@"subTitle" : @"无法与双击打开评论同时启用",
 		    @"detail" : @"",
-		    @"cellType" : @26,
+		    @"cellType" : @18,
 		    @"imageName" : @"ic_xiaoxihuazhonghua_outlined_20"}
 	  ];
 
@@ -2600,7 +2618,7 @@ extern "C"
 	  [formatter setDateFormat:@"yyyyMMdd_HHmmss"];
 	  NSString *timestamp = [formatter stringFromDate:[NSDate date]];
 	  NSString *backupFileName = [NSString stringWithFormat:@"DYYY_Backup_%@.json", timestamp];
-          NSString *tempFilePath = [DYYYUtils cachePathForFilename:backupFileName];
+	  NSString *tempFilePath = [DYYYUtils cachePathForFilename:backupFileName];
 
 	  BOOL success = [sortedJsonData writeToFile:tempFilePath atomically:YES];
 
@@ -2793,7 +2811,7 @@ extern "C"
 
 	NSArray<NSString *> *customDirs = @[ @"Application Support/gurd_cache", @"Caches", @"BDByteCast", @"kitelog" ];
 	NSString *libraryDir = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES).firstObject;
-        NSMutableArray<NSString *> *allPaths = [NSMutableArray arrayWithObject:[DYYYUtils cacheDirectory]];
+	NSMutableArray<NSString *> *allPaths = [NSMutableArray arrayWithObject:[DYYYUtils cacheDirectory]];
 	for (NSString *sub in customDirs) {
 		NSString *fullPath = [libraryDir stringByAppendingPathComponent:sub];
 		if ([[NSFileManager defaultManager] fileExistsAtPath:fullPath]) {
@@ -2836,10 +2854,10 @@ extern "C"
 	  [strongCleanCacheItem refreshCell];
 
 	  dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-            [DYYYUtils clearCacheDirectory];
-            for (NSString *basePath in allPaths) {
-                    [DYYYUtils removeAllContentsAtPath:basePath];
-            }
+	    [DYYYUtils clearCacheDirectory];
+	    for (NSString *basePath in allPaths) {
+		    [DYYYUtils removeAllContentsAtPath:basePath];
+	    }
 
 	    unsigned long long afterSize = 0;
 	    for (NSString *basePath in allPaths) {
