@@ -178,9 +178,7 @@ static void ensureSpeedButtonForStackView(UIView *stackView) {
         }
 }
 
-@interface UIView (SpeedHelper)
-- (UIViewController *)firstAvailableUIViewController;
-@end
+
 
 @implementation FloatingSpeedButton
 
@@ -464,27 +462,6 @@ static void ensureSpeedButtonForStackView(UIView *stackView) {
         }
 }
 
-- (void)didMoveToWindow {
-        %orig;
-        if (!isRightInteractionStack(self))
-                return;
-        if (self.window) {
-                ensureSpeedButtonForStackView(self);
-                updateFlag(SpeedButtonVisibilityFlagInteraction, YES);
-        } else {
-                updateFlag(SpeedButtonVisibilityFlagInteraction, NO);
-        }
-}
-
-- (void)layoutSubviews {
-        %orig;
-        if (!isRightInteractionStack(self))
-                return;
-        if (self.window) {
-                ensureSpeedButtonForStackView(self);
-        }
-}
-
 %end
 
 @interface AWEAwemePlayVideoViewController (SpeedControl)
@@ -528,7 +505,43 @@ static void ensureSpeedButtonForStackView(UIView *stackView) {
 
 %new
 - (void)adjustPlaybackSpeed:(float)speed {
-	[self setVideoControllerPlaybackRate:speed];
+        [self setVideoControllerPlaybackRate:speed];
+}
+
+%end
+
+%hook AWEPlayInteractionViewController
+
+- (void)viewDidAppear:(BOOL)animated {
+        %orig;
+        updateFlag(SpeedButtonVisibilityFlagInteraction, YES);
+        updateFlag(SpeedButtonVisibilityFlagComment, self.isCommentVCShowing);
+        ensureSpeedButtonForStackView(nil);
+}
+
+- (void)viewDidLayoutSubviews {
+        %orig;
+        if (!isFloatSpeedButtonEnabled)
+                return;
+
+        BOOL hasRightStack = NO;
+        Class stackClass = NSClassFromString(@"AWEElementStackView");
+        for (UIView *sub in self.view.subviews) {
+                if ([sub isKindOfClass:stackClass] && isRightInteractionStack(sub)) {
+                        hasRightStack = YES;
+                        break;
+                }
+        }
+        if (hasRightStack) {
+                ensureSpeedButtonForStackView(nil);
+        }
+        updateFlag(SpeedButtonVisibilityFlagComment, self.isCommentVCShowing);
+}
+
+- (void)viewDidDisappear:(BOOL)animated {
+        %orig;
+        updateFlag(SpeedButtonVisibilityFlagInteraction, NO);
+        updateFlag(SpeedButtonVisibilityFlagComment, self.isCommentVCShowing);
 }
 
 %end
