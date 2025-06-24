@@ -2,6 +2,7 @@
 
 @interface FloatingSpeedButton : UIButton
 @property(nonatomic, assign) CGPoint lastLocation;
+@property(nonatomic, weak) id interactionController;
 @property(nonatomic, assign) BOOL isLocked;
 @property(nonatomic, strong) NSTimer *firstStageTimer;
 @property(nonatomic, assign) BOOL justToggledLock;
@@ -17,3 +18,4 @@
 extern FloatingSpeedButton *getSpeedButton(void);
 extern void showSpeedButton(void);
 extern void hideSpeedButton(void);
+extern void toggleSpeedButtonVisibility(void);
