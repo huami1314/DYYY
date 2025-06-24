@@ -473,59 +473,88 @@ void updateSpeedButtonVisibility() {
 
 - (void)viewDidAppear:(BOOL)animated {
 	%orig;
-	isInteractionViewVisible = YES;
-	isCommentViewVisible = self.isCommentVCShowing;
-	updateSpeedButtonVisibility();
+	BOOL hasRightStack = NO;
+	Class stackClass = NSClassFromString(@"AWEElementStackView");
+	for (UIView *sub in self.view.subviews) {
+		if ([sub isKindOfClass:stackClass] && isRightInteractionStack(sub)) {
+			hasRightStack = YES;
+			break;
+		}
+	}
+	if (hasRightStack) {
+		isInteractionViewVisible = YES;
+		isCommentViewVisible = self.isCommentVCShowing;
+		updateSpeedButtonVisibility();
+	}
 }
-
 - (void)viewDidLayoutSubviews {
 	%orig;
 
 	if (!isFloatSpeedButtonEnabled)
 		return;
-	if (speedButton == nil) {
-		speedButtonSize = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYSpeedButtonSize"] ?: 32.0;
+	BOOL hasRightStack = NO;
+	Class stackClass = NSClassFromString(@"AWEElementStackView");
+	for (UIView *sub in self.view.subviews) {
+		if ([sub isKindOfClass:stackClass] && isRightInteractionStack(sub)) {
+			hasRightStack = YES;
+			break;
+		}
+	}
+	if (hasRightStack) {
+		if (speedButton == nil) {
+			speedButtonSize = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYSpeedButtonSize"] ?: 32.0;
 
-		CGRect screenBounds = [UIScreen mainScreen].bounds;
-		CGRect initialFrame = CGRectMake((screenBounds.size.width - speedButtonSize) / 2, (screenBounds.size.height - speedButtonSize) / 2, speedButtonSize, speedButtonSize);
+			CGRect screenBounds = [UIScreen mainScreen].bounds;
+			CGRect initialFrame = CGRectMake((screenBounds.size.width - speedButtonSize) / 2, (screenBounds.size.height - speedButtonSize) / 2, speedButtonSize, speedButtonSize);
 
-		speedButton = [[FloatingSpeedButton alloc] initWithFrame:initialFrame];
+			speedButton = [[FloatingSpeedButton alloc] initWithFrame:initialFrame];
 
-		speedButton.interactionController = self;
-
-		showSpeedX = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYSpeedButtonShowX"];
-
-		updateSpeedButtonUI();
-	} else {
-		[speedButton resetButtonState];
-
-		if (speedButton.interactionController == nil || speedButton.interactionController != self) {
 			speedButton.interactionController = self;
+
+			showSpeedX = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYSpeedButtonShowX"];
+
+			updateSpeedButtonUI();
+		} else {
+			[speedButton resetButtonState];
+
+			if (speedButton.interactionController == nil || speedButton.interactionController != self) {
+				speedButton.interactionController = self;
+			}
+
+			if (speedButton.frame.size.width != speedButtonSize) {
+				CGPoint center = speedButton.center;
+				CGRect newFrame = CGRectMake(0, 0, speedButtonSize, speedButtonSize);
+				speedButton.frame = newFrame;
+				speedButton.center = center;
+				speedButton.layer.cornerRadius = speedButtonSize / 2;
+			}
 		}
 
-		if (speedButton.frame.size.width != speedButtonSize) {
-			CGPoint center = speedButton.center;
-			CGRect newFrame = CGRectMake(0, 0, speedButtonSize, speedButtonSize);
-			speedButton.frame = newFrame;
-			speedButton.center = center;
-			speedButton.layer.cornerRadius = speedButtonSize / 2;
+		UIWindow *keyWindow = [UIApplication sharedApplication].keyWindow;
+		if (keyWindow && ![speedButton isDescendantOfView:keyWindow]) {
+			[keyWindow addSubview:speedButton];
+			[speedButton loadSavedPosition];
 		}
+		isCommentViewVisible = self.isCommentVCShowing;
+		updateSpeedButtonVisibility();
 	}
-
-	UIWindow *keyWindow = [UIApplication sharedApplication].keyWindow;
-	if (keyWindow && ![speedButton isDescendantOfView:keyWindow]) {
-		[keyWindow addSubview:speedButton];
-		[speedButton loadSavedPosition];
-	}
-	isCommentViewVisible = self.isCommentVCShowing;
-	updateSpeedButtonVisibility();
 }
 
 - (void)viewDidDisappear:(BOOL)animated {
 	%orig;
-	isInteractionViewVisible = NO;
-	isCommentViewVisible = self.isCommentVCShowing;
-	updateSpeedButtonVisibility();
+	BOOL hasRightStack = NO;
+	Class stackClass = NSClassFromString(@"AWEElementStackView");
+	for (UIView *sub in self.view.subviews) {
+		if ([sub isKindOfClass:stackClass] && isRightInteractionStack(sub)) {
+			hasRightStack = YES;
+			break;
+		}
+	}
+	if (hasRightStack) {
+		isInteractionViewVisible = NO;
+		isCommentViewVisible = self.isCommentVCShowing;
+		updateSpeedButtonVisibility();
+	}
 }
 
 %new

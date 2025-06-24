@@ -110,6 +110,17 @@ NSString * _Nullable cleanShareURL(NSString * _Nullable url);
  */
 UIViewController * _Nullable topView(void);
 
+/**
+ * 判断视图是否包含指定类型的子视图
+ */
+BOOL viewContainsSubviewOfClass(UIView * _Nullable view, Class _Nullable viewClass);
+
+/** 判断是否为右侧互动区域 */
+BOOL isRightInteractionStack(UIView * _Nullable stackView);
+
+/** 判断是否为左侧互动区域 */
+BOOL isLeftInteractionStack(UIView * _Nullable stackView);
+
 #ifdef __cplusplus
 }
 #endif
