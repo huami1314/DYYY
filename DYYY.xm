@@ -5437,31 +5437,9 @@ static CGFloat currentScale = 1.0;
 	}
 
 	UIViewController *viewController = [self firstAvailableUIViewController];
-	if ([viewController isKindOfClass:%c(AWEPlayInteractionViewController)]) {
-		// 先判断是否有accessibilityLabel
-		BOOL isRightElement = NO;
-		BOOL isLeftElement = NO;
-
-		if (self.accessibilityLabel) {
-			if ([self.accessibilityLabel isEqualToString:@"right"]) {
-				isRightElement = YES;
-			} else if ([self.accessibilityLabel isEqualToString:@"left"]) {
-				isLeftElement = YES;
-			}
-		} else {
-
-			for (UIView *subview in self.subviews) {
-
-				if ([self view:subview containsSubviewOfClass:%c(AWEPlayInteractionUserAvatarView)]) {
-					isRightElement = YES;
-					break;
-				}
-				if ([self view:subview containsSubviewOfClass:%c(AWEFeedAnchorContainerView)]) {
-					isLeftElement = YES;
-					break;
-				}
-			}
-		}
+        if ([viewController isKindOfClass:%c(AWEPlayInteractionViewController)]) {
+                BOOL isRightElement = isRightInteractionStack(self);
+                BOOL isLeftElement = isLeftInteractionStack(self);
 
 		// 右侧元素的处理逻辑
 		if (isRightElement) {
@@ -5513,24 +5491,9 @@ static CGFloat currentScale = 1.0;
 }
 - (NSArray<__kindof UIView *> *)arrangedSubviews {
 
-	UIViewController *viewController = [self firstAvailableUIViewController];
-	if ([viewController isKindOfClass:%c(AWEPlayInteractionViewController)]) {
-		// 先判断是否有accessibilityLabel
-		BOOL isLeftElement = NO;
-
-		if (self.accessibilityLabel) {
-			if ([self.accessibilityLabel isEqualToString:@"left"]) {
-				isLeftElement = YES;
-			}
-		} else {
-
-			for (UIView *subview in self.subviews) {
-				if ([self view:subview containsSubviewOfClass:%c(AWEFeedAnchorContainerView)]) {
-					isLeftElement = YES;
-					break;
-				}
-			}
-		}
+        UIViewController *viewController = [self firstAvailableUIViewController];
+        if ([viewController isKindOfClass:%c(AWEPlayInteractionViewController)]) {
+                BOOL isLeftElement = isLeftInteractionStack(self);
 
 		if (isLeftElement) {
 			NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
@@ -5557,31 +5520,6 @@ static CGFloat currentScale = 1.0;
 
 	NSArray *originalSubviews = %orig;
 	return originalSubviews;
-}
-%new
-- (UIViewController *)firstAvailableUIViewController {
-	UIResponder *responder = [self nextResponder];
-	while (responder != nil) {
-		if ([responder isKindOfClass:[UIViewController class]]) {
-			return (UIViewController *)responder;
-		}
-		responder = [responder nextResponder];
-	}
-	return nil;
-}
-%new
-- (BOOL)view:(UIView *)view containsSubviewOfClass:(Class)viewClass {
-	if ([view isKindOfClass:viewClass]) {
-		return YES;
-	}
-
-	for (UIView *subview in view.subviews) {
-		if ([self view:subview containsSubviewOfClass:viewClass]) {
-			return YES;
-		}
-	}
-
-	return NO;
 }
 %end
 

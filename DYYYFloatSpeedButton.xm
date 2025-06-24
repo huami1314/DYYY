@@ -464,7 +464,7 @@ static void ensureSpeedButtonForStackView(UIView *stackView) {
 - (void)setAlpha:(CGFloat)alpha {
         %orig;
 
-        if (speedButton && isFloatSpeedButtonEnabled) {
+        if ([DYYYUtils isRightInteractionStack:self] && speedButton && isFloatSpeedButtonEnabled) {
                 if (alpha == 0) {
                         setVisibilityFlag(SpeedButtonVisibilityFlagComment, YES);
                 } else if (alpha == 1) {
@@ -476,6 +476,8 @@ static void ensureSpeedButtonForStackView(UIView *stackView) {
 
 - (void)didMoveToWindow {
         %orig;
+        if (![DYYYUtils isRightInteractionStack:self])
+                return;
         if (self.window) {
                 ensureSpeedButtonForStackView(self);
                 setVisibilityFlag(SpeedButtonVisibilityFlagInteraction, YES);
@@ -487,6 +489,8 @@ static void ensureSpeedButtonForStackView(UIView *stackView) {
 
 - (void)layoutSubviews {
         %orig;
+        if (![DYYYUtils isRightInteractionStack:self])
+                return;
         if (self.window) {
                 ensureSpeedButtonForStackView(self);
         }
