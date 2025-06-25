@@ -472,48 +472,48 @@
 %hook AWEFeedContainerContentView
 - (void)setAlpha:(CGFloat)alpha {
 	// 纯净模式功能
-        static dispatch_source_t timer = nil;
-        static int attempts = 0;
-        static BOOL pureModeSet = NO;
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnablePure"]) {
-                %orig(0.0);
-                if (pureModeSet) {
-                        return;
-                }
-                if (!timer) {
-                        timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
-                        dispatch_source_set_timer(timer, DISPATCH_TIME_NOW, 0.5 * NSEC_PER_SEC, 0);
-                        dispatch_source_set_event_handler(timer, ^{
-                                UIWindow *keyWindow = [DYYYUtils getActiveWindow];
-                                if (keyWindow && keyWindow.rootViewController) {
-                                        UIViewController *feedVC = findViewControllerOfClass(keyWindow.rootViewController, NSClassFromString(@"AWEFeedTableViewController"));
-                                        if (feedVC) {
-                                                [feedVC setValue:@YES forKey:@"pureMode"];
-                                                pureModeSet = YES;
-                                                dispatch_source_cancel(timer);
-                                                timer = nil;
-                                                attempts = 0;
-                                                return;
-                                        }
-                                }
-                                attempts++;
-                                if (attempts >= 10) {
-                                        dispatch_source_cancel(timer);
-                                        timer = nil;
-                                        attempts = 0;
-                                }
-                        });
-                        dispatch_resume(timer);
-                }
-                return;
-        } else {
-                if (timer) {
-                        dispatch_source_cancel(timer);
-                        timer = nil;
-                }
-                attempts = 0;
-                pureModeSet = NO;
-        }
+	static dispatch_source_t timer = nil;
+	static int attempts = 0;
+	static BOOL pureModeSet = NO;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnablePure"]) {
+		%orig(0.0);
+		if (pureModeSet) {
+			return;
+		}
+		if (!timer) {
+			timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
+			dispatch_source_set_timer(timer, DISPATCH_TIME_NOW, 0.5 * NSEC_PER_SEC, 0);
+			dispatch_source_set_event_handler(timer, ^{
+			  UIWindow *keyWindow = [DYYYUtils getActiveWindow];
+			  if (keyWindow && keyWindow.rootViewController) {
+				  UIViewController *feedVC = findViewControllerOfClass(keyWindow.rootViewController, NSClassFromString(@"AWEFeedTableViewController"));
+				  if (feedVC) {
+					  [feedVC setValue:@YES forKey:@"pureMode"];
+					  pureModeSet = YES;
+					  dispatch_source_cancel(timer);
+					  timer = nil;
+					  attempts = 0;
+					  return;
+				  }
+			  }
+			  attempts++;
+			  if (attempts >= 10) {
+				  dispatch_source_cancel(timer);
+				  timer = nil;
+				  attempts = 0;
+			  }
+			});
+			dispatch_resume(timer);
+		}
+		return;
+	} else {
+		if (timer) {
+			dispatch_source_cancel(timer);
+			timer = nil;
+		}
+		attempts = 0;
+		pureModeSet = NO;
+	}
 	// 原来的透明度设置逻辑，保持不变
 	NSString *transparentValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYtopbartransparent"];
 	if (transparentValue && transparentValue.length > 0) {
@@ -533,12 +533,12 @@
 // 添加新的 hook 来处理顶栏透明度
 %hook AWEFeedTopBarContainer
 - (void)layoutSubviews {
-        %orig;
-        applyTopBarTransparency(self);
+	%orig;
+	applyTopBarTransparency(self);
 }
 - (void)didMoveToSuperview {
-        %orig;
-        applyTopBarTransparency(self);
+	%orig;
+	applyTopBarTransparency(self);
 }
 %end
 
@@ -933,6 +933,78 @@
 }
 %end
 
+%hook AWEPlayInteractionProgressContainerView
+- (void)layoutSubviews {
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+		for (UIView *subview in self.subviews) {
+			if ([subview class] == [UIView class]) {
+				[subview setBackgroundColor:[UIColor clearColor]];
+			}
+		}
+	}
+	[self dyyy_applyShrinkIfNeeded];
+}
+
+%new
+- (void)dyyy_applyShrinkIfNeeded {
+	if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisShowScheduleDisplay"]) {
+		return;
+	}
+
+	NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
+	if (![scheduleStyle isEqualToString:@"进度条两侧左右"]) {
+		NSMutableDictionary *origFrames = objc_getAssociatedObject(self, @selector(dyyy_applyShrinkIfNeeded));
+		if (origFrames) {
+			for (UIView *subview in self.subviews) {
+				NSString *key = [NSString stringWithFormat:@"%p", subview];
+				NSValue *val = origFrames[key];
+				if (val) {
+					subview.frame = [val CGRectValue];
+				}
+			}
+		}
+		return;
+	}
+
+	UILabel *leftLabel = [self viewWithTag:10001];
+	UILabel *rightLabel = [self viewWithTag:10002];
+	if (!leftLabel || !rightLabel) {
+		return;
+	}
+
+	CGFloat padding = 5.0;
+	CGFloat shrinkX = CGRectGetMaxX(leftLabel.frame) + padding;
+	CGFloat shrinkWidth = rightLabel.frame.origin.x - padding - shrinkX;
+	if (shrinkWidth < 0)
+		shrinkWidth = 0;
+
+	NSMutableDictionary *origFrames = objc_getAssociatedObject(self, @selector(dyyy_applyShrinkIfNeeded));
+	if (!origFrames) {
+		origFrames = [NSMutableDictionary dictionary];
+		for (UIView *subview in self.subviews) {
+			NSString *key = [NSString stringWithFormat:@"%p", subview];
+			origFrames[key] = [NSValue valueWithCGRect:subview.frame];
+		}
+		objc_setAssociatedObject(self, @selector(dyyy_applyShrinkIfNeeded), origFrames, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+	}
+
+	for (UIView *subview in self.subviews) {
+		NSString *key = [NSString stringWithFormat:@"%p", subview];
+		CGRect origFrame = [origFrames[key] CGRectValue];
+		if ([subview isKindOfClass:[UILabel class]])
+			continue;
+		CGFloat ratio = origFrame.size.width / origFrame.size.height;
+		if (ratio > 10.0) {
+			CGRect frame = origFrame;
+			frame.origin.x = shrinkX;
+			frame.size.width = shrinkWidth;
+			subview.frame = frame;
+		}
+	}
+}
+%end
+
 %hook AWEFeedProgressSlider
 
 // layoutSubviews 保持不变
@@ -966,18 +1038,7 @@
 				sliderWidth = 0;
 
 			self.frame = CGRectMake(sliderX, sliderY, sliderWidth, sliderHeight);
-		} else {
-			CGFloat fallbackWidthPercent = 0.80;
-			CGFloat parentWidth = parentView.bounds.size.width;
-			CGFloat fallbackWidth = parentWidth * fallbackWidthPercent;
-			CGFloat fallbackX = (parentWidth - fallbackWidth) / 2.0;
-			// 使用 self.frame 获取当前 Y 和 Height (通常由 %orig 设置)
-			CGFloat currentY = self.frame.origin.y;
-			CGFloat currentHeight = self.frame.size.height;
-			// 应用回退 frame
-			self.frame = CGRectMake(fallbackX, currentY, fallbackWidth, currentHeight);
 		}
-	} else {
 	}
 }
 
@@ -5310,19 +5371,6 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 }
 %end
 
-%hook AWEPlayInteractionProgressContainerView
-- (void)layoutSubviews {
-	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-		for (UIView *subview in self.subviews) {
-			if ([subview class] == [UIView class]) {
-				[subview setBackgroundColor:[UIColor clearColor]];
-			}
-		}
-	}
-}
-%end
-
 %hook AWEElementStackView
 static CGFloat stream_frame_y = 0;
 static CGFloat right_tx = 0;
@@ -5391,9 +5439,9 @@ static CGFloat currentScale = 1.0;
 	}
 
 	UIViewController *viewController = [self firstAvailableUIViewController];
-        if ([viewController isKindOfClass:%c(AWEPlayInteractionViewController)]) {
-                BOOL isRightElement = isRightInteractionStack(self);
-                BOOL isLeftElement = isLeftInteractionStack(self);
+	if ([viewController isKindOfClass:%c(AWEPlayInteractionViewController)]) {
+		BOOL isRightElement = isRightInteractionStack(self);
+		BOOL isLeftElement = isLeftInteractionStack(self);
 
 		// 右侧元素的处理逻辑
 		if (isRightElement) {
@@ -5445,9 +5493,9 @@ static CGFloat currentScale = 1.0;
 }
 - (NSArray<__kindof UIView *> *)arrangedSubviews {
 
-        UIViewController *viewController = [self firstAvailableUIViewController];
-        if ([viewController isKindOfClass:%c(AWEPlayInteractionViewController)]) {
-                BOOL isLeftElement = isLeftInteractionStack(self);
+	UIViewController *viewController = [self firstAvailableUIViewController];
+	if ([viewController isKindOfClass:%c(AWEPlayInteractionViewController)]) {
+		BOOL isLeftElement = isLeftInteractionStack(self);
 
 		if (isLeftElement) {
 			NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
@@ -5981,12 +6029,12 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 		return;
 	}
 
-        if (!keepCellsInfo) {
-                keepCellsInfo = [NSMutableDictionary dictionary];
-        }
-        if (!sectionKeepInfo) {
-                sectionKeepInfo = [NSMutableDictionary dictionary];
-        }
+	if (!keepCellsInfo) {
+		keepCellsInfo = [NSMutableDictionary dictionary];
+	}
+	if (!sectionKeepInfo) {
+		sectionKeepInfo = [NSMutableDictionary dictionary];
+	}
 }
 
 - (void)viewDidDisappear:(BOOL)animated {
@@ -5996,8 +6044,8 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 		return;
 	}
 
-        [keepCellsInfo removeAllObjects];
-        [sectionKeepInfo removeAllObjects];
+	[keepCellsInfo removeAllObjects];
+	[sectionKeepInfo removeAllObjects];
 }
 
 - (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {
@@ -6014,13 +6062,13 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 		BOOL shouldKeep = [cell.contentView containsClassNamed:kAWELeftSideBarTopRightLayoutView] || [cell.contentView containsClassNamed:kAWELeftSideBarFunctionContainerView] ||
 				  [cell.contentView containsClassNamed:kAWELeftSideBarWeatherView];
 
-                NSString *key = [NSString stringWithFormat:@"%ld-%ld", (long)indexPath.section, (long)indexPath.row];
-                keepCellsInfo[key] = @(shouldKeep);
-                if (shouldKeep) {
-                        sectionKeepInfo[@(indexPath.section)] = @YES;
-                } else if (!sectionKeepInfo[@(indexPath.section)]) {
-                        sectionKeepInfo[@(indexPath.section)] = @NO;
-                }
+		NSString *key = [NSString stringWithFormat:@"%ld-%ld", (long)indexPath.section, (long)indexPath.row];
+		keepCellsInfo[key] = @(shouldKeep);
+		if (shouldKeep) {
+			sectionKeepInfo[@(indexPath.section)] = @YES;
+		} else if (!sectionKeepInfo[@(indexPath.section)]) {
+			sectionKeepInfo[@(indexPath.section)] = @NO;
+		}
 
 		if (!shouldKeep) {
 			cell.hidden = YES;
@@ -6063,11 +6111,11 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 		return originalInsets;
 	}
 
-        BOOL hasKeepCells = [sectionKeepInfo[@(section)] boolValue];
+	BOOL hasKeepCells = [sectionKeepInfo[@(section)] boolValue];
 
-        if (!hasKeepCells) {
-                return UIEdgeInsetsZero;
-        }
+	if (!hasKeepCells) {
+		return UIEdgeInsetsZero;
+	}
 
 	return originalInsets;
 }
@@ -6225,57 +6273,57 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 // 隐藏键盘ai
 static __weak UIView *cachedHideView = nil;
 static void hideParentViewsSubviews(UIView *view) {
-        if (!view)
-                return;
-        UIView *parentView = [view superview];
-        if (!parentView)
-                return;
-        UIView *grandParentView = [parentView superview];
-        if (!grandParentView)
-                return;
-        UIView *greatGrandParentView = [grandParentView superview];
-        if (!greatGrandParentView)
-                return;
-        cachedHideView = greatGrandParentView;
-        for (UIView *subview in greatGrandParentView.subviews) {
-                subview.hidden = YES;
-        }
+	if (!view)
+		return;
+	UIView *parentView = [view superview];
+	if (!parentView)
+		return;
+	UIView *grandParentView = [parentView superview];
+	if (!grandParentView)
+		return;
+	UIView *greatGrandParentView = [grandParentView superview];
+	if (!greatGrandParentView)
+		return;
+	cachedHideView = greatGrandParentView;
+	for (UIView *subview in greatGrandParentView.subviews) {
+		subview.hidden = YES;
+	}
 }
 // 递归查找目标视图
 static void findTargetViewInView(UIView *view) {
-        if (cachedHideView)
-                return;
-        if ([view isKindOfClass:NSClassFromString(@"AWESearchKeyboardVoiceSearchEntranceView")]) {
-                hideParentViewsSubviews(view);
-                return;
-        }
-        for (UIView *subview in view.subviews) {
-                findTargetViewInView(subview);
-                if (cachedHideView)
-                        break;
-        }
+	if (cachedHideView)
+		return;
+	if ([view isKindOfClass:NSClassFromString(@"AWESearchKeyboardVoiceSearchEntranceView")]) {
+		hideParentViewsSubviews(view);
+		return;
+	}
+	for (UIView *subview in view.subviews) {
+		findTargetViewInView(subview);
+		if (cachedHideView)
+			break;
+	}
 }
 
 %ctor {
 	// 注册键盘通知
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {
-                [[NSNotificationCenter defaultCenter] addObserverForName:UIKeyboardWillShowNotification
-                                                                  object:nil
-                                                                   queue:[NSOperationQueue mainQueue]
-                                                              usingBlock:^(NSNotification *notification) {
-                        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidekeyboardai"]) {
-                                if (cachedHideView) {
-                                        for (UIView *subview in cachedHideView.subviews) {
-                                                subview.hidden = YES;
-                                        }
-                                } else {
-                                        for (UIWindow *window in [UIApplication sharedApplication].windows) {
-                                                findTargetViewInView(window);
-                                                if (cachedHideView)
-                                                        break;
-                                        }
-                                }
-                        }
-                }];
+		[[NSNotificationCenter defaultCenter] addObserverForName:UIKeyboardWillShowNotification
+								  object:nil
+								   queue:[NSOperationQueue mainQueue]
+							      usingBlock:^(NSNotification *notification) {
+								if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidekeyboardai"]) {
+									if (cachedHideView) {
+										for (UIView *subview in cachedHideView.subviews) {
+											subview.hidden = YES;
+										}
+									} else {
+										for (UIWindow *window in [UIApplication sharedApplication].windows) {
+											findTargetViewInView(window);
+											if (cachedHideView)
+												break;
+										}
+									}
+								}
+							      }];
 	}
 }
