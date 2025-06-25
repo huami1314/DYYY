@@ -153,52 +153,43 @@ static NSArray *allSettingsViewControllers(void) {
     NSDictionary *mutualExclusive = [self settingsDependencyConfig][@"mutualExclusive"];
     NSDictionary *valueDependencies = [self settingsDependencyConfig][@"valueDependencies"];
 
+    BOOL enableState = YES;
+
     for (NSString *sourceKey in dependencies) {
         NSArray *dependentItems = dependencies[sourceKey];
         if ([dependentItems containsObject:item.identifier]) {
-            BOOL sourceValue = settingActive(sourceKey);
-            item.isEnable = sourceValue;
-            return;
+            enableState = settingActive(sourceKey);
+            break;
         }
     }
 
     for (NSString *targetKey in conditionalDependencies) {
+        if (![targetKey isEqualToString:item.identifier])
+            continue;
         NSDictionary *conditionConfig = conditionalDependencies[targetKey];
-        if ([targetKey isEqualToString:item.identifier]) {
-            NSString *conditionType = conditionConfig[@"condition"];
-            NSArray *settingList = conditionConfig[@"settings"];
+        NSString *conditionType = conditionConfig[@"condition"];
+        NSArray *settingList = conditionConfig[@"settings"];
 
-            if ([conditionType isEqualToString:@"OR"]) {
-                BOOL shouldEnable = NO;
-                for (NSString *settingKey in settingList) {
-                    if (settingActive(settingKey)) {
-                        shouldEnable = YES;
-                        break;
-                    }
+        if ([conditionType isEqualToString:@"OR"]) {
+            BOOL shouldEnable = NO;
+            for (NSString *settingKey in settingList) {
+                if (settingActive(settingKey)) {
+                    shouldEnable = YES;
+                    break;
                 }
-                item.isEnable = shouldEnable;
-                return;
-            } else if ([conditionType isEqualToString:@"AND"]) {
-                BOOL shouldEnable = YES;
-                for (NSString *settingKey in settingList) {
-                    if (!settingActive(settingKey)) {
-                        shouldEnable = NO;
-                        break;
-                    }
-                }
-                item.isEnable = shouldEnable;
-                return;
             }
+            enableState = shouldEnable;
+        } else if ([conditionType isEqualToString:@"AND"]) {
+            BOOL shouldEnable = YES;
+            for (NSString *settingKey in settingList) {
+                if (!settingActive(settingKey)) {
+                    shouldEnable = NO;
+                    break;
+                }
+            }
+            enableState = shouldEnable;
         }
-    }
-
-    for (NSString *sourceKey in mutualExclusive) {
-        NSArray *exclusiveItems = mutualExclusive[sourceKey];
-        if ([exclusiveItems containsObject:item.identifier]) {
-            BOOL sourceValue = settingActive(sourceKey);
-            item.isEnable = !sourceValue;
-            return;
-        }
+        break;
     }
 
     for (NSString *sourceKey in valueDependencies) {
@@ -211,11 +202,21 @@ static NSArray *allSettingsViewControllers(void) {
 
             if ([valueType isEqualToString:@"string"] && [condition isEqualToString:@"isNotEmpty"]) {
                 NSString *sourceValue = [[NSUserDefaults standardUserDefaults] objectForKey:sourceKey];
-                item.isEnable = (sourceValue != nil && sourceValue.length > 0);
-                return;
+                enableState = (sourceValue != nil && sourceValue.length > 0);
             }
+            break;
         }
     }
+
+    for (NSString *sourceKey in mutualExclusive) {
+        NSArray *exclusiveItems = mutualExclusive[sourceKey];
+        if ([exclusiveItems containsObject:item.identifier] && settingActive(sourceKey)) {
+            enableState = NO;
+            break;
+        }
+    }
+
+    item.isEnable = enableState;
 }
 
 + (void)handleConflictsAndDependenciesForSetting:(NSString *)identifier isEnabled:(BOOL)isEnabled {
