@@ -322,6 +322,7 @@
             }
         }
     }
+}
 
 
 + (AWESettingItemModel *)createSettingItem:(NSDictionary *)dict {
@@ -388,7 +389,6 @@
 extern void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed);
 extern void *kViewModelKey;
 
-@class DYYYImagePickerDelegate;
 
 static void showIconOptionsDialog(NSString *title, UIImage *previewImage, NSString *saveFilename, void (^onClear)(void), void (^onSelect)(void)) {
     DYYYIconOptionsDialogView *optionsDialog = [[DYYYIconOptionsDialogView alloc] initWithTitle:title previewImage:previewImage];
