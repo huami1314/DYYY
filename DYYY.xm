@@ -993,8 +993,6 @@
 	}
 }
 
-static CGFloat leftLabelLeftMargin = -1;
-static CGFloat rightLabelRightMargin = -1;
 
 - (void)setLimitUpperActionArea:(BOOL)arg1 {
 	%orig;
@@ -1032,29 +1030,26 @@ static CGFloat rightLabelRightMargin = -1;
 		CGFloat labelHeight = 15.0;
 		UIFont *labelFont = [UIFont systemFontOfSize:8];
 
-		if (!showRemainingTime && !showCompleteTime) {
-			UILabel *leftLabel = [[UILabel alloc] init];
-			leftLabel.backgroundColor = [UIColor clearColor];
-			leftLabel.font = labelFont;
-			leftLabel.tag = 10001;
-			if (showLeftRemainingTime)
-				leftLabel.text = @"00:00";
-			else if (showLeftCompleteTime)
-				leftLabel.text = [NSString stringWithFormat:@"00:00/%@", durationFormatted];
-			else
-				leftLabel.text = @"00:00";
+                if (!showRemainingTime && !showCompleteTime) {
+                        UILabel *leftLabel = [[UILabel alloc] init];
+                        leftLabel.backgroundColor = [UIColor clearColor];
+                        leftLabel.font = labelFont;
+                        leftLabel.tag = 10001;
+                        if (showLeftRemainingTime)
+                                leftLabel.text = @"00:00";
+                        else if (showLeftCompleteTime)
+                                leftLabel.text = [NSString stringWithFormat:@"00:00/%@", durationFormatted];
+                        else
+                                leftLabel.text = @"00:00";
 
-			[leftLabel sizeToFit];
+                        [leftLabel sizeToFit];
 
-			if (leftLabelLeftMargin == -1) {
-				leftLabelLeftMargin = sliderFrame.origin.x;
-			}
+                        CGFloat leftLabelLeftMargin = sliderFrame.origin.x;
+                        leftLabel.frame = CGRectMake(leftLabelLeftMargin, labelYPosition, leftLabel.frame.size.width, labelHeight);
+                        [parentView addSubview:leftLabel];
 
-			leftLabel.frame = CGRectMake(leftLabelLeftMargin, labelYPosition, leftLabel.frame.size.width, labelHeight);
-			[parentView addSubview:leftLabel];
-
-			[DYYYUtils applyColorSettingsToLabel:leftLabel colorHexString:labelColorHex];
-		}
+                        [DYYYUtils applyColorSettingsToLabel:leftLabel colorHexString:labelColorHex];
+                }
 
 		if (!showLeftRemainingTime && !showLeftCompleteTime) {
 			UILabel *rightLabel = [[UILabel alloc] init];
@@ -1068,14 +1063,12 @@ static CGFloat rightLabelRightMargin = -1;
 			else
 				rightLabel.text = durationFormatted;
 
-			[rightLabel sizeToFit];
+                        [rightLabel sizeToFit];
 
-			if (rightLabelRightMargin == -1) {
-				rightLabelRightMargin = sliderFrame.origin.x + sliderFrame.size.width - rightLabel.frame.size.width;
-			}
+                        CGFloat rightLabelRightMargin = sliderFrame.origin.x + sliderFrame.size.width - rightLabel.frame.size.width;
 
-			rightLabel.frame = CGRectMake(rightLabelRightMargin, labelYPosition, rightLabel.frame.size.width, labelHeight);
-			[parentView addSubview:rightLabel];
+                        rightLabel.frame = CGRectMake(rightLabelRightMargin, labelYPosition, rightLabel.frame.size.width, labelHeight);
+                        [parentView addSubview:rightLabel];
 
 			[DYYYUtils applyColorSettingsToLabel:rightLabel colorHexString:labelColorHex];
 		}
@@ -1142,15 +1135,16 @@ static CGFloat rightLabelRightMargin = -1;
 				newLeftText = [self formatTimeFromSeconds:arg1];
 			}
 
-			if (![leftLabel.text isEqualToString:newLeftText]) {
-				leftLabel.text = newLeftText;
-				[leftLabel sizeToFit];
-				CGRect leftFrame = leftLabel.frame;
-				leftFrame.size.height = 15.0;
-				leftLabel.frame = leftFrame;
-			}
-			[DYYYUtils applyColorSettingsToLabel:leftLabel colorHexString:labelColorHex];
-		}
+                        if (![leftLabel.text isEqualToString:newLeftText]) {
+                                leftLabel.text = newLeftText;
+                                [leftLabel sizeToFit];
+                        }
+                        CGRect leftFrame = leftLabel.frame;
+                        leftFrame.size.height = 15.0;
+                        leftFrame.origin.x = progressSlider.frame.origin.x;
+                        leftLabel.frame = leftFrame;
+                        [DYYYUtils applyColorSettingsToLabel:leftLabel colorHexString:labelColorHex];
+                }
 
 		// 更新右标签
 		if (arg2 > 0 && rightLabel) {
@@ -1166,16 +1160,26 @@ static CGFloat rightLabelRightMargin = -1;
 				newRightText = [self formatTimeFromSeconds:arg2];
 			}
 
-			if (![rightLabel.text isEqualToString:newRightText]) {
-				rightLabel.text = newRightText;
-				[rightLabel sizeToFit];
-				CGRect rightFrame = rightLabel.frame;
-				rightFrame.size.height = 15.0;
-				rightLabel.frame = rightFrame;
-			}
-			[DYYYUtils applyColorSettingsToLabel:leftLabel colorHexString:labelColorHex];
-		}
-	}
+                        if (![rightLabel.text isEqualToString:newRightText]) {
+                                rightLabel.text = newRightText;
+                                [rightLabel sizeToFit];
+                        }
+                        CGRect rightFrame = rightLabel.frame;
+                        rightFrame.size.height = 15.0;
+                        rightFrame.origin.x = progressSlider.frame.origin.x + progressSlider.frame.size.width - rightLabel.frame.size.width;
+                        rightLabel.frame = rightFrame;
+                        [DYYYUtils applyColorSettingsToLabel:rightLabel colorHexString:labelColorHex];
+                }
+                if ([scheduleStyle isEqualToString:@"进度条两侧左右"] && progressSlider) {
+                        [progressSlider applyCustomProgressStyle];
+                        CGRect lFrame = leftLabel.frame;
+                        lFrame.origin.x = progressSlider.frame.origin.x;
+                        leftLabel.frame = lFrame;
+                        CGRect rFrame = rightLabel.frame;
+                        rFrame.origin.x = progressSlider.frame.origin.x + progressSlider.frame.size.width - rightLabel.frame.size.width;
+                        rightLabel.frame = rFrame;
+                }
+        }
 }
 
 - (void)setHidden:(BOOL)hidden {
