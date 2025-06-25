@@ -933,6 +933,74 @@
 }
 %end
 
+
+%hook AWEPlayInteractionProgressContainerView
+- (void)layoutSubviews {
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+		for (UIView *subview in self.subviews) {
+			if ([subview class] == [UIView class]) {
+				[subview setBackgroundColor:[UIColor clearColor]];
+			}
+		}
+	}
+	[self dyyy_applyShrinkIfNeeded];
+}
+
+%new
+- (void)dyyy_applyShrinkIfNeeded {
+	if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisShowScheduleDisplay"]) {
+		return;
+	}
+
+	NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
+	if (![scheduleStyle isEqualToString:@"进度条两侧左右"]) {
+		NSMutableDictionary *origFrames = objc_getAssociatedObject(self, @selector(dyyy_applyShrinkIfNeeded));
+		if (origFrames) {
+			for (UIView *subview in self.subviews) {
+				NSString *key = [NSString stringWithFormat:@"%p", subview];
+				NSValue *val = origFrames[key];
+				if (val) {
+					subview.frame = [val CGRectValue];
+				}
+			}
+		}
+		return;
+	}
+
+	UILabel *leftLabel = [self viewWithTag:10001];
+	UILabel *rightLabel = [self viewWithTag:10002];
+	if (!leftLabel || !rightLabel) {
+		return;
+	}
+
+	CGFloat padding = 5.0;
+	CGFloat shrinkX = CGRectGetMaxX(leftLabel.frame) + padding;
+	CGFloat shrinkWidth = rightLabel.frame.origin.x - padding - shrinkX;
+	if (shrinkWidth < 0)
+		shrinkWidth = 0;
+
+	NSMutableDictionary *origFrames = objc_getAssociatedObject(self, @selector(dyyy_applyShrinkIfNeeded));
+	if (!origFrames) {
+		origFrames = [NSMutableDictionary dictionary];
+		for (UIView *subview in self.subviews) {
+			NSString *key = [NSString stringWithFormat:@"%p", subview];
+			origFrames[key] = [NSValue valueWithCGRect:subview.frame];
+		}
+		objc_setAssociatedObject(self, @selector(dyyy_applyShrinkIfNeeded), origFrames, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+	}
+
+	for (UIView *subview in self.subviews) {
+		if ([subview isKindOfClass:[UILabel class]])
+			continue;
+		CGRect frame = subview.frame;
+		frame.origin.x = shrinkX;
+		frame.size.width = shrinkWidth;
+		subview.frame = frame;
+	}
+}
+%end
+
 %hook AWEFeedProgressSlider
 
 static char kDYYYSliderOriginalFrameKey;
@@ -5342,73 +5410,6 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 		CGRect frame = self.frame;
 		frame.size.height = self.superview.frame.size.height;
 		self.frame = frame;
-	}
-}
-%end
-
-%hook AWEPlayInteractionProgressContainerView
-- (void)layoutSubviews {
-	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-		for (UIView *subview in self.subviews) {
-			if ([subview class] == [UIView class]) {
-				[subview setBackgroundColor:[UIColor clearColor]];
-			}
-		}
-	}
-	[self dyyy_applyShrinkIfNeeded];
-}
-
-%new
-- (void)dyyy_applyShrinkIfNeeded {
-	if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisShowScheduleDisplay"]) {
-		return;
-	}
-
-	NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
-	if (![scheduleStyle isEqualToString:@"进度条两侧左右"]) {
-		NSMutableDictionary *origFrames = objc_getAssociatedObject(self, @selector(dyyy_applyShrinkIfNeeded));
-		if (origFrames) {
-			for (UIView *subview in self.subviews) {
-				NSString *key = [NSString stringWithFormat:@"%p", subview];
-				NSValue *val = origFrames[key];
-				if (val) {
-					subview.frame = [val CGRectValue];
-				}
-			}
-		}
-		return;
-	}
-
-	UILabel *leftLabel = [self viewWithTag:10001];
-	UILabel *rightLabel = [self viewWithTag:10002];
-	if (!leftLabel || !rightLabel) {
-		return;
-	}
-
-	CGFloat padding = 5.0;
-	CGFloat shrinkX = CGRectGetMaxX(leftLabel.frame) + padding;
-	CGFloat shrinkWidth = rightLabel.frame.origin.x - padding - shrinkX;
-	if (shrinkWidth < 0)
-		shrinkWidth = 0;
-
-	NSMutableDictionary *origFrames = objc_getAssociatedObject(self, @selector(dyyy_applyShrinkIfNeeded));
-	if (!origFrames) {
-		origFrames = [NSMutableDictionary dictionary];
-		for (UIView *subview in self.subviews) {
-			NSString *key = [NSString stringWithFormat:@"%p", subview];
-			origFrames[key] = [NSValue valueWithCGRect:subview.frame];
-		}
-		objc_setAssociatedObject(self, @selector(dyyy_applyShrinkIfNeeded), origFrames, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-	}
-
-	for (UIView *subview in self.subviews) {
-		if ([subview isKindOfClass:[UILabel class]])
-			continue;
-		CGRect frame = subview.frame;
-		frame.origin.x = shrinkX;
-		frame.size.width = shrinkWidth;
-		subview.frame = frame;
 	}
 }
 %end
