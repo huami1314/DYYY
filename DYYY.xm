@@ -936,6 +936,7 @@
 %hook AWEFeedProgressSlider
 
 static char kDYYYSliderOriginalFrameKey;
+static char kDYYYSliderAdjustedFrameKey;
 
 // layoutSubviews 保持不变
 - (void)layoutSubviews {
@@ -949,43 +950,50 @@ static char kDYYYSliderOriginalFrameKey;
 %new
 
 - (void)applyCustomProgressStyle {
-	NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
-	UIView *parentView = self.superview;
+        NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
+        UIView *parentView = self.superview;
 
-	if (!parentView)
-		return;
+        if (!parentView)
+                return;
 
-	if ([scheduleStyle isEqualToString:@"进度条两侧左右"]) {
-		// 尝试获取标签
-		UILabel *leftLabel = [parentView viewWithTag:10001];
-		UILabel *rightLabel = [parentView viewWithTag:10002];
+        NSValue *origVal = objc_getAssociatedObject(self, &kDYYYSliderOriginalFrameKey);
+        CGRect origFrame = origVal ? [origVal CGRectValue] : self.frame;
+        NSValue *adjustedVal = objc_getAssociatedObject(self, &kDYYYSliderAdjustedFrameKey);
 
+        if ([scheduleStyle isEqualToString:@"进度条两侧左右"]) {
+                if (adjustedVal) {
+                        self.frame = [adjustedVal CGRectValue];
+                        return;
+                }
+
+                UILabel *leftLabel = [parentView viewWithTag:10001];
+                UILabel *rightLabel = [parentView viewWithTag:10002];
+
+                CGRect newFrame = origFrame;
                 if (leftLabel && rightLabel) {
                         CGFloat padding = 5.0;
-                        NSValue *origVal = objc_getAssociatedObject(self, &kDYYYSliderOriginalFrameKey);
-                        CGRect origFrame = origVal ? [origVal CGRectValue] : self.frame;
                         CGFloat sliderY = origFrame.origin.y;
                         CGFloat sliderHeight = origFrame.size.height;
                         CGFloat sliderX = leftLabel.frame.origin.x + leftLabel.frame.size.width + padding;
                         CGFloat sliderWidth = rightLabel.frame.origin.x - padding - sliderX;
-
-			if (sliderWidth < 0)
-				sliderWidth = 0;
-
-			self.frame = CGRectMake(sliderX, sliderY, sliderWidth, sliderHeight);
-		} else {
+                        if (sliderWidth < 0)
+                                sliderWidth = 0;
+                        newFrame = CGRectMake(sliderX, sliderY, sliderWidth, sliderHeight);
+                } else {
                         CGFloat fallbackWidthPercent = 0.80;
                         CGFloat parentWidth = parentView.bounds.size.width;
                         CGFloat fallbackWidth = parentWidth * fallbackWidthPercent;
                         CGFloat fallbackX = (parentWidth - fallbackWidth) / 2.0;
-                        NSValue *origVal = objc_getAssociatedObject(self, &kDYYYSliderOriginalFrameKey);
-                        CGRect origFrame = origVal ? [origVal CGRectValue] : self.frame;
                         CGFloat currentY = origFrame.origin.y;
                         CGFloat currentHeight = origFrame.size.height;
-                        self.frame = CGRectMake(fallbackX, currentY, fallbackWidth, currentHeight);
-		}
-	} else {
-	}
+                        newFrame = CGRectMake(fallbackX, currentY, fallbackWidth, currentHeight);
+                }
+                self.frame = newFrame;
+                objc_setAssociatedObject(self, &kDYYYSliderAdjustedFrameKey, [NSValue valueWithCGRect:newFrame], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        } else if (adjustedVal) {
+                self.frame = origFrame;
+                objc_setAssociatedObject(self, &kDYYYSliderAdjustedFrameKey, nil, OBJC_ASSOCIATION_ASSIGN);
+        }
 }
 
 - (void)setAlpha:(CGFloat)alpha {
@@ -1016,7 +1024,9 @@ static char kDYYYSliderOriginalFrameKey;
 
                CGRect sliderOriginalFrameInParent = [self convertRect:self.bounds toView:parentView];
                CGRect sliderFrame = self.frame;
-               objc_setAssociatedObject(self, &kDYYYSliderOriginalFrameKey, [NSValue valueWithCGRect:sliderFrame], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+               if (!objc_getAssociatedObject(self, &kDYYYSliderOriginalFrameKey)) {
+                       objc_setAssociatedObject(self, &kDYYYSliderOriginalFrameKey, [NSValue valueWithCGRect:sliderFrame], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+               }
 
 		CGFloat verticalOffset = -12.5;
 		NSString *offsetValueString = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTimelineVerticalPosition"];
@@ -1089,6 +1099,7 @@ static char kDYYYSliderOriginalFrameKey;
                         [[parentView viewWithTag:10002] removeFromSuperview];
                 }
                 objc_setAssociatedObject(self, &kDYYYSliderOriginalFrameKey, nil, OBJC_ASSOCIATION_ASSIGN);
+                objc_setAssociatedObject(self, &kDYYYSliderAdjustedFrameKey, nil, OBJC_ASSOCIATION_ASSIGN);
                 [self setNeedsLayout];
         }
 }
