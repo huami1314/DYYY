@@ -2080,30 +2080,45 @@ extern "C"
 				    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
 					    __weak AWESettingItemModel *weakSaveItem = saveABTestConfigFileItemRef;
 
-					    NSString *sourcePath = [url path];
+					    NSURL *sourceURL = url; // 用户选择的源文件 URL
 
 					    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
 					    NSString *documentsDirectory = [paths firstObject];
 					    NSString *dyyyFolderPath = [documentsDirectory stringByAppendingPathComponent:@"DYYY"];
-					    NSString *destPath = [dyyyFolderPath stringByAppendingPathComponent:@"abtest_data_fixed.json"];
+					    NSURL *destinationURL = [NSURL fileURLWithPath:[dyyyFolderPath stringByAppendingPathComponent:@"abtest_data_fixed.json"]];
 
-					    if (![[NSFileManager defaultManager] fileExistsAtPath:dyyyFolderPath]) {
-							[[NSFileManager defaultManager] createDirectoryAtPath:dyyyFolderPath withIntermediateDirectories:YES attributes:nil error:nil];
+					    NSFileManager *fileManager = [NSFileManager defaultManager];
+					    NSError *error = nil;
+					    BOOL success = NO;
+					    NSString *message = nil;
+
+					    if (![fileManager fileExistsAtPath:dyyyFolderPath]) {
+						    [fileManager createDirectoryAtPath:dyyyFolderPath withIntermediateDirectories:YES attributes:nil error:&error];
+						    if (error) {
+							    message = [NSString stringWithFormat:@"创建目录失败: %@", error.localizedDescription];
+						    }
 					    }
 
-					    NSError *error;
-					    if ([[NSFileManager defaultManager] fileExistsAtPath:destPath]) {
-							[[NSFileManager defaultManager] removeItemAtPath:destPath error:&error];
+					    if (!message) {
+						    // 在同一个目录下创建一个临时文件 URL 以确保原子性
+						    NSString *tempFileName = [NSUUID UUID].UUIDString;
+						    NSURL *temporaryURL = [NSURL fileURLWithPath:[dyyyFolderPath stringByAppendingPathComponent:tempFileName]];
+
+						    if ([fileManager copyItemAtURL:sourceURL toURL:temporaryURL error:&error]) {
+							    if ([fileManager replaceItemAtURL:destinationURL withItemAtURL:temporaryURL backupItemName:nil options:0 resultingItemURL:nil error:&error]) {
+								    [DYYYABTestHook cleanLocalABTestData];
+								    [DYYYABTestHook loadLocalABTestConfig];
+								    [DYYYABTestHook applyFixedABTestData];
+								    success = YES;
+								    message = @"配置已导入，部分设置需重启应用后生效";
+							    } else {
+								    [fileManager removeItemAtURL:temporaryURL error:nil];
+								    message = [NSString stringWithFormat:@"导入失败 (替换文件失败): %@", error.localizedDescription];
+							    }
+						    } else {
+							    message = [NSString stringWithFormat:@"导入失败 (复制到临时文件失败): %@", error.localizedDescription];
+						    }
 					    }
-
-					    BOOL success = [[NSFileManager defaultManager] copyItemAtPath:sourcePath toPath:destPath error:&error];
-
-					    if (success) {
-						    [DYYYABTestHook cleanLocalABTestData];
-						    [DYYYABTestHook loadLocalABTestConfig];
-						    [DYYYABTestHook applyFixedABTestData];
-					    }
-
 					    // 回到主线程显示 Toast 和更新 UI
 					    dispatch_async(dispatch_get_main_queue(), ^{
 						    __strong AWESettingItemModel *strongSaveItemAgain = weakSaveItem;
