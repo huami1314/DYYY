@@ -18,9 +18,21 @@
 
 @implementation DYYYKeywordListView
 
+- (void)setAddItemTitle:(NSString *)addItemTitle {
+  _addItemTitle = [addItemTitle copy];
+  NSString *addTitle = _addItemTitle ?: @"添加";
+  if (self.addButton) {
+    [self.addButton setTitle:[@"+ " stringByAppendingString:addTitle]
+                     forState:UIControlStateNormal];
+  }
+}
+
 - (instancetype)initWithTitle:(NSString *)title keywords:(NSArray *)keywords {
   if (self = [super initWithFrame:UIScreen.mainScreen.bounds]) {
     self.keywords = [NSMutableArray arrayWithArray:keywords ?: @[]];
+    self.addItemTitle = @"添加过滤项";
+    self.editItemTitle = @"编辑过滤项";
+    self.inputPlaceholder = @"请输入过滤项";
     self.backgroundColor = [UIColor colorWithWhite:0 alpha:0.2];
 
     BOOL isDarkMode = [DYYYUtils isDarkMode];
@@ -88,7 +100,9 @@
         [UIColor colorWithRed:45/255.0 green:45/255.0 blue:45/255.0 alpha:1.0] :
         [UIColor colorWithRed:245/255.0 green:245/255.0 blue:245/255.0 alpha:1.0];
     self.addButton.layer.cornerRadius = 8;
-    [self.addButton setTitle:@"+ 添加过滤项" forState:UIControlStateNormal];
+    NSString *addTitle = self.addItemTitle ?: @"添加";
+    [self.addButton setTitle:[@"+ " stringByAppendingString:addTitle]
+                         forState:UIControlStateNormal];
     [self.addButton setTitleColor:[UIColor colorWithRed:11/255.0
                                                   green:223/255.0
                                                    blue:154/255.0
@@ -186,9 +200,9 @@
 
 - (void)addKeywordTapped {
   DYYYCustomInputView *inputView = [[DYYYCustomInputView alloc]
-      initWithTitle:@"添加过滤项"
+      initWithTitle:self.addItemTitle
         defaultText:nil
-        placeholder:@"请输入过滤项，多个用逗号分隔"];
+        placeholder:self.inputPlaceholder];
 
   __weak typeof(self) weakSelf = self;
   inputView.onConfirm = ^(NSString *text) {
@@ -303,9 +317,9 @@
 
   NSString *currentKeyword = self.keywords[indexPath.row];
   DYYYCustomInputView *inputView =
-      [[DYYYCustomInputView alloc] initWithTitle:@"编辑过滤项"
+      [[DYYYCustomInputView alloc] initWithTitle:self.editItemTitle
                                      defaultText:currentKeyword
-                                     placeholder:@"请输入过滤项"];
+                                     placeholder:self.inputPlaceholder];
 
   __weak typeof(self) weakSelf = self;
   inputView.onConfirm = ^(NSString *text) {
