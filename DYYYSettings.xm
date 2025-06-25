@@ -1860,6 +1860,7 @@ extern "C"
 			    } else {
 				    item.isSwitchOn = newValue;
 				    [DYYYSettingsHelper setUserDefaults:@(newValue) forKey:@"DYYYABTestBlockEnabled"];
+				    [DYYYUtils showToast:@"已允许热更新下发配置，重启后生效。"];
 			    }
 			  };
 		  } else if ([item.identifier isEqualToString:@"DYYYABTestModeString"]) {
@@ -2046,7 +2047,7 @@ extern "C"
 
 				BOOL success = [[NSFileManager defaultManager] copyItemAtPath:sourcePath toPath:destPath error:&error];
 
-				NSString *message = success ? @"配置已导入，若没生效请重启抖音" : [NSString stringWithFormat:@"导入失败: %@", error.localizedDescription];
+				NSString *message = success ? @"配置已导入，部分设置需重启应用后生效" : [NSString stringWithFormat:@"导入失败: %@", error.localizedDescription];
 				[DYYYUtils showToast:message];
 
 				if (success) {
