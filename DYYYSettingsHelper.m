@@ -220,16 +220,12 @@ static NSArray *allSettingsViewControllers(void) {
 
 + (void)handleConflictsAndDependenciesForSetting:(NSString *)identifier isEnabled:(BOOL)isEnabled {
     NSDictionary *conflicts = [self settingsDependencyConfig][@"conflicts"];
-    NSDictionary *dependencies = [self settingsDependencyConfig][@"dependencies"];
     if (isEnabled) {
         NSArray *conflictingItems = conflicts[identifier];
         if (conflictingItems) {
             for (NSString *conflictItem in conflictingItems) {
-                // 更新NSUserDefaults
-                [self setUserDefaults:@(NO) forKey:conflictItem];
-
-                // 立即更新互斥项的UI状态
                 [self updateConflictingItemUIState:conflictItem withValue:NO];
+                [self updateDependentItemsForSetting:conflictItem value:@(NO)];
             }
         }
     }
@@ -251,7 +247,14 @@ static NSArray *allSettingsViewControllers(void) {
                     continue;
                 AWESettingItemModel *item = (AWESettingItemModel *)itemObj;
                 if ([item.identifier isEqualToString:identifier]) {
-                    item.isSwitchOn = value;
+                    if (item.cellType == 6 || item.cellType == 37) {
+                        item.isSwitchOn = value;
+                        [self setUserDefaults:@(value) forKey:identifier];
+                    } else if (item.cellType == 20 || item.cellType == 26) {
+                        if (!value) {
+                            [self setUserDefaults:@"" forKey:identifier];
+                        }
+                    }
                     item.isEnable = value;
                     [item refreshCell];
                     break;
