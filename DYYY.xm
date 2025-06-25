@@ -472,48 +472,48 @@
 %hook AWEFeedContainerContentView
 - (void)setAlpha:(CGFloat)alpha {
 	// 纯净模式功能
-        static dispatch_source_t timer = nil;
-        static int attempts = 0;
-        static BOOL pureModeSet = NO;
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnablePure"]) {
-                %orig(0.0);
-                if (pureModeSet) {
-                        return;
-                }
-                if (!timer) {
-                        timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
-                        dispatch_source_set_timer(timer, DISPATCH_TIME_NOW, 0.5 * NSEC_PER_SEC, 0);
-                        dispatch_source_set_event_handler(timer, ^{
-                                UIWindow *keyWindow = [DYYYUtils getActiveWindow];
-                                if (keyWindow && keyWindow.rootViewController) {
-                                        UIViewController *feedVC = findViewControllerOfClass(keyWindow.rootViewController, NSClassFromString(@"AWEFeedTableViewController"));
-                                        if (feedVC) {
-                                                [feedVC setValue:@YES forKey:@"pureMode"];
-                                                pureModeSet = YES;
-                                                dispatch_source_cancel(timer);
-                                                timer = nil;
-                                                attempts = 0;
-                                                return;
-                                        }
-                                }
-                                attempts++;
-                                if (attempts >= 10) {
-                                        dispatch_source_cancel(timer);
-                                        timer = nil;
-                                        attempts = 0;
-                                }
-                        });
-                        dispatch_resume(timer);
-                }
-                return;
-        } else {
-                if (timer) {
-                        dispatch_source_cancel(timer);
-                        timer = nil;
-                }
-                attempts = 0;
-                pureModeSet = NO;
-        }
+	static dispatch_source_t timer = nil;
+	static int attempts = 0;
+	static BOOL pureModeSet = NO;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnablePure"]) {
+		%orig(0.0);
+		if (pureModeSet) {
+			return;
+		}
+		if (!timer) {
+			timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
+			dispatch_source_set_timer(timer, DISPATCH_TIME_NOW, 0.5 * NSEC_PER_SEC, 0);
+			dispatch_source_set_event_handler(timer, ^{
+			  UIWindow *keyWindow = [DYYYUtils getActiveWindow];
+			  if (keyWindow && keyWindow.rootViewController) {
+				  UIViewController *feedVC = findViewControllerOfClass(keyWindow.rootViewController, NSClassFromString(@"AWEFeedTableViewController"));
+				  if (feedVC) {
+					  [feedVC setValue:@YES forKey:@"pureMode"];
+					  pureModeSet = YES;
+					  dispatch_source_cancel(timer);
+					  timer = nil;
+					  attempts = 0;
+					  return;
+				  }
+			  }
+			  attempts++;
+			  if (attempts >= 10) {
+				  dispatch_source_cancel(timer);
+				  timer = nil;
+				  attempts = 0;
+			  }
+			});
+			dispatch_resume(timer);
+		}
+		return;
+	} else {
+		if (timer) {
+			dispatch_source_cancel(timer);
+			timer = nil;
+		}
+		attempts = 0;
+		pureModeSet = NO;
+	}
 	// 原来的透明度设置逻辑，保持不变
 	NSString *transparentValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYtopbartransparent"];
 	if (transparentValue && transparentValue.length > 0) {
@@ -533,12 +533,12 @@
 // 添加新的 hook 来处理顶栏透明度
 %hook AWEFeedTopBarContainer
 - (void)layoutSubviews {
-        %orig;
-        applyTopBarTransparency(self);
+	%orig;
+	applyTopBarTransparency(self);
 }
 - (void)didMoveToSuperview {
-        %orig;
-        applyTopBarTransparency(self);
+	%orig;
+	applyTopBarTransparency(self);
 }
 %end
 
@@ -940,60 +940,60 @@ static char kDYYYSliderAdjustedFrameKey;
 
 // layoutSubviews 保持不变
 - (void)layoutSubviews {
-        %orig;
-        if (!objc_getAssociatedObject(self, &kDYYYSliderOriginalFrameKey)) {
-                objc_setAssociatedObject(self, &kDYYYSliderOriginalFrameKey, [NSValue valueWithCGRect:self.frame], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-        }
-        [self applyCustomProgressStyle];
+	%orig;
+	if (!objc_getAssociatedObject(self, &kDYYYSliderOriginalFrameKey)) {
+		objc_setAssociatedObject(self, &kDYYYSliderOriginalFrameKey, [NSValue valueWithCGRect:self.frame], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+	}
+	[self applyCustomProgressStyle];
 }
 
 %new
 
 - (void)applyCustomProgressStyle {
-        NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
-        UIView *parentView = self.superview;
+	NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
+	UIView *parentView = self.superview;
 
-        if (!parentView)
-                return;
+	if (!parentView)
+		return;
 
-        NSValue *origVal = objc_getAssociatedObject(self, &kDYYYSliderOriginalFrameKey);
-        CGRect origFrame = origVal ? [origVal CGRectValue] : self.frame;
-        NSValue *adjustedVal = objc_getAssociatedObject(self, &kDYYYSliderAdjustedFrameKey);
+	NSValue *origVal = objc_getAssociatedObject(self, &kDYYYSliderOriginalFrameKey);
+	CGRect origFrame = origVal ? [origVal CGRectValue] : self.frame;
+	NSValue *adjustedVal = objc_getAssociatedObject(self, &kDYYYSliderAdjustedFrameKey);
 
-        if ([scheduleStyle isEqualToString:@"进度条两侧左右"]) {
-                UILabel *leftLabel = [parentView viewWithTag:10001];
-                UILabel *rightLabel = [parentView viewWithTag:10002];
+	if ([scheduleStyle isEqualToString:@"进度条两侧左右"]) {
+		UILabel *leftLabel = [parentView viewWithTag:10001];
+		UILabel *rightLabel = [parentView viewWithTag:10002];
 
-                CGRect newFrame = origFrame;
-                if (leftLabel && rightLabel) {
-                        CGFloat padding = 5.0;
-                        CGFloat sliderY = origFrame.origin.y;
-                        CGFloat sliderHeight = origFrame.size.height;
-                        CGFloat sliderX = leftLabel.frame.origin.x + leftLabel.frame.size.width + padding;
-                        CGFloat sliderWidth = rightLabel.frame.origin.x - padding - sliderX;
-                        if (sliderWidth < 0)
-                                sliderWidth = 0;
-                        newFrame = CGRectMake(sliderX, sliderY, sliderWidth, sliderHeight);
-                } else {
-                        CGFloat fallbackWidthPercent = 0.80;
-                        CGFloat parentWidth = parentView.bounds.size.width;
-                        CGFloat fallbackWidth = parentWidth * fallbackWidthPercent;
-                        CGFloat fallbackX = (parentWidth - fallbackWidth) / 2.0;
-                        CGFloat currentY = origFrame.origin.y;
-                        CGFloat currentHeight = origFrame.size.height;
-                        newFrame = CGRectMake(fallbackX, currentY, fallbackWidth, currentHeight);
-                }
+		CGRect newFrame = origFrame;
+		if (leftLabel && rightLabel) {
+			CGFloat padding = 5.0;
+			CGFloat sliderY = origFrame.origin.y;
+			CGFloat sliderHeight = origFrame.size.height;
+			CGFloat sliderX = leftLabel.frame.origin.x + leftLabel.frame.size.width + padding;
+			CGFloat sliderWidth = rightLabel.frame.origin.x - padding - sliderX;
+			if (sliderWidth < 0)
+				sliderWidth = 0;
+			newFrame = CGRectMake(sliderX, sliderY, sliderWidth, sliderHeight);
+		} else {
+			CGFloat fallbackWidthPercent = 0.80;
+			CGFloat parentWidth = parentView.bounds.size.width;
+			CGFloat fallbackWidth = parentWidth * fallbackWidthPercent;
+			CGFloat fallbackX = (parentWidth - fallbackWidth) / 2.0;
+			CGFloat currentY = origFrame.origin.y;
+			CGFloat currentHeight = origFrame.size.height;
+			newFrame = CGRectMake(fallbackX, currentY, fallbackWidth, currentHeight);
+		}
 
-                if (!adjustedVal || !CGRectEqualToRect(newFrame, [adjustedVal CGRectValue])) {
-                        self.frame = newFrame;
-                        objc_setAssociatedObject(self, &kDYYYSliderAdjustedFrameKey, [NSValue valueWithCGRect:newFrame], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-                } else {
-                        self.frame = [adjustedVal CGRectValue];
-                }
-        } else if (adjustedVal) {
-                self.frame = origFrame;
-                objc_setAssociatedObject(self, &kDYYYSliderAdjustedFrameKey, nil, OBJC_ASSOCIATION_ASSIGN);
-        }
+		if (!adjustedVal || !CGRectEqualToRect(newFrame, [adjustedVal CGRectValue])) {
+			self.frame = newFrame;
+			objc_setAssociatedObject(self, &kDYYYSliderAdjustedFrameKey, [NSValue valueWithCGRect:newFrame], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+		} else {
+			self.frame = [adjustedVal CGRectValue];
+		}
+	} else if (adjustedVal) {
+		self.frame = origFrame;
+		objc_setAssociatedObject(self, &kDYYYSliderAdjustedFrameKey, nil, OBJC_ASSOCIATION_ASSIGN);
+	}
 }
 
 - (void)setAlpha:(CGFloat)alpha {
@@ -1008,7 +1008,6 @@ static char kDYYYSliderAdjustedFrameKey;
 	}
 }
 
-
 - (void)setLimitUpperActionArea:(BOOL)arg1 {
 	%orig;
 
@@ -1022,11 +1021,11 @@ static char kDYYYSliderAdjustedFrameKey;
 		[[parentView viewWithTag:10001] removeFromSuperview];
 		[[parentView viewWithTag:10002] removeFromSuperview];
 
-               CGRect sliderOriginalFrameInParent = [self convertRect:self.bounds toView:parentView];
-               CGRect sliderFrame = self.frame;
-               if (!objc_getAssociatedObject(self, &kDYYYSliderOriginalFrameKey)) {
-                       objc_setAssociatedObject(self, &kDYYYSliderOriginalFrameKey, [NSValue valueWithCGRect:sliderFrame], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-               }
+		CGRect sliderOriginalFrameInParent = [self convertRect:self.bounds toView:parentView];
+		CGRect sliderFrame = self.frame;
+		if (!objc_getAssociatedObject(self, &kDYYYSliderOriginalFrameKey)) {
+			objc_setAssociatedObject(self, &kDYYYSliderOriginalFrameKey, [NSValue valueWithCGRect:sliderFrame], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+		}
 
 		CGFloat verticalOffset = -12.5;
 		NSString *offsetValueString = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTimelineVerticalPosition"];
@@ -1048,26 +1047,26 @@ static char kDYYYSliderAdjustedFrameKey;
 		CGFloat labelHeight = 15.0;
 		UIFont *labelFont = [UIFont systemFontOfSize:8];
 
-                if (!showRemainingTime && !showCompleteTime) {
-                        UILabel *leftLabel = [[UILabel alloc] init];
-                        leftLabel.backgroundColor = [UIColor clearColor];
-                        leftLabel.font = labelFont;
-                        leftLabel.tag = 10001;
-                        if (showLeftRemainingTime)
-                                leftLabel.text = @"00:00";
-                        else if (showLeftCompleteTime)
-                                leftLabel.text = [NSString stringWithFormat:@"00:00/%@", durationFormatted];
-                        else
-                                leftLabel.text = @"00:00";
+		if (!showRemainingTime && !showCompleteTime) {
+			UILabel *leftLabel = [[UILabel alloc] init];
+			leftLabel.backgroundColor = [UIColor clearColor];
+			leftLabel.font = labelFont;
+			leftLabel.tag = 10001;
+			if (showLeftRemainingTime)
+				leftLabel.text = @"00:00";
+			else if (showLeftCompleteTime)
+				leftLabel.text = [NSString stringWithFormat:@"00:00/%@", durationFormatted];
+			else
+				leftLabel.text = @"00:00";
 
-                        [leftLabel sizeToFit];
+			[leftLabel sizeToFit];
 
-                        CGFloat leftLabelLeftMargin = sliderFrame.origin.x;
-                        leftLabel.frame = CGRectMake(leftLabelLeftMargin, labelYPosition, leftLabel.frame.size.width, labelHeight);
-                        [parentView addSubview:leftLabel];
+			CGFloat leftLabelLeftMargin = sliderFrame.origin.x;
+			leftLabel.frame = CGRectMake(leftLabelLeftMargin, labelYPosition, leftLabel.frame.size.width, labelHeight);
+			[parentView addSubview:leftLabel];
 
-                        [DYYYUtils applyColorSettingsToLabel:leftLabel colorHexString:labelColorHex];
-                }
+			[DYYYUtils applyColorSettingsToLabel:leftLabel colorHexString:labelColorHex];
+		}
 
 		if (!showLeftRemainingTime && !showLeftCompleteTime) {
 			UILabel *rightLabel = [[UILabel alloc] init];
@@ -1081,33 +1080,32 @@ static char kDYYYSliderAdjustedFrameKey;
 			else
 				rightLabel.text = durationFormatted;
 
-                        [rightLabel sizeToFit];
+			[rightLabel sizeToFit];
 
-                        CGFloat rightLabelRightMargin = sliderFrame.origin.x + sliderFrame.size.width - rightLabel.frame.size.width;
+			CGFloat rightLabelRightMargin = sliderFrame.origin.x + sliderFrame.size.width - rightLabel.frame.size.width;
 
-                        rightLabel.frame = CGRectMake(rightLabelRightMargin, labelYPosition, rightLabel.frame.size.width, labelHeight);
-                        [parentView addSubview:rightLabel];
+			rightLabel.frame = CGRectMake(rightLabelRightMargin, labelYPosition, rightLabel.frame.size.width, labelHeight);
+			[parentView addSubview:rightLabel];
 
 			[DYYYUtils applyColorSettingsToLabel:rightLabel colorHexString:labelColorHex];
 		}
 
 		[self setNeedsLayout];
 	} else {
-                UIView *parentView = self.superview;
-                if (parentView) {
-                        [[parentView viewWithTag:10001] removeFromSuperview];
-                        [[parentView viewWithTag:10002] removeFromSuperview];
-                }
-                objc_setAssociatedObject(self, &kDYYYSliderOriginalFrameKey, nil, OBJC_ASSOCIATION_ASSIGN);
-                objc_setAssociatedObject(self, &kDYYYSliderAdjustedFrameKey, nil, OBJC_ASSOCIATION_ASSIGN);
-                [self setNeedsLayout];
-        }
+		UIView *parentView = self.superview;
+		if (parentView) {
+			[[parentView viewWithTag:10001] removeFromSuperview];
+			[[parentView viewWithTag:10002] removeFromSuperview];
+		}
+		objc_setAssociatedObject(self, &kDYYYSliderOriginalFrameKey, nil, OBJC_ASSOCIATION_ASSIGN);
+		objc_setAssociatedObject(self, &kDYYYSliderAdjustedFrameKey, nil, OBJC_ASSOCIATION_ASSIGN);
+		[self setNeedsLayout];
+	}
 }
 
 %new
 - (void)handleProgressGesture:(id)gesture {
-        %orig;
-        [self applyCustomProgressStyle];
+	[self applyCustomProgressStyle];
 }
 
 %end
@@ -1161,19 +1159,19 @@ static char kDYYYSliderAdjustedFrameKey;
 				newLeftText = [self formatTimeFromSeconds:arg1];
 			}
 
-                        if (![leftLabel.text isEqualToString:newLeftText]) {
-                                leftLabel.text = newLeftText;
-                                [leftLabel sizeToFit];
-                        }
-                        NSValue *origVal = objc_getAssociatedObject(progressSlider, &kDYYYSliderOriginalFrameKey);
-                        CGRect baseFrame = origVal ? [origVal CGRectValue] : progressSlider.frame;
+			if (![leftLabel.text isEqualToString:newLeftText]) {
+				leftLabel.text = newLeftText;
+				[leftLabel sizeToFit];
+			}
+			NSValue *origVal = objc_getAssociatedObject(progressSlider, &kDYYYSliderOriginalFrameKey);
+			CGRect baseFrame = origVal ? [origVal CGRectValue] : progressSlider.frame;
 
-                        CGRect leftFrame = leftLabel.frame;
-                        leftFrame.size.height = 15.0;
-                        leftFrame.origin.x = baseFrame.origin.x;
-                        leftLabel.frame = leftFrame;
-                        [DYYYUtils applyColorSettingsToLabel:leftLabel colorHexString:labelColorHex];
-                }
+			CGRect leftFrame = leftLabel.frame;
+			leftFrame.size.height = 15.0;
+			leftFrame.origin.x = baseFrame.origin.x;
+			leftLabel.frame = leftFrame;
+			[DYYYUtils applyColorSettingsToLabel:leftLabel colorHexString:labelColorHex];
+		}
 
 		// 更新右标签
 		if (arg2 > 0 && rightLabel) {
@@ -1189,31 +1187,31 @@ static char kDYYYSliderAdjustedFrameKey;
 				newRightText = [self formatTimeFromSeconds:arg2];
 			}
 
-                        if (![rightLabel.text isEqualToString:newRightText]) {
-                                rightLabel.text = newRightText;
-                                [rightLabel sizeToFit];
-                        }
-                        NSValue *origVal2 = objc_getAssociatedObject(progressSlider, &kDYYYSliderOriginalFrameKey);
-                        CGRect baseFrame2 = origVal2 ? [origVal2 CGRectValue] : progressSlider.frame;
+			if (![rightLabel.text isEqualToString:newRightText]) {
+				rightLabel.text = newRightText;
+				[rightLabel sizeToFit];
+			}
+			NSValue *origVal2 = objc_getAssociatedObject(progressSlider, &kDYYYSliderOriginalFrameKey);
+			CGRect baseFrame2 = origVal2 ? [origVal2 CGRectValue] : progressSlider.frame;
 
-                        CGRect rightFrame = rightLabel.frame;
-                        rightFrame.size.height = 15.0;
-                        rightFrame.origin.x = baseFrame2.origin.x + baseFrame2.size.width - rightLabel.frame.size.width;
-                        rightLabel.frame = rightFrame;
-                        [DYYYUtils applyColorSettingsToLabel:rightLabel colorHexString:labelColorHex];
-                }
-                if ([scheduleStyle isEqualToString:@"进度条两侧左右"] && progressSlider) {
-                        [progressSlider applyCustomProgressStyle];
-                        NSValue *baseVal = objc_getAssociatedObject(progressSlider, &kDYYYSliderOriginalFrameKey);
-                        CGRect baseFrameFinal = baseVal ? [baseVal CGRectValue] : progressSlider.frame;
-                        CGRect lFrame = leftLabel.frame;
-                        lFrame.origin.x = baseFrameFinal.origin.x;
-                        leftLabel.frame = lFrame;
-                        CGRect rFrame = rightLabel.frame;
-                        rFrame.origin.x = baseFrameFinal.origin.x + baseFrameFinal.size.width - rightLabel.frame.size.width;
-                        rightLabel.frame = rFrame;
-                }
-        }
+			CGRect rightFrame = rightLabel.frame;
+			rightFrame.size.height = 15.0;
+			rightFrame.origin.x = baseFrame2.origin.x + baseFrame2.size.width - rightLabel.frame.size.width;
+			rightLabel.frame = rightFrame;
+			[DYYYUtils applyColorSettingsToLabel:rightLabel colorHexString:labelColorHex];
+		}
+		if ([scheduleStyle isEqualToString:@"进度条两侧左右"] && progressSlider) {
+			[progressSlider applyCustomProgressStyle];
+			NSValue *baseVal = objc_getAssociatedObject(progressSlider, &kDYYYSliderOriginalFrameKey);
+			CGRect baseFrameFinal = baseVal ? [baseVal CGRectValue] : progressSlider.frame;
+			CGRect lFrame = leftLabel.frame;
+			lFrame.origin.x = baseFrameFinal.origin.x;
+			leftLabel.frame = lFrame;
+			CGRect rFrame = rightLabel.frame;
+			rFrame.origin.x = baseFrameFinal.origin.x + baseFrameFinal.size.width - rightLabel.frame.size.width;
+			rightLabel.frame = rFrame;
+		}
+	}
 }
 
 - (void)setHidden:(BOOL)hidden {
@@ -5350,66 +5348,68 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 
 %hook AWEPlayInteractionProgressContainerView
 - (void)layoutSubviews {
-        %orig;
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-                for (UIView *subview in self.subviews) {
-                        if ([subview class] == [UIView class]) {
-                                [subview setBackgroundColor:[UIColor clearColor]];
-                        }
-                }
-        }
-        [self dyyy_applyShrinkIfNeeded];
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+		for (UIView *subview in self.subviews) {
+			if ([subview class] == [UIView class]) {
+				[subview setBackgroundColor:[UIColor clearColor]];
+			}
+		}
+	}
+	[self dyyy_applyShrinkIfNeeded];
 }
 
 %new
 - (void)dyyy_applyShrinkIfNeeded {
-        if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisShowScheduleDisplay"]) {
-                return;
-        }
+	if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisShowScheduleDisplay"]) {
+		return;
+	}
 
-        NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
-        if (![scheduleStyle isEqualToString:@"进度条两侧左右"]) {
-                NSMutableDictionary *origFrames = objc_getAssociatedObject(self, @selector(dyyy_applyShrinkIfNeeded));
-                if (origFrames) {
-                        for (UIView *subview in self.subviews) {
-                                NSString *key = [NSString stringWithFormat:@"%p", subview];
-                                NSValue *val = origFrames[key];
-                                if (val) {
-                                        subview.frame = [val CGRectValue];
-                                }
-                        }
-                }
-                return;
-        }
+	NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
+	if (![scheduleStyle isEqualToString:@"进度条两侧左右"]) {
+		NSMutableDictionary *origFrames = objc_getAssociatedObject(self, @selector(dyyy_applyShrinkIfNeeded));
+		if (origFrames) {
+			for (UIView *subview in self.subviews) {
+				NSString *key = [NSString stringWithFormat:@"%p", subview];
+				NSValue *val = origFrames[key];
+				if (val) {
+					subview.frame = [val CGRectValue];
+				}
+			}
+		}
+		return;
+	}
 
-        UILabel *leftLabel = [self viewWithTag:10001];
-        UILabel *rightLabel = [self viewWithTag:10002];
-        if (!leftLabel || !rightLabel) {
-                return;
-        }
+	UILabel *leftLabel = [self viewWithTag:10001];
+	UILabel *rightLabel = [self viewWithTag:10002];
+	if (!leftLabel || !rightLabel) {
+		return;
+	}
 
-        CGFloat padding = 5.0;
-        CGFloat shrinkX = CGRectGetMaxX(leftLabel.frame) + padding;
-        CGFloat shrinkWidth = rightLabel.frame.origin.x - padding - shrinkX;
-        if (shrinkWidth < 0) shrinkWidth = 0;
+	CGFloat padding = 5.0;
+	CGFloat shrinkX = CGRectGetMaxX(leftLabel.frame) + padding;
+	CGFloat shrinkWidth = rightLabel.frame.origin.x - padding - shrinkX;
+	if (shrinkWidth < 0)
+		shrinkWidth = 0;
 
-        NSMutableDictionary *origFrames = objc_getAssociatedObject(self, @selector(dyyy_applyShrinkIfNeeded));
-        if (!origFrames) {
-                origFrames = [NSMutableDictionary dictionary];
-                for (UIView *subview in self.subviews) {
-                        NSString *key = [NSString stringWithFormat:@"%p", subview];
-                        origFrames[key] = [NSValue valueWithCGRect:subview.frame];
-                }
-                objc_setAssociatedObject(self, @selector(dyyy_applyShrinkIfNeeded), origFrames, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-        }
+	NSMutableDictionary *origFrames = objc_getAssociatedObject(self, @selector(dyyy_applyShrinkIfNeeded));
+	if (!origFrames) {
+		origFrames = [NSMutableDictionary dictionary];
+		for (UIView *subview in self.subviews) {
+			NSString *key = [NSString stringWithFormat:@"%p", subview];
+			origFrames[key] = [NSValue valueWithCGRect:subview.frame];
+		}
+		objc_setAssociatedObject(self, @selector(dyyy_applyShrinkIfNeeded), origFrames, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+	}
 
-        for (UIView *subview in self.subviews) {
-                if ([subview isKindOfClass:[UILabel class]]) continue;
-                CGRect frame = subview.frame;
-                frame.origin.x = shrinkX;
-                frame.size.width = shrinkWidth;
-                subview.frame = frame;
-        }
+	for (UIView *subview in self.subviews) {
+		if ([subview isKindOfClass:[UILabel class]])
+			continue;
+		CGRect frame = subview.frame;
+		frame.origin.x = shrinkX;
+		frame.size.width = shrinkWidth;
+		subview.frame = frame;
+	}
 }
 %end
 
@@ -5481,9 +5481,9 @@ static CGFloat currentScale = 1.0;
 	}
 
 	UIViewController *viewController = [self firstAvailableUIViewController];
-        if ([viewController isKindOfClass:%c(AWEPlayInteractionViewController)]) {
-                BOOL isRightElement = isRightInteractionStack(self);
-                BOOL isLeftElement = isLeftInteractionStack(self);
+	if ([viewController isKindOfClass:%c(AWEPlayInteractionViewController)]) {
+		BOOL isRightElement = isRightInteractionStack(self);
+		BOOL isLeftElement = isLeftInteractionStack(self);
 
 		// 右侧元素的处理逻辑
 		if (isRightElement) {
@@ -5535,9 +5535,9 @@ static CGFloat currentScale = 1.0;
 }
 - (NSArray<__kindof UIView *> *)arrangedSubviews {
 
-        UIViewController *viewController = [self firstAvailableUIViewController];
-        if ([viewController isKindOfClass:%c(AWEPlayInteractionViewController)]) {
-                BOOL isLeftElement = isLeftInteractionStack(self);
+	UIViewController *viewController = [self firstAvailableUIViewController];
+	if ([viewController isKindOfClass:%c(AWEPlayInteractionViewController)]) {
+		BOOL isLeftElement = isLeftInteractionStack(self);
 
 		if (isLeftElement) {
 			NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
@@ -6071,12 +6071,12 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 		return;
 	}
 
-        if (!keepCellsInfo) {
-                keepCellsInfo = [NSMutableDictionary dictionary];
-        }
-        if (!sectionKeepInfo) {
-                sectionKeepInfo = [NSMutableDictionary dictionary];
-        }
+	if (!keepCellsInfo) {
+		keepCellsInfo = [NSMutableDictionary dictionary];
+	}
+	if (!sectionKeepInfo) {
+		sectionKeepInfo = [NSMutableDictionary dictionary];
+	}
 }
 
 - (void)viewDidDisappear:(BOOL)animated {
@@ -6086,8 +6086,8 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 		return;
 	}
 
-        [keepCellsInfo removeAllObjects];
-        [sectionKeepInfo removeAllObjects];
+	[keepCellsInfo removeAllObjects];
+	[sectionKeepInfo removeAllObjects];
 }
 
 - (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {
@@ -6104,13 +6104,13 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 		BOOL shouldKeep = [cell.contentView containsClassNamed:kAWELeftSideBarTopRightLayoutView] || [cell.contentView containsClassNamed:kAWELeftSideBarFunctionContainerView] ||
 				  [cell.contentView containsClassNamed:kAWELeftSideBarWeatherView];
 
-                NSString *key = [NSString stringWithFormat:@"%ld-%ld", (long)indexPath.section, (long)indexPath.row];
-                keepCellsInfo[key] = @(shouldKeep);
-                if (shouldKeep) {
-                        sectionKeepInfo[@(indexPath.section)] = @YES;
-                } else if (!sectionKeepInfo[@(indexPath.section)]) {
-                        sectionKeepInfo[@(indexPath.section)] = @NO;
-                }
+		NSString *key = [NSString stringWithFormat:@"%ld-%ld", (long)indexPath.section, (long)indexPath.row];
+		keepCellsInfo[key] = @(shouldKeep);
+		if (shouldKeep) {
+			sectionKeepInfo[@(indexPath.section)] = @YES;
+		} else if (!sectionKeepInfo[@(indexPath.section)]) {
+			sectionKeepInfo[@(indexPath.section)] = @NO;
+		}
 
 		if (!shouldKeep) {
 			cell.hidden = YES;
@@ -6153,11 +6153,11 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 		return originalInsets;
 	}
 
-        BOOL hasKeepCells = [sectionKeepInfo[@(section)] boolValue];
+	BOOL hasKeepCells = [sectionKeepInfo[@(section)] boolValue];
 
-        if (!hasKeepCells) {
-                return UIEdgeInsetsZero;
-        }
+	if (!hasKeepCells) {
+		return UIEdgeInsetsZero;
+	}
 
 	return originalInsets;
 }
@@ -6315,57 +6315,57 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 // 隐藏键盘ai
 static __weak UIView *cachedHideView = nil;
 static void hideParentViewsSubviews(UIView *view) {
-        if (!view)
-                return;
-        UIView *parentView = [view superview];
-        if (!parentView)
-                return;
-        UIView *grandParentView = [parentView superview];
-        if (!grandParentView)
-                return;
-        UIView *greatGrandParentView = [grandParentView superview];
-        if (!greatGrandParentView)
-                return;
-        cachedHideView = greatGrandParentView;
-        for (UIView *subview in greatGrandParentView.subviews) {
-                subview.hidden = YES;
-        }
+	if (!view)
+		return;
+	UIView *parentView = [view superview];
+	if (!parentView)
+		return;
+	UIView *grandParentView = [parentView superview];
+	if (!grandParentView)
+		return;
+	UIView *greatGrandParentView = [grandParentView superview];
+	if (!greatGrandParentView)
+		return;
+	cachedHideView = greatGrandParentView;
+	for (UIView *subview in greatGrandParentView.subviews) {
+		subview.hidden = YES;
+	}
 }
 // 递归查找目标视图
 static void findTargetViewInView(UIView *view) {
-        if (cachedHideView)
-                return;
-        if ([view isKindOfClass:NSClassFromString(@"AWESearchKeyboardVoiceSearchEntranceView")]) {
-                hideParentViewsSubviews(view);
-                return;
-        }
-        for (UIView *subview in view.subviews) {
-                findTargetViewInView(subview);
-                if (cachedHideView)
-                        break;
-        }
+	if (cachedHideView)
+		return;
+	if ([view isKindOfClass:NSClassFromString(@"AWESearchKeyboardVoiceSearchEntranceView")]) {
+		hideParentViewsSubviews(view);
+		return;
+	}
+	for (UIView *subview in view.subviews) {
+		findTargetViewInView(subview);
+		if (cachedHideView)
+			break;
+	}
 }
 
 %ctor {
 	// 注册键盘通知
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {
-                [[NSNotificationCenter defaultCenter] addObserverForName:UIKeyboardWillShowNotification
-                                                                  object:nil
-                                                                   queue:[NSOperationQueue mainQueue]
-                                                              usingBlock:^(NSNotification *notification) {
-                        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidekeyboardai"]) {
-                                if (cachedHideView) {
-                                        for (UIView *subview in cachedHideView.subviews) {
-                                                subview.hidden = YES;
-                                        }
-                                } else {
-                                        for (UIWindow *window in [UIApplication sharedApplication].windows) {
-                                                findTargetViewInView(window);
-                                                if (cachedHideView)
-                                                        break;
-                                        }
-                                }
-                        }
-                }];
+		[[NSNotificationCenter defaultCenter] addObserverForName:UIKeyboardWillShowNotification
+								  object:nil
+								   queue:[NSOperationQueue mainQueue]
+							      usingBlock:^(NSNotification *notification) {
+								if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidekeyboardai"]) {
+									if (cachedHideView) {
+										for (UIView *subview in cachedHideView.subviews) {
+											subview.hidden = YES;
+										}
+									} else {
+										for (UIWindow *window in [UIApplication sharedApplication].windows) {
+											findTargetViewInView(window);
+											if (cachedHideView)
+												break;
+										}
+									}
+								}
+							      }];
 	}
 }
