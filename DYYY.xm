@@ -18,6 +18,19 @@
 #import "DYYYToast.h"
 #import "DYYYUtils.h"
 
+// 关闭不可见水印
+%hook AWEHPChannelInvisibleWaterMarkModel
+
+- (BOOL)isEnter {
+	return NO;
+}
+
+- (BOOL)isAppear {
+	return NO;
+}
+
+%end
+
 // 长按复制个人简介
 %hook AWEProfileMentionLabel
 
