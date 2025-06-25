@@ -27,14 +27,26 @@ static NSDictionary *s_localABTestData = nil;
 static dispatch_once_t s_loadOnceToken;
 static dispatch_queue_t s_abTestHookQueue;
 static dispatch_once_t s_queueOnceToken;
+static void *s_queueSpecificKey = &s_queueSpecificKey;
 
 static dispatch_queue_t DYYYABTestQueue() {
     dispatch_once(&s_queueOnceToken, ^{
         if (!s_abTestHookQueue) {
             s_abTestHookQueue = dispatch_queue_create("com.dyyy.abtesthook.queue", DISPATCH_QUEUE_SERIAL);
+            // Mark the queue with specific key for reentrancy checks
+            dispatch_queue_set_specific(s_abTestHookQueue, s_queueSpecificKey, (void *)1, NULL);
         }
     });
     return s_abTestHookQueue;
+}
+
+static void DYYYQueueSync(dispatch_block_t block) {
+    dispatch_queue_t queue = DYYYABTestQueue();
+    if (dispatch_get_specific(s_queueSpecificKey)) {
+        block();
+    } else {
+        dispatch_sync(queue, block);
+    }
 }
 
 @implementation DYYYABTestHook
@@ -55,7 +67,7 @@ static dispatch_queue_t DYYYABTestQueue() {
  */
 + (BOOL)isLocalConfigLoaded {
     __block BOOL loaded = NO;
-    dispatch_sync(DYYYABTestQueue(), ^{
+    DYYYQueueSync(^{
         loaded = (s_localABTestData != nil);
     });
     return loaded;
@@ -67,7 +79,7 @@ static dispatch_queue_t DYYYABTestQueue() {
  */
 + (BOOL)isABTestBlockEnabled {
     __block BOOL enabled = NO;
-    dispatch_sync(DYYYABTestQueue(), ^{
+    DYYYQueueSync(^{
         enabled = s_abTestBlockEnabled;
     });
     return enabled;
@@ -211,7 +223,7 @@ static dispatch_queue_t DYYYABTestQueue() {
  */
 - (void)setAbTestData:(id)data {
     __block BOOL shouldBlock = NO;
-    dispatch_sync(DYYYABTestQueue(), ^{
+    DYYYQueueSync(^{
         // 在队列上安全地检查禁止下发标志 和 正在应用本地数据的标志
         // 如果禁止下发开启 并且 不是正在应用本地数据，则阻止
         if (s_abTestBlockEnabled && !s_isApplyingFixedData) {
@@ -233,7 +245,7 @@ static dispatch_queue_t DYYYABTestQueue() {
  */
 - (void)incrementalUpdateData:(id)data unchangedKeyList:(id)keyList {
     __block BOOL shouldBlock = NO;
-    dispatch_sync(DYYYABTestQueue(), ^{
+    DYYYQueueSync(^{
         shouldBlock = s_abTestBlockEnabled;
     });
 
@@ -251,7 +263,7 @@ static dispatch_queue_t DYYYABTestQueue() {
  */
 - (void)fetchConfigurationWithRetry:(BOOL)retry completion:(id)completion {
     __block BOOL shouldBlock = NO;
-    dispatch_sync(DYYYABTestQueue(), ^{
+    DYYYQueueSync(^{
         shouldBlock = s_abTestBlockEnabled;
     });
 
@@ -274,7 +286,7 @@ static dispatch_queue_t DYYYABTestQueue() {
  */
 - (void)fetchConfiguration:(id)arg1 {
     __block BOOL shouldBlock = NO;
-    dispatch_sync(DYYYABTestQueue(), ^{
+    DYYYQueueSync(^{
         shouldBlock = s_abTestBlockEnabled;
     });
 
@@ -292,7 +304,7 @@ static dispatch_queue_t DYYYABTestQueue() {
  */
 - (void)overrideABTestData:(id)data needCleanCache:(BOOL)cleanCache {
     __block BOOL shouldBlock = NO;
-    dispatch_sync(DYYYABTestQueue(), ^{
+    DYYYQueueSync(^{
         shouldBlock = s_abTestBlockEnabled;
     });
 
@@ -310,7 +322,7 @@ static dispatch_queue_t DYYYABTestQueue() {
  */
 - (void)_saveABTestData:(id)data {
     __block BOOL shouldBlock = NO;
-    dispatch_sync(DYYYABTestQueue(), ^{
+    DYYYQueueSync(^{
         shouldBlock = s_abTestBlockEnabled;
     });
 
