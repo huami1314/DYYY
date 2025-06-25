@@ -26,6 +26,28 @@ static NSDictionary *s_localABTestData = nil;
 
 static dispatch_once_t s_loadOnceToken;
 static dispatch_queue_t s_abTestHookQueue;
+static dispatch_once_t s_queueOnceToken;
+static void *s_queueSpecificKey = &s_queueSpecificKey;
+
+static dispatch_queue_t DYYYABTestQueue() {
+    dispatch_once(&s_queueOnceToken, ^{
+        if (!s_abTestHookQueue) {
+            s_abTestHookQueue = dispatch_queue_create("com.dyyy.abtesthook.queue", DISPATCH_QUEUE_SERIAL);
+            // Mark the queue with specific key for reentrancy checks
+            dispatch_queue_set_specific(s_abTestHookQueue, s_queueSpecificKey, (void *)1, NULL);
+        }
+    });
+    return s_abTestHookQueue;
+}
+
+static void DYYYQueueSync(dispatch_block_t block) {
+    dispatch_queue_t queue = DYYYABTestQueue();
+    if (dispatch_get_specific(s_queueSpecificKey)) {
+        block();
+    } else {
+        dispatch_sync(queue, block);
+    }
+}
 
 @implementation DYYYABTestHook
 
@@ -45,7 +67,7 @@ static dispatch_queue_t s_abTestHookQueue;
  */
 + (BOOL)isLocalConfigLoaded {
     __block BOOL loaded = NO;
-    dispatch_sync(s_abTestHookQueue, ^{
+    DYYYQueueSync(^{
         loaded = (s_localABTestData != nil);
     });
     return loaded;
@@ -57,7 +79,7 @@ static dispatch_queue_t s_abTestHookQueue;
  */
 + (BOOL)isABTestBlockEnabled {
     __block BOOL enabled = NO;
-    dispatch_sync(s_abTestHookQueue, ^{
+    DYYYQueueSync(^{
         enabled = s_abTestBlockEnabled;
     });
     return enabled;
@@ -68,7 +90,7 @@ static dispatch_queue_t s_abTestHookQueue;
  * 使用 dispatch_async 在队列上异步设置状态
  */
 + (void)setABTestBlockEnabled:(BOOL)enabled {
-    dispatch_async(s_abTestHookQueue, ^{
+    dispatch_async(DYYYABTestQueue(), ^{
         s_abTestBlockEnabled = enabled;
     });
 }
@@ -78,7 +100,7 @@ static dispatch_queue_t s_abTestHookQueue;
  * 使用 dispatch_async 在队列上异步清除数据
  */
 + (void)cleanLocalABTestData {
-    dispatch_async(s_abTestHookQueue, ^{
+    dispatch_async(DYYYABTestQueue(), ^{
         s_localABTestData = nil;
         s_loadOnceToken = 0;
         NSLog(@"[DYYY] 本地ABTest配置已清除");
@@ -92,7 +114,7 @@ static dispatch_queue_t s_abTestHookQueue;
  * 整个加载过程在队列上异步执行
  */
 + (void)loadLocalABTestConfig {
-    dispatch_async(s_abTestHookQueue, ^{
+    dispatch_async(DYYYABTestQueue(), ^{
         dispatch_once(&s_loadOnceToken, ^{
             // 获取存储路径
             NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
@@ -139,7 +161,7 @@ static dispatch_queue_t s_abTestHookQueue;
  * 整个应用过程在队列上异步执行
  */
 + (void)applyFixedABTestData {
-    dispatch_async(s_abTestHookQueue, ^{
+    dispatch_async(DYYYABTestQueue(), ^{
         if (!s_abTestBlockEnabled || !s_localABTestData) {
             NSLog(@"[DYYY] 不满足应用本地配置的条件 (禁止下发=%@, 数据是否为空=%@)",
                 s_abTestBlockEnabled ? @"开启" : @"关闭",
@@ -201,7 +223,7 @@ static dispatch_queue_t s_abTestHookQueue;
  */
 - (void)setAbTestData:(id)data {
     __block BOOL shouldBlock = NO;
-    dispatch_sync(s_abTestHookQueue, ^{
+    DYYYQueueSync(^{
         // 在队列上安全地检查禁止下发标志 和 正在应用本地数据的标志
         // 如果禁止下发开启 并且 不是正在应用本地数据，则阻止
         if (s_abTestBlockEnabled && !s_isApplyingFixedData) {
@@ -223,7 +245,7 @@ static dispatch_queue_t s_abTestHookQueue;
  */
 - (void)incrementalUpdateData:(id)data unchangedKeyList:(id)keyList {
     __block BOOL shouldBlock = NO;
-    dispatch_sync(s_abTestHookQueue, ^{
+    DYYYQueueSync(^{
         shouldBlock = s_abTestBlockEnabled;
     });
 
@@ -241,7 +263,7 @@ static dispatch_queue_t s_abTestHookQueue;
  */
 - (void)fetchConfigurationWithRetry:(BOOL)retry completion:(id)completion {
     __block BOOL shouldBlock = NO;
-    dispatch_sync(s_abTestHookQueue, ^{
+    DYYYQueueSync(^{
         shouldBlock = s_abTestBlockEnabled;
     });
 
@@ -264,7 +286,7 @@ static dispatch_queue_t s_abTestHookQueue;
  */
 - (void)fetchConfiguration:(id)arg1 {
     __block BOOL shouldBlock = NO;
-    dispatch_sync(s_abTestHookQueue, ^{
+    DYYYQueueSync(^{
         shouldBlock = s_abTestBlockEnabled;
     });
 
@@ -282,7 +304,7 @@ static dispatch_queue_t s_abTestHookQueue;
  */
 - (void)overrideABTestData:(id)data needCleanCache:(BOOL)cleanCache {
     __block BOOL shouldBlock = NO;
-    dispatch_sync(s_abTestHookQueue, ^{
+    DYYYQueueSync(^{
         shouldBlock = s_abTestBlockEnabled;
     });
 
@@ -300,7 +322,7 @@ static dispatch_queue_t s_abTestHookQueue;
  */
 - (void)_saveABTestData:(id)data {
     __block BOOL shouldBlock = NO;
-    dispatch_sync(s_abTestHookQueue, ^{
+    DYYYQueueSync(^{
         shouldBlock = s_abTestBlockEnabled;
     });
 
@@ -314,12 +336,13 @@ static dispatch_queue_t s_abTestHookQueue;
 %end
 
 %ctor {
-    s_abTestHookQueue = dispatch_queue_create("com.dyyy.abtesthook.queue", DISPATCH_QUEUE_SERIAL);
+    // 预初始化队列以避免早期访问为 NULL
+    DYYYABTestQueue();
 
     %init;
 
     // 在队列上异步读取初始状态并加载/应用配置
-    dispatch_async(s_abTestHookQueue, ^{
+    dispatch_async(DYYYABTestQueue(), ^{
         s_abTestBlockEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYABTestBlockEnabled"];
 
         NSString *currentMode = [DYYYABTestHook isPatchMode] ? @"覆写模式" : @"替换模式";

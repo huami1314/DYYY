@@ -611,3 +611,45 @@ BOOL isLeftInteractionStack(UIView *stackView) {
     }
     return NO;
 }
+
+UIViewController *findViewControllerOfClass(UIViewController *vc, Class targetClass) {
+    if (!vc)
+        return nil;
+    if ([vc isKindOfClass:targetClass])
+        return vc;
+    for (UIViewController *childVC in vc.childViewControllers) {
+        UIViewController *found = findViewControllerOfClass(childVC, targetClass);
+        if (found)
+            return found;
+    }
+    return findViewControllerOfClass(vc.presentedViewController, targetClass);
+}
+
+void applyTopBarTransparency(UIView *topBar) {
+    if (!topBar)
+        return;
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnablePure"]) {
+        return;
+    }
+
+    NSString *transparentValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYtopbartransparent"];
+    if (transparentValue && transparentValue.length > 0) {
+        CGFloat alphaValue = [transparentValue floatValue];
+        if (alphaValue >= 0.0 && alphaValue <= 1.0) {
+            CGFloat finalAlpha = (alphaValue < 0.011) ? 0.011 : alphaValue;
+
+            UIColor *backgroundColor = topBar.backgroundColor;
+            if (backgroundColor) {
+                CGFloat r, g, b, a;
+                if ([backgroundColor getRed:&r green:&g blue:&b alpha:&a]) {
+                    topBar.backgroundColor = [UIColor colorWithRed:r green:g blue:b alpha:finalAlpha * a];
+                }
+            }
+
+            topBar.alpha = finalAlpha;
+            for (UIView *subview in topBar.subviews) {
+                subview.alpha = 1.0;
+            }
+        }
+    }
+}

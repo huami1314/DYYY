@@ -275,8 +275,9 @@ extern "C"
 		    @"imageName" : @"ic_location_outlined_20"},
 		  @{@"identifier" : @"DYYYEnabsuijiyanse",
 		    @"title" : @"属地随机渐变",
+			@"subTitle" : @"不能与属地标签颜色同时开启",
 		    @"detail" : @"",
-		    @"cellType" : @6,
+		    @"cellType" : @37,
 		    @"imageName" : @"ic_location_outlined_20"}
 	  ];
 
@@ -428,8 +429,9 @@ extern "C"
 		    @"imageName" : @"ic_personcircleclean_outlined_20"},
 		  @{@"identifier" : @"DYYYNoUpdates",
 		    @"title" : @"屏蔽抖音检测更新",
+			@"subTitle" : @"屏蔽抖音应用的版本更新",
 		    @"detail" : @"",
-		    @"cellType" : @6,
+		    @"cellType" : @37,
 		    @"imageName" : @"ic_circletop_outlined"},
 		  @{@"identifier" : @"DYYYDisableLivePCDN",
 		    @"title" : @"屏蔽直播PCDN功能",
@@ -698,10 +700,29 @@ extern "C"
 		    @"imageName" : @"ic_user_outlined_20"},
 	  ];
 
-	  for (NSDictionary *dict in titleSettings) {
-		  AWESettingItemModel *item = [DYYYSettingsHelper createSettingItem:dict cellTapHandlers:cellTapHandlers];
-		  [titleItems addObject:item];
-	  }
+          for (NSDictionary *dict in titleSettings) {
+                  AWESettingItemModel *item = [DYYYSettingsHelper createSettingItem:dict cellTapHandlers:cellTapHandlers];
+                  if ([item.identifier isEqualToString:@"DYYYModifyTopTabText"]) {
+                          NSString *savedValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYModifyTopTabText"];
+                          item.detail = savedValue ?: @"";
+                          item.cellTappedBlock = ^{
+                            NSString *savedPairs = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYModifyTopTabText"] ?: @"";
+                            NSArray *pairArray = savedPairs.length > 0 ? [savedPairs componentsSeparatedByString:@"#"] : @[];
+                            DYYYKeywordListView *keywordListView = [[DYYYKeywordListView alloc] initWithTitle:@"设置顶栏标题" keywords:pairArray];
+                            keywordListView.addItemTitle = @"添加标题修改";
+                            keywordListView.editItemTitle = @"编辑标题修改";
+                            keywordListView.inputPlaceholder = @"原标题=新标题";
+                            keywordListView.onConfirm = ^(NSArray *keywords) {
+                              NSString *keywordString = [keywords componentsJoinedByString:@"#"];
+                              [DYYYSettingsHelper setUserDefaults:keywordString forKey:@"DYYYModifyTopTabText"];
+                              item.detail = keywordString;
+                              [item refreshCell];
+                            };
+                            [keywordListView show];
+                          };
+                  }
+                  [titleItems addObject:item];
+          }
 
 	  // 【图标自定义】分类
 	  NSMutableArray<AWESettingItemModel *> *iconItems = [NSMutableArray array];
@@ -2196,7 +2217,7 @@ extern "C"
 		    @"imageName" : @"ic_phonearrowdown_outlined_20"},
 		  @{@"identifier" : @"DYYYDisableAutoEnterLive",
 		    @"title" : @"禁用自动进入直播",
-			@"subTitle" : @"禁止顶栏-直播下自动进入直播间",
+			@"subTitle" : @"禁止顶栏直播下自动进入直播间",
 		    @"detail" : @"",
 		    @"cellType" : @37,
 		    @"imageName" : @"ic_video_outlined_20"},

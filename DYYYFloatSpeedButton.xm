@@ -535,8 +535,6 @@ void updateSpeedButtonVisibility() {
 			[keyWindow addSubview:speedButton];
 			[speedButton loadSavedPosition];
 		}
-		isCommentViewVisible = self.isCommentVCShowing;
-		updateSpeedButtonVisibility();
 	}
 }
 
