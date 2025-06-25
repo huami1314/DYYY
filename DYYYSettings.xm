@@ -1827,31 +1827,53 @@ extern "C"
 	    if (!saveABTestConfigFileItemRef)
 		    return;
 
-	    NSFileManager *fileManager = [NSFileManager defaultManager];
-	    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-	    NSString *documentsDirectory = [paths firstObject];
-	    NSString *dyyyFolderPath = [documentsDirectory stringByAppendingPathComponent:@"DYYY"];
-	    NSString *jsonFilePath = [dyyyFolderPath stringByAppendingPathComponent:@"abtest_data_fixed.json"];
-
-	    NSString *loadingStatus = [DYYYABTestHook isLocalConfigLoaded] ? @"已加载：" : @"未加载：";
-
-	    if (![fileManager fileExistsAtPath:jsonFilePath]) {
-		    saveABTestConfigFileItemRef.detail = [NSString stringWithFormat:@"%@ (文件不存在)", loadingStatus];
-		    saveABTestConfigFileItemRef.isEnable = NO;
-	    } else {
-		    unsigned long long jsonFileSize = 0;
-		    NSError *attributesError = nil;
-		    NSDictionary *attributes = [fileManager attributesOfItemAtPath:jsonFilePath error:&attributesError];
-		    if (!attributesError && attributes) {
-			    jsonFileSize = [attributes fileSize];
-			    saveABTestConfigFileItemRef.detail = [NSString stringWithFormat:@"%@ %@", loadingStatus, [DYYYUtils formattedSize:jsonFileSize]];
-			    saveABTestConfigFileItemRef.isEnable = YES;
-		    } else {
-			    saveABTestConfigFileItemRef.detail = [NSString stringWithFormat:@"%@ (读取失败: %@)", loadingStatus, attributesError.localizedDescription ?: @"未知错误"];
-			    saveABTestConfigFileItemRef.isEnable = NO;
+	    // 在后台队列执行文件状态检查和大小获取
+	    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+		    __weak AWESettingItemModel *weakSaveItem = saveABTestConfigFileItemRef;
+		    __strong AWESettingItemModel *strongSaveItem = weakSaveItem;
+		    if (!strongSaveItem) {
+			    return;
 		    }
-	    }
-	    [saveABTestConfigFileItemRef refreshCell];
+
+		    NSFileManager *fileManager = [NSFileManager defaultManager];
+		    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+		    NSString *documentsDirectory = [paths firstObject];
+		    NSString *dyyyFolderPath = [documentsDirectory stringByAppendingPathComponent:@"DYYY"];
+		    NSString *jsonFilePath = [dyyyFolderPath stringByAppendingPathComponent:@"abtest_data_fixed.json"];
+
+		    NSString *loadingStatus = [DYYYABTestHook isLocalConfigLoaded] ? @"已加载：" : @"未加载：";
+
+		    NSString *detailText = nil;
+		    BOOL isItemEnable = NO;
+
+		    if (![fileManager fileExistsAtPath:jsonFilePath]) {
+			    detailText = [NSString stringWithFormat:@"%@ (文件不存在)", loadingStatus];
+			    isItemEnable = NO;
+		    } else {
+			    unsigned long long jsonFileSize = 0;
+			    NSError *attributesError = nil;
+			    NSDictionary *attributes = [fileManager attributesOfItemAtPath:jsonFilePath error:&attributesError];
+			    if (!attributesError && attributes) {
+				    jsonFileSize = [attributes fileSize];
+				    detailText = [NSString stringWithFormat:@"%@ %@", loadingStatus, [DYYYUtils formattedSize:jsonFileSize]];
+				    isItemEnable = YES;
+			    } else {
+				    detailText = [NSString stringWithFormat:@"%@ (读取失败: %@)", loadingStatus, attributesError.localizedDescription ?: @"未知错误"];
+				    isItemEnable = NO;
+			    }
+		    }
+
+		    // 回到主线程更新 UI
+		    dispatch_async(dispatch_get_main_queue(), ^{
+			    // 在主线程更新 UI 前检查 item 是否仍然存在
+			    __strong AWESettingItemModel *strongSaveItemAgain = weakSaveItem;
+			    if (strongSaveItemAgain) {
+				    strongSaveItemAgain.detail = detailText;
+				    strongSaveItemAgain.isEnable = isItemEnable;
+				    [strongSaveItemAgain refreshCell];
+			    }
+		    });
+	    });
 	  };
 
 	  for (NSDictionary *dict in hotUpdateSettings) {
@@ -1881,6 +1903,7 @@ extern "C"
 			    } else {
 				    item.isSwitchOn = newValue;
 				    [DYYYSettingsHelper setUserDefaults:@(newValue) forKey:@"DYYYABTestBlockEnabled"];
+				    [DYYYUtils showToast:@"已允许热更新下发配置，重启后生效。"];
 			    }
 			  };
 		  } else if ([item.identifier isEqualToString:@"DYYYABTestModeString"]) {
@@ -1909,22 +1932,47 @@ extern "C"
 			  };
 		  } else if ([item.identifier isEqualToString:@"SaveCurrentABTestData"]) {
 			  item.detail = @"(获取中...)";
+			  item.isEnable = NO;
 
-			  NSDictionary *currentData = [DYYYABTestHook getCurrentABTestData];
-
-			  if (!currentData) {
-				  item.detail = @"(获取失败)";
-				  item.isEnable = NO;
-			  } else {
-				  NSError *serializationError = nil;
-				  NSData *jsonData = [NSJSONSerialization dataWithJSONObject:currentData options:NSJSONWritingPrettyPrinted error:&serializationError];
-				  if (!serializationError && jsonData) {
-					  item.detail = [DYYYUtils formattedSize:jsonData.length];
-				  } else {
-					  item.detail = [NSString stringWithFormat:@"(序列化失败: %@)", serializationError.localizedDescription ?: @"未知错误"];
-					  item.isEnable = NO;
+			  // 在后台队列获取数据并更新 UI
+			  dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+				  __weak AWESettingItemModel *weakItem = item;
+				  __strong AWESettingItemModel *strongItem = weakItem;
+				  if (!strongItem) {
+					  return;
 				  }
-			  }
+
+				  NSDictionary *currentData = [DYYYABTestHook getCurrentABTestData];
+
+				  NSString *detailText = nil;
+				  BOOL isItemEnable = NO;
+				  NSData *jsonDataForSize = nil;
+
+				  if (!currentData) {
+					  detailText = @"(获取失败)";
+					  isItemEnable = NO;
+				  } else {
+					  NSError *serializationError = nil;
+					  jsonDataForSize = [NSJSONSerialization dataWithJSONObject:currentData options:NSJSONWritingPrettyPrinted error:&serializationError];
+					  if (!serializationError && jsonDataForSize) {
+						  detailText = [DYYYUtils formattedSize:jsonDataForSize.length];
+						  isItemEnable = YES;
+					  } else {
+						  detailText = [NSString stringWithFormat:@"(序列化失败: %@)", serializationError.localizedDescription ?: @"未知错误"];
+						  isItemEnable = NO;
+					  }
+				  }
+
+				  // 回到主线程更新 UI
+				  dispatch_async(dispatch_get_main_queue(), ^{
+					  __strong AWESettingItemModel *strongItemAgain = weakItem;
+					  if (strongItemAgain) {
+						  strongItemAgain.detail = detailText;
+						  strongItemAgain.isEnable = isItemEnable;
+						  [strongItemAgain refreshCell];
+					  }
+				  });
+			  });
 
 			  item.cellTappedBlock = ^{
 			    NSDictionary *currentData = [DYYYABTestHook getCurrentABTestData];
@@ -2049,34 +2097,63 @@ extern "C"
 
 			      DYYYBackupPickerDelegate *pickerDelegate = [[DYYYBackupPickerDelegate alloc] init];
 			      pickerDelegate.completionBlock = ^(NSURL *url) {
-				NSString *sourcePath = [url path];
+				    // Delegate 回调通常在主线程，但文件操作和 Hook 调用应在后台
+				    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+					    __weak AWESettingItemModel *weakSaveItem = saveABTestConfigFileItemRef;
 
-				NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-				NSString *documentsDirectory = [paths firstObject];
-				NSString *dyyyFolderPath = [documentsDirectory stringByAppendingPathComponent:@"DYYY"];
-				NSString *destPath = [dyyyFolderPath stringByAppendingPathComponent:@"abtest_data_fixed.json"];
+					    NSURL *sourceURL = url; // 用户选择的源文件 URL
 
-				if (![[NSFileManager defaultManager] fileExistsAtPath:dyyyFolderPath]) {
-					[[NSFileManager defaultManager] createDirectoryAtPath:dyyyFolderPath withIntermediateDirectories:YES attributes:nil error:nil];
-				}
+					    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+					    NSString *documentsDirectory = [paths firstObject];
+					    NSString *dyyyFolderPath = [documentsDirectory stringByAppendingPathComponent:@"DYYY"];
+					    NSURL *destinationURL = [NSURL fileURLWithPath:[dyyyFolderPath stringByAppendingPathComponent:@"abtest_data_fixed.json"]];
 
-				NSError *error;
-				if ([[NSFileManager defaultManager] fileExistsAtPath:destPath]) {
-					[[NSFileManager defaultManager] removeItemAtPath:destPath error:&error];
-				}
+					    NSFileManager *fileManager = [NSFileManager defaultManager];
+					    NSError *error = nil;
+					    BOOL success = NO;
+					    NSString *message = nil;
 
-				BOOL success = [[NSFileManager defaultManager] copyItemAtPath:sourcePath toPath:destPath error:&error];
+					    if (![fileManager fileExistsAtPath:dyyyFolderPath]) {
+						    [fileManager createDirectoryAtPath:dyyyFolderPath withIntermediateDirectories:YES attributes:nil error:&error];
+						    if (error) {
+							    message = [NSString stringWithFormat:@"创建目录失败: %@", error.localizedDescription];
+						    }
+					    }
 
-				NSString *message = success ? @"配置已导入，若没生效请重启抖音" : [NSString stringWithFormat:@"导入失败: %@", error.localizedDescription];
-				[DYYYUtils showToast:message];
+					    if (!message) {
+						    // 在同一个目录下创建一个临时文件 URL 以确保原子性
+						    NSString *tempFileName = [NSUUID UUID].UUIDString;
+						    NSURL *temporaryURL = [NSURL fileURLWithPath:[dyyyFolderPath stringByAppendingPathComponent:tempFileName]];
 
-				if (success) {
-					[DYYYABTestHook cleanLocalABTestData];
-					[DYYYABTestHook loadLocalABTestConfig];
-					[DYYYABTestHook applyFixedABTestData];
-					// 导入成功后更新 SaveABTestConfigFile item 的状态
-					refreshSaveABTestConfigFileItem();
-				}
+						    if ([fileManager copyItemAtURL:sourceURL toURL:temporaryURL error:&error]) {
+							    if ([fileManager replaceItemAtURL:destinationURL withItemAtURL:temporaryURL backupItemName:nil options:0 resultingItemURL:nil error:&error]) {
+								    [DYYYABTestHook cleanLocalABTestData];
+								    [DYYYABTestHook loadLocalABTestConfig];
+								    [DYYYABTestHook applyFixedABTestData];
+								    success = YES;
+								    message = @"配置已导入，部分设置需重启应用后生效";
+							    } else {
+								    [fileManager removeItemAtURL:temporaryURL error:nil];
+								    message = [NSString stringWithFormat:@"导入失败 (替换文件失败): %@", error.localizedDescription];
+							    }
+						    } else {
+							    message = [NSString stringWithFormat:@"导入失败 (复制到临时文件失败): %@", error.localizedDescription];
+						    }
+					    }
+					    // 回到主线程显示 Toast 和更新 UI
+					    dispatch_async(dispatch_get_main_queue(), ^{
+						    __strong AWESettingItemModel *strongSaveItemAgain = weakSaveItem;
+
+						    // 无论成功与否，都显示 Toast 告知用户结果
+						    NSString *message = success ? @"配置已导入，部分设置需重启应用后生效" : [NSString stringWithFormat:@"导入失败: %@", error.localizedDescription];
+						    [DYYYUtils showToast:message];
+
+						    // 仅在导入成功且 item 仍然存在时更新 UI
+						    if (success && strongSaveItemAgain) {
+							    refreshSaveABTestConfigFileItem();
+						    }
+					    });
+				    });
 			      };
 
 			      static char kPickerDelegateKey;
