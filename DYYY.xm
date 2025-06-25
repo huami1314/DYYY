@@ -933,7 +933,6 @@
 }
 %end
 
-
 %hook AWEPlayInteractionProgressContainerView
 - (void)layoutSubviews {
 	%orig;
@@ -991,27 +990,26 @@
 	}
 
 	for (UIView *subview in self.subviews) {
+		NSString *key = [NSString stringWithFormat:@"%p", subview];
+		CGRect origFrame = [origFrames[key] CGRectValue];
 		if ([subview isKindOfClass:[UILabel class]])
 			continue;
-		CGRect frame = subview.frame;
-		frame.origin.x = shrinkX;
-		frame.size.width = shrinkWidth;
-		subview.frame = frame;
+		CGFloat ratio = origFrame.size.width / origFrame.size.height;
+		if (ratio > 10.0) {
+			CGRect frame = origFrame;
+			frame.origin.x = shrinkX;
+			frame.size.width = shrinkWidth;
+			subview.frame = frame;
+		}
 	}
 }
 %end
 
 %hook AWEFeedProgressSlider
 
-static char kDYYYSliderOriginalFrameKey;
-static char kDYYYSliderAdjustedFrameKey;
-
 // layoutSubviews 保持不变
 - (void)layoutSubviews {
 	%orig;
-	if (!objc_getAssociatedObject(self, &kDYYYSliderOriginalFrameKey)) {
-		objc_setAssociatedObject(self, &kDYYYSliderOriginalFrameKey, [NSValue valueWithCGRect:self.frame], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-	}
 	[self applyCustomProgressStyle];
 }
 
@@ -1024,43 +1022,23 @@ static char kDYYYSliderAdjustedFrameKey;
 	if (!parentView)
 		return;
 
-	NSValue *origVal = objc_getAssociatedObject(self, &kDYYYSliderOriginalFrameKey);
-	CGRect origFrame = origVal ? [origVal CGRectValue] : self.frame;
-	NSValue *adjustedVal = objc_getAssociatedObject(self, &kDYYYSliderAdjustedFrameKey);
-
 	if ([scheduleStyle isEqualToString:@"进度条两侧左右"]) {
+		// 尝试获取标签
 		UILabel *leftLabel = [parentView viewWithTag:10001];
 		UILabel *rightLabel = [parentView viewWithTag:10002];
 
-		CGRect newFrame = origFrame;
 		if (leftLabel && rightLabel) {
 			CGFloat padding = 5.0;
-			CGFloat sliderY = origFrame.origin.y;
-			CGFloat sliderHeight = origFrame.size.height;
+			CGFloat sliderY = self.frame.origin.y;
+			CGFloat sliderHeight = self.frame.size.height;
 			CGFloat sliderX = leftLabel.frame.origin.x + leftLabel.frame.size.width + padding;
 			CGFloat sliderWidth = rightLabel.frame.origin.x - padding - sliderX;
+
 			if (sliderWidth < 0)
 				sliderWidth = 0;
-			newFrame = CGRectMake(sliderX, sliderY, sliderWidth, sliderHeight);
-		} else {
-			CGFloat fallbackWidthPercent = 0.80;
-			CGFloat parentWidth = parentView.bounds.size.width;
-			CGFloat fallbackWidth = parentWidth * fallbackWidthPercent;
-			CGFloat fallbackX = (parentWidth - fallbackWidth) / 2.0;
-			CGFloat currentY = origFrame.origin.y;
-			CGFloat currentHeight = origFrame.size.height;
-			newFrame = CGRectMake(fallbackX, currentY, fallbackWidth, currentHeight);
-		}
 
-		if (!adjustedVal || !CGRectEqualToRect(newFrame, [adjustedVal CGRectValue])) {
-			self.frame = newFrame;
-			objc_setAssociatedObject(self, &kDYYYSliderAdjustedFrameKey, [NSValue valueWithCGRect:newFrame], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-		} else {
-			self.frame = [adjustedVal CGRectValue];
+			self.frame = CGRectMake(sliderX, sliderY, sliderWidth, sliderHeight);
 		}
-	} else if (adjustedVal) {
-		self.frame = origFrame;
-		objc_setAssociatedObject(self, &kDYYYSliderAdjustedFrameKey, nil, OBJC_ASSOCIATION_ASSIGN);
 	}
 }
 
@@ -1075,6 +1053,9 @@ static char kDYYYSliderAdjustedFrameKey;
 		%orig;
 	}
 }
+
+static CGFloat leftLabelLeftMargin = -1;
+static CGFloat rightLabelRightMargin = -1;
 
 - (void)setLimitUpperActionArea:(BOOL)arg1 {
 	%orig;
@@ -1091,9 +1072,6 @@ static char kDYYYSliderAdjustedFrameKey;
 
 		CGRect sliderOriginalFrameInParent = [self convertRect:self.bounds toView:parentView];
 		CGRect sliderFrame = self.frame;
-		if (!objc_getAssociatedObject(self, &kDYYYSliderOriginalFrameKey)) {
-			objc_setAssociatedObject(self, &kDYYYSliderOriginalFrameKey, [NSValue valueWithCGRect:sliderFrame], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-		}
 
 		CGFloat verticalOffset = -12.5;
 		NSString *offsetValueString = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTimelineVerticalPosition"];
@@ -1129,7 +1107,10 @@ static char kDYYYSliderAdjustedFrameKey;
 
 			[leftLabel sizeToFit];
 
-			CGFloat leftLabelLeftMargin = sliderFrame.origin.x;
+			if (leftLabelLeftMargin == -1) {
+				leftLabelLeftMargin = sliderFrame.origin.x;
+			}
+
 			leftLabel.frame = CGRectMake(leftLabelLeftMargin, labelYPosition, leftLabel.frame.size.width, labelHeight);
 			[parentView addSubview:leftLabel];
 
@@ -1150,7 +1131,9 @@ static char kDYYYSliderAdjustedFrameKey;
 
 			[rightLabel sizeToFit];
 
-			CGFloat rightLabelRightMargin = sliderFrame.origin.x + sliderFrame.size.width - rightLabel.frame.size.width;
+			if (rightLabelRightMargin == -1) {
+				rightLabelRightMargin = sliderFrame.origin.x + sliderFrame.size.width - rightLabel.frame.size.width;
+			}
 
 			rightLabel.frame = CGRectMake(rightLabelRightMargin, labelYPosition, rightLabel.frame.size.width, labelHeight);
 			[parentView addSubview:rightLabel];
@@ -1165,15 +1148,8 @@ static char kDYYYSliderAdjustedFrameKey;
 			[[parentView viewWithTag:10001] removeFromSuperview];
 			[[parentView viewWithTag:10002] removeFromSuperview];
 		}
-		objc_setAssociatedObject(self, &kDYYYSliderOriginalFrameKey, nil, OBJC_ASSOCIATION_ASSIGN);
-		objc_setAssociatedObject(self, &kDYYYSliderAdjustedFrameKey, nil, OBJC_ASSOCIATION_ASSIGN);
 		[self setNeedsLayout];
 	}
-}
-
-%new
-- (void)handleProgressGesture:(id)gesture {
-	[self applyCustomProgressStyle];
 }
 
 %end
@@ -1230,14 +1206,10 @@ static char kDYYYSliderAdjustedFrameKey;
 			if (![leftLabel.text isEqualToString:newLeftText]) {
 				leftLabel.text = newLeftText;
 				[leftLabel sizeToFit];
+				CGRect leftFrame = leftLabel.frame;
+				leftFrame.size.height = 15.0;
+				leftLabel.frame = leftFrame;
 			}
-			NSValue *origVal = objc_getAssociatedObject(progressSlider, &kDYYYSliderOriginalFrameKey);
-			CGRect baseFrame = origVal ? [origVal CGRectValue] : progressSlider.frame;
-
-			CGRect leftFrame = leftLabel.frame;
-			leftFrame.size.height = 15.0;
-			leftFrame.origin.x = baseFrame.origin.x;
-			leftLabel.frame = leftFrame;
 			[DYYYUtils applyColorSettingsToLabel:leftLabel colorHexString:labelColorHex];
 		}
 
@@ -1258,26 +1230,11 @@ static char kDYYYSliderAdjustedFrameKey;
 			if (![rightLabel.text isEqualToString:newRightText]) {
 				rightLabel.text = newRightText;
 				[rightLabel sizeToFit];
+				CGRect rightFrame = rightLabel.frame;
+				rightFrame.size.height = 15.0;
+				rightLabel.frame = rightFrame;
 			}
-			NSValue *origVal2 = objc_getAssociatedObject(progressSlider, &kDYYYSliderOriginalFrameKey);
-			CGRect baseFrame2 = origVal2 ? [origVal2 CGRectValue] : progressSlider.frame;
-
-			CGRect rightFrame = rightLabel.frame;
-			rightFrame.size.height = 15.0;
-			rightFrame.origin.x = baseFrame2.origin.x + baseFrame2.size.width - rightLabel.frame.size.width;
-			rightLabel.frame = rightFrame;
-			[DYYYUtils applyColorSettingsToLabel:rightLabel colorHexString:labelColorHex];
-		}
-		if ([scheduleStyle isEqualToString:@"进度条两侧左右"] && progressSlider) {
-			[progressSlider applyCustomProgressStyle];
-			NSValue *baseVal = objc_getAssociatedObject(progressSlider, &kDYYYSliderOriginalFrameKey);
-			CGRect baseFrameFinal = baseVal ? [baseVal CGRectValue] : progressSlider.frame;
-			CGRect lFrame = leftLabel.frame;
-			lFrame.origin.x = baseFrameFinal.origin.x;
-			leftLabel.frame = lFrame;
-			CGRect rFrame = rightLabel.frame;
-			rFrame.origin.x = baseFrameFinal.origin.x + baseFrameFinal.size.width - rightLabel.frame.size.width;
-			rightLabel.frame = rFrame;
+			[DYYYUtils applyColorSettingsToLabel:leftLabel colorHexString:labelColorHex];
 		}
 	}
 }
