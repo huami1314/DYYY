@@ -940,9 +940,19 @@ static char kDYYYSliderAdjustedFrameKey;
 
 // layoutSubviews 保持不变
 - (void)layoutSubviews {
-	%orig;
-	if (!objc_getAssociatedObject(self, &kDYYYSliderOriginalFrameKey)) {
-		objc_setAssociatedObject(self, &kDYYYSliderOriginalFrameKey, [NSValue valueWithCGRect:self.frame], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        if (origFrame.size.height > 0) {
+                CGFloat ratio = origFrame.size.width / origFrame.size.height;
+                if (ratio < 4.0) {
+                        return;
+                }
+        }
+                        if (!CGRectEqualToRect(self.frame, newFrame)) {
+                                self.frame = newFrame;
+                        }
+                } else if (!CGRectEqualToRect(self.frame, [adjustedVal CGRectValue])) {
+                if (!CGRectEqualToRect(self.frame, origFrame)) {
+                        self.frame = origFrame;
+                }
 	}
 	[self applyCustomProgressStyle];
 }
@@ -5348,9 +5358,26 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 
 %hook AWEPlayInteractionProgressContainerView
 - (void)layoutSubviews {
-	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-		for (UIView *subview in self.subviews) {
+                NSMutableDictionary *origFrames = objc_getAssociatedObject(self, @selector(dyyy_applyShrinkIfNeeded));
+                if (origFrames) {
+                        for (UIView *subview in self.subviews) {
+                                NSString *key = [NSString stringWithFormat:@"%p", subview];
+                                NSValue *val = origFrames[key];
+                                if (val) {
+                                        subview.frame = [val CGRectValue];
+                                }
+                        }
+                }
+        const CGFloat ratioThreshold = 4.0;
+                if (frame.size.height <= 0) continue;
+                CGFloat ratio = frame.size.width / frame.size.height;
+                if (ratio < ratioThreshold) continue;
+                CGRect newFrame = frame;
+                newFrame.origin.x = shrinkX;
+                newFrame.size.width = shrinkWidth;
+                if (!CGRectEqualToRect(newFrame, frame)) {
+                        subview.frame = newFrame;
+                }
 			if ([subview class] == [UIView class]) {
 				[subview setBackgroundColor:[UIColor clearColor]];
 			}
