@@ -18,6 +18,15 @@
 
 @implementation DYYYKeywordListView
 
+- (void)setAddItemTitle:(NSString *)addItemTitle {
+  _addItemTitle = [addItemTitle copy];
+  NSString *addTitle = _addItemTitle ?: @"添加";
+  if (self.addButton) {
+    [self.addButton setTitle:[@"+ " stringByAppendingString:addTitle]
+                     forState:UIControlStateNormal];
+  }
+}
+
 - (instancetype)initWithTitle:(NSString *)title keywords:(NSArray *)keywords {
   if (self = [super initWithFrame:UIScreen.mainScreen.bounds]) {
     self.keywords = [NSMutableArray arrayWithArray:keywords ?: @[]];
