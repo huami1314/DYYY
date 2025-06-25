@@ -275,8 +275,9 @@ extern "C"
 		    @"imageName" : @"ic_location_outlined_20"},
 		  @{@"identifier" : @"DYYYEnabsuijiyanse",
 		    @"title" : @"属地随机渐变",
+			@"subTitle" : @"不能与属地标签颜色同时开启",
 		    @"detail" : @"",
-		    @"cellType" : @6,
+		    @"cellType" : @37,
 		    @"imageName" : @"ic_location_outlined_20"}
 	  ];
 
@@ -428,8 +429,9 @@ extern "C"
 		    @"imageName" : @"ic_personcircleclean_outlined_20"},
 		  @{@"identifier" : @"DYYYNoUpdates",
 		    @"title" : @"屏蔽抖音检测更新",
+			@"subTitle" : @"屏蔽抖音应用的版本更新",
 		    @"detail" : @"",
-		    @"cellType" : @6,
+		    @"cellType" : @37,
 		    @"imageName" : @"ic_circletop_outlined"},
 		  @{@"identifier" : @"DYYYDisableLivePCDN",
 		    @"title" : @"屏蔽直播PCDN功能",
@@ -2119,7 +2121,7 @@ extern "C"
 		    @"imageName" : @"ic_phonearrowdown_outlined_20"},
 		  @{@"identifier" : @"DYYYDisableAutoEnterLive",
 		    @"title" : @"禁用自动进入直播",
-			@"subTitle" : @"禁止顶栏-直播下自动进入直播间",
+			@"subTitle" : @"禁止顶栏直播下自动进入直播间",
 		    @"detail" : @"",
 		    @"cellType" : @37,
 		    @"imageName" : @"ic_video_outlined_20"},
