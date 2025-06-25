@@ -935,10 +935,15 @@
 
 %hook AWEFeedProgressSlider
 
+static char kDYYYSliderOriginalFrameKey;
+
 // layoutSubviews 保持不变
 - (void)layoutSubviews {
-	%orig;
-	[self applyCustomProgressStyle];
+        %orig;
+        if (!objc_getAssociatedObject(self, &kDYYYSliderOriginalFrameKey)) {
+                objc_setAssociatedObject(self, &kDYYYSliderOriginalFrameKey, [NSValue valueWithCGRect:self.frame], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        }
+        [self applyCustomProgressStyle];
 }
 
 %new
@@ -955,27 +960,29 @@
 		UILabel *leftLabel = [parentView viewWithTag:10001];
 		UILabel *rightLabel = [parentView viewWithTag:10002];
 
-		if (leftLabel && rightLabel) {
-			CGFloat padding = 5.0;
-			CGFloat sliderY = self.frame.origin.y;
-			CGFloat sliderHeight = self.frame.size.height;
-			CGFloat sliderX = leftLabel.frame.origin.x + leftLabel.frame.size.width + padding;
-			CGFloat sliderWidth = rightLabel.frame.origin.x - padding - sliderX;
+                if (leftLabel && rightLabel) {
+                        CGFloat padding = 5.0;
+                        NSValue *origVal = objc_getAssociatedObject(self, &kDYYYSliderOriginalFrameKey);
+                        CGRect origFrame = origVal ? [origVal CGRectValue] : self.frame;
+                        CGFloat sliderY = origFrame.origin.y;
+                        CGFloat sliderHeight = origFrame.size.height;
+                        CGFloat sliderX = leftLabel.frame.origin.x + leftLabel.frame.size.width + padding;
+                        CGFloat sliderWidth = rightLabel.frame.origin.x - padding - sliderX;
 
 			if (sliderWidth < 0)
 				sliderWidth = 0;
 
 			self.frame = CGRectMake(sliderX, sliderY, sliderWidth, sliderHeight);
 		} else {
-			CGFloat fallbackWidthPercent = 0.80;
-			CGFloat parentWidth = parentView.bounds.size.width;
-			CGFloat fallbackWidth = parentWidth * fallbackWidthPercent;
-			CGFloat fallbackX = (parentWidth - fallbackWidth) / 2.0;
-			// 使用 self.frame 获取当前 Y 和 Height (通常由 %orig 设置)
-			CGFloat currentY = self.frame.origin.y;
-			CGFloat currentHeight = self.frame.size.height;
-			// 应用回退 frame
-			self.frame = CGRectMake(fallbackX, currentY, fallbackWidth, currentHeight);
+                        CGFloat fallbackWidthPercent = 0.80;
+                        CGFloat parentWidth = parentView.bounds.size.width;
+                        CGFloat fallbackWidth = parentWidth * fallbackWidthPercent;
+                        CGFloat fallbackX = (parentWidth - fallbackWidth) / 2.0;
+                        NSValue *origVal = objc_getAssociatedObject(self, &kDYYYSliderOriginalFrameKey);
+                        CGRect origFrame = origVal ? [origVal CGRectValue] : self.frame;
+                        CGFloat currentY = origFrame.origin.y;
+                        CGFloat currentHeight = origFrame.size.height;
+                        self.frame = CGRectMake(fallbackX, currentY, fallbackWidth, currentHeight);
 		}
 	} else {
 	}
@@ -1007,8 +1014,9 @@
 		[[parentView viewWithTag:10001] removeFromSuperview];
 		[[parentView viewWithTag:10002] removeFromSuperview];
 
-		CGRect sliderOriginalFrameInParent = [self convertRect:self.bounds toView:parentView];
-		CGRect sliderFrame = self.frame;
+               CGRect sliderOriginalFrameInParent = [self convertRect:self.bounds toView:parentView];
+               CGRect sliderFrame = self.frame;
+               objc_setAssociatedObject(self, &kDYYYSliderOriginalFrameKey, [NSValue valueWithCGRect:sliderFrame], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 
 		CGFloat verticalOffset = -12.5;
 		NSString *offsetValueString = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTimelineVerticalPosition"];
@@ -1075,13 +1083,14 @@
 
 		[self setNeedsLayout];
 	} else {
-		UIView *parentView = self.superview;
-		if (parentView) {
-			[[parentView viewWithTag:10001] removeFromSuperview];
-			[[parentView viewWithTag:10002] removeFromSuperview];
-		}
-		[self setNeedsLayout];
-	}
+                UIView *parentView = self.superview;
+                if (parentView) {
+                        [[parentView viewWithTag:10001] removeFromSuperview];
+                        [[parentView viewWithTag:10002] removeFromSuperview];
+                }
+                objc_setAssociatedObject(self, &kDYYYSliderOriginalFrameKey, nil, OBJC_ASSOCIATION_ASSIGN);
+                [self setNeedsLayout];
+        }
 }
 
 %end
@@ -1139,9 +1148,12 @@
                                 leftLabel.text = newLeftText;
                                 [leftLabel sizeToFit];
                         }
+                        NSValue *origVal = objc_getAssociatedObject(progressSlider, &kDYYYSliderOriginalFrameKey);
+                        CGRect baseFrame = origVal ? [origVal CGRectValue] : progressSlider.frame;
+
                         CGRect leftFrame = leftLabel.frame;
                         leftFrame.size.height = 15.0;
-                        leftFrame.origin.x = progressSlider.frame.origin.x;
+                        leftFrame.origin.x = baseFrame.origin.x;
                         leftLabel.frame = leftFrame;
                         [DYYYUtils applyColorSettingsToLabel:leftLabel colorHexString:labelColorHex];
                 }
@@ -1164,19 +1176,24 @@
                                 rightLabel.text = newRightText;
                                 [rightLabel sizeToFit];
                         }
+                        NSValue *origVal2 = objc_getAssociatedObject(progressSlider, &kDYYYSliderOriginalFrameKey);
+                        CGRect baseFrame2 = origVal2 ? [origVal2 CGRectValue] : progressSlider.frame;
+
                         CGRect rightFrame = rightLabel.frame;
                         rightFrame.size.height = 15.0;
-                        rightFrame.origin.x = progressSlider.frame.origin.x + progressSlider.frame.size.width - rightLabel.frame.size.width;
+                        rightFrame.origin.x = baseFrame2.origin.x + baseFrame2.size.width - rightLabel.frame.size.width;
                         rightLabel.frame = rightFrame;
                         [DYYYUtils applyColorSettingsToLabel:rightLabel colorHexString:labelColorHex];
                 }
                 if ([scheduleStyle isEqualToString:@"进度条两侧左右"] && progressSlider) {
                         [progressSlider applyCustomProgressStyle];
+                        NSValue *baseVal = objc_getAssociatedObject(progressSlider, &kDYYYSliderOriginalFrameKey);
+                        CGRect baseFrameFinal = baseVal ? [baseVal CGRectValue] : progressSlider.frame;
                         CGRect lFrame = leftLabel.frame;
-                        lFrame.origin.x = progressSlider.frame.origin.x;
+                        lFrame.origin.x = baseFrameFinal.origin.x;
                         leftLabel.frame = lFrame;
                         CGRect rFrame = rightLabel.frame;
-                        rFrame.origin.x = progressSlider.frame.origin.x + progressSlider.frame.size.width - rightLabel.frame.size.width;
+                        rFrame.origin.x = baseFrameFinal.origin.x + baseFrameFinal.size.width - rightLabel.frame.size.width;
                         rightLabel.frame = rFrame;
                 }
         }
