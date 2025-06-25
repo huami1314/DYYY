@@ -961,11 +961,6 @@ static char kDYYYSliderAdjustedFrameKey;
         NSValue *adjustedVal = objc_getAssociatedObject(self, &kDYYYSliderAdjustedFrameKey);
 
         if ([scheduleStyle isEqualToString:@"进度条两侧左右"]) {
-                if (adjustedVal) {
-                        self.frame = [adjustedVal CGRectValue];
-                        return;
-                }
-
                 UILabel *leftLabel = [parentView viewWithTag:10001];
                 UILabel *rightLabel = [parentView viewWithTag:10002];
 
@@ -988,8 +983,13 @@ static char kDYYYSliderAdjustedFrameKey;
                         CGFloat currentHeight = origFrame.size.height;
                         newFrame = CGRectMake(fallbackX, currentY, fallbackWidth, currentHeight);
                 }
-                self.frame = newFrame;
-                objc_setAssociatedObject(self, &kDYYYSliderAdjustedFrameKey, [NSValue valueWithCGRect:newFrame], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+                if (!adjustedVal || !CGRectEqualToRect(newFrame, [adjustedVal CGRectValue])) {
+                        self.frame = newFrame;
+                        objc_setAssociatedObject(self, &kDYYYSliderAdjustedFrameKey, [NSValue valueWithCGRect:newFrame], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+                } else {
+                        self.frame = [adjustedVal CGRectValue];
+                }
         } else if (adjustedVal) {
                 self.frame = origFrame;
                 objc_setAssociatedObject(self, &kDYYYSliderAdjustedFrameKey, nil, OBJC_ASSOCIATION_ASSIGN);
@@ -1102,6 +1102,12 @@ static char kDYYYSliderAdjustedFrameKey;
                 objc_setAssociatedObject(self, &kDYYYSliderAdjustedFrameKey, nil, OBJC_ASSOCIATION_ASSIGN);
                 [self setNeedsLayout];
         }
+}
+
+%new
+- (void)handleProgressGesture:(id)gesture {
+        %orig;
+        [self applyCustomProgressStyle];
 }
 
 %end
