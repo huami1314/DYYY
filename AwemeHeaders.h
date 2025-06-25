@@ -186,7 +186,6 @@ static CGFloat gStartVal = 0.0;
 @end
 
 @interface AWEFeedContainerContentView : UIView
-- (UIViewController *)findViewController:(UIViewController *)vc ofClass:(Class)targetClass;
 @end
 
 @interface AWELeftSideBarEntranceView : UIView
@@ -279,7 +278,6 @@ static CGFloat gStartVal = 0.0;
 @end
 
 @interface AWEPlayInteractionProgressController : AWEPlayInteractionNewBaseController
-- (UIViewController *)findViewController:(UIViewController *)vc ofClass:(Class)targetClass;
 @property(retain, nonatomic) id progressSlider;
 - (NSString *)formatTimeFromSeconds:(CGFloat)seconds;
 - (NSString *)convertSecondsToTimeString:(NSInteger)totalSeconds;
@@ -681,11 +679,9 @@ static CGFloat gStartVal = 0.0;
 @end
 
 @interface AWEFeedTopBarContainer : UIView
-- (void)applyDYYYTransparency;
 @end
 
 @interface AWEHPTopBarCTAContainer : UIView
-- (void)applyDYYYTransparency;
 @end
 
 @interface ACCStickerContainerView : UIView
