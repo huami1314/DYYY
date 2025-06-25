@@ -85,11 +85,6 @@
 + (void)updateDependentItemsForSetting:(NSString *)identifier value:(id)value;
 
 /**
- * 刷新设置表视图
- */
-+ (void)refreshTableView;
-
-/**
  * 创建设置项模型
  * @param dict 包含设置项配置的字典
  * @return 创建的设置项模型
