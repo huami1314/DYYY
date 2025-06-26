@@ -94,20 +94,12 @@
   return self;
 }
 
-
 + (void)saveMedia:(NSURL *)mediaURL
         mediaType:(MediaType)mediaType
        completion:(void (^)(void))completion {
   if (mediaType == MediaTypeAudio) {
     return;
   }
-
-  void (^completionWrapper)(void) = ^{
-    if (completion) {
-      completion();
-    }
-    [DYYYUtils clearCacheDirectory];
-  };
 
   [PHPhotoLibrary requestAuthorization:^(PHAuthorizationStatus status) {
     if (status == PHAuthorizationStatusAuthorized) {
@@ -130,7 +122,9 @@
                                                      removeItemAtPath:mediaURL
                                                                           .path
                                                                 error:nil];
-                                                 completionWrapper();
+                                                 if (completion) {
+                                                   completion();
+                                                 }
                                                }];
                               } else {
                                 [DYYYUtils showToast:@"转换失败"];
@@ -138,7 +132,9 @@
                                 [[NSFileManager defaultManager]
                                     removeItemAtPath:mediaURL.path
                                                error:nil];
-                                completionWrapper();
+                                if (completion) {
+                                  completion();
+                                }
                               }
                             }];
         } else if ([actualFormat isEqualToString:@"heic"] ||
@@ -154,7 +150,9 @@
                                              [[NSFileManager defaultManager]
                                                  removeItemAtPath:mediaURL.path
                                                             error:nil];
-                                             completionWrapper();
+                                             if (completion) {
+                                               completion();
+                                             }
                                            }];
                         } else {
                           [DYYYUtils showToast:@"转换失败"];
@@ -162,7 +160,9 @@
                           [[NSFileManager defaultManager]
                               removeItemAtPath:mediaURL.path
                                          error:nil];
-                          completionWrapper();
+                          if (completion) {
+                            completion();
+                          }
                         }
                       }];
         } else if ([actualFormat isEqualToString:@"gif"]) {
@@ -182,7 +182,9 @@
               }
               completionHandler:^(BOOL success, NSError *_Nullable error) {
                 if (success) {
-                  completionWrapper();
+                  if (completion) {
+                    completion();
+                  }
                 } else {
                   [DYYYUtils showToast:@"保存失败"];
                 }
@@ -209,7 +211,9 @@
             completionHandler:^(BOOL success, NSError *_Nullable error) {
               if (success) {
 
-                completionWrapper();
+                if (completion) {
+                  completion();
+                }
               } else {
                 [DYYYUtils showToast:@"保存失败"];
               }
@@ -311,7 +315,6 @@
         }
         // 不管成功失败都清理临时文件
         [[NSFileManager defaultManager] removeItemAtPath:gifURL.path error:nil];
-        [DYYYUtils clearCacheDirectory];
       }];
 }
 
@@ -329,7 +332,7 @@ static void ReleaseWebPData(void *info, const void *data, size_t size) {
             [[webpURL.lastPathComponent stringByDeletingPathExtension]
                 stringByAppendingPathExtension:@"gif"];
         NSURL *gifURL = [NSURL
-            fileURLWithPath:[[DYYYUtils cacheDirectory]
+            fileURLWithPath:[NSTemporaryDirectory()
                                 stringByAppendingPathComponent:gifFileName]];
 
         // 读取WebP文件数据
@@ -587,9 +590,6 @@ static void ReleaseWebPData(void *info, const void *data, size_t size) {
 
             // 处理帧间延迟
             float delayTime = iter.duration / 1000.0f;
-            if (delayTime <= 0.01f) {
-              delayTime = 0.1f; // 默认延迟
-            }
 
             // 创建帧属性
             NSDictionary *frameProperties = @{
@@ -691,7 +691,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
             [[heicURL.lastPathComponent stringByDeletingPathExtension]
                 stringByAppendingPathExtension:@"gif"];
         NSURL *gifURL = [NSURL
-            fileURLWithPath:[[DYYYUtils cacheDirectory]
+            fileURLWithPath:[NSTemporaryDirectory()
                                 stringByAppendingPathComponent:gifFileName]];
 
         // 4. GIF属性
@@ -731,8 +731,6 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
               if (delayNum)
                 CFNumberGetValue(delayNum, kCFNumberFloatType, &delayTime);
             }
-            if (delayTime <= 0.01f || delayTime > 10.0f)
-              delayTime = 0.1f;
             CFRelease(properties);
           }
 
@@ -790,12 +788,12 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
               [[NSFileManager defaultManager] fileExistsAtPath:videoPath];
 
           dispatch_async(dispatch_get_main_queue(), ^{
-              if (imageExists && videoExists) {
-                [[DYYYManager shared] saveLivePhoto:imagePath videoUrl:videoPath];
-                if (completion) {
-                  completion();
-                }
-                return;
+            if (imageExists && videoExists) {
+              [[DYYYManager shared] saveLivePhoto:imagePath videoUrl:videoPath];
+              if (completion) {
+                completion();
+              }
+              return;
             } else {
               // 文件不完整，需要重新下载
               [self startDownloadLivePhotoProcess:imageURL
@@ -820,7 +818,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
                            completion:(void (^)(void))completion {
   // 创建临时目录
   NSString *livePhotoPath =
-      [[DYYYUtils cacheDirectory] stringByAppendingPathComponent:@"LivePhoto"];
+      [NSTemporaryDirectory() stringByAppendingPathComponent:@"LivePhoto"];
 
   NSFileManager *fileManager = [NSFileManager defaultManager];
   if (![fileManager fileExistsAtPath:livePhotoPath]) {
@@ -1016,10 +1014,10 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
         [DYYYUtils showToast:@"下载实况照片失败"];
       }
 
-        if (completion) {
-          completion();
-        }
-      });
+      if (completion) {
+        completion();
+      }
+    });
   });
 }
 
@@ -1068,7 +1066,6 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
                                      [[NSFileManager defaultManager]
                                          removeItemAtURL:fileURL
                                                    error:nil];
-                                     [DYYYUtils clearCacheDirectory];
                                    }];
                                UIViewController *rootVC =
                                    [UIApplication sharedApplication]
@@ -1079,7 +1076,6 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
                                if (completion) {
                                  completion(YES);
                                }
-                               [DYYYUtils clearCacheDirectory];
                              });
                            } else {
                              [self saveMedia:fileURL
@@ -1088,14 +1084,12 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
                                     if (completion) {
                                       completion(YES);
                                     }
-                                    [DYYYUtils clearCacheDirectory];
                                   }];
                            }
                          } else {
                            if (completion) {
                              completion(NO);
                            }
-                           [DYYYUtils clearCacheDirectory];
                          }
                        }];
 }
@@ -1179,7 +1173,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
     }
   }
 
-  NSString *livePhotoPath = [[DYYYUtils cacheDirectory] stringByAppendingPathComponent:@"LivePhotoBatch"];
+  NSString *livePhotoPath = [NSTemporaryDirectory() stringByAppendingPathComponent:@"LivePhotoBatch"];
   NSFileManager *fileManager = [NSFileManager defaultManager];
   if ([fileManager fileExistsAtPath:livePhotoPath]) {
     NSError *error = nil;
@@ -1189,7 +1183,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
     }
   }
   
-  NSString *generalLivePhotoPath = [[DYYYUtils cacheDirectory] stringByAppendingPathComponent:@"LivePhoto"];
+  NSString *generalLivePhotoPath = [NSTemporaryDirectory() stringByAppendingPathComponent:@"LivePhoto"];
   if ([fileManager fileExistsAtPath:generalLivePhotoPath]) {
     NSError *error = nil;
     [fileManager removeItemAtPath:generalLivePhotoPath error:&error];
@@ -1367,7 +1361,6 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
       for (NSString *downloadID in downloadIDs) {
         [self.downloadToBatchMap removeObjectForKey:downloadID];
       }
-      [DYYYUtils clearCacheDirectory];
     }
   }
 }
@@ -1474,7 +1467,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
     }
   }
 
-  NSURL *tempDir = [NSURL fileURLWithPath:[DYYYUtils cacheDirectory]];
+  NSURL *tempDir = [NSURL fileURLWithPath:NSTemporaryDirectory()];
   NSURL *destinationURL = [tempDir URLByAppendingPathComponent:fileName];
 
   NSError *moveError;
@@ -1655,11 +1648,10 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
                               [[NSFileManager defaultManager]
                                   removeItemAtPath:photoFile
                                              error:nil];
-                                [[NSFileManager defaultManager]
-                                    removeItemAtPath:videoFile
-                                               error:nil];
-                              }
-                              [DYYYUtils clearCacheDirectory];
+                              [[NSFileManager defaultManager]
+                                  removeItemAtPath:videoFile
+                                             error:nil];
+                            }
                           });
                         }];
                   }];
@@ -1871,7 +1863,9 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
   return item;
 }
 - (NSString *)filePathFromTmp:(NSString *)filename {
-  return [[DYYYUtils cacheDirectory] stringByAppendingPathComponent:filename];
+  NSString *tempPath = NSTemporaryDirectory();
+  NSString *filePath = [tempPath stringByAppendingPathComponent:filename];
+  return filePath;
 }
 
 - (void)deleteFile:(NSString *)file {
@@ -1945,7 +1939,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
         __block NSInteger phase = 0; // 0:下载图片阶段，1:下载视频阶段，2:合成阶段
         
         // 创建临时目录
-        NSString *livePhotoPath = [[DYYYUtils cacheDirectory] stringByAppendingPathComponent:@"LivePhotoBatch"];
+        NSString *livePhotoPath = [NSTemporaryDirectory() stringByAppendingPathComponent:@"LivePhotoBatch"];
         NSFileManager *fileManager = [NSFileManager defaultManager];
         [fileManager createDirectoryAtPath:livePhotoPath withIntermediateDirectories:YES attributes:nil error:nil];
 
@@ -2638,7 +2632,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
         };
         
         // 创建临时目录
-        NSString *mediaPath = [[DYYYUtils cacheDirectory] stringByAppendingPathComponent:@"VideoComposition"];
+        NSString *mediaPath = [NSTemporaryDirectory() stringByAppendingPathComponent:@"VideoComposition"];
         NSFileManager *fileManager = [NSFileManager defaultManager];
         if ([fileManager fileExistsAtPath:mediaPath]) {
             DYYYLogVideo(@"正在清理旧的临时目录: %@", mediaPath);
@@ -2978,7 +2972,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
                    (long)(i+1), (long)imageFiles.count, image.size.width, image.size.height);
         
         // 创建临时视频文件路径
-        NSString *tempVideoPath = [[DYYYUtils cacheDirectory] stringByAppendingPathComponent:
+        NSString *tempVideoPath = [NSTemporaryDirectory() stringByAppendingPathComponent:
                                   [NSString stringWithFormat:@"temp_img_%@.mp4", [NSUUID UUID].UUIDString]];
         
         dispatch_group_enter(processingGroup);
@@ -3529,7 +3523,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
                     });
                     return;
                 }
-                NSString *tempPath = [[DYYYUtils cacheDirectory] stringByAppendingPathComponent:
+                NSString *tempPath = [NSTemporaryDirectory() stringByAppendingPathComponent:
                                       [NSString stringWithFormat:@"sticker_%ld.gif", (long)[[NSDate date] timeIntervalSince1970]]];
                 BOOL success = [self createGIFWithImages:images duration:duration path:tempPath progress:^(float progress) {}];
                 dispatch_async(dispatch_get_main_queue(), ^{
@@ -3600,8 +3594,6 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
     }
     if ([imageView.image respondsToSelector:@selector(images)]) {
         return [imageView.image performSelector:@selector(images)];
-    } else if (imageView.animationImages) {
-        return imageView.animationImages;
     }
     return nil;
 }
@@ -3609,17 +3601,9 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
     if (!imageView || !imageView.image) {
         return 0;
     }
-    if ([imageView.image respondsToSelector:@selector(duration)]) {
-        CGFloat duration = [[imageView.image performSelector:@selector(duration)] floatValue];
-        if (duration > 0) {
-            return duration;
-        }
-    }
-    if (imageView.animationDuration > 0 && imageView.animationImages.count > 0) {
-        return imageView.animationDuration;
-    }
-    NSArray *images = [self getImagesFromYYAnimatedImageView:imageView];
-    return 0.1 * (images ? images.count : 10);
+
+    id duration = [imageView.image valueForKey:@"duration"];
+    return [duration respondsToSelector:@selector(floatValue)] ? [duration floatValue] : 0;
 }
 + (BOOL)createGIFWithImages:(NSArray *)images duration:(CGFloat)duration path:(NSString *)path progress:(void(^)(float progress))progressBlock {
     if (images.count == 0) return NO;
