@@ -653,3 +653,36 @@ void applyTopBarTransparency(UIView *topBar) {
         }
     }
 }
+
+id DYYYJSONSafeObject(id obj) {
+    if (!obj || obj == [NSNull null]) {
+        return [NSNull null];
+    }
+    if ([obj isKindOfClass:[NSString class]] ||
+        [obj isKindOfClass:[NSNumber class]]) {
+        return obj;
+    }
+    if ([obj isKindOfClass:[NSArray class]]) {
+        NSMutableArray *array = [NSMutableArray array];
+        for (id value in (NSArray *)obj) {
+            id safeValue = DYYYJSONSafeObject(value);
+            if (safeValue) [array addObject:safeValue];
+        }
+        return array;
+    }
+    if ([obj isKindOfClass:[NSDictionary class]]) {
+        NSMutableDictionary *dict = [NSMutableDictionary dictionary];
+        for (id key in (NSDictionary *)obj) {
+            id safeValue = DYYYJSONSafeObject([(NSDictionary *)obj objectForKey:key]);
+            if (safeValue) dict[key] = safeValue;
+        }
+        return dict;
+    }
+    if ([obj isKindOfClass:[NSData class]]) {
+        return [(NSData *)obj base64EncodedStringWithOptions:0];
+    }
+    if ([obj isKindOfClass:[NSDate class]]) {
+        return @([(NSDate *)obj timeIntervalSince1970]);
+    }
+    return [obj description];
+}
