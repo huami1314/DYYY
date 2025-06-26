@@ -275,7 +275,7 @@ extern "C"
 		    @"imageName" : @"ic_location_outlined_20"},
 		  @{@"identifier" : @"DYYYEnabsuijiyanse",
 		    @"title" : @"属地随机渐变",
-			@"subTitle" : @"不能与属地标签颜色同时开启",
+			@"subTitle" : @"启用后将覆盖上面的属地标签颜色",
 		    @"detail" : @"",
 		    @"cellType" : @37,
 		    @"imageName" : @"ic_location_outlined_20"}
