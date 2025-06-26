@@ -208,7 +208,7 @@ static CGFloat gStartVal = 0.0;
 
 @interface AWEPlayInteractionViewController : UIViewController
 @property(nonatomic, strong) UIView *view;
-@property (nonatomic, strong) AWEAwemeModel *model;
+@property(nonatomic, strong) AWEAwemeModel *model;
 @property(nonatomic, strong) NSString *referString;
 @property(nonatomic, assign) BOOL isCommentVCShowing;
 - (void)performCommentAction;
@@ -833,7 +833,7 @@ static CGFloat gStartVal = 0.0;
 @property(nonatomic, assign) CGFloat sectionHeaderHeight;
 @property(nonatomic, copy) NSString *sectionHeaderTitle;
 @property(nonatomic, copy) NSString *sectionFooterTitle;
-@property (nonatomic, assign) BOOL useNewFooterLayout;
+@property(nonatomic, assign) BOOL useNewFooterLayout;
 @property(nonatomic, strong) NSArray *itemArray;
 @property(retain, nonatomic) NSString *identifier;
 @property(copy, nonatomic) NSString *title;
@@ -994,6 +994,10 @@ static CGFloat gStartVal = 0.0;
 
 // 直播间点赞动画
 @interface HTSLiveDiggView : UIView
+@end
+@interface IESLiveStickerView : UIView
+@end
+@interface HTSEventForwardingView : UIView
 @end
 
 // 隐藏状态栏

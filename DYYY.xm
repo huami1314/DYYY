@@ -4036,6 +4036,26 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
+// 隐藏直播间文字贴纸
+%hook IESLiveStickerView
+- (void)layoutSubviews {
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideStickerView"]) {
+		[self removeFromSuperview];
+	}
+}
+%end
+
+// 隐藏进场特效
+%hook HTSEventForwardingView
+- (void)layoutSubviews {
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideForwardingView"]) {
+		[self removeFromSuperview];
+	}
+}
+%end
+
 // 屏蔽青少年模式弹窗
 %hook AWETeenModeAlertView
 - (BOOL)show {
