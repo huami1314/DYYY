@@ -1005,6 +1005,8 @@ static CGFloat gStartVal = 0.0;
 @end
 @interface PlatformCanvasView : UIView
 @end
+@interface IESLiveLotteryAnimationViewNew : UIView
+@end
 
 // 隐藏状态栏
 @interface AWEFeedRootViewController : UIViewController

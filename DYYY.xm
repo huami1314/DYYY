@@ -3521,6 +3521,15 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
+%hook IESLiveLotteryAnimationViewNew
+- (void)layoutSubviews {
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTouchView"]) {
+		[self removeFromSuperview];
+	}
+}
+%end
+
 // 隐藏直播点歌
 %hook IESLiveKTVSongIndicatorView
 - (void)layoutSubviews {
