@@ -836,13 +836,15 @@ extern "C"
 	  NSArray *videoUiSettings = @[
 		  @{@"identifier" : @"DYYYHideLOTAnimationView",
 		    @"title" : @"隐藏头像加号",
+			@"subTitle" : @"原始位置可点击",
 		    @"detail" : @"",
-		    @"cellType" : @6,
+		    @"cellType" : @37,
 		    @"imageName" : @"ic_eyeslash_outlined_16"},
 		  @{@"identifier" : @"DYYYHideFollowPromptView",
 		    @"title" : @"移除头像加号",
+			@"subTitle" : @"完全移除不可点击",
 		    @"detail" : @"",
-		    @"cellType" : @6,
+		    @"cellType" : @37,
 		    @"imageName" : @"ic_eyeslash_outlined_16"},
 		  @{@"identifier" : @"DYYYHideLikeLabel",
 		    @"title" : @"隐藏点赞数值",
@@ -931,8 +933,9 @@ extern "C"
 		    @"imageName" : @"ic_eyeslash_outlined_16"},
 		  @{@"identifier" : @"DYYYHideBack",
 		    @"title" : @"隐藏返回按钮",
+			@"subTitle" : @"主页视频左上角的返回按钮",
 		    @"detail" : @"",
-		    @"cellType" : @6,
+		    @"cellType" : @37,
 		    @"imageName" : @"ic_eyeslash_outlined_16"},
 		  @{@"identifier" : @"DYYYHideSettingsAbout",
 		    @"title" : @"隐藏设置关于",
@@ -1035,8 +1038,8 @@ extern "C"
 		    @"imageName" : @"ic_eyeslash_outlined_16"},
 		  @{@"identifier" : @"DYYYHideSearchBubble",
 		    @"title" : @"隐藏弹出热搜",
-		    @"detail" : @"",
-		    @"cellType" : @6,
+		    @"detail" : @"从右上搜索位置处弹出的热搜小白框",
+		    @"cellType" : @37,
 		    @"imageName" : @"ic_eyeslash_outlined_16"},
 		  @{@"identifier" : @"DYYYHideSearchSame",
 		    @"title" : @"隐藏搜索同款",
@@ -1217,8 +1220,9 @@ extern "C"
 		    @"imageName" : @"ic_eyeslash_outlined_16"},
 		  @{@"identifier" : @"DYYYHideScancode",
 		    @"title" : @"隐藏输入扫码",
+			@"subTitle" : @"隐藏点击搜索后输入框右部的扫码按钮",
 		    @"detail" : @"",
-		    @"cellType" : @6,
+		    @"cellType" : @37,
 		    @"imageName" : @"ic_eyeslash_outlined_16"},
 		  @{@"identifier" : @"DYYYHideReply",
 		    @"title" : @"隐藏私信回复",
@@ -1286,6 +1290,18 @@ extern "C"
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_eyeslash_outlined_16"},
+		  @{@"identifier" : @"DYYYHideLiveDetail",
+		    @"title" : @"隐藏直播热榜",
+			@"subTitle" : @"隐藏用户下方的小时榜、人气榜、热度等信息",
+		    @"detail" : @"",
+		    @"cellType" : @37,
+		    @"imageName" : @"ic_eyeslash_outlined_16"},
+		  @{@"identifier" : @"DYYYHideTouchView",
+		    @"title" : @"隐藏红包悬浮",
+			@"subTitle" : @"隐藏用户下方的红包、积分等悬浮按钮",
+		    @"detail" : @"",
+		    @"cellType" : @37,
+		    @"imageName" : @"ic_eyeslash_outlined_16"},
 		  @{@"identifier" : @"DYYYHideKTVSongIndicator",
 		    @"title" : @"隐藏直播点歌",
 		    @"detail" : @"",
@@ -1298,6 +1314,16 @@ extern "C"
 		    @"imageName" : @"ic_eyeslash_outlined_16"},
 		  @{@"identifier" : @"DYYYHideLiveLikeAnimation",
 		    @"title" : @"隐藏点赞动画",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_eyeslash_outlined_16"},
+		  @{@"identifier" : @"DYYYHideLivePopup",
+		    @"title" : @"隐藏进场特效",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_eyeslash_outlined_16"},
+		  @{@"identifier" : @"DYYYHideStickerView",
+		    @"title" : @"隐藏文字贴纸",
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_eyeslash_outlined_16"},
@@ -2206,8 +2232,9 @@ extern "C"
 		    @"imageName" : @"ic_circlearrowin_outlined_20"},
 		  @{@"identifier" : @"DYYYDisableSidebarGesture",
 		    @"title" : @"禁止侧滑进入边栏",
+			@"subTitle" : @"禁止在首页最左边的页面时右滑进入侧边栏",
 		    @"detail" : @"",
-		    @"cellType" : @6,
+		    @"cellType" : @37,
 		    @"imageName" : @"ic_circlearrowin_outlined_20"},
 		  @{@"identifier" : @"DYYYVideoGesture",
 		    @"title" : @"横屏视频交互增强",
@@ -2245,8 +2272,9 @@ extern "C"
 		    @"imageName" : @"ic_rectangleonrectangleup_outlined_20"},
 		  @{@"identifier" : @"DYYYMusicCopyText",
 		    @"title" : @"评论音乐点击复制",
+			@"subTitle" : @"含有音乐的视频打开评论区顶部时，移除去汽水听，点击复制歌曲名",
 		    @"detail" : @"",
-		    @"cellType" : @6,
+		    @"cellType" : @37,
 		    @"imageName" : @"ic_quaver_outlined_20"},
 		  @{@"identifier" : @"DYYYisAutoSelectOriginalPhoto",
 		    @"title" : @"启用自动勾选原图",
@@ -2589,8 +2617,9 @@ extern "C"
 	      createSettingItem:
 		  @{@"identifier" : @"DYYYEnabshijianjindu",
 		    @"title" : @"清屏移除进度",
+			@"subTitle" : @"清屏状态下完全移除时间进度条",
 		    @"detail" : @"",
-		    @"cellType" : @6,
+		    @"cellType" : @37,
 		    @"imageName" : @"ic_eyeslash_outlined_16"}];
 	  [clearButtonItems addObject:enableqingButton];
 	  // 清屏隐藏时间进度
@@ -2598,24 +2627,27 @@ extern "C"
 	      createSettingItem:
 		  @{@"identifier" : @"DYYYHideTimeProgress",
 		    @"title" : @"清屏隐藏进度",
+			@"subTitle" : @"原始位置可拖动时间进度条",
 		    @"detail" : @"",
-		    @"cellType" : @6,
+		    @"cellType" : @37,
 		    @"imageName" : @"ic_eyeslash_outlined_16"}];
 	  [clearButtonItems addObject:enableqingButton1];
 	  AWESettingItemModel *hideSliderButton = [DYYYSettingsHelper
 	      createSettingItem:
 		  @{@"identifier" : @"DYYYHideSlider",
 		    @"title" : @"清屏隐藏滑条",
+			@"subTitle" : @"清屏状态下隐藏多图片下方的滑条",
 		    @"detail" : @"",
-		    @"cellType" : @6,
+		    @"cellType" : @37,
 		    @"imageName" : @"ic_eyeslash_outlined_16"}];
 	  [clearButtonItems addObject:hideSliderButton];
 	  AWESettingItemModel *hideChapterButton = [DYYYSettingsHelper
 	      createSettingItem:
 		  @{@"identifier" : @"DYYYHideChapter",
 		    @"title" : @"清屏隐藏章节",
+			@"subTitle" : @"清屏状态下隐藏部分视频出现的章节进度显示",
 		    @"detail" : @"",
-		    @"cellType" : @6,
+		    @"cellType" : @37,
 		    @"imageName" : @"ic_eyeslash_outlined_16"}];
 	  [clearButtonItems addObject:hideChapterButton];
 	  AWESettingItemModel *hideTabButton = [DYYYSettingsHelper
@@ -2630,8 +2662,9 @@ extern "C"
 	      createSettingItem:
 		  @{@"identifier" : @"DYYYHideSpeed",
 		    @"title" : @"清屏隐藏倍速",
+			@"subTitle" : @"清屏状态下隐藏DYYY的倍速按钮",
 		    @"detail" : @"",
-		    @"cellType" : @6,
+		    @"cellType" : @37,
 		    @"imageName" : @"ic_eyeslash_outlined_16"}];
 	  [clearButtonItems addObject:hideSpeedButton];
 	  // 获取清屏按钮的当前开关状态
