@@ -3503,6 +3503,24 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
+%hook IESLiveDynamicRankListEntranceView
+- (void)layoutSubviews {
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveDetail"]) {
+		[self removeFromSuperview];
+	}
+}
+%end
+
+%hook IESLiveShortTouchActionView
+- (void)layoutSubviews {
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTouchView"]) {
+		[self removeFromSuperview];
+	}
+}
+%end
+
 // 隐藏直播点歌
 %hook IESLiveKTVSongIndicatorView
 - (void)layoutSubviews {
@@ -4047,10 +4065,10 @@ static AWEIMReusableCommonCell *currentCell;
 %end
 
 // 隐藏进场特效
-%hook HTSEventForwardingView
+%hook HTSLivePopupContainer
 - (void)layoutSubviews {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideForwardingView"]) {
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLivePopup"]) {
 		[self removeFromSuperview];
 	}
 }
