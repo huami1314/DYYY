@@ -127,6 +127,11 @@ UIViewController * _Nullable findViewControllerOfClass(UIViewController * _Nulla
 /** 根据设置应用顶栏透明度 */
 void applyTopBarTransparency(UIView * _Nullable topBar);
 
+/**
+ * 递归将任意对象转换为 JSON 可序列化对象
+ */
+id DYYYJSONSafeObject(id _Nullable obj);
+
 #ifdef __cplusplus
 }
 #endif

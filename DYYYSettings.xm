@@ -2703,9 +2703,10 @@ extern "C"
 		  dyyySettings[@"DYYYIconsBase64"] = iconBase64Dict;
 	  }
 
-	  // 转换为JSON数据
-	  NSError *error;
-	  NSData *sortedJsonData = [NSJSONSerialization dataWithJSONObject:dyyySettings options:NSJSONWritingPrettyPrinted | NSJSONWritingSortedKeys error:&error];
+          // 转换为JSON数据
+          NSError *error;
+          id jsonObject = DYYYJSONSafeObject(dyyySettings);
+          NSData *sortedJsonData = [NSJSONSerialization dataWithJSONObject:jsonObject options:NSJSONWritingPrettyPrinted | NSJSONWritingSortedKeys error:&error];
 
 	  if (error) {
 		  [DYYYUtils showToast:@"备份失败：无法序列化设置数据"];
