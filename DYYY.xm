@@ -4065,7 +4065,7 @@ static AWEIMReusableCommonCell *currentCell;
 %end
 
 // 隐藏进场特效
-%hook HTSLivePopupContainer
+%hook IESLiveDynamicUserEnterView
 - (void)layoutSubviews {
 	%orig;
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLivePopup"]) {
