@@ -4074,6 +4074,15 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
+%hook PlatformCanvasView
+- (void)layoutSubviews {
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLivePopup"]) {
+		[self removeFromSuperview];
+	}
+}
+%end
+
 // 屏蔽青少年模式弹窗
 %hook AWETeenModeAlertView
 - (BOOL)show {

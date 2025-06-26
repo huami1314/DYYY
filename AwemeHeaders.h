@@ -1003,6 +1003,8 @@ static CGFloat gStartVal = 0.0;
 @end
 @interface IESLiveShortTouchActionView : UIView
 @end
+@interface PlatformCanvasView : UIView
+@end
 
 // 隐藏状态栏
 @interface AWEFeedRootViewController : UIViewController
