@@ -890,6 +890,8 @@
 	}
 }
 
+%end
+
 %hook AWEFeedProgressSlider
 
 // layoutSubviews 保持不变
