@@ -5171,65 +5171,10 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 							break;
 						}
 					}
-				} else {
-					for (UIView *innerSubview in subview.subviews) {
-						if ([innerSubview isKindOfClass:[UIView class]]) {
-							if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBarTransparent"]) {
-								// 检查背景颜色
-								UIColor *bgColor = innerSubview.backgroundColor;
-								if (bgColor) {
-									CGFloat red = 0, green = 0, blue = 0, alpha = 0;
-									BOOL isWhite = NO;
-
-									if ([bgColor getRed:&red green:&green blue:&blue alpha:&alpha]) {
-										isWhite = (red > 0.95 && green > 0.95 && blue > 0.95);
-										// 如果背景是透明的，则不处理
-										if (alpha < 0.1) {
-											break;
-										}
-									}
-
-									// 只有当背景是白色时才应用毛玻璃效果
-									if (isWhite) {
-										float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"]
-										    floatValue];
-										if (userTransparency <= 0 || userTransparency > 1) {
-											userTransparency = 0.95;
-										}
-										DYYYAddCustomViewToParent(innerSubview, userTransparency);
-									}
-								}
-							} else {
-								float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
-								if (userTransparency <= 0 || userTransparency > 1) {
-									userTransparency = 0.95;
-								}
-								DYYYAddCustomViewToParent(innerSubview, userTransparency);
-							}
-							break;
-						}
-					}
 				}
 			}
 		}
-	}
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"] || [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"]) {
 
-		UIViewController *vc = [self firstAvailableUIViewController];
-		if ([vc isKindOfClass:%c(AWEPlayInteractionViewController)]) {
-			BOOL shouldHideSubview = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"] ||
-						 [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"];
-
-			if (shouldHideSubview) {
-				for (UIView *subview in self.subviews) {
-					if ([subview isKindOfClass:[UIView class]] && subview.backgroundColor && CGColorEqualToColor(subview.backgroundColor.CGColor, [UIColor blackColor].CGColor)) {
-						subview.hidden = YES;
-					}
-				}
-			}
-		}
-	}
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"]) {
 		NSString *className = NSStringFromClass([self class]);
 		if ([className isEqualToString:@"AWECommentInputViewSwiftImpl.CommentInputContainerView"]) {
 			for (UIView *subview in self.subviews) {
@@ -5243,6 +5188,48 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 							userTransparency = 0.95;
 						}
 						DYYYAddCustomViewToParent(subview, userTransparency);
+					}
+				}
+			}
+		}
+	}
+
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBarBlur"]) {
+		for (UIView *subview in self.subviews) {
+			if ([subview isKindOfClass:NSClassFromString(@"AWECommentInputViewSwiftImpl.CommentInputViewMiddleContainer")]) {
+				BOOL containsDanmu = NO;
+				for (UIView *innerSubviewCheck in subview.subviews) {
+					if ([innerSubviewCheck isKindOfClass:[UILabel class]] && [((UILabel *)innerSubviewCheck).text containsString:@"弹幕"]) {
+						containsDanmu = YES;
+						break;
+					}
+				}
+				if (!containsDanmu) {
+					for (UIView *innerSubview in subview.subviews) {
+						if ([innerSubview isKindOfClass:[UIView class]]) {
+							float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
+							if (userTransparency <= 0 || userTransparency > 1) {
+								userTransparency = 0.95;
+							}
+							DYYYAddCustomViewToParent(innerSubview, userTransparency);
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"] || [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"]) {
+		UIViewController *vc = [self firstAvailableUIViewController];
+		if ([vc isKindOfClass:%c(AWEPlayInteractionViewController)]) {
+			BOOL shouldHideSubview = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"] ||
+						 [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"];
+
+			if (shouldHideSubview) {
+				for (UIView *subview in self.subviews) {
+					if ([subview isKindOfClass:[UIView class]] && subview.backgroundColor && CGColorEqualToColor(subview.backgroundColor.CGColor, [UIColor blackColor].CGColor)) {
+						subview.hidden = YES;
 					}
 				}
 			}
