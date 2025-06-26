@@ -2272,7 +2272,7 @@ extern "C"
 		    @"imageName" : @"ic_rectangleonrectangleup_outlined_20"},
 		  @{@"identifier" : @"DYYYMusicCopyText",
 		    @"title" : @"评论音乐点击复制",
-			@"subTitle" : @"含有音乐的视频打开评论区顶部时,移除去汽水听,点击复制歌曲名",
+			@"subTitle" : @"含有音乐的视频打开评论区顶部时，移除去汽水听，点击复制歌曲名",
 		    @"detail" : @"",
 		    @"cellType" : @37,
 		    @"imageName" : @"ic_quaver_outlined_20"},
