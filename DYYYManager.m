@@ -1063,9 +1063,10 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
                                        BOOL completed,
                                        NSArray *_Nullable returnedItems,
                                        NSError *_Nullable error) {
-                                     [[NSFileManager defaultManager]
-                                         removeItemAtURL:fileURL
-                                                   error:nil];
+                                     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5 * NSEC_PER_SEC)), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+                                       [[NSFileManager defaultManager] removeItemAtURL:fileURL
+                                                                             error:nil];
+                                     });
                                    }];
                                UIViewController *rootVC =
                                    [UIApplication sharedApplication]
