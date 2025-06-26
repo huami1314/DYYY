@@ -322,7 +322,6 @@ static CGFloat gStartVal = 0.0;
 @end
 
 @interface AWEPlayInteractionProgressContainerView : UIView
-- (void)dyyy_applyShrinkIfNeeded;
 @end
 
 @interface AFDFastSpeedView : UIView
@@ -460,8 +459,6 @@ static CGFloat gStartVal = 0.0;
 @property(nonatomic, strong) UIView *leftLabelUI;
 @property(nonatomic, strong) UIView *rightLabelUI;
 @property(nonatomic) AWEPlayInteractionProgressController *progressSliderDelegate;
-
-- (void)applyCustomProgressStyle;
 - (void)applyWidthPercentToSubviews:(CGFloat)widthPercent;
 @end
 
@@ -781,7 +778,6 @@ static CGFloat gStartVal = 0.0;
 @end
 
 @interface AWEFakeProgressSliderView : UIView
-- (void)applyCustomProgressStyle;
 @end
 
 @protocol IESIMContentSheetVCProtocol

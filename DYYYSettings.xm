@@ -324,7 +324,7 @@ extern "C"
 			  NSString *savedStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
 			  item.detail = savedStyle ?: @"默认";
 			  item.cellTappedBlock = ^{
-			    NSArray *styleOptions = @[ @"进度条两侧上下", @"进度条两侧左右", @"进度条左侧剩余", @"进度条左侧完整", @"进度条右侧剩余", @"进度条右侧完整" ];
+                            NSArray *styleOptions = @[ @"进度条两侧上下", @"进度条左侧剩余", @"进度条左侧完整", @"进度条右侧剩余", @"进度条右侧完整" ];
 
 			    [DYYYOptionsSelectionView showWithPreferenceKey:@"DYYYScheduleStyle"
 							       optionsArray:styleOptions
