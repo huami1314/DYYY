@@ -658,12 +658,17 @@ extern "C"
 		    @"detail" : @"不填默认",
 		    @"cellType" : @26,
 		    @"imageName" : @"ic_pensketch_outlined_20"},
-		  @{@"identifier" : @"DYYYIPLabelVerticalOffset",
-		    @"title" : @"属地上移距离",
-		    @"detail" : @"默认为 3",
-		    @"cellType" : @26,
-		    @"imageName" : @"ic_pensketch_outlined_20"},
-	  ];
+                  @{@"identifier" : @"DYYYIPLabelVerticalOffset",
+                    @"title" : @"属地上移距离",
+                    @"detail" : @"默认为 3",
+                    @"cellType" : @26,
+                    @"imageName" : @"ic_pensketch_outlined_20"},
+                  @{@"identifier" : @"DYYYTabBarHeight",
+                    @"title" : @"底栏高度",
+                    @"detail" : @"默认83",
+                    @"cellType" : @26,
+                    @"imageName" : @"ic_pensketch_outlined_20"},
+          ];
 
 	  for (NSDictionary *dict in scaleSettings) {
 		  AWESettingItemModel *item = [DYYYSettingsHelper createSettingItem:dict cellTapHandlers:cellTapHandlers];

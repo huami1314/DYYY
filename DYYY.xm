@@ -4962,6 +4962,15 @@ static AWEIMReusableCommonCell *currentCell;
 // 底栏高度
 static CGFloat tabHeight = 0;
 
+static CGFloat customTabBarHeight() {
+        NSString *value = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTabBarHeight"];
+        CGFloat height = value.length > 0 ? [value floatValue] : 83;
+        if (height < 0) {
+                height = 83;
+        }
+        return height;
+}
+
 static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 	if (!parentView)
 		return;
@@ -5182,9 +5191,11 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 		parentVC = parentVC.parentViewController;
 	}
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-		NSString *currentReferString = self.referString;
-		CGRect frame = self.view.frame;
+        CGFloat customHeight = customTabBarHeight();
+        BOOL enableFS = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"];
+        if (enableFS || customHeight > 0) {
+                NSString *currentReferString = self.referString;
+                CGRect frame = self.view.frame;
 
 		// 根据referString来决定是否减去高度差值
 		if ([currentReferString isEqualToString:@"general_search"]) {
@@ -5197,14 +5208,18 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 			frame.size.height = self.view.superview.frame.size.height;
 		} else if ([currentReferString isEqualToString:@"offline_mode"] || currentReferString == nil) {
 			frame.size.height = self.view.superview.frame.size.height;
-		} else if ([currentReferString isEqualToString:@"others_homepage"] || currentReferString == nil) {
-			frame.size.height = self.view.superview.frame.size.height - tabHeight;
-		} else {
-			frame.size.height = self.view.superview.frame.size.height - tabHeight;
-		}
+                } else if ([currentReferString isEqualToString:@"others_homepage"] || currentReferString == nil) {
+                        frame.size.height = self.view.superview.frame.size.height - tabHeight;
+                } else {
+                        frame.size.height = self.view.superview.frame.size.height - tabHeight;
+                }
 
-		self.view.frame = frame;
-	}
+                if (!enableFS && customHeight > 0) {
+                        frame.size.height = self.view.superview.frame.size.height - customHeight;
+                }
+
+                self.view.frame = frame;
+        }
 }
 
 %end
@@ -5212,41 +5227,55 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 %hook AWEDPlayerFeedPlayerViewController
 
 - (void)viewDidLayoutSubviews {
-	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-		UIView *contentView = self.contentView;
-		if (contentView && contentView.superview) {
-			CGRect frame = contentView.frame;
-			CGFloat parentHeight = contentView.superview.frame.size.height;
-
-			if (frame.size.height == parentHeight - tabHeight) {
-				frame.size.height = parentHeight;
-				contentView.frame = frame;
-			} else if (frame.size.height == parentHeight - (tabHeight * 2)) {
-				frame.size.height = parentHeight - tabHeight;
-				contentView.frame = frame;
-			}
-		}
-	}
+        %orig;
+        CGFloat customHeight = customTabBarHeight();
+        BOOL enableFS = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"];
+        if (enableFS || customHeight > 0) {
+                UIView *contentView = self.contentView;
+                if (contentView && contentView.superview) {
+                        CGRect frame = contentView.frame;
+                        CGFloat parentHeight = contentView.superview.frame.size.height;
+                        if (enableFS) {
+                                if (frame.size.height == parentHeight - tabHeight) {
+                                        frame.size.height = parentHeight;
+                                } else if (frame.size.height == parentHeight - (tabHeight * 2)) {
+                                        frame.size.height = parentHeight - tabHeight;
+                                }
+                        } else if (customHeight > 0) {
+                                CGFloat expected = parentHeight - customHeight;
+                                if (fabs(frame.size.height - expected) < 1.0) {
+                                        frame.size.height = expected;
+                                }
+                        }
+                        contentView.frame = frame;
+                }
+        }
 }
 
 %end
 
 %hook AWEFeedTableView
 - (void)layoutSubviews {
-	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-		if (self.superview) {
-			CGFloat currentDifference = self.superview.frame.size.height - self.frame.size.height;
-			if (currentDifference > 0 && currentDifference != tabHeight) {
-				tabHeight = currentDifference;
-			}
-		}
+        %orig;
+        CGFloat customHeight = customTabBarHeight();
+        BOOL enableFS = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"];
 
-		CGRect frame = self.frame;
-		frame.size.height = self.superview.frame.size.height;
-		self.frame = frame;
-	}
+        if (enableFS || customHeight > 0) {
+                if (self.superview) {
+                        CGFloat diff = customHeight > 0 ? customHeight : (self.superview.frame.size.height - self.frame.size.height);
+                        if (diff > 0 && diff != tabHeight) {
+                                tabHeight = diff;
+                        }
+                }
+
+                CGRect frame = self.frame;
+                if (enableFS) {
+                        frame.size.height = self.superview.frame.size.height;
+                } else if (customHeight > 0) {
+                        frame.size.height = self.superview.frame.size.height - customHeight;
+                }
+                self.frame = frame;
+        }
 }
 %end
 
@@ -5503,8 +5532,43 @@ static CGFloat currentScale = 1.0;
 
 %hook AWENormalModeTabBar
 
+- (void)setFrame:(CGRect)frame {
+        CGFloat h = customTabBarHeight();
+        if (h > 0) {
+                frame.size.height = h;
+                if (self.superview) {
+                        frame.origin.y = self.superview.bounds.size.height - h;
+                }
+                tabHeight = h;
+        }
+        %orig(frame);
+}
+
+- (CGSize)sizeThatFits:(CGSize)size {
+        CGSize newSize = %orig(size);
+        CGFloat h = customTabBarHeight();
+        if (h > 0) {
+                newSize.height = h;
+        }
+        return newSize;
+}
+
 - (void)layoutSubviews {
-	%orig;
+        %orig;
+
+        CGFloat h = customTabBarHeight();
+        if (h > 0) {
+                if ([self respondsToSelector:@selector(setDesiredHeight:)]) {
+                        ((void (*)(id, SEL, double))objc_msgSend)(self, @selector(setDesiredHeight:), h);
+                }
+                CGRect frame = self.frame;
+                frame.size.height = h;
+                if (self.superview) {
+                        frame.origin.y = self.superview.bounds.size.height - h;
+                }
+                tabHeight = h;
+                self.frame = frame;
+        }
 
 	BOOL hideShop = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShopButton"];
 	BOOL hideMsg = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMessageButton"];
@@ -5706,9 +5770,10 @@ static CGFloat currentScale = 1.0;
 %hook AWEMixVideoPanelMoreView
 
 - (void)setFrame:(CGRect)frame {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-		CGFloat targetY = frame.origin.y - tabHeight;
-		CGFloat screenHeightMinusGDiff = [UIScreen mainScreen].bounds.size.height - tabHeight;
+        CGFloat customHeight = customTabBarHeight();
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"] || customHeight > 0) {
+                CGFloat targetY = frame.origin.y - tabHeight;
+                CGFloat screenHeightMinusGDiff = [UIScreen mainScreen].bounds.size.height - tabHeight;
 
 		CGFloat tolerance = 10.0;
 
@@ -5722,9 +5787,9 @@ static CGFloat currentScale = 1.0;
 - (void)layoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-		self.backgroundColor = [UIColor clearColor];
-	}
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"] || customTabBarHeight() > 0) {
+                self.backgroundColor = [UIColor clearColor];
+        }
 }
 
 %end
@@ -5741,18 +5806,15 @@ static CGFloat currentScale = 1.0;
 		}
 	}
 
-	if (parentVC && ([parentVC isKindOfClass:%c(AWEAwemeDetailTableViewController)] || [parentVC isKindOfClass:%c(AWEAwemeDetailCellViewController)])) {
-		for (UIView *subview in [self subviews]) {
-			if ([subview class] == [UIView class]) {
-				if ([(UIView *)self frame].size.height == tabHeight) {
-					subview.hidden = YES;
-				} else {
-					subview.hidden = NO;
-				}
-				break;
-			}
-		}
-	}
+        if (parentVC && ([parentVC isKindOfClass:%c(AWEAwemeDetailTableViewController)] || [parentVC isKindOfClass:%c(AWEAwemeDetailCellViewController)])) {
+                for (UIView *subview in [self subviews]) {
+                        if ([subview class] == [UIView class]) {
+                                BOOL shouldHide = ([(UIView *)self frame].size.height == tabHeight) && (customTabBarHeight() > 0 || [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]);
+                                subview.hidden = shouldHide;
+                                break;
+                        }
+                }
+        }
 }
 
 %end
@@ -5763,8 +5825,8 @@ static CGFloat currentScale = 1.0;
 - (void)layoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-		UIView *parentView = self.superview;
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"] || customTabBarHeight() > 0) {
+                UIView *parentView = self.superview;
 		while (parentView) {
 			if ([NSStringFromClass([parentView class]) isEqualToString:@"UIView"]) {
 				dispatch_async(dispatch_get_main_queue(), ^{
