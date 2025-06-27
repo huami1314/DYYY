@@ -4962,6 +4962,15 @@ static AWEIMReusableCommonCell *currentCell;
 // 底栏高度
 static CGFloat tabHeight = 0;
 
+static CGFloat customTabBarHeight() {
+    NSString *value = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTabBarHeight"];
+    if (value.length > 0) {
+        CGFloat h = [value floatValue];
+        return h > 0 ? h : 83;
+    }
+    return 83;
+}
+
 static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 	if (!parentView)
 		return;
@@ -5235,16 +5244,23 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 %hook AWEFeedTableView
 - (void)layoutSubviews {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+	CGFloat customHeight = customTabBarHeight();
+	BOOL enableFS = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"];
+
+	if (enableFS || customHeight > 0) {
 		if (self.superview) {
-			CGFloat currentDifference = self.superview.frame.size.height - self.frame.size.height;
-			if (currentDifference > 0 && currentDifference != tabHeight) {
-				tabHeight = currentDifference;
+			CGFloat diff = self.superview.frame.size.height - self.frame.size.height;
+			if (diff > 0 && diff != tabHeight) {
+				tabHeight = diff;
 			}
 		}
 
 		CGRect frame = self.frame;
-		frame.size.height = self.superview.frame.size.height;
+		if (enableFS) {
+			frame.size.height = self.superview.frame.size.height;
+		} else if (customHeight > 0) {
+			frame.size.height = self.superview.frame.size.height - customHeight;
+		}
 		self.frame = frame;
 	}
 }
@@ -5504,9 +5520,24 @@ static CGFloat currentScale = 1.0;
 %hook AWENormalModeTabBar
 
 - (void)layoutSubviews {
-	%orig;
+        %orig;
 
-	BOOL hideShop = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShopButton"];
+        CGFloat h = customTabBarHeight();
+        if (h > 0) {
+                if ([self respondsToSelector:@selector(setDesiredHeight:)]) {
+                        ((void (*)(id, SEL, double))objc_msgSend)(self, @selector(setDesiredHeight:), h);
+                }
+                CGRect frame = self.frame;
+                if (fabs(frame.size.height - h) > 0.5) {
+                        frame.size.height = h;
+                        if (self.superview) {
+                                frame.origin.y = self.superview.bounds.size.height - h;
+                        }
+                        self.frame = frame;
+                }
+        }
+
+        BOOL hideShop = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShopButton"];
 	BOOL hideMsg = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMessageButton"];
 	BOOL hideFri = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFriendsButton"];
 	BOOL hideMe = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMyButton"];
