@@ -603,8 +603,8 @@
 		self.layer.shadowOffset = CGSizeZero;
 		self.layer.shadowOpacity = 0.0;
 		[DYYYUtils applyColorSettingsToLabel:self colorHexString:danmuColor];
-        return;
-    }
+		return;
+	}
 
 	%orig(textColor);
 }
@@ -896,7 +896,7 @@
 
 // layoutSubviews 保持不变
 - (void)layoutSubviews {
-        %orig;
+	%orig;
 }
 
 - (void)setAlpha:(CGFloat)alpha {
@@ -4963,12 +4963,12 @@ static AWEIMReusableCommonCell *currentCell;
 static CGFloat tabHeight = 0;
 
 static CGFloat customTabBarHeight() {
-    NSString *value = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTabBarHeight"];
-    if (value.length > 0) {
-        CGFloat h = [value floatValue];
-        return h > 0 ? h : 83;
-    }
-    return 83;
+	NSString *value = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTabBarHeight"];
+	if (value.length > 0) {
+		CGFloat h = [value floatValue];
+		return h > 0 ? h : 83;
+	}
+	return 83;
 }
 
 static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
@@ -5520,24 +5520,24 @@ static CGFloat currentScale = 1.0;
 %hook AWENormalModeTabBar
 
 - (void)layoutSubviews {
-        %orig;
+	%orig;
 
-        CGFloat h = customTabBarHeight();
-        if (h > 0) {
-                if ([self respondsToSelector:@selector(setDesiredHeight:)]) {
-                        ((void (*)(id, SEL, double))objc_msgSend)(self, @selector(setDesiredHeight:), h);
-                }
-                CGRect frame = self.frame;
-                if (fabs(frame.size.height - h) > 0.5) {
-                        frame.size.height = h;
-                        if (self.superview) {
-                                frame.origin.y = self.superview.bounds.size.height - h;
-                        }
-                        self.frame = frame;
-                }
-        }
+	CGFloat h = customTabBarHeight();
+	if (h > 0) {
+		if ([self respondsToSelector:@selector(setDesiredHeight:)]) {
+			((void (*)(id, SEL, double))objc_msgSend)(self, @selector(setDesiredHeight:), h);
+		}
+		CGRect frame = self.frame;
+		if (fabs(frame.size.height - h) > 0.5) {
+			frame.size.height = h;
+			if (self.superview) {
+				frame.origin.y = self.superview.bounds.size.height - h;
+			}
+			self.frame = frame;
+		}
+	}
 
-        BOOL hideShop = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShopButton"];
+	BOOL hideShop = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShopButton"];
 	BOOL hideMsg = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMessageButton"];
 	BOOL hideFri = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFriendsButton"];
 	BOOL hideMe = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMyButton"];
