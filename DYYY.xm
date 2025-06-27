@@ -597,16 +597,28 @@
 
 %hook AWEDanmakuContentLabel
 - (void)setTextColor:(UIColor *)textColor {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableDanmuColor"]) {
-		NSString *danmuColor = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYdanmuColor"];
-
-		self.layer.shadowOffset = CGSizeZero;
-		self.layer.shadowOpacity = 0.0;
-		[DYYYUtils applyColorSettingsToLabel:self colorHexString:danmuColor];
-        return;
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableDanmuColor"]) {
+        NSString *danmuColor = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYdanmuColor"];
+        [DYYYUtils applyColorSettingsToLabel:self colorHexString:danmuColor];
+    } else {
+        %orig(textColor);
     }
+}
 
-	%orig(textColor);
+- (void)setStrokeWidth:(double)strokeWidth {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableDanmuColor"]) {
+        %orig(FLT_MIN);
+    } else {
+        %orig(strokeWidth);
+    }
+}
+
+- (void)setStrokeColor:(UIColor *)strokeColor {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableDanmuColor"]) {
+        %orig(nil);
+    } else {
+        %orig(strokeColor);
+    }
 }
 
 %end

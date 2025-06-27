@@ -85,6 +85,7 @@
     [attributedText removeAttribute:NSForegroundColorAttributeName range:NSMakeRange(0, attributedText.length)];
     [attributedText removeAttribute:NSStrokeColorAttributeName range:NSMakeRange(0, attributedText.length)];
     [attributedText removeAttribute:NSStrokeWidthAttributeName range:NSMakeRange(0, attributedText.length)];
+    [attributedText removeAttribute:NSShadowAttributeName range:NSMakeRange(0, attributedText.length)];
 
     if (!colorHexString || colorHexString.length == 0) {
         [attributedText addAttribute:NSForegroundColorAttributeName value:[UIColor whiteColor] range:NSMakeRange(0, attributedText.length)];

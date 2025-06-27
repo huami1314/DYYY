@@ -194,7 +194,52 @@ static CGFloat gStartVal = 0.0;
 @end
 
 @interface AWEDanmakuContentLabel : UILabel
-- (UIColor *)colorFromHexString:(NSString *)hexString baseColor:(UIColor *)baseColor;
+@property (nonatomic, assign) long long type;
+@property (nonatomic, copy) NSString *danmakuText;
+@property (nonatomic, copy) NSArray *danmakuStyleList;
+@property (nonatomic, strong) UIColor *strokeColor;
+@property (nonatomic, assign) double strokeWidth;
+- (id)colorFromHexString:(id)arg0 baseColor:(id)arg1 ;
+- (void)setTextColor:(id)arg0 ;
+- (id)initWithFrame:(id)arg0 textColor:(id)arg1 type:(long long)arg2 ;
+- (id)danmakuText;
+- (void)setDanmakuText:(id)arg0 ;
+- (id)danmakuStyleList;
+- (void)drawUnderLineWithStart:(long long)arg0 len:(long long)arg1 ;
+- (void)setDanmakuStyleList:(id)arg0 ;
+- (double)strokeWidth;
+- (id)accessibilityLabel;
+- (void)setStrokeWidth:(double)arg0 ;
+- (void)setAccessibilityLabel:(id)arg0 ;
+- (void)setStrokeColor:(id)arg0 ;
+- (id)strokeColor;
+- (long long)type;
+- (id)initWithFrame:(id)arg0 ;
+- (id)boundingRectForCharacterRange:(id)arg0 ;
+- (void)drawTextInRect:(id)arg0 ;
+- (void)setType:(long long)arg0 ;
+@end
+
+@interface AWEDanmakuItemTextInfo : NSObject
+@property (nonatomic, strong) NSAttributedString *danmakuText;
+@property (nonatomic, assign) id danmakuTextFrame;
+@property (nonatomic, assign) double strokeWidth;
+@property (nonatomic, strong) UIColor *strokeColor;
+@property (nonatomic, strong) UIFont *danmakuFont;
+@property (nonatomic, strong) UIColor *danmakuTextColor;
+- (id)colorFromHexStringForTextInfo:(id)arg0 ;
+- (void)setDanmakuFont:(id)arg0 ;
+- (id)danmakuFont;
+- (id)danmakuText;
+- (void)setDanmakuText:(id)arg0 ;
+- (id)danmakuTextFrame;
+- (void)setDanmakuTextFrame:(id)arg0 ;
+- (id)danmakuTextColor;
+- (void)setDanmakuTextColor:(id)arg0 ;
+- (double)strokeWidth;
+- (void)setStrokeWidth:(double)arg0 ;
+- (void)setStrokeColor:(id)arg0 ;
+- (id)strokeColor;
 @end
 
 @interface AWELandscapeFeedEntryView : UIView
@@ -236,11 +281,6 @@ static CGFloat gStartVal = 0.0;
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey, id> *)change context:(void *)context;
 - (void)setVideoControllerPlaybackRate:(double)arg0;
 
-@end
-
-@interface AWEDanmakuItemTextInfo : NSObject
-- (void)setDanmakuTextColor:(id)arg1;
-- (UIColor *)colorFromHexStringForTextInfo:(NSString *)hexString;
 @end
 
 @interface AWECommentMiniEmoticonPanelView : UIView
