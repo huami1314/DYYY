@@ -116,6 +116,40 @@
     label.attributedText = attributedText;
 }
 
++ (void)applyStrokeToLabel:(UILabel *)label strokeColor:(UIColor *)strokeColor strokeWidth:(CGFloat)strokeWidth {
+    if (!label || label.attributedText.length == 0) {
+        return;
+    }
+    NSMutableAttributedString *mutableAttributedText = [[NSMutableAttributedString alloc] initWithAttributedString:label.attributedText];
+    NSRange fullRange = NSMakeRange(0, mutableAttributedText.length);
+
+    // 先移除现有的描边属性，确保新的描边能完全生效
+    [mutableAttributedText removeAttribute:NSStrokeColorAttributeName range:fullRange];
+    [mutableAttributedText removeAttribute:NSStrokeWidthAttributeName range:fullRange];
+
+    if (strokeColor && strokeWidth != 0) { // 只有当描边颜色和宽度有效时才应用
+        [mutableAttributedText addAttribute:NSStrokeColorAttributeName value:strokeColor range:fullRange];
+        [mutableAttributedText addAttribute:NSStrokeWidthAttributeName value:@(strokeWidth) range:fullRange];
+    }
+    label.attributedText = mutableAttributedText;
+}
+
++ (void)applyShadowToLabel:(UILabel *)label shadow:(NSShadow *)shadow {
+    if (!label || label.attributedText.length == 0) {
+        return;
+    }
+    NSMutableAttributedString *mutableAttributedText = [[NSMutableAttributedString alloc] initWithAttributedString:label.attributedText];
+    NSRange fullRange = NSMakeRange(0, mutableAttributedText.length);
+
+    // 先移除现有的阴影属性，确保新的阴影能完全生效
+    [mutableAttributedText removeAttribute:NSShadowAttributeName range:fullRange];
+
+    if (shadow) { // 只有当阴影对象有效时才应用
+        [mutableAttributedText addAttribute:NSShadowAttributeName value:shadow range:fullRange];
+    }
+    label.attributedText = mutableAttributedText;
+}
+
 + (UIColor *(^)(CGFloat progress))colorSchemeBlockWithHexString:(NSString *)hexString {
     UIColor *(^defaultScheme)(CGFloat) = ^UIColor *(CGFloat progress) {
         return [UIColor whiteColor];

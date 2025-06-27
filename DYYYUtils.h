@@ -46,6 +46,8 @@ NS_ASSUME_NONNULL_BEGIN
  * @param colorHexString 颜色方案字符串，用法见 colorSchemeBlockWithHexString。
  */
 + (void)applyColorSettingsToLabel:(UILabel *)label colorHexString:(NSString *)colorHexString;
++ (void)applyStrokeToLabel:(UILabel *)label strokeColor:(UIColor *)strokeColor strokeWidth:(CGFloat)strokeWidth;
++ (void)applyShadowToLabel:(UILabel *)label shadow:(NSShadow *)shadow;
 
 /**
  * @brief 根据颜色字符串配置，返回一个用于计算文本颜色方案的 Block。
