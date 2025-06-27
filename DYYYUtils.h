@@ -51,7 +51,7 @@ NS_ASSUME_NONNULL_BEGIN
  * @brief 根据颜色字符串配置，返回一个用于计算文本颜色方案的 Block。
  *        该 Block 接收一个进度值 (0.0 - 1.0)，返回对应进度的 UIColor。
  *        支持的颜色配置字符串:
- *        - "random_rainbow" 或 "#random_rainbow": 返回一个随机三色渐变方案（每次调用时随机生成颜色）。
+ *        - "random_gradient" 或 "#random_gradient": 返回一个随机三色渐变方案（每次调用时随机生成颜色）。
  *        - "rainbow" 或 "#rainbow": 返回一个固定彩虹七色渐变方案。
  *        - "random" 或 "#random": 返回一个单色随机颜色（每次调用时随机生成颜色）。
  *        - "HEX1,HEX2,..." 或 "#HEX1,#HEX2,...": 返回一个多色渐变方案，支持任意数量的十六进制颜色。
@@ -65,7 +65,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * @brief 根据十六进制字符串返回一个配置好的 CALayer (纯色或渐变)。
  *        此方法适用于将颜色方案作为 CALayer 的 mask 或直接作为子层。
- *        支持单色、随机色、多色渐变 (逗号分隔)、"rainbow" 和 "random_rainbow"。
+ *        支持单色、随机色、多色渐变 (逗号分隔)、"rainbow" 和 "random_gradient"。
  * @param hexString 颜色方案字符串。
  * @param frame CALayer 的 frame。
  * @return 配置好的 CALayer 实例。如果无法解析或 frame 无效，返回 nil。

@@ -1153,7 +1153,7 @@ static CGFloat rightLabelRightMargin = -1;
 	UILabel *label = %orig;
 	NSString *labelColorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYLabelColor"];
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnabsuijiyanse"]) {
-		labelColorHex = @"random_rainbow";
+		labelColorHex = @"random_gradient";
 	}
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableArea"]) {
 		NSString *originalText = label.text ?: @"";

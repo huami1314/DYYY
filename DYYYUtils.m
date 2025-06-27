@@ -136,7 +136,7 @@
         };
     }
 
-    // 2. 尝试获取渐变颜色数组 (包括 rainbow, random_rainbow, 多色渐变)
+    // 2. 尝试获取渐变颜色数组 (包括 rainbow, random_gradient, 多色渐变)
     NSArray<UIColor *> *gradientColors = [self _gradientColorsForSchemeHexString:hexString];
     if (gradientColors && gradientColors.count > 0) {
         return [self _gradientBlockWithColors:gradientColors];
@@ -222,7 +222,7 @@
         }
     }
 
-    // 3. 对于渐变色（包括 rainbow, random_rainbow, 多色渐变），使用图案填充
+    // 3. 对于渐变色（包括 rainbow, random_gradient, 多色渐变），使用图案填充
     UIColor *(^gradientBlock)(CGFloat progress) = [self colorSchemeBlockWithHexString:hexString];
 
     // 定义图案图像的尺寸。宽度足够大以避免重复，高度为1以避免垂直拉伸形变。
@@ -441,7 +441,7 @@
 
 /**
  * @brief 私有辅助方法：根据颜色方案字符串解析出渐变所需的颜色数组。
- *        此方法专门处理多色渐变、"rainbow" 和 "random_rainbow" 方案。
+ *        此方法专门处理多色渐变、"rainbow" 和 "random_gradient" 方案。
  * @param hexString 颜色方案字符串。
  * @return 包含 UIColor 对象的数组。如果不是渐变方案（例如单色或纯随机色），则返回 nil。
  */
@@ -462,7 +462,7 @@
         ];
     }
 
-    if ([lowercaseHexString isEqualToString:@"random_rainbow"] || [lowercaseHexString isEqualToString:@"#random_rainbow"]) {
+    if ([lowercaseHexString isEqualToString:@"random_gradient"] || [lowercaseHexString isEqualToString:@"#random_gradient"]) {
         // 生成三个随机颜色用于三色渐变
         return @[[self _randomColor], [self _randomColor], [self _randomColor]];
     }
