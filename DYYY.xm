@@ -1153,7 +1153,7 @@ static CGFloat rightLabelRightMargin = -1;
 	UILabel *label = %orig;
 	NSString *labelColorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYLabelColor"];
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnabsuijiyanse"]) {
-		labelColorHex = @"random_rainbow";
+		labelColorHex = @"random_gradient";
 	}
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableArea"]) {
 		NSString *originalText = label.text ?: @"";
@@ -4389,7 +4389,7 @@ static AWEIMReusableCommonCell *currentCell;
 - (UIColor *)awe_smartBackgroundColor {
 	NSString *colorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYVideoBGColor"];
 	if (colorHex && colorHex.length > 0) {
-		UIColor *customColor = [DYYYUtils colorWithHexString:colorHex];
+		UIColor *customColor = [DYYYUtils colorWithSchemeHexStringForPattern:colorHex];
 		if (customColor) {
 			return customColor;
 		}
@@ -4405,7 +4405,7 @@ static AWEIMReusableCommonCell *currentCell;
 	%orig;
 	NSString *colorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYVideoBGColor"];
 	if (colorHex && colorHex.length > 0) {
-		UIColor *customColor = [DYYYUtils colorWithHexString:colorHex];
+		UIColor *customColor = [DYYYUtils colorWithSchemeHexStringForPattern:colorHex];
 		if (customColor) {
 			self.backgroundColor = customColor;
 		}
