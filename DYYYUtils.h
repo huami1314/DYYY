@@ -1,11 +1,14 @@
 #import <UIKit/UIKit.h>
 #import <Photos/Photos.h>
+#import <QuartzCore/QuartzCore.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
 @class YYAnimatedImageView;
 
 @interface DYYYUtils : NSObject
+
+#pragma mark - Public UI/Window/Controller Utilities (公共 UI/窗口/控制器 工具)
 
 /**
  * 获取当前显示的顶层视图控制器
@@ -24,32 +27,6 @@ NS_ASSUME_NONNULL_BEGIN
 + (UIViewController *)getActiveTopController;
 
 /**
- * 将指定的颜色字符串应用到UILabel上
- * @param label 要应用颜色的UILabel
- * @param colorHexString 颜色的十六进制字符串，用法见 colorSchemeBlockWithHexString
- */
-+ (void)applyColorSettingsToLabel:(UILabel *)label colorHexString:(NSString *)colorHexString;
-
-/**
- * 根据颜色字符串配置，返回一个用于计算文本颜色方案的Block。
- * 支持的颜色配置字符串:
- * - "random_rainbow" 或 "#random_rainbow": 返回一个随机三色渐变方案（每次调用colorSchemeBlockWithHexString时随机）。
- * - "rainbow" 或 "#rainbow": 返回一个固定彩虹七色渐变方案。
- * - "random" 或 "#random": 返回一个单色随机颜色（每次调用colorSchemeBlockWithHexString时随机）。
- * - "HEX1,HEX2,..." 或 "#HEX1,#HEX2,...": 返回一个多色渐变方案，支持任意数量的十六进制颜色。
- * - "HEX" 或 "#HEX": 返回一个单色方案。
- * @param hexString 颜色配置字符串。
- * @return 一个Block，该Block接收0.0到1.0的进度值，返回对应的UIColor。
- */
-+ (UIColor *(^)(CGFloat progress))colorSchemeBlockWithHexString:(NSString *)hexString;
-
-/**
- * 根据十六进制字符串创建颜色对象
- * @param hexString 十六进制颜色字符串
- */
-+ (UIColor *)colorWithHexString:(NSString *)hexString;
-
-/**
  * 显示提示信息
  * @param text 要显示的文本
  */
@@ -59,6 +36,53 @@ NS_ASSUME_NONNULL_BEGIN
  * 检查当前是否为暗黑模式
  */
 + (BOOL)isDarkMode;
+
+#pragma mark - Public Color Scheme Methods (公共颜色方案方法)
+
+/**
+ * @brief 将指定的颜色字符串方案应用到 UILabel 上，实现字符级渐变。
+ *        此方法通过修改 UILabel 的 attributedText 来实现颜色效果。
+ * @param label 要应用颜色的 UILabel。
+ * @param colorHexString 颜色方案字符串，用法见 colorSchemeBlockWithHexString。
+ */
++ (void)applyColorSettingsToLabel:(UILabel *)label colorHexString:(NSString *)colorHexString;
+
+/**
+ * @brief 根据颜色字符串配置，返回一个用于计算文本颜色方案的 Block。
+ *        该 Block 接收一个进度值 (0.0 - 1.0)，返回对应进度的 UIColor。
+ *        支持的颜色配置字符串:
+ *        - "random_rainbow" 或 "#random_rainbow": 返回一个随机三色渐变方案（每次调用时随机生成颜色）。
+ *        - "rainbow" 或 "#rainbow": 返回一个固定彩虹七色渐变方案。
+ *        - "random" 或 "#random": 返回一个单色随机颜色（每次调用时随机生成颜色）。
+ *        - "HEX1,HEX2,..." 或 "#HEX1,#HEX2,...": 返回一个多色渐变方案，支持任意数量的十六进制颜色。
+ *        - "HEX" 或 "#HEX": 返回一个单色方案。
+ * @param hexString 颜色配置字符串。
+ * @return 一个 Block，该 Block 接收0.0到1.0的进度值，返回对应的 UIColor。
+ *         如果无法解析，返回一个始终返回黑色的 Block。
+ */
++ (UIColor *(^)(CGFloat progress))colorSchemeBlockWithHexString:(NSString *)hexString;
+
+/**
+ * @brief 根据十六进制字符串返回一个配置好的 CALayer (纯色或渐变)。
+ *        此方法适用于将颜色方案作为 CALayer 的 mask 或直接作为子层。
+ *        支持单色、随机色、多色渐变 (逗号分隔)、"rainbow" 和 "random_rainbow"。
+ * @param hexString 颜色方案字符串。
+ * @param frame CALayer 的 frame。
+ * @return 配置好的 CALayer 实例。如果无法解析或 frame 无效，返回 nil。
+ */
++ (CALayer *)colorSchemeLayerWithHexString:(NSString *)hexString frame:(CGRect)frame;
+
+/**
+ * @brief 根据十六进制字符串返回一个适合用于图案填充的 UIColor。
+ *        此方法主要用于 UILabel.textColor 等需要 UIColor 对象的场景，以实现文本渐变。
+ *        对于渐变色，它会内部渲染一个大尺寸的 UIImage 作为图案填充。
+ *        对于单色或随机色，直接返回对应的 UIColor 对象，效率更高。
+ * @param hexString 颜色方案字符串。
+ * @return 配置好的 UIColor 实例。如果无法解析，返回黑色。
+ */
++ (UIColor *)colorWithSchemeHexStringForPattern:(NSString *)hexString;
+
+#pragma mark - Public File Management (公共文件管理)
 
 /**格式化大小
  * 将大小转换为易读的格式
@@ -92,6 +116,8 @@ NS_ASSUME_NONNULL_BEGIN
 + (NSString *)cachePathForFilename:(NSString *)filename;
 
 @end
+
+#pragma mark - External C Functions (外部 C 函数)
 
 #ifdef __cplusplus
 extern "C" {
