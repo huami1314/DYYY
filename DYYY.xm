@@ -5244,16 +5244,23 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 %hook AWEFeedTableView
 - (void)layoutSubviews {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+	CGFloat customHeight = customTabBarHeight();
+	BOOL enableFS = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"];
+
+	if (enableFS || customHeight > 0) {
 		if (self.superview) {
-			CGFloat currentDifference = self.superview.frame.size.height - self.frame.size.height;
-			if (currentDifference > 0 && currentDifference != tabHeight) {
-				tabHeight = currentDifference;
+			CGFloat diff = self.superview.frame.size.height - self.frame.size.height;
+			if (diff > 0 && diff != tabHeight) {
+				tabHeight = diff;
 			}
 		}
 
 		CGRect frame = self.frame;
-		frame.size.height = self.superview.frame.size.height;
+		if (enableFS) {
+			frame.size.height = self.superview.frame.size.height;
+		} else if (customHeight > 0) {
+			frame.size.height = self.superview.frame.size.height - customHeight;
+		}
 		self.frame = frame;
 	}
 }
@@ -5528,7 +5535,6 @@ static CGFloat currentScale = 1.0;
                         }
                         self.frame = frame;
                 }
-                tabHeight = h;
         }
 
         BOOL hideShop = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShopButton"];
