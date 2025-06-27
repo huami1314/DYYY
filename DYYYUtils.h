@@ -51,8 +51,9 @@ NS_ASSUME_NONNULL_BEGIN
  * @brief 根据颜色字符串配置，返回一个用于计算文本颜色方案的 Block。
  *        该 Block 接收一个进度值 (0.0 - 1.0)，返回对应进度的 UIColor。
  *        支持的颜色配置字符串:
- *        - "random_gradient" 或 "#random_gradient": 返回一个随机三色渐变方案（每次调用时随机生成颜色）。
- *        - "rainbow" 或 "#rainbow": 返回一个固定彩虹七色渐变方案。
+ *        - "rainbow" 或 "#rainbow": 七色固定彩虹渐变方案（红橙黄绿青蓝紫）。
+ *        - "rotating_rainbow" 或 "#rotating_rainbow": 七色轮转彩虹渐变方案（每次调用时起始颜色轮转）。
+ *        - "random_gradient" 或 "#random_gradient": 随机三色渐变方案（每次调用时随机生成颜色）。
  *        - "random" 或 "#random": 返回一个单色随机颜色（每次调用时随机生成颜色）。
  *        - "HEX1,HEX2,..." 或 "#HEX1,#HEX2,...": 返回一个多色渐变方案，支持任意数量的十六进制颜色。
  *        - "HEX" 或 "#HEX": 返回一个单色方案。

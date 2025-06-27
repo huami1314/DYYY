@@ -401,19 +401,17 @@
     if (!colors || colors.count == 0) {
         return ^UIColor *(CGFloat progress) { return [UIColor whiteColor]; };
     }
-    if (colors.count == 1) { // 单色也视为一种特殊的“渐变”
+    if (colors.count == 1) {
         UIColor *singleColor = colors.firstObject;
         return ^UIColor *(CGFloat progress) { return singleColor; };
     }
 
     return ^UIColor *(CGFloat progress) {
-        progress = fmaxf(0.0, fminf(1.0, progress)); // 确保进度在 0.0 到 1.0 之间
+        progress = fmaxf(0.0, fminf(1.0, progress));
 
-        // 计算当前进度所在的颜色段
         CGFloat segmentWidth = 1.0 / (colors.count - 1);
         NSInteger startIndex = floor(progress / segmentWidth);
 
-        // 边界处理
         if (startIndex >= colors.count - 1) {
             startIndex = colors.count - 2;
         }
@@ -422,13 +420,12 @@
         UIColor *startColor = colors[startIndex];
         UIColor *endColor = colors[endIndex];
 
-        CGFloat segmentProgress = (progress - startIndex * segmentWidth);
-        
-        // 颜色插值计算
         CGFloat startRed, startGreen, startBlue, startAlpha;
         CGFloat endRed, endGreen, endBlue, endAlpha;
         [startColor getRed:&startRed green:&startGreen blue:&startBlue alpha:&startAlpha];
         [endColor getRed:&endRed green:&endGreen blue:&endBlue alpha:&endAlpha];
+
+        CGFloat segmentProgress = (progress - startIndex * segmentWidth);
 
         CGFloat red = startRed + (endRed - startRed) * segmentProgress;
         CGFloat green = startGreen + (endGreen - startGreen) * segmentProgress;
@@ -439,19 +436,14 @@
     };
 }
 
-/**
- * @brief 私有辅助方法：根据颜色方案字符串解析出渐变所需的颜色数组。
- *        此方法专门处理多色渐变、"rainbow" 和 "random_gradient" 方案。
- * @param hexString 颜色方案字符串。
- * @return 包含 UIColor 对象的数组。如果不是渐变方案（例如单色或纯随机色），则返回 nil。
- */
-+ (NSArray<UIColor *> *)_gradientColorsForSchemeHexString:(NSString *)hexString {
-    NSString *trimmedHexString = [hexString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    NSString *lowercaseHexString = [trimmedHexString lowercaseString];
+static NSArray<UIColor *> *_baseRainbowColors = nil;
+static NSInteger _currentRainbowStartIndex = 0;
 
-    if ([lowercaseHexString isEqualToString:@"rainbow"] || [lowercaseHexString isEqualToString:@"#rainbow"]) {
-        // 定义彩虹色数组
-        return @[
+// 私有辅助方法：确保基础彩虹颜色已初始化
++ (void)_initializeBaseRainbowColors {
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        _baseRainbowColors = @[
             [UIColor colorWithRed:1.0 green:0.0 blue:0.0 alpha:1.0], // 红
             [UIColor colorWithRed:1.0 green:0.5 blue:0.0 alpha:1.0], // 橙
             [UIColor colorWithRed:1.0 green:1.0 blue:0.0 alpha:1.0], // 黄
@@ -460,10 +452,48 @@
             [UIColor colorWithRed:0.0 green:0.0 blue:1.0 alpha:1.0], // 蓝
             [UIColor colorWithRed:0.5 green:0.0 blue:0.5 alpha:1.0]  // 紫
         ];
+    });
+}
+
+// 私有辅助方法：获取当前轮转状态的彩虹颜色数组，并更新索引
++ (NSArray<UIColor *> *)_rotatedRainbowColors {
+    [self _initializeBaseRainbowColors];
+
+    NSUInteger count = _baseRainbowColors.count;
+    if (count == 0) return @[];
+
+    NSMutableArray<UIColor *> *rotatedColors = [NSMutableArray arrayWithCapacity:count];
+
+    @synchronized (self) { // 线程安全地访问和更新索引
+        for (NSUInteger i = 0; i < count; i++) {
+            [rotatedColors addObject:_baseRainbowColors[(_currentRainbowStartIndex + i) % count]];
+        }
+        _currentRainbowStartIndex = (_currentRainbowStartIndex + 1) % count;
+    }
+    return [rotatedColors copy];
+}
+
+/**
+ * @brief 私有辅助方法：根据颜色方案字符串解析出渐变所需的颜色数组。
+ *        此方法专门处理多色渐变、"rainbow"、"random_rainbow" 和 "random_gradient" 方案。
+ * @param hexString 颜色方案字符串。
+ * @return 包含 UIColor 对象的数组。如果不是渐变方案（例如单色或纯随机色），则返回 nil。
+ */
++ (NSArray<UIColor *> *)_gradientColorsForSchemeHexString:(NSString *)hexString {
+    NSString *trimmedHexString = [hexString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    NSString *lowercaseHexString = [trimmedHexString lowercaseString];
+
+    [self _initializeBaseRainbowColors];
+
+    if ([lowercaseHexString isEqualToString:@"rainbow"] || [lowercaseHexString isEqualToString:@"#rainbow"]) {
+        return _baseRainbowColors;
+    }
+
+    if ([lowercaseHexString isEqualToString:@"rotating_rainbow"] || [lowercaseHexString isEqualToString:@"#rotating_rainbow"]) {
+        return [self _rotatedRainbowColors];
     }
 
     if ([lowercaseHexString isEqualToString:@"random_gradient"] || [lowercaseHexString isEqualToString:@"#random_gradient"]) {
-        // 生成三个随机颜色用于三色渐变
         return @[[self _randomColor], [self _randomColor], [self _randomColor]];
     }
 
@@ -473,12 +503,9 @@
         NSMutableArray *gradientColors = [NSMutableArray array];
         for (NSString *hex in hexComponents) {
             UIColor *color = [self _colorFromHexString:hex];
-            if (color) {
-                [gradientColors addObject:color];
-            }
+            if (color) [gradientColors addObject:color];
         }
-        // 确保至少有两个颜色才能形成有效渐变
-        if (gradientColors.count >= 2) {
+        if (gradientColors.count >= 2) { // 确保至少有两个颜色才能形成有效渐变
             return [gradientColors copy];
         }
     }
