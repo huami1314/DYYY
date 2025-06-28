@@ -1017,6 +1017,8 @@ static CGFloat gStartVal = 0.0;
 @end
 @interface IESLiveGameCPExplainCardContainerImpl : UIView
 @end
+@interface AWEPOILivePurchaseAtmosphereView : UIView
+@end
 
 // 隐藏状态栏
 @interface AWEFeedRootViewController : UIViewController

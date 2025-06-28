@@ -4097,6 +4097,15 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
+%hook AWEPOILivePurchaseAtmosphereView
+- (void)layoutSubviews {
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveGoodsMsg"] && self.superview) {
+		[self.superview removeFromSuperview];
+	}
+}
+%end
+
 // 隐藏直播间点赞动画
 %hook HTSLiveDiggView
 - (void)setIconImageView:(UIImageView *)arg1 {
