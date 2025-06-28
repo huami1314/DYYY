@@ -4136,6 +4136,16 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
+// 预约直播
+%hook IESLivePreAnnouncementPanelViewNew
+- (void)layoutSubviews {
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideStickerView"]) {
+		[self removeFromSuperview];
+	}
+}
+%end
+
 // 隐藏进场特效
 %hook IESLiveDynamicUserEnterView
 - (void)layoutSubviews {

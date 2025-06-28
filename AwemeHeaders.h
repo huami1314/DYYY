@@ -997,6 +997,8 @@ static CGFloat gStartVal = 0.0;
 @end
 @interface IESLiveStickerView : UIView
 @end
+@interface IESLivePreAnnouncementPanelViewNew : UIView
+@end
 @interface IESLiveDynamicUserEnterView : UIView
 @end
 @interface IESLiveDynamicRankListEntranceView : UIView
