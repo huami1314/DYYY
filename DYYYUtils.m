@@ -6,6 +6,37 @@
 #import "AwemeHeaders.h"
 
 @implementation DYYYUtils
+    static NSArray<UIColor *> *_baseRainbowColors;
+    static NSInteger _currentRainbowStartIndex;
+    static NSCache *_gradientColorCache;
+
+#pragma mark - Initialization
+
+// +initialize 方法在类第一次被使用时调用，且只调用一次，是线程安全的
++ (void)initialize {
+    if (self == [DYYYUtils class]) {
+        // 1. 初始化缓存
+        _gradientColorCache = [[NSCache alloc] init];
+        _gradientColorCache.name = @"DYYYGradientColorCache";
+        // 可以设置缓存限制，例如：
+        // _gradientColorCache.countLimit = 100; // 最大缓存对象数量
+        // _gradientColorCache.totalCostLimit = 10 * 1024 * 1024; // 最大缓存成本（例如10MB）
+
+        // 2. 初始化彩虹颜色数组
+        _baseRainbowColors = @[
+            [UIColor colorWithRed:1.0 green:0.0 blue:0.0 alpha:1.0], // 红
+            [UIColor colorWithRed:1.0 green:0.5 blue:0.0 alpha:1.0], // 橙
+            [UIColor colorWithRed:1.0 green:1.0 blue:0.0 alpha:1.0], // 黄
+            [UIColor colorWithRed:0.0 green:1.0 blue:0.0 alpha:1.0], // 绿
+            [UIColor colorWithRed:0.0 green:1.0 blue:1.0 alpha:1.0], // 青
+            [UIColor colorWithRed:0.0 green:0.0 blue:1.0 alpha:1.0], // 蓝
+            [UIColor colorWithRed:0.5 green:0.0 blue:0.5 alpha:1.0]  // 紫
+        ];
+
+        // 3. 初始化当前彩虹索引
+        _currentRainbowStartIndex = 0;
+    }
+}
 
 #pragma mark - Public UI/Window/Controller Utilities (公共 UI/窗口/控制器 工具)
 
@@ -65,212 +96,6 @@
     return NO;
   }
   return [themeManagerClass isLightTheme] ? NO : YES;
-}
-
-#pragma mark - Public Color Scheme Methods (公共颜色方案方法)
-
-+ (void)applyColorSettingsToLabel:(UILabel *)label colorHexString:(NSString *)colorHexString {
-    NSMutableAttributedString *attributedText;
-    if ([label.attributedText isKindOfClass:[NSAttributedString class]]) {
-        attributedText = [[NSMutableAttributedString alloc] initWithAttributedString:label.attributedText];
-    } else {
-        attributedText = [[NSMutableAttributedString alloc] initWithString:label.text ?: @""];
-    }
-
-    if (attributedText.length == 0) {
-        label.attributedText = attributedText;
-        return;
-    }
-
-    [attributedText removeAttribute:NSForegroundColorAttributeName range:NSMakeRange(0, attributedText.length)];
-    [attributedText removeAttribute:NSStrokeColorAttributeName range:NSMakeRange(0, attributedText.length)];
-    [attributedText removeAttribute:NSStrokeWidthAttributeName range:NSMakeRange(0, attributedText.length)];
-    [attributedText removeAttribute:NSShadowAttributeName range:NSMakeRange(0, attributedText.length)];
-
-    if (!colorHexString || colorHexString.length == 0) {
-        [attributedText addAttribute:NSForegroundColorAttributeName value:[UIColor whiteColor] range:NSMakeRange(0, attributedText.length)];
-        label.attributedText = attributedText;
-        return;
-    }
-
-    NSString *trimmedHexString = [colorHexString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    NSString *lowercaseHexString = [trimmedHexString lowercaseString];
-
-    // 获取颜色计算 Block
-    UIColor * (^colorScheme)(CGFloat) = [self colorSchemeBlockWithHexString:lowercaseHexString];
-
-    CFIndex length = [attributedText length];
-    for (CFIndex i = 0; i < length; i++) {
-        CGFloat progress = (length > 1) ? (CGFloat)i / (length - 1) : 0.0;
-
-        UIColor *currentColor = colorScheme(progress);
-
-        NSMutableDictionary *attributes = [NSMutableDictionary dictionary];
-        if (currentColor) {
-            attributes[NSForegroundColorAttributeName] = currentColor;
-        } else {
-            attributes[NSForegroundColorAttributeName] = [UIColor whiteColor]; // 默认白色
-        }
-
-        [attributedText addAttributes:attributes range:NSMakeRange(i, 1)];
-    }
-    label.attributedText = attributedText;
-}
-
-+ (void)applyStrokeToLabel:(UILabel *)label strokeColor:(UIColor *)strokeColor strokeWidth:(CGFloat)strokeWidth {
-    if (!label || label.attributedText.length == 0) {
-        return;
-    }
-    NSMutableAttributedString *mutableAttributedText = [[NSMutableAttributedString alloc] initWithAttributedString:label.attributedText];
-    NSRange fullRange = NSMakeRange(0, mutableAttributedText.length);
-
-    // 先移除现有的描边属性，确保新的描边能完全生效
-    [mutableAttributedText removeAttribute:NSStrokeColorAttributeName range:fullRange];
-    [mutableAttributedText removeAttribute:NSStrokeWidthAttributeName range:fullRange];
-
-    if (strokeColor && strokeWidth != 0) { // 只有当描边颜色和宽度有效时才应用
-        [mutableAttributedText addAttribute:NSStrokeColorAttributeName value:strokeColor range:fullRange];
-        [mutableAttributedText addAttribute:NSStrokeWidthAttributeName value:@(strokeWidth) range:fullRange];
-    }
-    label.attributedText = mutableAttributedText;
-}
-
-+ (void)applyShadowToLabel:(UILabel *)label shadow:(NSShadow *)shadow {
-    if (!label || label.attributedText.length == 0) {
-        return;
-    }
-    NSMutableAttributedString *mutableAttributedText = [[NSMutableAttributedString alloc] initWithAttributedString:label.attributedText];
-    NSRange fullRange = NSMakeRange(0, mutableAttributedText.length);
-
-    // 先移除现有的阴影属性，确保新的阴影能完全生效
-    [mutableAttributedText removeAttribute:NSShadowAttributeName range:fullRange];
-
-    if (shadow) { // 只有当阴影对象有效时才应用
-        [mutableAttributedText addAttribute:NSShadowAttributeName value:shadow range:fullRange];
-    }
-    label.attributedText = mutableAttributedText;
-}
-
-+ (UIColor *(^)(CGFloat progress))colorSchemeBlockWithHexString:(NSString *)hexString {
-    UIColor *(^defaultScheme)(CGFloat) = ^UIColor *(CGFloat progress) {
-        return [UIColor whiteColor];
-    };
-
-    if (!hexString || hexString.length == 0) {
-        return defaultScheme;
-    }
-
-    NSString *trimmedHexString = [hexString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    NSString *lowercaseHexString = [trimmedHexString lowercaseString];
-
-    // 1. 优先处理纯随机色
-    if ([lowercaseHexString isEqualToString:@"random"] || [lowercaseHexString isEqualToString:@"#random"]) {
-        UIColor *randomColor = [self _randomColor];
-        return ^UIColor *(CGFloat progress) {
-            return randomColor; // 始终返回同一个随机色
-        };
-    }
-
-    // 2. 尝试获取渐变颜色数组 (包括 rainbow, random_gradient, 多色渐变)
-    NSArray<UIColor *> *gradientColors = [self _gradientColorsForSchemeHexString:hexString];
-    if (gradientColors && gradientColors.count > 0) {
-        return [self _gradientBlockWithColors:gradientColors];
-    }
-
-    // 3. 处理单色方案 (单个十六进制)
-    UIColor *singleColor = [self _colorFromHexString:trimmedHexString];
-    if (singleColor) {
-        return ^UIColor *(CGFloat progress) {
-            return singleColor; // 始终返回同一个单色
-        };
-    }
-
-    return defaultScheme; // 无法解析的方案
-}
-
-+ (CALayer *)colorSchemeLayerWithHexString:(NSString *)hexString frame:(CGRect)frame {
-    if (!hexString || hexString.length == 0 || CGRectIsEmpty(frame)) {
-        return nil;
-    }
-
-    NSString *trimmedHexString = [hexString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    NSString *lowercaseHexString = [trimmedHexString lowercaseString];
-
-    // 1. 优先处理纯色或纯随机色
-    UIColor *singleColor = nil;
-    if ([lowercaseHexString isEqualToString:@"random"] || [lowercaseHexString isEqualToString:@"#random"]) {
-        singleColor = [self _randomColor];
-    } else {
-        singleColor = [self _colorFromHexString:trimmedHexString];
-    }
-
-    // 如果是纯色或纯随机色，并且不是渐变方案，则返回一个普通的 CALayer
-    if (singleColor && ![self _gradientColorsForSchemeHexString:hexString]) {
-        CALayer *layer = [CALayer layer];
-        layer.frame = frame;
-        layer.backgroundColor = singleColor.CGColor;
-        return layer;
-    }
-
-    // 2. 尝试获取渐变颜色数组
-    NSArray<UIColor *> *gradientColors = [self _gradientColorsForSchemeHexString:hexString];
-    if (gradientColors && gradientColors.count > 0) {
-        CAGradientLayer *gradientLayer = [CAGradientLayer layer];
-        gradientLayer.frame = frame;
-        
-        // 将 UIColor 数组转换为 CGColorRef 数组
-        NSMutableArray *cgColors = [NSMutableArray arrayWithCapacity:gradientColors.count];
-        for (UIColor *color in gradientColors) {
-            [cgColors addObject:(__bridge id)color.CGColor];
-        }
-        gradientLayer.colors = cgColors;
-
-        // 默认水平渐变，可根据需求调整 startPoint 和 endPoint
-        gradientLayer.startPoint = CGPointMake(0.0, 0.5); // 从左到右
-        gradientLayer.endPoint = CGPointMake(1.0, 0.5);
-
-        return gradientLayer;
-    }
-
-    return nil; // 无法解析的颜色方案
-}
-
-+ (UIColor *)colorWithSchemeHexStringForPattern:(NSString *)hexString {
-    if (!hexString || hexString.length == 0) {
-        return [UIColor whiteColor];
-    }
-
-    NSString *trimmedHexString = [hexString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    NSString *lowercaseHexString = [trimmedHexString lowercaseString];
-
-    // 1. 优先处理纯随机色
-    if ([lowercaseHexString isEqualToString:@"random"] || [lowercaseHexString isEqualToString:@"#random"]) {
-        return [self _randomColor];
-    }
-
-    // 2. 尝试解析为单色 (非渐变方案)
-    // 只有当 _gradientColorsForSchemeHexString 返回 nil 时，才可能是纯单色
-    if (![self _gradientColorsForSchemeHexString:hexString]) {
-        UIColor *singleColor = [self _colorFromHexString:trimmedHexString];
-        if (singleColor) {
-            return singleColor;
-        }
-    }
-
-    // 3. 对于渐变色（包括 rainbow, random_gradient, 多色渐变），使用图案填充
-    UIColor *(^gradientBlock)(CGFloat progress) = [self colorSchemeBlockWithHexString:hexString];
-
-    // 定义图案图像的尺寸。宽度足够大以避免重复，高度为1以避免垂直拉伸形变。
-    // 2000x1 是一个经验值，可以覆盖大多数文本宽度，且垂直方向不会有形变。
-    CGSize patternSize = CGSizeMake(2000, 1);
-
-    UIImage *gradientImage = [self _imageWithGradientBlock:gradientBlock size:patternSize];
-
-    if (gradientImage) {
-        return [UIColor colorWithPatternImage:gradientImage];
-    }
-
-    return [UIColor whiteColor]; // 无法解析的方案
 }
 
 #pragma mark - Public File Management (公共文件管理)
@@ -369,6 +194,208 @@
     return [[self cacheDirectory] stringByAppendingPathComponent:filename];
 }
 
+#pragma mark - Public Color Scheme Methods (公共颜色方案方法)
+
++ (void)applyColorSettingsToLabel:(UILabel *)label colorHexString:(NSString *)colorHexString {
+    NSMutableAttributedString *attributedText;
+    if ([label.attributedText isKindOfClass:[NSAttributedString class]]) {
+        attributedText = [[NSMutableAttributedString alloc] initWithAttributedString:label.attributedText];
+    } else {
+        attributedText = [[NSMutableAttributedString alloc] initWithString:label.text ?: @""];
+    }
+
+    if (attributedText.length == 0) {
+        label.attributedText = attributedText;
+        return;
+    }
+
+    NSRange fullRange = NSMakeRange(0, attributedText.length);
+    [attributedText removeAttribute:NSForegroundColorAttributeName range:fullRange];
+    [attributedText removeAttribute:NSStrokeColorAttributeName range:fullRange];
+    [attributedText removeAttribute:NSStrokeWidthAttributeName range:fullRange];
+    [attributedText removeAttribute:NSShadowAttributeName range:fullRange];
+
+    if (!colorHexString || colorHexString.length == 0) {
+        [attributedText addAttribute:NSForegroundColorAttributeName value:[UIColor whiteColor] range:fullRange];
+        label.attributedText = attributedText;
+        return;
+    }
+
+    if (![attributedText attribute:NSFontAttributeName atIndex:0 effectiveRange:nil]) {
+        if (label.font) {
+            [attributedText addAttribute:NSFontAttributeName value:label.font range:fullRange];
+        }
+    }
+
+    CGSize maxTextSize = CGSizeMake(CGFLOAT_MAX, label.bounds.size.height);
+    CGRect textRect = [attributedText boundingRectWithSize:maxTextSize
+                                                   options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading
+                                                   context:nil];
+    CGFloat actualTextWidth = MAX(1.0, ceil(textRect.size.width));
+
+    UIColor *finalTextColor = [self colorWithSchemeHexStringForPattern:colorHexString targetWidth:actualTextWidth];
+
+    if (finalTextColor) {
+        [attributedText addAttribute:NSForegroundColorAttributeName value:finalTextColor range:fullRange];
+    } else {
+        [attributedText addAttribute:NSForegroundColorAttributeName value:[UIColor whiteColor] range:fullRange];
+    }
+    label.attributedText = attributedText;
+}
+
++ (void)applyStrokeToLabel:(UILabel *)label strokeColor:(UIColor *)strokeColor strokeWidth:(CGFloat)strokeWidth {
+    if (!label || label.attributedText.length == 0) {
+        return;
+    }
+    NSMutableAttributedString *mutableAttributedText = [[NSMutableAttributedString alloc] initWithAttributedString:label.attributedText];
+    NSRange fullRange = NSMakeRange(0, mutableAttributedText.length);
+
+    // 先移除现有的描边属性，确保新的描边能完全生效
+    [mutableAttributedText removeAttribute:NSStrokeColorAttributeName range:fullRange];
+    [mutableAttributedText removeAttribute:NSStrokeWidthAttributeName range:fullRange];
+
+    if (strokeColor && strokeWidth != 0) { // 只有当描边颜色和宽度有效时才应用
+        [mutableAttributedText addAttribute:NSStrokeColorAttributeName value:strokeColor range:fullRange];
+        [mutableAttributedText addAttribute:NSStrokeWidthAttributeName value:@(strokeWidth) range:fullRange];
+    }
+    label.attributedText = mutableAttributedText;
+}
+
++ (void)applyShadowToLabel:(UILabel *)label shadow:(NSShadow *)shadow {
+    if (!label || label.attributedText.length == 0) {
+        return;
+    }
+    NSMutableAttributedString *mutableAttributedText = [[NSMutableAttributedString alloc] initWithAttributedString:label.attributedText];
+    NSRange fullRange = NSMakeRange(0, mutableAttributedText.length);
+
+    // 先移除现有的阴影属性，确保新的阴影能完全生效
+    [mutableAttributedText removeAttribute:NSShadowAttributeName range:fullRange];
+
+    if (shadow) { // 只有当阴影对象有效时才应用
+        [mutableAttributedText addAttribute:NSShadowAttributeName value:shadow range:fullRange];
+    }
+    label.attributedText = mutableAttributedText;
+}
+
++ (UIColor *)colorWithSchemeHexStringForPattern:(NSString *)hexString targetWidth:(CGFloat)targetWidth {
+    if (!hexString || hexString.length == 0) {
+        return [UIColor whiteColor];
+    }
+
+    NSString *trimmedHexString = [hexString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    NSString *lowercaseHexString = [trimmedHexString lowercaseString];
+
+    // 1. 优先处理纯随机色（不缓存）
+    if ([lowercaseHexString isEqualToString:@"random"] || [lowercaseHexString isEqualToString:@"#random"]) {
+        return [self _randomColor];
+    }
+
+    CGFloat quantizedWidth = ceil(targetWidth); // 向上取整到整数像素
+    NSString *cacheKey = [NSString stringWithFormat:@"%@_%.0f", lowercaseHexString, quantizedWidth];
+
+    UIColor *cachedColor = [_gradientColorCache objectForKey:cacheKey];
+    if (cachedColor) {
+        return cachedColor;
+    }
+
+    // 2. 尝试解析渐变色（缓存）
+    UIColor *finalColor = nil;
+    NSArray<UIColor *> *gradientColors = [self gradientColorsForSchemeHexString:hexString];
+    if (gradientColors && gradientColors.count > 0) {
+        CGSize patternSize = CGSizeMake(MAX(1.0, quantizedWidth), 1);
+        UIImage *gradientImage = [self _imageWithGradientColors:gradientColors size:patternSize];
+
+        if (gradientImage) {
+            finalColor = [UIColor colorWithPatternImage:gradientImage];
+            if (finalColor) [_gradientColorCache setObject:finalColor forKey:cacheKey];
+        }
+    } else {
+        // 3. 处理单色（缓存）
+        UIColor *singleColor = [self _colorFromHexString:trimmedHexString];
+        if (singleColor) {
+            finalColor = singleColor;
+            [_gradientColorCache setObject:finalColor forKey:cacheKey];
+        }
+    }
+
+    if (!finalColor) finalColor = [UIColor whiteColor];
+    return finalColor;
+}
+
++ (CALayer *)colorSchemeLayerWithHexString:(NSString *)hexString frame:(CGRect)frame {
+    if (!hexString || hexString.length == 0 || CGRectIsEmpty(frame)) {
+        return nil;
+    }
+
+    NSString *trimmedHexString = [hexString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    NSString *lowercaseHexString = [trimmedHexString lowercaseString];
+
+    // 1. 优先处理纯色或纯随机色
+    UIColor *singleColor = nil;
+    if ([lowercaseHexString isEqualToString:@"random"] || [lowercaseHexString isEqualToString:@"#random"]) {
+        singleColor = [self _randomColor];
+    } else {
+        singleColor = [self _colorFromHexString:trimmedHexString];
+    }
+
+    // 2. 尝试解析渐变颜色数组
+    NSArray<UIColor *> *gradientColors = [self gradientColorsForSchemeHexString:hexString];
+    if (gradientColors && gradientColors.count > 0) {
+        CAGradientLayer *gradientLayer = [CAGradientLayer layer];
+        gradientLayer.frame = frame;
+        
+        NSMutableArray *cgColors = [NSMutableArray arrayWithCapacity:gradientColors.count];
+        for (UIColor *color in gradientColors) {
+            [cgColors addObject:(__bridge id)color.CGColor];
+        }
+        gradientLayer.colors = cgColors;
+
+        gradientLayer.startPoint = CGPointMake(0.0, 0.5);
+        gradientLayer.endPoint = CGPointMake(1.0, 0.5);
+
+        return gradientLayer;
+    } else if (singleColor) { // 如果是纯色则返回一个普通的 CALayer
+        CALayer *layer = [CALayer layer];
+        layer.frame = frame;
+        layer.backgroundColor = singleColor.CGColor;
+        return layer;
+    }
+
+    return nil; // 无法解析的颜色方案
+}
+
++ (NSArray<UIColor *> *)gradientColorsForSchemeHexString:(NSString *)hexString {
+    NSString *trimmedHexString = [hexString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    NSString *lowercaseHexString = [trimmedHexString lowercaseString];
+
+    if ([lowercaseHexString isEqualToString:@"rainbow"] || [lowercaseHexString isEqualToString:@"#rainbow"]) {
+        return _baseRainbowColors;
+    }
+
+    if ([lowercaseHexString isEqualToString:@"rotating_rainbow"] || [lowercaseHexString isEqualToString:@"#rotating_rainbow"]) {
+        return [self _rotatedRainbowColors];
+    }
+
+    if ([lowercaseHexString isEqualToString:@"random_gradient"] || [lowercaseHexString isEqualToString:@"#random_gradient"]) {
+        return @[[self _randomColor], [self _randomColor], [self _randomColor]];
+    }
+
+    if ([trimmedHexString containsString:@","]) {
+        // 处理逗号分隔的多色渐变
+        NSArray *hexComponents = [trimmedHexString componentsSeparatedByString:@","];
+        NSMutableArray *gradientColors = [NSMutableArray array];
+        for (NSString *hex in hexComponents) {
+            UIColor *color = [self _colorFromHexString:hex];
+            if (color) [gradientColors addObject:color];
+        }
+        if (gradientColors.count >= 2) { // 确保至少有两个颜色才能形成有效渐变
+            return [gradientColors copy];
+        }
+    }
+
+    return nil; // 不是渐变方案，或者颜色数量不足以形成渐变
+}
+
 #pragma mark - Private Helper Methods (私有辅助方法)
 
 /**
@@ -426,74 +453,8 @@
                            alpha:1.0];
 }
 
-/**
- * @brief 私有辅助方法：通用渐变 Block 工厂，接收一个颜色数组，返回一个根据进度计算颜色的 Block。
- *        此 Block 实现了颜色在数组中的平滑过渡。
- * @param colors 包含 UIColor 对象的数组，至少需要两个颜色才能形成渐变。
- * @return 一个 UIColor *(^)(CGFloat progress) Block。如果颜色数组无效，返回一个始终返回黑色的 Block。
- */
-+ (UIColor *(^)(CGFloat progress))_gradientBlockWithColors:(NSArray<UIColor *> *)colors {
-    if (!colors || colors.count == 0) {
-        return ^UIColor *(CGFloat progress) { return [UIColor whiteColor]; };
-    }
-    if (colors.count == 1) {
-        UIColor *singleColor = colors.firstObject;
-        return ^UIColor *(CGFloat progress) { return singleColor; };
-    }
-
-    return ^UIColor *(CGFloat progress) {
-        progress = fmaxf(0.0, fminf(1.0, progress));
-
-        CGFloat segmentWidth = 1.0 / (colors.count - 1);
-        NSInteger startIndex = floor(progress / segmentWidth);
-
-        if (startIndex >= colors.count - 1) {
-            startIndex = colors.count - 2;
-        }
-        NSInteger endIndex = startIndex + 1;
-
-        UIColor *startColor = colors[startIndex];
-        UIColor *endColor = colors[endIndex];
-
-        CGFloat startRed, startGreen, startBlue, startAlpha;
-        CGFloat endRed, endGreen, endBlue, endAlpha;
-        [startColor getRed:&startRed green:&startGreen blue:&startBlue alpha:&startAlpha];
-        [endColor getRed:&endRed green:&endGreen blue:&endBlue alpha:&endAlpha];
-
-        CGFloat segmentProgress = (progress - startIndex * segmentWidth);
-
-        CGFloat red = startRed + (endRed - startRed) * segmentProgress;
-        CGFloat green = startGreen + (endGreen - startGreen) * segmentProgress;
-        CGFloat blue = startBlue + (endBlue - startBlue) * segmentProgress;
-        CGFloat alpha = startAlpha + (endAlpha - startAlpha) * segmentProgress;
-
-        return [UIColor colorWithRed:red green:green blue:blue alpha:alpha];
-    };
-}
-
-static NSArray<UIColor *> *_baseRainbowColors = nil;
-static NSInteger _currentRainbowStartIndex = 0;
-
-// 私有辅助方法：确保基础彩虹颜色已初始化
-+ (void)_initializeBaseRainbowColors {
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        _baseRainbowColors = @[
-            [UIColor colorWithRed:1.0 green:0.0 blue:0.0 alpha:1.0], // 红
-            [UIColor colorWithRed:1.0 green:0.5 blue:0.0 alpha:1.0], // 橙
-            [UIColor colorWithRed:1.0 green:1.0 blue:0.0 alpha:1.0], // 黄
-            [UIColor colorWithRed:0.0 green:1.0 blue:0.0 alpha:1.0], // 绿
-            [UIColor colorWithRed:0.0 green:1.0 blue:1.0 alpha:1.0], // 青
-            [UIColor colorWithRed:0.0 green:0.0 blue:1.0 alpha:1.0], // 蓝
-            [UIColor colorWithRed:0.5 green:0.0 blue:0.5 alpha:1.0]  // 紫
-        ];
-    });
-}
-
-// 私有辅助方法：获取当前轮转状态的彩虹颜色数组，并更新索引
+// 私有辅助方法：获取当前旋转状态的彩虹颜色数组，并更新索引
 + (NSArray<UIColor *> *)_rotatedRainbowColors {
-    [self _initializeBaseRainbowColors];
-
     NSUInteger count = _baseRainbowColors.count;
     if (count == 0) return @[];
 
@@ -508,76 +469,34 @@ static NSInteger _currentRainbowStartIndex = 0;
     return [rotatedColors copy];
 }
 
-/**
- * @brief 私有辅助方法：根据颜色方案字符串解析出渐变所需的颜色数组。
- *        此方法专门处理多色渐变、"rainbow"、"random_rainbow" 和 "random_gradient" 方案。
- * @param hexString 颜色方案字符串。
- * @return 包含 UIColor 对象的数组。如果不是渐变方案（例如单色或纯随机色），则返回 nil。
- */
-+ (NSArray<UIColor *> *)_gradientColorsForSchemeHexString:(NSString *)hexString {
-    NSString *trimmedHexString = [hexString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    NSString *lowercaseHexString = [trimmedHexString lowercaseString];
-
-    [self _initializeBaseRainbowColors];
-
-    if ([lowercaseHexString isEqualToString:@"rainbow"] || [lowercaseHexString isEqualToString:@"#rainbow"]) {
-        return _baseRainbowColors;
-    }
-
-    if ([lowercaseHexString isEqualToString:@"rotating_rainbow"] || [lowercaseHexString isEqualToString:@"#rotating_rainbow"]) {
-        return [self _rotatedRainbowColors];
-    }
-
-    if ([lowercaseHexString isEqualToString:@"random_gradient"] || [lowercaseHexString isEqualToString:@"#random_gradient"]) {
-        return @[[self _randomColor], [self _randomColor], [self _randomColor]];
-    }
-
-    if ([trimmedHexString containsString:@","]) {
-        // 处理逗号分隔的多色渐变
-        NSArray *hexComponents = [trimmedHexString componentsSeparatedByString:@","];
-        NSMutableArray *gradientColors = [NSMutableArray array];
-        for (NSString *hex in hexComponents) {
-            UIColor *color = [self _colorFromHexString:hex];
-            if (color) [gradientColors addObject:color];
-        }
-        if (gradientColors.count >= 2) { // 确保至少有两个颜色才能形成有效渐变
-            return [gradientColors copy];
-        }
-    }
-
-    return nil; // 不是渐变方案，或者颜色数量不足以形成渐变
-}
-
-/**
- * @brief 私有辅助方法：将颜色计算 Block 渲染成 UIImage。
- *        用于创建 UIColor 的 patternImage。
- * @param gradientBlock 颜色计算 Block。
- * @param size 渲染图像的尺寸。
- * @return 渲染出的 UIImage 对象。
- */
-+ (UIImage *)_imageWithGradientBlock:(UIColor *(^)(CGFloat progress))gradientBlock size:(CGSize)size {
-    if (!gradientBlock || size.width <= 0 || size.height <= 0) {
++ (UIImage *)_imageWithGradientColors:(NSArray<UIColor *> *)colors size:(CGSize)size {
+    if (!colors || colors.count < 2 || size.width <= 0 || size.height <= 0) {
         return nil;
     }
 
-    UIGraphicsBeginImageContextWithOptions(size, NO, 0);
+    UIGraphicsBeginImageContextWithOptions(size, NO, 0.0);
     CGContextRef context = UIGraphicsGetCurrentContext();
 
-    // 遍历图像的宽度，逐像素绘制颜色
-    for (int x = 0; x < size.width; x++) {
-        CGFloat progress = (CGFloat)x / (size.width - 1); // 计算当前像素的进度 (0.0 到 1.0)
-        UIColor *color = gradientBlock(progress); // 获取当前进度的颜色
-
-        if (color) {
-            [color setFill]; // 设置填充颜色
-            CGContextFillRect(context, CGRectMake(x, 0, 1, size.height)); // 绘制1像素宽的垂直条
-        }
+    // 创建CGGradient
+    CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+    NSMutableArray *cgColors = [NSMutableArray array];
+    for (UIColor *color in colors) {
+        [cgColors addObject:(__bridge id)color.CGColor];
     }
 
-    UIImage *gradientImage = UIGraphicsGetImageFromCurrentImageContext();
+    CGGradientRef gradient = CGGradientCreateWithColors(colorSpace, (CFArrayRef)cgColors, NULL);
+
+    CGPoint startPoint = CGPointMake(0, 0);
+    CGPoint endPoint = CGPointMake(size.width, 0);
+    CGContextDrawLinearGradient(context, gradient, startPoint, endPoint, 0);
+
+    UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
     UIGraphicsEndImageContext();
 
-    return gradientImage;
+    CGGradientRelease(gradient);
+    CGColorSpaceRelease(colorSpace);
+
+    return image;
 }
 
 @end

@@ -4401,12 +4401,14 @@ static AWEIMReusableCommonCell *currentCell;
 - (UIColor *)awe_smartBackgroundColor {
 	NSString *colorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYVideoBGColor"];
 	if (colorHex && colorHex.length > 0) {
-		UIColor *customColor = [DYYYUtils colorWithSchemeHexStringForPattern:colorHex];
-		if (customColor) {
-			return customColor;
+		if ([DYYYUtils gradientColorsForSchemeHexString:colorHex]) {
+			return %orig;
+		} else {
+			UIColor *customColor = [DYYYUtils colorWithSchemeHexStringForPattern:colorHex targetWidth:1.0];
+			if (customColor) return customColor;
 		}
 	}
-	return %orig;
+	return %orig; // 没有设置自定义颜色，或自定义颜色无效，返回原始颜色
 }
 
 %end
@@ -4417,10 +4419,9 @@ static AWEIMReusableCommonCell *currentCell;
 	%orig;
 	NSString *colorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYVideoBGColor"];
 	if (colorHex && colorHex.length > 0) {
-		UIColor *customColor = [DYYYUtils colorWithSchemeHexStringForPattern:colorHex];
-		if (customColor) {
-			self.backgroundColor = customColor;
-		}
+		CGFloat viewWidth = MAX(1.0, CGRectGetWidth(self.bounds));
+		UIColor *customColor = [DYYYUtils colorWithSchemeHexStringForPattern:colorHex targetWidth:viewWidth];
+		if (customColor) self.backgroundColor = customColor;
 	}
 }
 
