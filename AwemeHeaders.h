@@ -1021,8 +1021,6 @@ static CGFloat gStartVal = 0.0;
 @end
 @interface AWEPOILivePurchaseAtmosphereView : UIView
 @end
-@interface IESLiveActivityBannnerView : UIView
-@end
 
 // 隐藏状态栏
 @interface AWEFeedRootViewController : UIViewController

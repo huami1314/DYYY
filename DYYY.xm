@@ -3982,16 +3982,6 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
-%hook IESLiveActivityBannnerView
-- (void)layoutSubviews {
-	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideGiftPavilion"]) {
-		self.hidden = YES;
-	}
-}
-
-%end
-
 // 隐藏直播广场
 %hook IESLiveFeedDrawerEntranceView
 - (void)layoutSubviews {
