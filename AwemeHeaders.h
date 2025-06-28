@@ -115,6 +115,7 @@ static CGFloat gStartVal = 0.0;
 @property(nonatomic, copy) NSString *descriptionString;
 @property(nonatomic, assign) BOOL isAds;
 @property(nonatomic, assign) BOOL isLive;
+@property(nonatomic, assign) BOOL isLivePhoto;
 @property(nonatomic, strong) NSString *shareURL;
 @property(nonatomic, strong) id hotSpotLynxCardModel;
 @property(nonatomic, copy) NSString *liveReason;
