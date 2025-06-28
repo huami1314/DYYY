@@ -4106,7 +4106,7 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
-%hook IESLiveActivityBannerView
+%hook IESLiveActivityBannnerView
 - (void)layoutSubviews {
 	%orig;
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveGoodsMsg"]) {
