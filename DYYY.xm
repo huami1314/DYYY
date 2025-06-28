@@ -3512,6 +3512,15 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
+%hook IESLiveMatrixEntranceView
+- (void)layoutSubviews {
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveDetail"]) {
+		[self removeFromSuperview];
+	}
+}
+%end
+
 %hook IESLiveShortTouchActionView
 - (void)layoutSubviews {
 	%orig;
@@ -3522,6 +3531,24 @@ static AWEIMReusableCommonCell *currentCell;
 %end
 
 %hook IESLiveLotteryAnimationViewNew
+- (void)layoutSubviews {
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTouchView"]) {
+		[self removeFromSuperview];
+	}
+}
+%end
+
+%hook IESLiveConfigurableShortTouchEntranceView
+- (void)layoutSubviews {
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTouchView"]) {
+		[self removeFromSuperview];
+	}
+}
+%end
+
+%hook IESLiveRedEnvelopeAniLynxView
 - (void)layoutSubviews {
 	%orig;
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTouchView"]) {
@@ -4044,6 +4071,24 @@ static AWEIMReusableCommonCell *currentCell;
 
 // 隐藏直播间商品信息
 %hook IESECLivePluginLayoutView
+- (void)layoutSubviews {
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveGoodsMsg"]) {
+		[self removeFromSuperview];
+	}
+}
+%end
+
+%hook IESLiveBottomRightCardView
+- (void)layoutSubviews {
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveGoodsMsg"]) {
+		[self removeFromSuperview];
+	}
+}
+%end
+
+%hook IESLiveGameCPExplainCardContainerImpl
 - (void)layoutSubviews {
 	%orig;
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveGoodsMsg"]) {

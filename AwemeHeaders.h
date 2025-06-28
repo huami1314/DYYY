@@ -1007,6 +1007,16 @@ static CGFloat gStartVal = 0.0;
 @end
 @interface IESLiveLotteryAnimationViewNew : UIView
 @end
+@interface IESLiveMatrixEntranceView : UIView
+@end
+@interface IESLiveConfigurableShortTouchEntranceView : UIView
+@end
+@interface IESLiveRedEnvelopeAniLynxView : UIView
+@end
+@interface IESLiveBottomRightCardView : UIView
+@end
+@interface IESLiveGameCPExplainCardContainerImpl : UIView
+@end
 
 // 隐藏状态栏
 @interface AWEFeedRootViewController : UIViewController
