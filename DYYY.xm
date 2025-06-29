@@ -787,7 +787,7 @@
 %end
 
 %hook UIView
-// 关键方法,误删！
+// 关键方法,勿删！
 %new
 - (UIViewController *)firstAvailableUIViewController {
 	UIResponder *responder = [self nextResponder];
