@@ -80,7 +80,6 @@
               @"DYYYHideFollowPromptView" : @[ @"DYYYHideLOTAnimationView" ],
               @"DYYYisEnableModern" : @[ @"DYYYisEnableModernLight" ],
               @"DYYYisEnableModernLight" : @[ @"DYYYisEnableModern" ],
-              @"DYYYLabelColor" : @[ @"DYYYEnabsuijiyanse" ],
               @"DYYYEnabsuijiyanse" : @[ @"DYYYLabelColor" ]
           },
 
@@ -93,7 +92,6 @@
               @"DYYYHideTimeProgress" : @[ @"DYYYEnabshijianjindu" ],
               @"DYYYHideLOTAnimationView" : @[ @"DYYYHideFollowPromptView" ],
               @"DYYYHideFollowPromptView" : @[ @"DYYYHideLOTAnimationView" ],
-              @"DYYYLabelColor" : @[ @"DYYYEnabsuijiyanse" ],
               @"DYYYEnabsuijiyanse" : @[ @"DYYYLabelColor" ]
           },
 
