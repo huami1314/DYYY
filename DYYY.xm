@@ -4401,14 +4401,11 @@ static AWEIMReusableCommonCell *currentCell;
 - (UIColor *)awe_smartBackgroundColor {
 	NSString *colorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYVideoBGColor"];
 	if (colorHex && colorHex.length > 0) {
-		if ([DYYYUtils gradientColorsForSchemeHexString:colorHex]) {
-			return %orig;
-		} else {
-			UIColor *customColor = [DYYYUtils colorWithSchemeHexStringForPattern:colorHex targetWidth:1.0];
-			if (customColor) return customColor;
-		}
+		CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
+		UIColor *customColor = [DYYYUtils colorFromSchemeHexString:colorHex targetWidth:screenWidth];
+		if (customColor) return customColor;
 	}
-	return %orig; // 没有设置自定义颜色，或自定义颜色无效，返回原始颜色
+	return %orig;
 }
 
 %end
@@ -4419,8 +4416,8 @@ static AWEIMReusableCommonCell *currentCell;
 	%orig;
 	NSString *colorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYVideoBGColor"];
 	if (colorHex && colorHex.length > 0) {
-		CGFloat viewWidth = MAX(1.0, CGRectGetWidth(self.bounds));
-		UIColor *customColor = [DYYYUtils colorWithSchemeHexStringForPattern:colorHex targetWidth:viewWidth];
+		CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
+		UIColor *customColor = [DYYYUtils colorFromSchemeHexString:colorHex targetWidth:screenWidth];
 		if (customColor) self.backgroundColor = customColor;
 	}
 }

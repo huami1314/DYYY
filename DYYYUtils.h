@@ -76,7 +76,13 @@ NS_ASSUME_NONNULL_BEGIN
  * @brief 将指定的颜色字符串方案应用到 UILabel 上，实现像素级渐变。
  *        此方法通过修改 UILabel 的 attributedText 来实现颜色效果。
  * @param label 要应用颜色的 UILabel。
- * @param colorHexString 颜色方案字符串，用法见 colorSchemeBlockWithHexString。
+ * @param colorHexString 颜色方案字符串
+ *        - "rainbow" 或 "#rainbow": 七色渐变彩虹固定方案（红橙黄绿青蓝紫）。
+ *        - "rainbow_rotating" 或 "#rainbow_rotating": 七色渐变彩虹旋转方案（每次调用时旋转起始颜色）。
+ *        - "random_gradient" 或 "#random_gradient": 随机三色渐变方案（每次调用时随机生成三种颜色）。
+ *        - "random" 或 "#random": 返回一个随机单色（每次调用时随机生成颜色）。
+ *        - "HEX1,HEX2,..." 或 "#HEX1,#HEX2,...": 返回一个多色渐变方案，支持任意数量的十六进制颜色。
+ *        - "HEX" 或 "#HEX": 返回一个单色方案。
  */
 + (void)applyColorSettingsToLabel:(UILabel *)label colorHexString:(NSString *)colorHexString;
 + (void)applyStrokeToLabel:(UILabel *)label strokeColor:(UIColor *)strokeColor strokeWidth:(CGFloat)strokeWidth;
@@ -85,37 +91,25 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * @brief 根据十六进制字符串返回一个适合用于图案填充的 UIColor。
  *        此方法主要用于 UILabel.textColor 等需要 UIColor 对象的场景。
- *        支持的颜色配置字符串:
- *        - "rotating_rainbow" 或 "#rotating_rainbow": 七色彩虹旋转渐变方案（每次调用时旋转起始颜色）。
- *        - "random_gradient" 或 "#random_gradient": 随机三色渐变方案（每次调用时随机生成三种颜色）。
- *        - "rainbow" 或 "#rainbow": 七色彩虹传统渐变方案（红橙黄绿青蓝紫）。
- *        - "random" 或 "#random": 返回一个随机单色（每次调用时随机生成颜色）。
- *        - "HEX1,HEX2,..." 或 "#HEX1,#HEX2,...": 返回一个多色渐变方案，支持任意数量的十六进制颜色。
- *        - "HEX" 或 "#HEX": 返回一个单色方案。
- *        对于渐变色，它会内部渲染一个大尺寸的 UIImage 作为图案填充。
- *        对于单色或随机色，直接返回对应的 UIColor 对象，效率更高。
- * @param hexString 颜色方案字符串。
+ * @param hexString 颜色方案字符串，用法见 applyColorSettingsToLabel
+ * @param targetWidth UIImage 需要的宽度
  * @return 配置好的 UIColor 实例。如果无法解析，返回白色。
+ *         - 对于单色或随机色，直接返回对应的 UIColor 对象。
+ *         - 对于渐变色，它会渲染一个单像素高度和 targetWidth 宽度的 UIImage 用于图案填充。
  */
-+ (UIColor *)colorWithSchemeHexStringForPattern:(NSString *)hexString targetWidth:(CGFloat)targetWidth;
++ (UIColor *)colorFromSchemeHexString:(NSString *)hexString targetWidth:(CGFloat)targetWidth;
 
 /**
  * @brief 根据十六进制字符串返回一个配置好的 CALayer (纯色或渐变)。
  *        此方法适用于将颜色方案作为 CALayer 的 mask 或直接作为子层。
- *        支持单色、随机色、多色渐变 (逗号分隔)、"rainbow"、"random_gradient"和"rotating_rainbow"。
- * @param hexString 颜色方案字符串。
+ * @param hexString 颜色方案字符串，用法见 applyColorSettingsToLabel
  * @param frame CALayer 的 frame。
  * @return 配置好的 CALayer 实例。如果无法解析或 frame 无效，返回 nil。
+ *         - 对于纯色或随机色，返回一个 `CALayer` 实例，其 `backgroundColor` 已设置。
+ *         - 对于渐变色返回一个 `CAGradientLayer` 实例。
+ *         - 如果无法解析或 `frame` 无效，返回 `nil`。
  */
-+ (CALayer *)colorSchemeLayerWithHexString:(NSString *)hexString frame:(CGRect)frame;
-
-/**
- * @brief 根据颜色方案字符串解析出渐变所需的颜色数组。
- *        此方法专门处理 多色、"rainbow"、"rotating_rainbow"和"random_gradient" 等渐变方案。
- * @param hexString 颜色方案字符串。
- * @return 包含 UIColor 对象的数组。如果不是渐变方案（例如单色或纯随机色），则返回 nil。
- */
-+ (NSArray<UIColor *> *)gradientColorsForSchemeHexString:(NSString *)hexString;
++ (CALayer *)layerFromSchemeHexString:(NSString *)hexString frame:(CGRect)frame;
 
 @end
 
