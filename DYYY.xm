@@ -599,6 +599,9 @@
 - (void)setTextColor:(UIColor *)textColor {
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableDanmuColor"]) {
         NSString *danmuColor = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYdanmuColor"];
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDanmuRainbowRotating"]) {
+            danmuColor = @"rainbow_rotating";
+        }
         [DYYYUtils applyColorSettingsToLabel:self colorHexString:danmuColor];
     } else {
         %orig(textColor);

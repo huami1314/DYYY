@@ -184,18 +184,22 @@ extern "C"
 	  NSMutableArray<AWESettingItemModel *> *appearanceItems = [NSMutableArray array];
 	  NSArray *appearanceSettings = @[
 		  @{@"identifier" : @"DYYYEnableDanmuColor",
-		    @"title" : @"启用弹幕改色",
-		    @"detail" : @"",
-		    @"cellType" : @6,
-		    @"imageName" : @"ic_dansquare_outlined_20"},
-		  @{
-			  @"identifier" : @"DYYYdanmuColor",
-			  @"title" : @"自定弹幕颜色",
-			  @"subTitle" : @"填入 random 使用随机颜色弹幕",
-			  @"detail" : @"十六进制",
-			  @"cellType" : @20,
-			  @"imageName" : @"ic_dansquarenut_outlined_20"
-		  },
+			@"title" : @"启用弹幕改色",
+			@"detail" : @"",
+			@"cellType" : @6,
+			@"imageName" : @"ic_dansquare_outlined_20"},
+		  @{@"identifier" : @"DYYYdanmuColor",
+			@"title" : @"自定弹幕颜色",
+			@"subTitle" : @"填入 random 使用随机颜色弹幕",
+			@"detail" : @"十六进制",
+			@"cellType" : @20,
+			@"imageName" : @"ic_dansquarenut_outlined_20"},
+		  @{@"identifier" : @"DYYYDanmuRainbowRotating",
+			@"title" : @"旋转彩虹弹幕",
+			@"subTitle" : @"启用后将覆盖上面的自定义弹幕颜色",
+			@"detail" : @"",
+			@"cellType" : @37,
+			@"imageName" : @"ic_dansquarenut_outlined_20"}
 	  ];
 
 	  for (NSDictionary *dict in appearanceSettings) {
