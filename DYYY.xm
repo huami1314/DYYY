@@ -597,16 +597,31 @@
 
 %hook AWEDanmakuContentLabel
 - (void)setTextColor:(UIColor *)textColor {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableDanmuColor"]) {
-		NSString *danmuColor = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYdanmuColor"];
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableDanmuColor"]) {
+        NSString *danmuColor = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYdanmuColor"];
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDanmuRainbowRotating"]) {
+            danmuColor = @"rainbow_rotating";
+        }
+        [DYYYUtils applyColorSettingsToLabel:self colorHexString:danmuColor];
+    } else {
+        %orig(textColor);
+    }
+}
 
-		self.layer.shadowOffset = CGSizeZero;
-		self.layer.shadowOpacity = 0.0;
-		[DYYYUtils applyColorSettingsToLabel:self colorHexString:danmuColor];
-		return;
-	}
+- (void)setStrokeWidth:(double)strokeWidth {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableDanmuColor"]) {
+        %orig(FLT_MIN);
+    } else {
+        %orig(strokeWidth);
+    }
+}
 
-	%orig(textColor);
+- (void)setStrokeColor:(UIColor *)strokeColor {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableDanmuColor"]) {
+        %orig(nil);
+    } else {
+        %orig(strokeColor);
+    }
 }
 
 %end
@@ -4452,10 +4467,9 @@ static AWEIMReusableCommonCell *currentCell;
 - (UIColor *)awe_smartBackgroundColor {
 	NSString *colorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYVideoBGColor"];
 	if (colorHex && colorHex.length > 0) {
-		UIColor *customColor = [DYYYUtils colorWithSchemeHexStringForPattern:colorHex];
-		if (customColor) {
-			return customColor;
-		}
+		CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
+		UIColor *customColor = [DYYYUtils colorFromSchemeHexString:colorHex targetWidth:screenWidth];
+		if (customColor) return customColor;
 	}
 	return %orig;
 }
@@ -4468,10 +4482,9 @@ static AWEIMReusableCommonCell *currentCell;
 	%orig;
 	NSString *colorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYVideoBGColor"];
 	if (colorHex && colorHex.length > 0) {
-		UIColor *customColor = [DYYYUtils colorWithSchemeHexStringForPattern:colorHex];
-		if (customColor) {
-			self.backgroundColor = customColor;
-		}
+		CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
+		UIColor *customColor = [DYYYUtils colorFromSchemeHexString:colorHex targetWidth:screenWidth];
+		if (customColor) self.backgroundColor = customColor;
 	}
 }
 
