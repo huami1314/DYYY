@@ -5,6 +5,10 @@ static inline UIColor *DYYYAccentColor(void) {
   return [UIColor colorWithRed:11 / 255.0 green:223 / 255.0 blue:154 / 255.0 alpha:1.0];
 }
 
+static inline UIColor *DYYYRedColor(void) {
+  return [UIColor colorWithRed:1.0 green:59 / 255.0 blue:48 / 255.0 alpha:1.0];
+}
+
 static inline UIColor *DYYYColor(UIColor *darkColor, UIColor *lightColor, BOOL darkMode) {
   return darkMode ? darkColor : lightColor;
 }
@@ -22,6 +26,8 @@ static const int kDYYYButtonsPerRow = 10;
 @property(nonatomic, strong) UIButton *cancelButton;
 @property(nonatomic, strong) UIButton *confirmButton;
 @property(nonatomic, strong) UIButton *keywordFilterButton;
+@property(nonatomic, strong) UIButton *propFilterButton;
+@property(nonatomic, copy) NSString *propName;
 @property(nonatomic, strong) UILabel *selectionPreviewLabel;
 @property(nonatomic, assign) CGRect originalFrame;
 @property(nonatomic, strong) NSString *text;
@@ -39,8 +45,9 @@ static const int kDYYYButtonsPerRow = 10;
 
 @implementation DYYYFilterSettingsView
 
-- (instancetype)initWithTitle:(NSString *)title text:(NSString *)text {
+- (instancetype)initWithTitle:(NSString *)title text:(NSString *)text propName:(NSString *)propName {
   if (self = [super initWithFrame:UIScreen.mainScreen.bounds]) {
+    _propName = [propName copy];
     _text = text ?: @"";
     _selectedText = [NSMutableString string];
     _characterButtons = [NSMutableArray array];
@@ -127,8 +134,24 @@ static const int kDYYYButtonsPerRow = 10;
     // 创建字符按钮
     [self setupCharacterButtons];
 
+    CGFloat separatorY = CGRectGetMaxY(self.charactersScrollView.frame) + 10;
+
+    if (self.propName.length > 0) {
+        self.propFilterButton = [UIButton buttonWithType:UIButtonTypeSystem];
+        self.propFilterButton.frame = CGRectMake(20, separatorY, 260, 40);
+        self.propFilterButton.backgroundColor = DYYYColor(
+            [UIColor colorWithRed:45/255.0 green:45/255.0 blue:45/255.0 alpha:1.0],
+            [UIColor colorWithRed:245/255.0 green:245/255.0 blue:245/255.0 alpha:1.0],
+            self.darkMode);
+        self.propFilterButton.layer.cornerRadius = 8;
+        [self.propFilterButton addTarget:self action:@selector(propFilterTapped) forControlEvents:UIControlEventTouchUpInside];
+        [self.contentView addSubview:self.propFilterButton];
+        [self updateFilterPropButton];
+        separatorY = CGRectGetMaxY(self.propFilterButton.frame) + 10;
+    }
+
     // 添加内容和按钮之间的分割线 - 根据模式设置颜色
-    UIView *contentButtonSeparator = [[UIView alloc] initWithFrame:CGRectMake(0, 344, 300, 0.5)];
+    UIView *contentButtonSeparator = [[UIView alloc] initWithFrame:CGRectMake(0, separatorY, 300, 0.5)];
     contentButtonSeparator.backgroundColor = DYYYColor(
         [UIColor colorWithRed:60/255.0 green:60/255.0 blue:60/255.0 alpha:1.0],
         [UIColor colorWithRed:230/255.0 green:230/255.0 blue:230/255.0 alpha:1.0],
@@ -181,6 +204,10 @@ static const int kDYYYButtonsPerRow = 10;
     self.originalFrame = self.contentView.frame;
   }
   return self;
+}
+
+- (instancetype)initWithTitle:(NSString *)title text:(NSString *)text {
+  return [self initWithTitle:title text:text propName:nil];
 }
 
 - (void)setupCharacterButtons {
@@ -454,6 +481,40 @@ static const int kDYYYButtonsPerRow = 10;
     if (self.onKeywordFilterTap) {
         self.onKeywordFilterTap();
     }
+}
+
+- (void)updateFilterPropButton {
+    if (!self.propFilterButton) return;
+
+    NSString *saved = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterProp"] ?: @"";
+    NSArray *array = saved.length > 0 ? [saved componentsSeparatedByString:@","] : @[];
+    BOOL exists = [array containsObject:self.propName];
+
+    NSString *title = exists ? @"取消过滤此拍同款" : @"过滤此拍同款";
+    UIColor *titleColor = exists ? DYYYRedColor() : DYYYAccentColor();
+    [self.propFilterButton setTitle:title forState:UIControlStateNormal];
+    [self.propFilterButton setTitleColor:titleColor forState:UIControlStateNormal];
+}
+
+- (void)propFilterTapped {
+    if (self.propName.length == 0) return;
+    NSString *saved = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterProp"] ?: @"";
+    NSMutableArray *array = saved.length > 0 ? [saved componentsSeparatedByString:@","].mutableCopy : [NSMutableArray array];
+    BOOL exists = [array containsObject:self.propName];
+
+    if (exists) {
+        [array removeObject:self.propName];
+        [DYYYUtils showToast:@"已从过滤列表中移除此拍同款"];
+    } else {
+        [array addObject:self.propName];
+        [DYYYUtils showToast:@"已添加此拍同款到过滤列表"];
+    }
+
+    NSString *newString = [array componentsJoinedByString:@","];
+    [[NSUserDefaults standardUserDefaults] setObject:newString forKey:@"DYYYfilterProp"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+
+    [self updateFilterPropButton];
 }
 
 @end
