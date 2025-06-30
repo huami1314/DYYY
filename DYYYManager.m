@@ -23,6 +23,36 @@
 #import "DYYYToast.h"
 #import "DYYYUtils.h"
 
+static const NSTimeInterval kDYYYDefaultFrameDelay = 0.1f;
+static const CGFloat kDYYYMillisecondsPerSecond = 1000.0f;
+
+static inline CGFloat DYYYFrameDelayForProperties(CFDictionaryRef properties) {
+  CGFloat delayTime = kDYYYDefaultFrameDelay;
+  if (properties) {
+    CFDictionaryRef gifDict =
+        CFDictionaryGetValue(properties, kCGImagePropertyGIFDictionary);
+    if (gifDict) {
+      CFNumberRef delayNum =
+          CFDictionaryGetValue(gifDict, kCGImagePropertyGIFDelayTime);
+      if (delayNum)
+        CFNumberGetValue(delayNum, kCFNumberFloatType, &delayTime);
+    } else {
+      CFDictionaryRef heifDict =
+          CFDictionaryGetValue(properties, kCGImagePropertyHEIFDictionary);
+      if (heifDict) {
+        CFNumberRef delayNum =
+            CFDictionaryGetValue(heifDict, kCGImagePropertyHEIFDelayTime);
+        if (delayNum)
+          CFNumberGetValue(delayNum, kCFNumberFloatType, &delayTime);
+      }
+    }
+  }
+  if (delayTime <= 0.0f) {
+    delayTime = kDYYYDefaultFrameDelay;
+  }
+  return delayTime;
+}
+
 @interface DYYYManager () {
   AVAssetExportSession *session;
   AVURLAsset *asset;
@@ -425,7 +455,8 @@ static void ReleaseWebPData(void *info, const void *data, size_t size) {
 
           NSDictionary *frameProperties = @{
             (__bridge NSString *)kCGImagePropertyGIFDictionary : @{
-              (__bridge NSString *)kCGImagePropertyGIFDelayTime : @0.1f,
+              (__bridge NSString *)kCGImagePropertyGIFDelayTime :
+                  @(kDYYYDefaultFrameDelay),
             }
           };
 
@@ -598,7 +629,10 @@ static void ReleaseWebPData(void *info, const void *data, size_t size) {
             CGImageRef canvasImageRef = CGBitmapContextCreateImage(currCanvas);
 
             // 处理帧间延迟
-            float delayTime = iter.duration / 1000.0f;
+            CGFloat delayTime =
+                iter.duration > 0
+                    ? iter.duration / kDYYYMillisecondsPerSecond
+                    : kDYYYDefaultFrameDelay;
 
             // 创建帧属性
             NSDictionary *frameProperties = @{
@@ -699,7 +733,6 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
 
         // 2. 获取帧数
         size_t count = CGImageSourceGetCount(src);
-        BOOL isAnimated = (count > 1);
 
         // 3. 生成GIF路径
         NSString *gifFileName =
@@ -734,29 +767,10 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
           CGImageRef imgRef = CGImageSourceCreateImageAtIndex(src, i, NULL);
 
           // 获取帧延迟
-          float delayTime = 0.1f;
           CFDictionaryRef properties =
               CGImageSourceCopyPropertiesAtIndex(src, i, NULL);
-          if (properties) {
-            CFDictionaryRef gifDict =
-                CFDictionaryGetValue(properties, kCGImagePropertyGIFDictionary);
-            if (gifDict) {
-              CFNumberRef delayNum =
-                  CFDictionaryGetValue(gifDict, kCGImagePropertyGIFDelayTime);
-              if (delayNum)
-                CFNumberGetValue(delayNum, kCFNumberFloatType, &delayTime);
-            } else {
-              CFDictionaryRef heifDict =
-                  CFDictionaryGetValue(properties, kCGImagePropertyHEIFDictionary);
-              if (heifDict) {
-                CFNumberRef delayNum =
-                    CFDictionaryGetValue(heifDict, kCGImagePropertyHEIFDelayTime);
-                if (delayNum)
-                  CFNumberGetValue(delayNum, kCFNumberFloatType, &delayTime);
-              }
-            }
-            CFRelease(properties);
-          }
+          CGFloat delayTime = DYYYFrameDelayForProperties(properties);
+          if (properties) CFRelease(properties);
 
           NSDictionary *frameProps = @{
             (__bridge NSString *)kCGImagePropertyGIFDictionary : @{
