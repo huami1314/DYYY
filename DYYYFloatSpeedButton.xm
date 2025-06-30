@@ -75,7 +75,13 @@ void updateSpeedButtonUI() {
 		formattedSpeed = [formattedSpeed stringByAppendingString:@"x"];
 	}
 
-	[speedButton setTitle:formattedSpeed forState:UIControlStateNormal];
+	if ([NSThread isMainThread]) {
+		[speedButton setTitle:formattedSpeed forState:UIControlStateNormal];
+	} else {
+		dispatch_async(dispatch_get_main_queue(), ^{
+			[speedButton setTitle:formattedSpeed forState:UIControlStateNormal];
+		});
+	}
 }
 
 FloatingSpeedButton *getSpeedButton(void) { return speedButton; }
@@ -96,9 +102,13 @@ void showSpeedButton(void) { isForceHidden = NO; }
 void hideSpeedButton(void) {
 	isForceHidden = YES;
 	if (speedButton) {
-		dispatch_async(dispatch_get_main_queue(), ^{
-		  speedButton.hidden = YES;
-		});
+		if ([NSThread isMainThread]) {
+			speedButton.hidden = YES;
+		} else {
+			dispatch_async(dispatch_get_main_queue(), ^{
+			  speedButton.hidden = YES;
+			});
+		}
 	}
 }
 
@@ -106,18 +116,32 @@ void updateSpeedButtonVisibility() {
 	if (!speedButton || !isFloatSpeedButtonEnabled)
 		return;
 
-	dispatch_async(dispatch_get_main_queue(), ^{
-	  if (!isInteractionViewVisible) {
-		  speedButton.hidden = YES;
-		  return;
-	  }
+	// 如果已经在主线程，直接执行；否则异步到主线程
+	if ([NSThread isMainThread]) {
+		if (!isInteractionViewVisible) {
+			speedButton.hidden = YES;
+			return;
+		}
 
-	  // 在交互界面时，根据评论界面状态决定是否显示
-	  BOOL shouldHide = isCommentViewVisible || isForceHidden;
-	  if (speedButton.hidden != shouldHide) {
-		  speedButton.hidden = shouldHide;
-	  }
-	});
+		// 在交互界面时，根据评论界面状态决定是否显示
+		BOOL shouldHide = isCommentViewVisible || isForceHidden;
+		if (speedButton.hidden != shouldHide) {
+			speedButton.hidden = shouldHide;
+		}
+	} else {
+		dispatch_async(dispatch_get_main_queue(), ^{
+		  if (!isInteractionViewVisible) {
+			  speedButton.hidden = YES;
+			  return;
+		  }
+
+		  // 在交互界面时，根据评论界面状态决定是否显示
+		  BOOL shouldHide = isCommentViewVisible || isForceHidden;
+		  if (speedButton.hidden != shouldHide) {
+			  speedButton.hidden = shouldHide;
+		  }
+		});
+	}
 }
 
 @interface UIView (SpeedHelper)
@@ -194,12 +218,12 @@ void updateSpeedButtonVisibility() {
 		return;
 	}
 
-	[UIView animateWithDuration:0.1
+	[UIView animateWithDuration:0.08
 	    animations:^{
-	      self.transform = CGAffineTransformMakeScale(1.2, 1.2);
+	      self.transform = CGAffineTransformMakeScale(1.15, 1.15);
 	    }
 	    completion:^(BOOL finished) {
-	      [UIView animateWithDuration:0.1
+	      [UIView animateWithDuration:0.08
 			       animations:^{
 				 self.transform = CGAffineTransformIdentity;
 			       }];
@@ -471,22 +495,6 @@ void updateSpeedButtonVisibility() {
 
 %hook AWEPlayInteractionViewController
 
-- (void)viewDidAppear:(BOOL)animated {
-	%orig;
-	BOOL hasRightStack = NO;
-	Class stackClass = NSClassFromString(@"AWEElementStackView");
-	for (UIView *sub in self.view.subviews) {
-		if ([sub isKindOfClass:stackClass] && isRightInteractionStack(sub)) {
-			hasRightStack = YES;
-			break;
-		}
-	}
-	if (hasRightStack) {
-		isInteractionViewVisible = YES;
-		isCommentViewVisible = self.isCommentVCShowing;
-		updateSpeedButtonVisibility();
-	}
-}
 - (void)viewDidLayoutSubviews {
 	%orig;
 
@@ -529,6 +537,8 @@ void updateSpeedButtonVisibility() {
 				speedButton.layer.cornerRadius = speedButtonSize / 2;
 			}
 		}
+
+		isInteractionViewVisible = YES;
 
 		UIWindow *keyWindow = [UIApplication sharedApplication].keyWindow;
 		if (keyWindow && ![speedButton isDescendantOfView:keyWindow]) {
@@ -595,15 +605,20 @@ void updateSpeedButtonVisibility() {
 
 	[sender setTitle:formattedSpeed forState:UIControlStateNormal];
 
-	[UIView animateWithDuration:0.15
+	[UIView animateWithDuration:0.1
+	    delay:0
+	    options:UIViewAnimationOptionCurveEaseOut
 	    animations:^{
-	      sender.transform = CGAffineTransformMakeScale(1.2, 1.2);
+	      sender.transform = CGAffineTransformMakeScale(1.1, 1.1);
 	    }
 	    completion:^(BOOL finished) {
-	      [UIView animateWithDuration:0.15
+	      [UIView animateWithDuration:0.1
+	                            delay:0
+	                          options:UIViewAnimationOptionCurveEaseIn
 			       animations:^{
 				 sender.transform = CGAffineTransformIdentity;
-			       }];
+			       }
+			       completion:nil];
 	    }];
 
 	BOOL speedApplied = NO;
