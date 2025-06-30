@@ -80,7 +80,7 @@
               @"DYYYHideFollowPromptView" : @[ @"DYYYHideLOTAnimationView" ],
               @"DYYYisEnableModern" : @[ @"DYYYisEnableModernLight" ],
               @"DYYYisEnableModernLight" : @[ @"DYYYisEnableModern" ],
-              @"DYYYLabelColor" : @[ @"DYYYEnabsuijiyanse" ],
+              @"DYYYDanmuRainbowRotating" : @[ @"DYYYdanmuColor" ],
               @"DYYYEnabsuijiyanse" : @[ @"DYYYLabelColor" ]
           },
 
@@ -93,7 +93,7 @@
               @"DYYYHideTimeProgress" : @[ @"DYYYEnabshijianjindu" ],
               @"DYYYHideLOTAnimationView" : @[ @"DYYYHideFollowPromptView" ],
               @"DYYYHideFollowPromptView" : @[ @"DYYYHideLOTAnimationView" ],
-              @"DYYYLabelColor" : @[ @"DYYYEnabsuijiyanse" ],
+              @"DYYYDanmuRainbowRotating" : @[ @"DYYYdanmuColor" ],
               @"DYYYEnabsuijiyanse" : @[ @"DYYYLabelColor" ]
           },
 

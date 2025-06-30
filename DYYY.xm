@@ -597,16 +597,31 @@
 
 %hook AWEDanmakuContentLabel
 - (void)setTextColor:(UIColor *)textColor {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableDanmuColor"]) {
-		NSString *danmuColor = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYdanmuColor"];
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableDanmuColor"]) {
+        NSString *danmuColor = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYdanmuColor"];
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDanmuRainbowRotating"]) {
+            danmuColor = @"rainbow_rotating";
+        }
+        [DYYYUtils applyColorSettingsToLabel:self colorHexString:danmuColor];
+    } else {
+        %orig(textColor);
+    }
+}
 
-		self.layer.shadowOffset = CGSizeZero;
-		self.layer.shadowOpacity = 0.0;
-		[DYYYUtils applyColorSettingsToLabel:self colorHexString:danmuColor];
-		return;
-	}
+- (void)setStrokeWidth:(double)strokeWidth {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableDanmuColor"]) {
+        %orig(FLT_MIN);
+    } else {
+        %orig(strokeWidth);
+    }
+}
 
-	%orig(textColor);
+- (void)setStrokeColor:(UIColor *)strokeColor {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableDanmuColor"]) {
+        %orig(nil);
+    } else {
+        %orig(strokeColor);
+    }
 }
 
 %end
@@ -3512,6 +3527,15 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
+%hook IESLiveMatrixEntranceView
+- (void)layoutSubviews {
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveDetail"]) {
+		[self removeFromSuperview];
+	}
+}
+%end
+
 %hook IESLiveShortTouchActionView
 - (void)layoutSubviews {
 	%orig;
@@ -3522,6 +3546,24 @@ static AWEIMReusableCommonCell *currentCell;
 %end
 
 %hook IESLiveLotteryAnimationViewNew
+- (void)layoutSubviews {
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTouchView"]) {
+		[self removeFromSuperview];
+	}
+}
+%end
+
+%hook IESLiveConfigurableShortTouchEntranceView
+- (void)layoutSubviews {
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTouchView"]) {
+		[self removeFromSuperview];
+	}
+}
+%end
+
+%hook IESLiveRedEnvelopeAniLynxView
 - (void)layoutSubviews {
 	%orig;
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTouchView"]) {
@@ -3955,16 +3997,6 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
-%hook IESLiveActivityBannnerView
-- (void)layoutSubviews {
-	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideGiftPavilion"]) {
-		self.hidden = YES;
-	}
-}
-
-%end
-
 // 隐藏直播广场
 %hook IESLiveFeedDrawerEntranceView
 - (void)layoutSubviews {
@@ -4052,6 +4084,42 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
+%hook IESLiveBottomRightCardView
+- (void)layoutSubviews {
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveGoodsMsg"]) {
+		[self removeFromSuperview];
+	}
+}
+%end
+
+%hook IESLiveGameCPExplainCardContainerImpl
+- (void)layoutSubviews {
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveGoodsMsg"]) {
+		[self removeFromSuperview];
+	}
+}
+%end
+
+%hook AWEPOILivePurchaseAtmosphereView
+- (void)layoutSubviews {
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveGoodsMsg"] && self.superview) {
+		[self.superview removeFromSuperview];
+	}
+}
+%end
+
+%hook IESLiveActivityBannnerView
+- (void)layoutSubviews {
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveGoodsMsg"]) {
+		[self removeFromSuperview];
+	}
+}
+%end
+
 // 隐藏直播间点赞动画
 %hook HTSLiveDiggView
 - (void)setIconImageView:(UIImageView *)arg1 {
@@ -4065,6 +4133,16 @@ static AWEIMReusableCommonCell *currentCell;
 
 // 隐藏直播间文字贴纸
 %hook IESLiveStickerView
+- (void)layoutSubviews {
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideStickerView"]) {
+		[self removeFromSuperview];
+	}
+}
+%end
+
+// 预约直播
+%hook IESLivePreAnnouncementPanelViewNew
 - (void)layoutSubviews {
 	%orig;
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideStickerView"]) {
@@ -4389,10 +4467,9 @@ static AWEIMReusableCommonCell *currentCell;
 - (UIColor *)awe_smartBackgroundColor {
 	NSString *colorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYVideoBGColor"];
 	if (colorHex && colorHex.length > 0) {
-		UIColor *customColor = [DYYYUtils colorWithSchemeHexStringForPattern:colorHex];
-		if (customColor) {
-			return customColor;
-		}
+		CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
+		UIColor *customColor = [DYYYUtils colorFromSchemeHexString:colorHex targetWidth:screenWidth];
+		if (customColor) return customColor;
 	}
 	return %orig;
 }
@@ -4405,10 +4482,9 @@ static AWEIMReusableCommonCell *currentCell;
 	%orig;
 	NSString *colorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYVideoBGColor"];
 	if (colorHex && colorHex.length > 0) {
-		UIColor *customColor = [DYYYUtils colorWithSchemeHexStringForPattern:colorHex];
-		if (customColor) {
-			self.backgroundColor = customColor;
-		}
+		CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
+		UIColor *customColor = [DYYYUtils colorFromSchemeHexString:colorHex targetWidth:screenWidth];
+		if (customColor) self.backgroundColor = customColor;
 	}
 }
 
