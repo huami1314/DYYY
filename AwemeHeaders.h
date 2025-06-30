@@ -101,6 +101,9 @@ static CGFloat gStartVal = 0.0;
 @property(nonatomic, copy) NSString *propName;
 @end
 
+@interface AWEECommerceLabel : NSObject
+@end
+
 @interface AWEAwemeModel : NSObject
 @property(nonatomic, strong, readwrite) NSNumber *createTime;
 @property(nonatomic, assign, readwrite) CGFloat videoDuration;
@@ -128,6 +131,7 @@ static CGFloat gStartVal = 0.0;
 @property(nonatomic, strong) AWEAnimatedImageVideoInfo *animatedImageVideoInfo;
 @property(nonatomic, strong) AWEAwemeStatisticsModel *statistics;
 @property(nonatomic, strong) AWEPropGuideV2Model *propGuideV2;
+@property(nonatomic, strong) AWEECommerceLabel *ecommerceBelowLabel;
 - (BOOL)isLive;
 - (AWESearchAwemeExtraModel *)searchExtraModel;
 @end
@@ -289,7 +293,6 @@ static CGFloat gStartVal = 0.0;
 @end
 
 @interface AWEBaseElementView : UIView
-
 @end
 
 @interface AWESearchEntranceView : UIView
