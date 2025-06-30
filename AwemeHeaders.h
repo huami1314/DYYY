@@ -463,6 +463,15 @@ static CGFloat gStartVal = 0.0;
 - (BOOL)view:(UIView *)view containsSubviewOfClass:(Class)viewClass;
 @end
 
+@interface IESLiveStackView : UIView
+@property(nonatomic, assign) CGRect frame;
+@property(nonatomic, assign) CGAffineTransform transform;
+@property(nonatomic, assign) CGFloat alpha;
+@property(nonatomic, strong) UIView *superview;
+@property(nonatomic, strong) NSArray *subviews;
+@property(nonatomic, copy) NSString *accessibilityLabel;
+@end
+
 @interface AWECommentImageModel : NSObject
 @property(nonatomic, copy) NSString *originUrl;
 @end
@@ -1208,6 +1217,7 @@ static CGFloat gStartVal = 0.0;
 @interface UIView (Helper)
 - (BOOL)containsClassNamed:(NSString *)className;
 - (UIView *)findViewWithClassName:(NSString *)className;
+- (NSArray<UIView *> *)findAllViewsWithClassName:(NSString *)className;
 @end
 
 @interface AWESettingsTableViewController : AWESettingBaseViewController
