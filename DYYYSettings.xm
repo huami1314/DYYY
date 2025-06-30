@@ -675,11 +675,11 @@ extern "C"
 		    @"detail" : @"默认为 3",
 		    @"cellType" : @26,
 		    @"imageName" : @"ic_pensketch_outlined_20"},
-		  @{@"identifier" : @"DYYYTabBarHeight",
-		    @"title" : @"首页底栏高度",
-		    @"detail" : @"默认83",
-		    @"cellType" : @26,
-		    @"imageName" : @"ic_pensketch_outlined_20"},
+                  @{@"identifier" : @"DYYYTabBarHeight",
+                    @"title" : @"修改底栏高度",
+                    @"detail" : @"默认为空",
+                    @"cellType" : @26,
+                    @"imageName" : @"ic_pensketch_outlined_20"},
 	  ];
 
 	  for (NSDictionary *dict in scaleSettings) {
