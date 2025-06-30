@@ -10,6 +10,15 @@
 #import <libwebp/mux.h>
 #import <objc/message.h>
 #import <objc/runtime.h>
+#ifndef kCGImagePropertyHEIFDictionary
+#define kCGImagePropertyHEIFDictionary CFSTR("HEIFDictionary")
+#endif
+#ifndef kCGImagePropertyHEIFDelayTime
+#define kCGImagePropertyHEIFDelayTime CFSTR("DelayTime")
+#endif
+#ifndef kUTTypeHEIC
+#define kUTTypeHEIC CFSTR("public.heic")
+#endif
 
 #import "DYYYToast.h"
 #import "DYYYUtils.h"
@@ -672,8 +681,14 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
   dispatch_async(
       dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         // 1. 创建ImageSource
+        NSDictionary *options = @{
+            (__bridge NSString *)kCGImageSourceTypeIdentifierHint :
+                (__bridge NSString *)kUTTypeHEIC,
+            (__bridge NSString *)kCGImageSourceShouldCache : @NO
+        };
         CGImageSourceRef src =
-            CGImageSourceCreateWithURL((__bridge CFURLRef)heicURL, NULL);
+            CGImageSourceCreateWithURL((__bridge CFURLRef)heicURL,
+                                      (__bridge CFDictionaryRef)options);
         if (!src) {
           dispatch_async(dispatch_get_main_queue(), ^{
             if (completion)
@@ -730,6 +745,15 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width,
                   CFDictionaryGetValue(gifDict, kCGImagePropertyGIFDelayTime);
               if (delayNum)
                 CFNumberGetValue(delayNum, kCFNumberFloatType, &delayTime);
+            } else {
+              CFDictionaryRef heifDict =
+                  CFDictionaryGetValue(properties, kCGImagePropertyHEIFDictionary);
+              if (heifDict) {
+                CFNumberRef delayNum =
+                    CFDictionaryGetValue(heifDict, kCGImagePropertyHEIFDelayTime);
+                if (delayNum)
+                  CFNumberGetValue(delayNum, kCFNumberFloatType, &delayTime);
+              }
             }
             CFRelease(properties);
           }
