@@ -5039,12 +5039,12 @@ static AWEIMReusableCommonCell *currentCell;
 static CGFloat tabHeight = 0;
 
 static CGFloat customTabBarHeight() {
-	NSString *value = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTabBarHeight"];
-	if (value.length > 0) {
-		CGFloat h = [value floatValue];
-		return h > 0 ? h : 83;
-	}
-	return 83;
+        NSString *value = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTabBarHeight"];
+        if (value.length > 0) {
+                CGFloat h = [value floatValue];
+                return h > 0 ? h : 0;
+        }
+        return 0;
 }
 
 static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
