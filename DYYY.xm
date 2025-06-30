@@ -3512,6 +3512,15 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
+%hook IESLiveMatrixEntranceView
+- (void)layoutSubviews {
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveDetail"]) {
+		[self removeFromSuperview];
+	}
+}
+%end
+
 %hook IESLiveShortTouchActionView
 - (void)layoutSubviews {
 	%orig;
@@ -3522,6 +3531,24 @@ static AWEIMReusableCommonCell *currentCell;
 %end
 
 %hook IESLiveLotteryAnimationViewNew
+- (void)layoutSubviews {
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTouchView"]) {
+		[self removeFromSuperview];
+	}
+}
+%end
+
+%hook IESLiveConfigurableShortTouchEntranceView
+- (void)layoutSubviews {
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTouchView"]) {
+		[self removeFromSuperview];
+	}
+}
+%end
+
+%hook IESLiveRedEnvelopeAniLynxView
 - (void)layoutSubviews {
 	%orig;
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTouchView"]) {
@@ -3955,16 +3982,6 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
-%hook IESLiveActivityBannnerView
-- (void)layoutSubviews {
-	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideGiftPavilion"]) {
-		self.hidden = YES;
-	}
-}
-
-%end
-
 // 隐藏直播广场
 %hook IESLiveFeedDrawerEntranceView
 - (void)layoutSubviews {
@@ -4052,6 +4069,42 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
+%hook IESLiveBottomRightCardView
+- (void)layoutSubviews {
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveGoodsMsg"]) {
+		[self removeFromSuperview];
+	}
+}
+%end
+
+%hook IESLiveGameCPExplainCardContainerImpl
+- (void)layoutSubviews {
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveGoodsMsg"]) {
+		[self removeFromSuperview];
+	}
+}
+%end
+
+%hook AWEPOILivePurchaseAtmosphereView
+- (void)layoutSubviews {
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveGoodsMsg"] && self.superview) {
+		[self.superview removeFromSuperview];
+	}
+}
+%end
+
+%hook IESLiveActivityBannnerView
+- (void)layoutSubviews {
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveGoodsMsg"]) {
+		[self removeFromSuperview];
+	}
+}
+%end
+
 // 隐藏直播间点赞动画
 %hook HTSLiveDiggView
 - (void)setIconImageView:(UIImageView *)arg1 {
@@ -4065,6 +4118,16 @@ static AWEIMReusableCommonCell *currentCell;
 
 // 隐藏直播间文字贴纸
 %hook IESLiveStickerView
+- (void)layoutSubviews {
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideStickerView"]) {
+		[self removeFromSuperview];
+	}
+}
+%end
+
+// 预约直播
+%hook IESLivePreAnnouncementPanelViewNew
 - (void)layoutSubviews {
 	%orig;
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideStickerView"]) {
