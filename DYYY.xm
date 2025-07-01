@@ -630,6 +630,18 @@
 
 %end
 
+%hook XIGDanmakuPlayerView
+
+- (id)initWithFrame:(CGRect)frame {
+    id orig = %orig;
+
+    ((UIView *)orig).tag = DYYY_IGNORE_GLOBAL_ALPHA_TAG;
+
+    return orig;
+}
+
+%end
+
 %hook AWEMarkView
 
 - (void)layoutSubviews {
@@ -852,16 +864,14 @@
 	%orig;
 
 	NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
-	if (transparentValue.length > 0) {
-		CGFloat alphaValue = transparentValue.floatValue;
-		if (alphaValue >= 0.0 && alphaValue <= 1.0) {
-			for (UIView *subview in self.subviews) {
-				if (subview.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG && ![NSStringFromClass([subview class]) isEqualToString:NSStringFromClass([self class])]) {
-					if (subview.alpha > 0) {
-						subview.alpha = alphaValue;
-					}
-				}
-			}
+	if (!transparentValue.length) return;
+	CGFloat alphaValue = transparentValue.floatValue;
+	if (alphaValue < 0.0 || alphaValue > 1.0) return;
+	if ([NSStringFromClass([self.superview class]) isEqualToString:NSStringFromClass([self class])]) return;
+	for (UIView *subview in self.subviews) {
+		if (subview.tag == DYYY_IGNORE_GLOBAL_ALPHA_TAG) continue;
+		if (subview.superview == self && subview.alpha > 0) {
+				subview.alpha = alphaValue;
 		}
 	}
 }
@@ -3393,7 +3403,7 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
-// 隐藏视频上方搜索长框、隐藏搜索指示条、应用全局透明
+// 隐藏视频顶部搜索框、隐藏搜索框背景、应用全局透明
 %hook AWESearchEntranceView
 
 - (void)layoutSubviews {
@@ -3404,9 +3414,10 @@ static AWEIMReusableCommonCell *currentCell;
 	}
 
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideSearchEntranceIndicator"]) {
-		for (UIView *subview in self.subviews) {
-			if ([subview isKindOfClass:[UIImageView class]] && [NSStringFromClass([((UIImageView *)subview).image class]) isEqualToString:@"_UIResizableImage"]) {
-				((UIImageView *)subview).hidden = YES;
+		for (UIView *subviews in self.subviews) {
+			if ([subviews isKindOfClass:%c(UIImageView)] && 
+				[NSStringFromClass([((UIImageView *)subviews).image class]) isEqualToString:@"_UIResizableImage"]) {
+				((UIImageView *)subviews).hidden = YES;
 			}
 		}
 	}
@@ -5508,6 +5519,53 @@ static CGFloat currentScale = 1.0;
 }
 %end
 
+// 新增直播间文案调整
+%hook IESLiveStackView
+- (void)layoutSubviews {
+    %orig;
+
+    UIView *superView = self.superview;
+    if (![superView isKindOfClass:%c(HTSEventForwardingView)] ||
+        ![superView.accessibilityLabel isEqualToString:@"ContentContainerLayer"]) {
+        return;
+	}
+
+    NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
+    if (transparentValue.length > 0) {
+        CGFloat alphaValue = transparentValue.floatValue;
+        if (alphaValue >= 0.0 && alphaValue <= 1.0) {
+            self.alpha = alphaValue;
+        }
+    }
+
+    NSString *vcScaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
+    if (vcScaleValue.length > 0) {
+        CGFloat scale = vcScaleValue.floatValue;
+        self.transform = CGAffineTransformIdentity;
+        if (scale > 0 && scale != 1.0) {
+            NSArray *subviews = [self.subviews copy];
+            CGFloat ty = 0;
+            for (UIView *view in subviews) {
+                CGFloat viewHeight = view.frame.size.height;
+                CGFloat contribution = (viewHeight - viewHeight * scale) / 2;
+                ty += contribution;
+            }
+            CGFloat frameWidth = self.frame.size.width;
+            CGFloat tx = (frameWidth - frameWidth * scale) / 2 - frameWidth * (1 - scale);
+            CGAffineTransform newTransform = CGAffineTransformMakeScale(scale, scale);
+            newTransform = CGAffineTransformTranslate(newTransform, tx / scale, ty / scale);
+            self.transform = newTransform;
+        }
+    }
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+        CGRect frame = self.frame;
+        frame.origin.y -= tabHeight;
+        stream_frame_y = frame.origin.y;
+        self.frame = frame;
+    }
+}
+%end
+
 %hook AWEStoryContainerCollectionView
 - (void)layoutSubviews {
 	%orig;
@@ -6007,6 +6065,18 @@ static CGFloat currentScale = 1.0;
 	}
 	return nil;
 }
+
+- (NSArray<UIView *> *)findAllViewsWithClassName:(NSString *)className {
+    NSMutableArray *foundViews = [NSMutableArray array];
+    if ([[[self class] description] isEqualToString:className]) {
+        [foundViews addObject:self];
+    }
+    for (UIView *subview in self.subviews) {
+        [foundViews addObjectsFromArray:[subview findAllViewsWithClassName:className]];
+    }
+    return [foundViews copy];
+}
+
 @end
 
 static NSMutableDictionary *keepCellsInfo;

@@ -225,6 +225,9 @@ static CGFloat gStartVal = 0.0;
 - (void)setType:(long long)arg0 ;
 @end
 
+@interface XIGDanmakuPlayerView : UIView
+@end
+
 @interface AWEDanmakuItemTextInfo : NSObject
 @property (nonatomic, strong) NSAttributedString *danmakuText;
 @property (nonatomic, assign) id danmakuTextFrame;
@@ -461,6 +464,15 @@ static CGFloat gStartVal = 0.0;
 @property(nonatomic, strong) NSArray *subviews;
 @property(nonatomic, assign) CGAffineTransform transform;
 - (BOOL)view:(UIView *)view containsSubviewOfClass:(Class)viewClass;
+@end
+
+@interface IESLiveStackView : UIView
+@property(nonatomic, assign) CGRect frame;
+@property(nonatomic, assign) CGAffineTransform transform;
+@property(nonatomic, assign) CGFloat alpha;
+@property(nonatomic, strong) UIView *superview;
+@property(nonatomic, strong) NSArray *subviews;
+@property(nonatomic, copy) NSString *accessibilityLabel;
 @end
 
 @interface AWECommentImageModel : NSObject
@@ -1208,6 +1220,7 @@ static CGFloat gStartVal = 0.0;
 @interface UIView (Helper)
 - (BOOL)containsClassNamed:(NSString *)className;
 - (UIView *)findViewWithClassName:(NSString *)className;
+- (NSArray<UIView *> *)findAllViewsWithClassName:(NSString *)className;
 @end
 
 @interface AWESettingsTableViewController : AWESettingBaseViewController
