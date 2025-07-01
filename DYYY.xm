@@ -626,6 +626,18 @@
 
 %end
 
+%hook XIGDanmakuPlayerView
+
+- (id)initWithFrame:(CGRect)frame {
+    id orig = %orig;
+
+    ((UIView *)orig).tag = DYYY_IGNORE_GLOBAL_ALPHA_TAG;
+
+    return orig;
+}
+
+%end
+
 %hook AWEMarkView
 
 - (void)layoutSubviews {
