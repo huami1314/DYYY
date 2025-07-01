@@ -860,16 +860,14 @@
 	%orig;
 
 	NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
-	if (transparentValue.length > 0) {
-		CGFloat alphaValue = transparentValue.floatValue;
-		if (alphaValue >= 0.0 && alphaValue <= 1.0) {
-			for (UIView *subview in self.subviews) {
-				if (subview.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG && ![NSStringFromClass([subview class]) isEqualToString:NSStringFromClass([self class])]) {
-					if (subview.alpha > 0) {
-						subview.alpha = alphaValue;
-					}
-				}
-			}
+	if (!transparentValue.length) return;
+	CGFloat alphaValue = transparentValue.floatValue;
+	if (alphaValue < 0.0 || alphaValue > 1.0) return;
+	if ([NSStringFromClass([self.superview class]) isEqualToString:NSStringFromClass([self class])]) return;
+	for (UIView *subview in self.subviews) {
+		if (subview.tag == DYYY_IGNORE_GLOBAL_ALPHA_TAG) continue;
+		if (subview.superview == self && subview.alpha > 0) {
+				subview.alpha = alphaValue;
 		}
 	}
 }
@@ -3401,7 +3399,7 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
-// 隐藏视频上方搜索长框、隐藏搜索指示条、应用全局透明
+// 隐藏视频顶部搜索框、隐藏搜索框背景、应用全局透明
 %hook AWESearchEntranceView
 
 - (void)layoutSubviews {
@@ -3412,9 +3410,10 @@ static AWEIMReusableCommonCell *currentCell;
 	}
 
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideSearchEntranceIndicator"]) {
-		for (UIView *subview in self.subviews) {
-			if ([subview isKindOfClass:[UIImageView class]] && [NSStringFromClass([((UIImageView *)subview).image class]) isEqualToString:@"_UIResizableImage"]) {
-				((UIImageView *)subview).hidden = YES;
+		for (UIView *subviews in self.subviews) {
+			if ([subviews isKindOfClass:%c(UIImageView)] && 
+				[NSStringFromClass([((UIImageView *)subviews).image class]) isEqualToString:@"_UIResizableImage"]) {
+				((UIImageView *)subviews).hidden = YES;
 			}
 		}
 	}
