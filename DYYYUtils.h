@@ -146,9 +146,6 @@ BOOL isLeftInteractionStack(UIView * _Nullable stackView);
 /** 在视图控制器层级中查找指定类的控制器 */
 UIViewController * _Nullable findViewControllerOfClass(UIViewController * _Nullable rootVC, Class _Nullable targetClass);
 
-/** 根据设置应用顶栏透明度 */
-void applyTopBarTransparency(UIView * _Nullable topBar);
-
 /**
  * 递归将任意对象转换为 JSON 可序列化对象
  */

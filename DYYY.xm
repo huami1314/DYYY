@@ -527,7 +527,6 @@
 		attempts = 0;
 		pureModeSet = NO;
 	}
-	// 原来的透明度设置逻辑，保持不变
 	NSString *transparentValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYtopbartransparent"];
 	if (transparentValue && transparentValue.length > 0) {
 		CGFloat alphaValue = [transparentValue floatValue];
@@ -543,15 +542,20 @@
 }
 %end
 
-// 添加新的 hook 来处理顶栏透明度
 %hook AWEFeedTopBarContainer
-- (void)layoutSubviews {
-	%orig;
-	applyTopBarTransparency(self);
-}
-- (void)didMoveToSuperview {
-	%orig;
-	applyTopBarTransparency(self);
+- (void)setAlpha:(CGFloat)alpha {
+	NSString *transparentValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYtopbartransparent"];
+	if (transparentValue && transparentValue.length > 0) {
+		CGFloat alphaValue = [transparentValue floatValue];
+		if (alphaValue >= 0.0 && alphaValue <= 1.0) {
+			CGFloat finalAlpha = (alphaValue < 0.011) ? 0.011 : alphaValue;
+			%orig(finalAlpha);
+		} else {
+			%orig(1.0);
+		}
+	} else {
+		%orig(1.0);
+	}
 }
 %end
 
