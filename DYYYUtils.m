@@ -591,40 +591,6 @@ BOOL viewContainsSubviewOfClass(UIView *view, Class viewClass) {
     return NO;
 }
 
-BOOL isRightInteractionStack(UIView *stackView) {
-    if (!stackView)
-        return NO;
-    NSString *label = stackView.accessibilityLabel;
-    if (label) {
-        if ([label isEqualToString:@"right"]) return YES;
-        if ([label isEqualToString:@"left"]) return NO;
-    }
-    for (UIView *sub in stackView.subviews) {
-        if (viewContainsSubviewOfClass(sub, NSClassFromString(@"AWEPlayInteractionUserAvatarView")))
-            return YES;
-        if (viewContainsSubviewOfClass(sub, NSClassFromString(@"AWEFeedAnchorContainerView")))
-            return NO;
-    }
-    return NO;
-}
-
-BOOL isLeftInteractionStack(UIView *stackView) {
-    if (!stackView)
-        return NO;
-    NSString *label = stackView.accessibilityLabel;
-    if (label) {
-        if ([label isEqualToString:@"left"]) return YES;
-        if ([label isEqualToString:@"right"]) return NO;
-    }
-    for (UIView *sub in stackView.subviews) {
-        if (viewContainsSubviewOfClass(sub, NSClassFromString(@"AWEFeedAnchorContainerView")))
-            return YES;
-        if (viewContainsSubviewOfClass(sub, NSClassFromString(@"AWEPlayInteractionUserAvatarView")))
-            return NO;
-    }
-    return NO;
-}
-
 UIViewController *findViewControllerOfClass(UIViewController *vc, Class targetClass) {
     if (!vc)
         return nil;

@@ -864,10 +864,10 @@
 	%orig;
 
 	NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
+	if ([NSStringFromClass([self.superview class]) isEqualToString:NSStringFromClass([self class])]) return;
 	if (!transparentValue.length) return;
 	CGFloat alphaValue = transparentValue.floatValue;
 	if (alphaValue < 0.0 || alphaValue > 1.0) return;
-	if ([NSStringFromClass([self.superview class]) isEqualToString:NSStringFromClass([self class])]) return;
 	for (UIView *subview in self.subviews) {
 		if (subview.tag == DYYY_IGNORE_GLOBAL_ALPHA_TAG) continue;
 		if (subview.superview == self && subview.alpha > 0) {
@@ -5366,9 +5366,6 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 %end
 
 %hook AWEElementStackView
-static CGFloat stream_frame_y = 0;
-static CGFloat right_tx = 0;
-static CGFloat left_tx = 0;
 static CGFloat currentScale = 1.0;
 - (void)layoutSubviews {
 	%orig;
@@ -5426,7 +5423,6 @@ static CGFloat currentScale = 1.0;
 			if ([viewController isKindOfClass:%c(AWELiveNewPreStreamViewController)]) {
 				CGRect frame = self.frame;
 				frame.origin.y -= tabHeight;
-				stream_frame_y = frame.origin.y;
 				self.frame = frame;
 			}
 		}
@@ -5434,27 +5430,24 @@ static CGFloat currentScale = 1.0;
 
 	UIViewController *viewController = [self firstAvailableUIViewController];
 	if ([viewController isKindOfClass:%c(AWEPlayInteractionViewController)]) {
-		BOOL isRightElement = isRightInteractionStack(self);
-		BOOL isLeftElement = isLeftInteractionStack(self);
 
 		// 右侧元素的处理逻辑
-		if (isRightElement) {
+		if ([self.accessibilityLabel isEqualToString:@"right"] || 
+			viewContainsSubviewOfClass(self, NSClassFromString(@"AWEPlayInteractionUserAvatarView"))) {
 			NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYElementScale"];
 			self.transform = CGAffineTransformIdentity;
 			if (scaleValue.length > 0) {
 				CGFloat scale = [scaleValue floatValue];
-				if (currentScale != scale) {
-					currentScale = scale;
-				}
+				if (currentScale != scale) currentScale = scale;
 				if (scale > 0 && scale != 1.0) {
+					NSArray *subviews = [self.subviews copy];
 					CGFloat ty = 0;
-					for (UIView *view in self.subviews) {
+					for (UIView *view in subviews) {
 						CGFloat viewHeight = view.frame.size.height;
-						CGFloat contribution = (viewHeight - viewHeight * scale) / 2;
-						ty += contribution;
+						ty += (viewHeight - viewHeight * scale) / 2;
 					}
 					CGFloat frameWidth = self.frame.size.width;
-					right_tx = (frameWidth - frameWidth * scale) / 2;
+					CGFloat right_tx = (frameWidth - frameWidth * scale) / 2;
 					self.transform = CGAffineTransformMake(scale, 0, 0, scale, right_tx, ty);
 				} else {
 					self.transform = CGAffineTransformIdentity;
@@ -5462,7 +5455,8 @@ static CGFloat currentScale = 1.0;
 			}
 		}
 		// 左侧元素的处理逻辑
-		else if (isLeftElement) {
+		else if ([self.accessibilityLabel isEqualToString:@"left"] || 
+                 viewContainsSubviewOfClass(self, NSClassFromString(@"AWEFeedAnchorContainerView"))) {
 			NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
 			if (scaleValue.length > 0) {
 				CGFloat scale = [scaleValue floatValue];
@@ -5472,8 +5466,7 @@ static CGFloat currentScale = 1.0;
 					CGFloat ty = 0;
 					for (UIView *view in subviews) {
 						CGFloat viewHeight = view.frame.size.height;
-						CGFloat contribution = (viewHeight - viewHeight * scale) / 2;
-						ty += contribution;
+						ty += (viewHeight - viewHeight * scale) / 2;
 					}
 					CGFloat frameWidth = self.frame.size.width;
 					CGFloat left_tx = (frameWidth - frameWidth * scale) / 2 - frameWidth * (1 - scale);
@@ -5489,9 +5482,9 @@ static CGFloat currentScale = 1.0;
 
 	UIViewController *viewController = [self firstAvailableUIViewController];
 	if ([viewController isKindOfClass:%c(AWEPlayInteractionViewController)]) {
-		BOOL isLeftElement = isLeftInteractionStack(self);
 
-		if (isLeftElement) {
+		if ([self.accessibilityLabel isEqualToString:@"left"] || 
+            viewContainsSubviewOfClass(self, NSClassFromString(@"AWEFeedAnchorContainerView"))) {
 			NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
 			if (scaleValue.length > 0) {
 				CGFloat scale = [scaleValue floatValue];
@@ -5501,8 +5494,7 @@ static CGFloat currentScale = 1.0;
 					CGFloat ty = 0;
 					for (UIView *view in subviews) {
 						CGFloat viewHeight = view.frame.size.height;
-						CGFloat contribution = (viewHeight - viewHeight * scale) / 2;
-						ty += contribution;
+						ty += (viewHeight - viewHeight * scale) / 2;
 					}
 					CGFloat frameWidth = self.frame.size.width;
 					CGFloat left_tx = (frameWidth - frameWidth * scale) / 2 - frameWidth * (1 - scale);
@@ -5560,7 +5552,6 @@ static CGFloat currentScale = 1.0;
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
         CGRect frame = self.frame;
         frame.origin.y -= tabHeight;
-        stream_frame_y = frame.origin.y;
         self.frame = frame;
     }
 }

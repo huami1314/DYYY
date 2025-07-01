@@ -503,7 +503,7 @@ void updateSpeedButtonVisibility() {
 	BOOL hasRightStack = NO;
 	Class stackClass = NSClassFromString(@"AWEElementStackView");
 	for (UIView *sub in self.view.subviews) {
-		if ([sub isKindOfClass:stackClass] && isRightInteractionStack(sub)) {
+		if ([sub isKindOfClass:stackClass] && ([sub.accessibilityLabel isEqualToString:@"right"] || viewContainsSubviewOfClass(sub, NSClassFromString(@"AWEPlayInteractionUserAvatarView")))) {
 			hasRightStack = YES;
 			break;
 		}
@@ -553,7 +553,7 @@ void updateSpeedButtonVisibility() {
 	BOOL hasRightStack = NO;
 	Class stackClass = NSClassFromString(@"AWEElementStackView");
 	for (UIView *sub in self.view.subviews) {
-		if ([sub isKindOfClass:stackClass] && isRightInteractionStack(sub)) {
+		if ([sub isKindOfClass:stackClass] && ([sub.accessibilityLabel isEqualToString:@"right"] || viewContainsSubviewOfClass(sub, NSClassFromString(@"AWEPlayInteractionUserAvatarView")))) {
 			hasRightStack = YES;
 			break;
 		}
