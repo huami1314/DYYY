@@ -137,6 +137,7 @@ static CGFloat gStartVal = 0.0;
 @property(nonatomic, strong) AWEPropGuideV2Model *propGuideV2;
 @property(nonatomic, strong) AWEECommerceLabel *ecommerceBelowLabel;
 - (BOOL)isLive;
+- (BOOL)contentFilter;
 - (AWESearchAwemeExtraModel *)searchExtraModel;
 @end
 

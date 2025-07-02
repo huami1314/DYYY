@@ -4071,7 +4071,18 @@ static AWEIMReusableCommonCell *currentCell;
 
 - (id)initWithDictionary:(id)arg1 error:(id *)arg2 {
 	id orig = %orig;
+    if (orig && [self contentFilter]) return nil;
+	return orig;
+}
 
+- (id)init {
+	id orig = %orig;
+    if (orig && [self contentFilter]) return nil;
+	return orig;
+}
+
+%new
+- (BOOL)contentFilter {
 	BOOL noAds = DYYYGetBool(@"DYYYNoAds");
 	BOOL skipLive = DYYYGetBool(@"DYYYisSkipLive");
 	BOOL skipHotSpot = DYYYGetBool(@"DYYYisSkipHotSpot");
@@ -4083,9 +4094,9 @@ static AWEIMReusableCommonCell *currentCell;
 	BOOL shouldFilterHDR = NO;
 	BOOL shouldFilterLowLikes = NO;
 	BOOL shouldFilterKeywords = NO;
+	BOOL shouldFilterProp = NO;
 	BOOL shouldFilterTime = NO;
 	BOOL shouldFilterUser = NO;
-	BOOL shouldFilterProp = NO;
 
 	// 获取用户设置的需要过滤的关键词
 	NSString *filterKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterKeywords"];
@@ -4095,7 +4106,7 @@ static AWEIMReusableCommonCell *currentCell;
 		keywordsList = [filterKeywords componentsSeparatedByString:@","];
 	}
 
-	// 获取需要过滤的道具关键词
+	// 过滤包含指定拍同款的视频
 	NSString *filterProp = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterProp"];
 	NSArray *propKeywordsList = nil;
 
@@ -4132,115 +4143,6 @@ static AWEIMReusableCommonCell *currentCell;
 	NSInteger filterLowLikesThreshold = DYYYGetInteger(@"DYYYfilterLowLikes");
 
 	// 只有当shareRecExtra不为空时才过滤点赞量低的视频和关键词
-	if (self.shareRecExtra && ![self.shareRecExtra isEqual:@""]) {
-		// 过滤低点赞量视频
-		if (filterLowLikesThreshold > 0) {
-			AWESearchAwemeExtraModel *searchExtraModel = [self searchExtraModel];
-			if (!searchExtraModel) {
-				AWEAwemeStatisticsModel *statistics = self.statistics;
-				if (statistics && statistics.diggCount) {
-					shouldFilterLowLikes = statistics.diggCount.integerValue < filterLowLikesThreshold;
-				}
-			}
-		}
-
-		// 过滤包含特定关键词的视频
-		if (keywordsList.count > 0) {
-			// 检查视频标题
-			if (self.descriptionString.length > 0) {
-				for (NSString *keyword in keywordsList) {
-					NSString *trimmedKeyword = [keyword stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-					if (trimmedKeyword.length > 0 && [self.descriptionString containsString:trimmedKeyword]) {
-						shouldFilterKeywords = YES;
-						break;
-					}
-				}
-			}
-		}
-
-		// 过滤包含指定拍同款的视频
-		if (propKeywordsList.count > 0 && self.propGuideV2) {
-			NSString *propName = self.propGuideV2.propName;
-			if (propName.length > 0) {
-				for (NSString *propKeyword in propKeywordsList) {
-					NSString *trimmedKeyword = [propKeyword stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-					if (trimmedKeyword.length > 0 && [propName containsString:trimmedKeyword]) {
-						shouldFilterProp = YES;
-						break;
-					}
-				}
-			}
-		}
-
-		// 过滤视频发布时间
-		long long currentTimestamp = (long long)[[NSDate date] timeIntervalSince1970];
-		NSInteger daysThreshold = DYYYGetInteger(@"DYYYfiltertimelimit");
-		if (daysThreshold > 0) {
-			NSTimeInterval videoTimestamp = [self.createTime doubleValue];
-			if (videoTimestamp > 0) {
-				NSTimeInterval threshold = daysThreshold * 86400.0;
-				NSTimeInterval current = (NSTimeInterval)currentTimestamp;
-				NSTimeInterval timeDifference = current - videoTimestamp;
-				shouldFilterTime = (timeDifference > threshold);
-			}
-		}
-	}
-	// 检查是否为HDR视频
-	if (filterHDR && self.video && self.video.bitrateModels) {
-		for (id bitrateModel in self.video.bitrateModels) {
-			NSNumber *hdrType = [bitrateModel valueForKey:@"hdrType"];
-			NSNumber *hdrBit = [bitrateModel valueForKey:@"hdrBit"];
-
-			// 如果hdrType=1且hdrBit=10，则视为HDR视频
-			if (hdrType && [hdrType integerValue] == 1 && hdrBit && [hdrBit integerValue] == 10) {
-				shouldFilterHDR = YES;
-				break;
-			}
-		}
-	}
-	if (shouldFilterAds || shouldFilterRec || shouldFilterHotSpot || shouldFilterHDR || shouldFilterLowLikes || shouldFilterKeywords || shouldFilterTime || shouldFilterUser || shouldFilterProp) {
-		return nil;
-	}
-
-	return orig;
-}
-
-- (id)init {
-	id orig = %orig;
-
-	BOOL noAds = DYYYGetBool(@"DYYYNoAds");
-	BOOL skipLive = DYYYGetBool(@"DYYYisSkipLive");
-	BOOL skipHotSpot = DYYYGetBool(@"DYYYisSkipHotSpot");
-	BOOL filterHDR = DYYYGetBool(@"DYYYfilterFeedHDR");
-
-	BOOL shouldFilterAds = noAds && (self.hotSpotLynxCardModel || self.isAds);
-	BOOL shouldFilterRec = skipLive && (self.liveReason != nil);
-	BOOL shouldFilterHotSpot = skipHotSpot && self.hotSpotLynxCardModel;
-	BOOL shouldFilterHDR = NO;
-	BOOL shouldFilterLowLikes = NO;
-	BOOL shouldFilterKeywords = NO;
-	BOOL shouldFilterProp = NO;
-	BOOL shouldFilterTime = NO;
-
-	// 获取用户设置的需要过滤的关键词
-	NSString *filterKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterKeywords"];
-	NSArray *keywordsList = nil;
-
-	if (filterKeywords.length > 0) {
-		keywordsList = [filterKeywords componentsSeparatedByString:@","];
-	}
-
-	// 过滤包含指定拍同款的视频
-	NSString *filterProp = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterProp"];
-	NSArray *propKeywordsList = nil;
-
-	if (filterProp.length > 0) {
-		propKeywordsList = [filterProp componentsSeparatedByString:@","];
-	}
-
-	NSInteger filterLowLikesThreshold = DYYYGetInteger(@"DYYYfilterLowLikes");
-
-	// 只有当shareRecExtra不为空时才过滤
 	if (self.shareRecExtra && ![self.shareRecExtra isEqual:@""]) {
 		// 过滤低点赞量视频
 		if (filterLowLikesThreshold > 0) {
@@ -4308,12 +4210,7 @@ static AWEIMReusableCommonCell *currentCell;
 			}
 		}
 	}
-
-	if (shouldFilterAds || shouldFilterRec || shouldFilterHotSpot || shouldFilterHDR || shouldFilterLowLikes || shouldFilterKeywords || shouldFilterProp || shouldFilterTime) {
-		return nil;
-	}
-
-	return orig;
+	return shouldFilterAds || shouldFilterRec || shouldFilterHotSpot || shouldFilterHDR || shouldFilterLowLikes || shouldFilterKeywords || shouldFilterProp || shouldFilterTime || shouldFilterUser;
 }
 
 - (AWEECommerceLabel *)ecommerceBelowLabel {
