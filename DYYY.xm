@@ -1822,35 +1822,49 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 // 强制启用新版抖音长按 UI（现代风）
 %hook AWELongPressPanelDataManager
 + (BOOL)enableModernLongPressPanelConfigWithSceneIdentifier:(id)arg1 {
-	return DYYYGetBool(@"DYYYisEnableModern") || DYYYGetBool(@"DYYYisEnableModernLight") || DYYYGetBool(@"DYYYModernPanelFollowSystem");
+    return DYYYGetBool(@"DYYYisEnableModernPanel");
 }
 %end
 
 %hook AWELongPressPanelABSettings
 + (NSUInteger)modernLongPressPanelStyleMode {
-	if (DYYYGetBool(@"DYYYModernPanelFollowSystem")) {
-		BOOL isDarkMode = [DYYYUtils isDarkMode];
-		return isDarkMode ? 1 : 2;
-	} else if (DYYYGetBool(@"DYYYisEnableModernLight")) {
-		return 2;
-	} else if (DYYYGetBool(@"DYYYisEnableModern")) {
-		return 1;
-	}
-	return 0;
+    if (!DYYYGetBool(@"DYYYisEnableModernPanel")) {
+        return %orig;
+    }
+    
+    BOOL forceBlur = DYYYGetBool(@"DYYYisLongPressPanelBlur");
+    BOOL forceDark = DYYYGetBool(@"DYYYisLongPressPanelDark");
+    
+    if (forceBlur && forceDark) {
+        return 1;
+    } else if (!forceBlur && !forceDark) {
+        return 2;
+    } else if (!forceBlur && forceDark) {
+        return 3;
+    } else { // forceBlur && !forceDark
+        return 4;
+    }
 }
 %end
 
 %hook AWEModernLongPressPanelUIConfig
 + (NSUInteger)modernLongPressPanelStyleMode {
-	if (DYYYGetBool(@"DYYYModernPanelFollowSystem")) {
-		BOOL isDarkMode = [DYYYUtils isDarkMode];
-		return isDarkMode ? 1 : 2;
-	} else if (DYYYGetBool(@"DYYYisEnableModernLight")) {
-		return 2;
-	} else if (DYYYGetBool(@"DYYYisEnableModern")) {
-		return 1;
-	}
-	return 0;
+    if (!DYYYGetBool(@"DYYYisEnableModernPanel")) {
+        return %orig;
+    }
+    
+    BOOL forceBlur = DYYYGetBool(@"DYYYisLongPressPanelBlur");
+    BOOL forceDark = DYYYGetBool(@"DYYYisLongPressPanelDark");
+    
+    if (forceBlur && forceDark) {
+        return 1;
+    } else if (!forceBlur && !forceDark) {
+        return 2;
+    } else if (!forceBlur && forceDark) {
+        return 3;
+    } else { // forceBlur && !forceDark
+        return 4;
+    }
 }
 %end
 
