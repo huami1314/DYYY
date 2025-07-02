@@ -167,8 +167,13 @@ void updateSpeedButtonVisibility() {
 		self.layer.shadowOffset = CGSizeMake(0, 2);
 		self.layer.shadowOpacity = 0.5;
 
-		self.userInteractionEnabled = YES;
-		self.isResponding = YES;
+                self.userInteractionEnabled = YES;
+                self.isResponding = YES;
+
+                self.originalAlpha = 1.0;
+                self.alpha = 0.5;
+
+                [self resetFadeTimer];
 
 		self.statusCheckTimer = [NSTimer scheduledTimerWithTimeInterval:60.0 target:self selector:@selector(checkAndRecoverButtonStatus) userInfo:nil repeats:YES];
 		[[NSRunLoop mainRunLoop] addTimer:self.statusCheckTimer forMode:NSRunLoopCommonModes];
@@ -209,14 +214,17 @@ void updateSpeedButtonVisibility() {
 }
 
 - (void)handleTouchDown:(UIButton *)sender {
-	self.isResponding = YES;
+        self.isResponding = YES;
+        [self resetFadeTimer];
 }
 
 - (void)handleTouchUpInside:(UIButton *)sender {
-	if (self.justToggledLock) {
-		self.justToggledLock = NO;
-		return;
-	}
+        if (self.justToggledLock) {
+                self.justToggledLock = NO;
+                return;
+        }
+
+        [self resetFadeTimer];
 
 	[UIView animateWithDuration:0.08
 	    animations:^{
@@ -241,22 +249,20 @@ void updateSpeedButtonVisibility() {
 }
 
 - (void)handleTouchUpOutside:(UIButton *)sender {
-	self.justToggledLock = NO;
+        self.justToggledLock = NO;
+        [self resetFadeTimer];
 }
 
 - (void)handleLongPress:(UILongPressGestureRecognizer *)gesture {
 	self.isResponding = YES;
 
-	if (gesture.state == UIGestureRecognizerStateBegan) {
-		if (self.firstStageTimer && [self.firstStageTimer isValid]) {
-			[self.firstStageTimer invalidate];
-			self.firstStageTimer = nil;
-		}
+        if (gesture.state == UIGestureRecognizerStateBegan) {
+                [self resetFadeTimer];
 
-		self.originalLockState = self.isLocked;
+                self.originalLockState = self.isLocked;
 
-		[self toggleLockState];
-	}
+                [self toggleLockState];
+        }
 }
 
 - (void)toggleLockState {
@@ -288,20 +294,42 @@ void updateSpeedButtonVisibility() {
 }
 
 - (void)resetButtonState {
-	self.justToggledLock = NO;
-	self.isResponding = YES;
-	self.userInteractionEnabled = YES;
-	self.transform = CGAffineTransformIdentity;
-	self.alpha = 1.0;
+        self.justToggledLock = NO;
+        self.isResponding = YES;
+        self.userInteractionEnabled = YES;
+        self.transform = CGAffineTransformIdentity;
+        self.alpha = self.originalAlpha;
 
-	[self setupGestureRecognizers];
+        [self resetFadeTimer];
+
+        [self setupGestureRecognizers];
+}
+
+- (void)resetFadeTimer {
+        [self.fadeTimer invalidate];
+        self.fadeTimer = [NSTimer scheduledTimerWithTimeInterval:3.0
+                                                         repeats:NO
+                                                           block:^(NSTimer *timer) {
+                                                             [UIView animateWithDuration:0.3
+                                                                              animations:^{
+                                                                                self.alpha = 0.5;
+                                                                              }];
+                                                           }];
+
+        if (self.alpha != self.originalAlpha) {
+                [UIView animateWithDuration:0.2
+                                 animations:^{
+                                   self.alpha = self.originalAlpha;
+                                 }];
+        }
 }
 
 - (void)handlePan:(UIPanGestureRecognizer *)pan {
-	if (self.isLocked)
-		return;
+        if (self.isLocked)
+                return;
 
-	self.justToggledLock = NO;
+        self.justToggledLock = NO;
+        [self resetFadeTimer];
 
 	CGPoint touchPoint = [pan locationInView:self.superview];
 
@@ -314,14 +342,14 @@ void updateSpeedButtonVisibility() {
 		newCenter.x = MAX(self.frame.size.width / 2, MIN(newCenter.x, self.superview.frame.size.width - self.frame.size.width / 2));
 		newCenter.y = MAX(self.frame.size.height / 2, MIN(newCenter.y, self.superview.frame.size.height - self.frame.size.height / 2));
 
-		self.center = newCenter;
-		[pan setTranslation:CGPointZero inView:self.superview];
+                self.center = newCenter;
+                [pan setTranslation:CGPointZero inView:self.superview];
 
-		self.alpha = 0.8;
-	} else if (pan.state == UIGestureRecognizerStateEnded || pan.state == UIGestureRecognizerStateCancelled) {
-		self.alpha = 1.0;
-		[self saveButtonPosition];
-	}
+                self.alpha = 0.8;
+        } else if (pan.state == UIGestureRecognizerStateEnded || pan.state == UIGestureRecognizerStateCancelled) {
+                self.alpha = self.originalAlpha;
+                [self saveButtonPosition];
+        }
 }
 
 - (void)saveButtonPosition {
@@ -369,12 +397,12 @@ void updateSpeedButtonVisibility() {
 }
 
 - (void)dealloc {
-	if (self.firstStageTimer && [self.firstStageTimer isValid]) {
-		[self.firstStageTimer invalidate];
-	}
-	if (self.statusCheckTimer && [self.statusCheckTimer isValid]) {
-		[self.statusCheckTimer invalidate];
-	}
+        if (self.statusCheckTimer && [self.statusCheckTimer isValid]) {
+                [self.statusCheckTimer invalidate];
+        }
+        if (self.fadeTimer && [self.fadeTimer isValid]) {
+                [self.fadeTimer invalidate];
+        }
 }
 @end
 
@@ -541,11 +569,12 @@ void updateSpeedButtonVisibility() {
 		isInteractionViewVisible = YES;
 
 		UIWindow *keyWindow = [UIApplication sharedApplication].keyWindow;
-		if (keyWindow && ![speedButton isDescendantOfView:keyWindow]) {
-			[keyWindow addSubview:speedButton];
-			[speedButton loadSavedPosition];
-		}
-	}
+                if (keyWindow && ![speedButton isDescendantOfView:keyWindow]) {
+                        [keyWindow addSubview:speedButton];
+                        [speedButton loadSavedPosition];
+                        [speedButton resetFadeTimer];
+                }
+        }
 }
 
 - (void)viewDidDisappear:(BOOL)animated {
@@ -579,7 +608,8 @@ void updateSpeedButtonVisibility() {
 
 %new
 - (void)speedButtonTapped:(UIButton *)sender {
-	NSArray *speeds = getSpeedOptions();
+        [(FloatingSpeedButton *)sender resetFadeTimer];
+        NSArray *speeds = getSpeedOptions();
 	if (speeds.count == 0)
 		return;
 
@@ -674,12 +704,13 @@ void updateSpeedButtonVisibility() {
 	if (!isFloatSpeedButtonEnabled)
 		return;
 
-	if (speedButton && ![speedButton isDescendantOfView:self]) {
-		dispatch_async(dispatch_get_main_queue(), ^{
-		  [self addSubview:speedButton];
-		  [speedButton loadSavedPosition];
-		});
-	}
+        if (speedButton && ![speedButton isDescendantOfView:self]) {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                  [self addSubview:speedButton];
+                  [speedButton loadSavedPosition];
+                  [speedButton resetFadeTimer];
+                });
+        }
 }
 %end
 
