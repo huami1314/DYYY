@@ -1748,23 +1748,32 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 
 %new
 - (void)setupBlurEffectForNotificationView {
-        static char kDYNotifContainerKey;
-        UIView *container = objc_getAssociatedObject(self, &kDYNotifContainerKey);
-        if (!container) {
-                for (UIView *subview in self.subviews) {
-                        if ([NSStringFromClass([subview class]) containsString:@"AWEInnerNotificationContainerView"]) {
-                                container = subview;
-                                objc_setAssociatedObject(self, &kDYNotifContainerKey, container, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-                                break;
-                        }
+        UIView *container = nil;
+        for (UIView *subview in self.subviews) {
+                if ([NSStringFromClass([subview class]) containsString:@"AWEInnerNotificationContainerView"]) {
+                        container = subview;
+                        break;
                 }
         }
 
-        if (!container || [container viewWithTag:999]) {
+        if (!container) {
                 return;
         }
 
-        [self applyBlurEffectToView:container];
+        UIVisualEffectView *existingBlur = (UIVisualEffectView *)[container viewWithTag:999];
+        if (!existingBlur) {
+                [self applyBlurEffectToView:container];
+        } else {
+                BOOL isDarkMode = [DYYYUtils isDarkMode];
+                UIBlurEffectStyle blurStyle = isDarkMode ? UIBlurEffectStyleDark : UIBlurEffectStyleLight;
+                existingBlur.effect = [UIBlurEffect effectWithStyle:blurStyle];
+
+                float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
+                if (userTransparency <= 0 || userTransparency > 1) {
+                        userTransparency = 0.5;
+                }
+                existingBlur.alpha = userTransparency;
+        }
 }
 
 %new
@@ -6132,8 +6141,10 @@ static CGFloat currentScale = 1.0;
         }
 
         static char kDYDoubleColumnCacheKey;
+        static char kDYDoubleColumnCountKey;
         NSArray *cachedViews = objc_getAssociatedObject(self, &kDYDoubleColumnCacheKey);
-        if (!cachedViews) {
+        NSNumber *cachedCount = objc_getAssociatedObject(self, &kDYDoubleColumnCountKey);
+        if (!cachedViews || cachedCount.unsignedIntegerValue != self.subviews.count) {
                 NSMutableArray *views = [NSMutableArray array];
                 for (UIView *subview in self.subviews) {
                         if (![subview isKindOfClass:[UILabel class]]) {
@@ -6142,6 +6153,7 @@ static CGFloat currentScale = 1.0;
                 }
                 cachedViews = [views copy];
                 objc_setAssociatedObject(self, &kDYDoubleColumnCacheKey, cachedViews, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+                objc_setAssociatedObject(self, &kDYDoubleColumnCountKey, @(self.subviews.count), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
         }
 
         for (UIView *v in cachedViews) {
