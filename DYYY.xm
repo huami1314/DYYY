@@ -869,19 +869,35 @@
 %hook AWEAwemeDetailNaviBarContainerView
 
 - (void)layoutSubviews {
-	%orig;
+        %orig;
 
-	NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
-	if (!transparentValue.length) return;
-	CGFloat alphaValue = transparentValue.floatValue;
-	if (alphaValue < 0.0 || alphaValue > 1.0) return;
-	if ([NSStringFromClass([self.superview class]) isEqualToString:NSStringFromClass([self class])]) return;
-	for (UIView *subview in self.subviews) {
-		if (subview.tag == DYYY_IGNORE_GLOBAL_ALPHA_TAG) continue;
-		if (subview.superview == self && subview.alpha > 0) {
-				subview.alpha = alphaValue;
-		}
-	}
+        NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
+        if (!transparentValue.length)
+                return;
+
+        CGFloat alphaValue = transparentValue.floatValue;
+        if (alphaValue < 0.0 || alphaValue > 1.0)
+                return;
+
+        if ([NSStringFromClass([self.superview class]) isEqualToString:NSStringFromClass([self class])])
+                return;
+
+        static char kDYYNaviAlphaCacheKey;
+        NSArray *alphaViews = objc_getAssociatedObject(self, &kDYYNaviAlphaCacheKey);
+        if (!alphaViews) {
+                NSMutableArray *tmp = [NSMutableArray array];
+                for (UIView *subview in self.subviews) {
+                        if (subview.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG && subview.superview == self && subview.alpha > 0) {
+                                [tmp addObject:subview];
+                        }
+                }
+                alphaViews = [tmp copy];
+                objc_setAssociatedObject(self, &kDYYNaviAlphaCacheKey, alphaViews, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        }
+
+        for (UIView *v in alphaViews) {
+                v.alpha = alphaValue;
+        }
 }
 
 %end
@@ -2906,14 +2922,27 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWENormalModeTabBarBadgeContainerView
 
 - (void)layoutSubviews {
-	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenBottomDot"]) {
-		for (UIView *subview in [self subviews]) {
-			if ([subview isKindOfClass:NSClassFromString(@"DUXBadge")]) {
-				[subview setHidden:YES];
-			}
-		}
-	}
+        %orig;
+        if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenBottomDot"]) {
+                return;
+        }
+
+        static char kDYBadgeCacheKey;
+        NSArray *badges = objc_getAssociatedObject(self, &kDYBadgeCacheKey);
+        if (!badges) {
+                NSMutableArray *tmp = [NSMutableArray array];
+                for (UIView *subview in [self subviews]) {
+                        if ([subview isKindOfClass:NSClassFromString(@"DUXBadge")]) {
+                                [tmp addObject:subview];
+                        }
+                }
+                badges = [tmp copy];
+                objc_setAssociatedObject(self, &kDYBadgeCacheKey, badges, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        }
+
+        for (UIView *badge in badges) {
+                badge.hidden = YES;
+        }
 }
 
 %end
@@ -2931,13 +2960,26 @@ static AWEIMReusableCommonCell *currentCell;
 		}
 	}
 
-	if (parentVC && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenLeftSideBar"]) {
-		for (UIView *subview in self.subviews) {
-			if ([subview isKindOfClass:%c(DUXBaseImageView)]) {
-				subview.hidden = YES;
-			}
-		}
-	}
+        if (!(parentVC && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenLeftSideBar"])) {
+                return;
+        }
+
+        static char kDYLeftSideViewCacheKey;
+        NSArray *cachedViews = objc_getAssociatedObject(self, &kDYLeftSideViewCacheKey);
+        if (!cachedViews) {
+                NSMutableArray *views = [NSMutableArray array];
+                for (UIView *subview in self.subviews) {
+                        if ([subview isKindOfClass:%c(DUXBaseImageView)]) {
+                                [views addObject:subview];
+                        }
+                }
+                cachedViews = [views copy];
+                objc_setAssociatedObject(self, &kDYLeftSideViewCacheKey, cachedViews, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        }
+
+        for (UIView *v in cachedViews) {
+                v.hidden = YES;
+        }
 }
 
 %end
@@ -2945,67 +2987,52 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWEFeedVideoButton
 
 - (void)layoutSubviews {
-	%orig;
+        %orig;
 
-	NSString *accessibilityLabel = self.accessibilityLabel;
+        NSString *accessibilityLabel = self.accessibilityLabel;
 
-	if ([accessibilityLabel isEqualToString:@"点赞"]) {
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLikeButton"]) {
-			[self removeFromSuperview];
-			return;
-		}
+        BOOL hideBtn = NO;
+        BOOL hideLabel = NO;
 
-		// 隐藏点赞数值标签
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLikeLabel"]) {
-			for (UIView *subview in self.subviews) {
-				if ([subview isKindOfClass:[UILabel class]]) {
-					subview.hidden = YES;
-				}
-			}
-		}
-	} else if ([accessibilityLabel isEqualToString:@"评论"]) {
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentButton"]) {
-			[self removeFromSuperview];
-			return;
-		}
+        if ([accessibilityLabel isEqualToString:@"点赞"]) {
+                hideBtn = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLikeButton"];
+                hideLabel = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLikeLabel"];
+        } else if ([accessibilityLabel isEqualToString:@"评论"]) {
+                hideBtn = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentButton"];
+                hideLabel = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentLabel"];
+        } else if ([accessibilityLabel isEqualToString:@"分享"]) {
+                hideBtn = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShareButton"];
+                hideLabel = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShareLabel"];
+        } else if ([accessibilityLabel isEqualToString:@"收藏"]) {
+                hideBtn = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCollectButton"];
+                hideLabel = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCollectLabel"];
+        }
 
-		// 隐藏评论数值标签
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentLabel"]) {
-			for (UIView *subview in self.subviews) {
-				if ([subview isKindOfClass:[UILabel class]]) {
-					subview.hidden = YES;
-				}
-			}
-		}
-	} else if ([accessibilityLabel isEqualToString:@"分享"]) {
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShareButton"]) {
-			[self removeFromSuperview];
-			return;
-		}
+        if (!hideBtn && !hideLabel) {
+                return; // 设置未启用，无需额外处理
+        }
 
-		// 隐藏分享数值标签
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShareLabel"]) {
-			for (UIView *subview in self.subviews) {
-				if ([subview isKindOfClass:[UILabel class]]) {
-					subview.hidden = YES;
-				}
-			}
-		}
-	} else if ([accessibilityLabel isEqualToString:@"收藏"]) {
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCollectButton"]) {
-			[self removeFromSuperview];
-			return;
-		}
+        if (hideBtn) {
+                [self removeFromSuperview];
+                return;
+        }
 
-		// 隐藏收藏数值标签
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCollectLabel"]) {
-			for (UIView *subview in self.subviews) {
-				if ([subview isKindOfClass:[UILabel class]]) {
-					subview.hidden = YES;
-				}
-			}
-		}
-	}
+        static char kDYLabelCacheKey;
+        NSArray *cachedLabels = objc_getAssociatedObject(self, &kDYLabelCacheKey);
+        if (!cachedLabels) {
+                NSMutableArray *labels = [NSMutableArray array];
+                for (UIView *subview in self.subviews) {
+                        if ([subview isKindOfClass:[UILabel class]]) {
+                                [labels addObject:subview];
+                        }
+                }
+                cachedLabels = [labels copy];
+                objc_setAssociatedObject(self, &kDYLabelCacheKey, cachedLabels, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        }
+
+        for (UILabel *label in cachedLabels) {
+                label.hidden = hideLabel;
+        }
 }
 
 %end
@@ -3421,14 +3448,25 @@ static AWEIMReusableCommonCell *currentCell;
 		return;
 	}
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideSearchEntranceIndicator"]) {
-		for (UIView *subviews in self.subviews) {
-			if ([subviews isKindOfClass:%c(UIImageView)] && 
-				[NSStringFromClass([((UIImageView *)subviews).image class]) isEqualToString:@"_UIResizableImage"]) {
-				((UIImageView *)subviews).hidden = YES;
-			}
-		}
-	}
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideSearchEntranceIndicator"]) {
+                static char kDYSearchIndicatorKey;
+                NSArray *indicatorViews = objc_getAssociatedObject(self, &kDYSearchIndicatorKey);
+                if (!indicatorViews) {
+                        NSMutableArray *tmp = [NSMutableArray array];
+                        for (UIView *subviews in self.subviews) {
+                                if ([subviews isKindOfClass:%c(UIImageView)] &&
+                                        [NSStringFromClass([((UIImageView *)subviews).image class]) isEqualToString:@"_UIResizableImage"]) {
+                                        [tmp addObject:subviews];
+                                }
+                        }
+                        indicatorViews = [tmp copy];
+                        objc_setAssociatedObject(self, &kDYSearchIndicatorKey, indicatorViews, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+                }
+
+                for (UIImageView *imgView in indicatorViews) {
+                        imgView.hidden = YES;
+                }
+        }
 
 	// NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
 	// if (transparentValue.length > 0) {
@@ -3449,21 +3487,27 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 	%orig;
 
-	BOOL shouldHide = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideStoryProgressSlide"];
-	if (!shouldHide)
-		return;
-	__block UIView *targetView = nil;
-	[self.subviews enumerateObjectsUsingBlock:^(__kindof UIView *_Nonnull obj, NSUInteger idx, BOOL *_Nonnull stop) {
-	  if ([obj isKindOfClass:NSClassFromString(@"UISlider")] || obj.frame.size.height < 5) {
-		  targetView = obj.superview;
-		  *stop = YES;
-	  }
-	}];
+        BOOL shouldHide = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideStoryProgressSlide"];
+        if (!shouldHide)
+                return;
 
-	if (targetView) {
-		targetView.hidden = YES;
-	} else {
-	}
+        static char kDYStoryProgressCacheKey;
+        UIView *targetView = objc_getAssociatedObject(self, &kDYStoryProgressCacheKey);
+        if (!targetView) {
+                for (UIView *obj in self.subviews) {
+                        if ([obj isKindOfClass:NSClassFromString(@"UISlider")] || obj.frame.size.height < 5) {
+                                targetView = obj.superview;
+                                break;
+                        }
+                }
+                if (targetView) {
+                        objc_setAssociatedObject(self, &kDYStoryProgressCacheKey, targetView, OBJC_ASSOCIATION_ASSIGN);
+                }
+        }
+
+        if (targetView) {
+                targetView.hidden = YES;
+        }
 }
 
 %end
@@ -3958,14 +4002,28 @@ static AWEIMReusableCommonCell *currentCell;
 }
 
 - (void)layoutSubviews {
-	%orig;
-	for (UIView *subview in self.subviews) {
-		if ([subview isKindOfClass:[%c(DUXBadge) class]]) {
-			if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenSidebarDot"]) {
-				subview.hidden = YES;
-			}
-		}
-	}
+        %orig;
+
+        if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenSidebarDot"]) {
+                return;
+        }
+
+        static char kDYSidebarBadgeCacheKey;
+        NSArray *cachedBadges = objc_getAssociatedObject(self, &kDYSidebarBadgeCacheKey);
+        if (!cachedBadges) {
+                NSMutableArray *badges = [NSMutableArray array];
+                for (UIView *subview in self.subviews) {
+                        if ([subview isKindOfClass:%c(DUXBadge)]) {
+                                [badges addObject:subview];
+                        }
+                }
+                cachedBadges = [badges copy];
+                objc_setAssociatedObject(self, &kDYSidebarBadgeCacheKey, cachedBadges, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        }
+
+        for (UIView *badge in cachedBadges) {
+                badge.hidden = YES;
+        }
 }
 %end
 
@@ -4049,30 +4107,32 @@ static AWEIMReusableCommonCell *currentCell;
 %hook IESLiveButton
 
 - (void)layoutSubviews {
-	%orig;
+        %orig;
 
-	// 处理清屏按钮
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveRoomClear"]) {
-		if ([self.accessibilityLabel isEqualToString:@"退出清屏"] && self.superview) {
-			[self.superview removeFromSuperview];
-		}
-	}
+        BOOL hideClear = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveRoomClear"];
+        BOOL hideMirror = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveRoomMirroring"];
+        BOOL hideFull = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveRoomFullscreen"];
 
-	// 投屏按钮
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveRoomMirroring"]) {
-		if ([self.accessibilityLabel isEqualToString:@"投屏"] && self.superview) {
-			[self.superview removeFromSuperview];
-		}
-	}
+        if (!(hideClear || hideMirror || hideFull)) {
+                return;
+        }
 
-	// 横屏按钮,可点击
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveRoomFullscreen"]) {
-		if ([self.accessibilityLabel isEqualToString:@"横屏"] && self.superview) {
-			for (UIView *subview in self.subviews) {
-				subview.hidden = YES;
-			}
-		}
-	}
+        NSString *label = self.accessibilityLabel;
+        if (hideClear && [label isEqualToString:@"退出清屏"] && self.superview) {
+                [self.superview removeFromSuperview];
+        } else if (hideMirror && [label isEqualToString:@"投屏"] && self.superview) {
+                [self.superview removeFromSuperview];
+        } else if (hideFull && [label isEqualToString:@"横屏"] && self.superview) {
+                static char kDYLiveButtonCacheKey;
+                NSArray *cached = objc_getAssociatedObject(self, &kDYLiveButtonCacheKey);
+                if (!cached) {
+                        cached = [self.subviews copy];
+                        objc_setAssociatedObject(self, &kDYLiveButtonCacheKey, cached, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+                }
+                for (UIView *subview in cached) {
+                        subview.hidden = YES;
+                }
+        }
 }
 
 %end
@@ -4556,17 +4616,30 @@ static AWEIMReusableCommonCell *currentCell;
 
 %hook AWEPlayInteractionUserAvatarView
 - (void)layoutSubviews {
-	%orig;
+        %orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFollowPromptView"]) {
-		for (UIView *subview in self.subviews) {
-			if ([subview isMemberOfClass:[UIView class]]) {
-				for (UIView *childView in subview.subviews) {
-					childView.alpha = 0.0;
-				}
-			}
-		}
-	}
+        if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFollowPromptView"]) {
+                return;
+        }
+
+        static char kDYAvatarCacheKey;
+        NSArray *viewCache = objc_getAssociatedObject(self, &kDYAvatarCacheKey);
+        if (!viewCache) {
+                NSMutableArray *tmp = [NSMutableArray array];
+                for (UIView *subview in self.subviews) {
+                        if ([subview isMemberOfClass:[UIView class]]) {
+                                [tmp addObject:subview];
+                        }
+                }
+                viewCache = [tmp copy];
+                objc_setAssociatedObject(self, &kDYAvatarCacheKey, viewCache, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        }
+
+        for (UIView *container in viewCache) {
+                for (UIView *child in container.subviews) {
+                        child.alpha = 0.0;
+                }
+        }
 }
 %end
 
@@ -5926,18 +5999,22 @@ static CGFloat currentScale = 1.0;
 		}
 	}
 
-	if (parentVC && ([parentVC isKindOfClass:%c(AWEAwemeDetailTableViewController)] || [parentVC isKindOfClass:%c(AWEAwemeDetailCellViewController)])) {
-		for (UIView *subview in [self subviews]) {
-			if ([subview class] == [UIView class]) {
-				if ([(UIView *)self frame].size.height == tabHeight) {
-					subview.hidden = YES;
-				} else {
-					subview.hidden = NO;
-				}
-				break;
-			}
-		}
-	}
+        if (parentVC && ([parentVC isKindOfClass:%c(AWEAwemeDetailTableViewController)] || [parentVC isKindOfClass:%c(AWEAwemeDetailCellViewController)])) {
+                static char kDYCommentHideCacheKey;
+                UIView *target = objc_getAssociatedObject(self, &kDYCommentHideCacheKey);
+                if (!target) {
+                        for (UIView *subview in [self subviews]) {
+                                if ([subview class] == [UIView class]) {
+                                        target = subview;
+                                        objc_setAssociatedObject(self, &kDYCommentHideCacheKey, target, OBJC_ASSOCIATION_ASSIGN);
+                                        break;
+                                }
+                        }
+                }
+                if (target) {
+                        target.hidden = ([(UIView *)self frame].size.height == tabHeight);
+                }
+        }
 }
 
 %end
@@ -6006,15 +6083,28 @@ static CGFloat currentScale = 1.0;
 // 隐藏双栏入口
 %hook AWENormalModeTabBarFeedView
 - (void)layoutSubviews {
-	%orig;
+        %orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideDoubleColumnEntry"]) {
-		for (UIView *subview in self.subviews) {
-			if (![subview isKindOfClass:[UILabel class]]) {
-				subview.hidden = YES;
-			}
-		}
-	}
+        if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideDoubleColumnEntry"]) {
+                return;
+        }
+
+        static char kDYDoubleColumnCacheKey;
+        NSArray *cachedViews = objc_getAssociatedObject(self, &kDYDoubleColumnCacheKey);
+        if (!cachedViews) {
+                NSMutableArray *views = [NSMutableArray array];
+                for (UIView *subview in self.subviews) {
+                        if (![subview isKindOfClass:[UILabel class]]) {
+                                [views addObject:subview];
+                        }
+                }
+                cachedViews = [views copy];
+                objc_setAssociatedObject(self, &kDYDoubleColumnCacheKey, cachedViews, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        }
+
+        for (UIView *v in cachedViews) {
+                v.hidden = YES;
+        }
 }
 %end
 
