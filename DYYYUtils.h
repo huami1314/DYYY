@@ -79,6 +79,15 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark - Public Color Scheme Methods (公共颜色方案方法)
 
 /**
+ * @brief 递归地将指定的文本颜色应用到视图及其所有子视图中的 UILabel 和 UIButton。
+ *        可以通过 shouldExcludeViewBlock 提供自定义的排除逻辑。
+ * @param color 要应用的文本颜色。
+ * @param view 起始视图。
+ * @param excludeBlock 一个 Block，用于判断是否应该排除某个视图。如果 Block 返回 YES，则该视图不会被应用颜色。可以为 nil。
+ */
++ (void)applyTextColorRecursively:(UIColor *)color inView:(UIView *)view shouldExcludeViewBlock:(BOOL (^)(UIView *subview))excludeBlock;
+
+/**
  * @brief 将指定的颜色字符串方案应用到 UILabel 上，实现像素级渐变。
  *        此方法通过修改 UILabel 的 attributedText 来实现颜色效果。
  * @param label 要应用颜色的 UILabel。

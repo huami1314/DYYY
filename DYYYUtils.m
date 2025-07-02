@@ -328,6 +328,25 @@
     }
 }
 
++ (void)applyTextColorRecursively:(UIColor *)color inView:(UIView *)view shouldExcludeViewBlock:(BOOL (^)(UIView *subview))excludeBlock {
+    if (!view || !color) return;
+
+    BOOL shouldExclude = NO;
+    if (excludeBlock) shouldExclude = excludeBlock(view);
+
+    if (!shouldExclude) {
+        if ([view isKindOfClass:[UILabel class]]) {
+            ((UILabel *)view).textColor = color;
+        } else if ([view isKindOfClass:[UIButton class]]) {
+            [(UIButton *)view setTitleColor:color forState:UIControlStateNormal];
+        }
+    }
+
+    for (UIView *subview in view.subviews) {
+        [self applyTextColorRecursively:color inView:subview shouldExcludeViewBlock:excludeBlock];
+    }
+}
+
 + (void)applyColorSettingsToLabel:(UILabel *)label colorHexString:(NSString *)colorHexString {
     NSMutableAttributedString *attributedText;
     if ([label.attributedText isKindOfClass:[NSAttributedString class]]) {

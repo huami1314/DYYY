@@ -1663,26 +1663,26 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 			if (userTransparency <= 0 || userTransparency > 1) {
 				userTransparency = 0.5;
 			}
+
 			[DYYYUtils applyBlurEffectToView:subview transparency:userTransparency blurViewTag:999];
-			[DYYYUtils clearBackgroundRecursivelyInView:subview]; // 确保背景透明
-			[self setLabelsColorWhiteInView:subview];
+			[DYYYUtils clearBackgroundRecursivelyInView:subview];
+
+            // 定义排除 Block
+            NSSet *excludedTexts = [NSSet setWithObjects:@"回复", @"查看", @"续火花", nil];
+            BOOL (^excludeBlock)(UIView *) = ^BOOL (UIView *currentView) {
+                if ([currentView isKindOfClass:[UILabel class]]) {
+                    UILabel *label = (UILabel *)currentView;
+                    if (label.text && [excludedTexts containsObject:label.text]) {
+                        return YES;
+                    }
+                }
+                return NO;
+            };
+            // 调用新的通用方法设置文本颜色，并传入排除 Block
+            [DYYYUtils applyTextColorRecursively:[UIColor whiteColor] inView:subview shouldExcludeViewBlock:excludeBlock];
+
 			break;
 		}
-	}
-}
-
-%new
-- (void)setLabelsColorWhiteInView:(UIView *)view {
-	for (UIView *subview in view.subviews) {
-		if ([subview isKindOfClass:[UILabel class]]) {
-			UILabel *label = (UILabel *)subview;
-			NSString *text = label.text;
-
-			if (![text isEqualToString:@"回复"] && ![text isEqualToString:@"查看"] && ![text isEqualToString:@"续火花"]) {
-				label.textColor = [UIColor whiteColor];
-			}
-		}
-		[self setLabelsColorWhiteInView:subview];
 	}
 }
 
@@ -1709,29 +1709,15 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 		if (userTransparency <= 0 || userTransparency > 1) {
 			userTransparency = 0.9; // 默认值0.9
 		}
+
 		[DYYYUtils applyBlurEffectToView:self.containerView transparency:userTransparency blurViewTag:9999];
-		// 确保所有子视图背景透明，以便模糊效果可见
 		[DYYYUtils clearBackgroundRecursivelyInView:self.containerView];
-		[self setTextColorWhiteRecursivelyInView:self.containerView];
+
+        // 调用新的通用方法设置文本颜色，这里没有排除需求，所以传入 nil Block
+        [DYYYUtils applyTextColorRecursively:[UIColor whiteColor] inView:self.containerView shouldExcludeViewBlock:nil];
 	}
 }
 
-%new
-- (void)setTextColorWhiteRecursivelyInView:(UIView *)view {
-	for (UIView *subview in view.subviews) {
-		if ([subview isKindOfClass:[UILabel class]]) {
-			UILabel *label = (UILabel *)subview;
-			label.textColor = [UIColor whiteColor];
-		}
-
-		if ([subview isKindOfClass:[UIButton class]]) {
-			UIButton *button = (UIButton *)subview;
-			[button setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-		}
-
-		[self setTextColorWhiteRecursivelyInView:subview];
-	}
-}
 %end
 
 %hook _TtC33AWECommentLongPressPanelSwiftImpl32CommentLongPressPanelCopyElement
