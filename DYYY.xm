@@ -933,14 +933,28 @@
 
 %hook AWEPlayInteractionProgressContainerView
 - (void)layoutSubviews {
-	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-		for (UIView *subview in self.subviews) {
-			if ([subview class] == [UIView class]) {
-				[subview setBackgroundColor:[UIColor clearColor]];
-			}
-		}
-	}
+        %orig;
+
+        if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+                return;
+        }
+
+        static char kDYProgressBgKey;
+        NSArray *bgViews = objc_getAssociatedObject(self, &kDYProgressBgKey);
+        if (!bgViews) {
+                NSMutableArray *tmp = [NSMutableArray array];
+                for (UIView *subview in self.subviews) {
+                        if ([subview class] == [UIView class]) {
+                                [tmp addObject:subview];
+                        }
+                }
+                bgViews = [tmp copy];
+                objc_setAssociatedObject(self, &kDYProgressBgKey, bgViews, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        }
+
+        for (UIView *v in bgViews) {
+                v.backgroundColor = [UIColor clearColor];
+        }
 }
 
 %end
@@ -1162,42 +1176,45 @@ static CGFloat rightLabelRightMargin = -1;
 %hook AWENormalModeTabBarTextView
 
 - (void)layoutSubviews {
-	%orig;
+        %orig;
 
-	NSString *indexTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYIndexTitle"];
-	NSString *friendsTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYFriendsTitle"];
-	NSString *msgTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYMsgTitle"];
-	NSString *selfTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYSelfTitle"];
+        NSString *indexTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYIndexTitle"];
+        NSString *friendsTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYFriendsTitle"];
+        NSString *msgTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYMsgTitle"];
+        NSString *selfTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYSelfTitle"];
 
-	for (UIView *subview in [self subviews]) {
-		if ([subview isKindOfClass:[UILabel class]]) {
-			UILabel *label = (UILabel *)subview;
-			if ([label.text isEqualToString:@"首页"]) {
-				if (indexTitle.length > 0) {
-					[label setText:indexTitle];
-					[self setNeedsLayout];
-				}
-			}
-			if ([label.text isEqualToString:@"朋友"]) {
-				if (friendsTitle.length > 0) {
-					[label setText:friendsTitle];
-					[self setNeedsLayout];
-				}
-			}
-			if ([label.text isEqualToString:@"消息"]) {
-				if (msgTitle.length > 0) {
-					[label setText:msgTitle];
-					[self setNeedsLayout];
-				}
-			}
-			if ([label.text isEqualToString:@"我"]) {
-				if (selfTitle.length > 0) {
-					[label setText:selfTitle];
-					[self setNeedsLayout];
-				}
-			}
-		}
-	}
+        if (!(indexTitle.length || friendsTitle.length || msgTitle.length || selfTitle.length)) {
+                return;
+        }
+
+        static char kDYTabLabelCacheKey;
+        NSArray *labelCache = objc_getAssociatedObject(self, &kDYTabLabelCacheKey);
+        if (!labelCache) {
+                NSMutableArray *tmp = [NSMutableArray array];
+                for (UIView *subview in [self subviews]) {
+                        if ([subview isKindOfClass:[UILabel class]]) {
+                                [tmp addObject:subview];
+                        }
+                }
+                labelCache = [tmp copy];
+                objc_setAssociatedObject(self, &kDYTabLabelCacheKey, labelCache, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        }
+
+        for (UILabel *label in labelCache) {
+                if ([label.text isEqualToString:@"首页"] && indexTitle.length > 0) {
+                        label.text = indexTitle;
+                        [self setNeedsLayout];
+                } else if ([label.text isEqualToString:@"朋友"] && friendsTitle.length > 0) {
+                        label.text = friendsTitle;
+                        [self setNeedsLayout];
+                } else if ([label.text isEqualToString:@"消息"] && msgTitle.length > 0) {
+                        label.text = msgTitle;
+                        [self setNeedsLayout];
+                } else if ([label.text isEqualToString:@"我"] && selfTitle.length > 0) {
+                        label.text = selfTitle;
+                        [self setNeedsLayout];
+                }
+        }
 }
 %end
 %hook AWEPlayInteractionTimestampElement
@@ -1709,10 +1726,10 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 }
 
 - (void)layoutSubviews {
-	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableNotificationTransparency"]) {
-		[self setupBlurEffectForNotificationView];
-	}
+        %orig;
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableNotificationTransparency"]) {
+                [self setupBlurEffectForNotificationView];
+        }
 }
 
 - (void)didMoveToWindow {
@@ -1731,12 +1748,23 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 
 %new
 - (void)setupBlurEffectForNotificationView {
-	for (UIView *subview in self.subviews) {
-		if ([NSStringFromClass([subview class]) containsString:@"AWEInnerNotificationContainerView"]) {
-			[self applyBlurEffectToView:subview];
-			break;
-		}
-	}
+        static char kDYNotifContainerKey;
+        UIView *container = objc_getAssociatedObject(self, &kDYNotifContainerKey);
+        if (!container) {
+                for (UIView *subview in self.subviews) {
+                        if ([NSStringFromClass([subview class]) containsString:@"AWEInnerNotificationContainerView"]) {
+                                container = subview;
+                                objc_setAssociatedObject(self, &kDYNotifContainerKey, container, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+                                break;
+                        }
+                }
+        }
+
+        if (!container || [container viewWithTag:999]) {
+                return;
+        }
+
+        [self applyBlurEffectToView:container];
 }
 
 %new
@@ -5715,14 +5743,28 @@ static CGFloat currentScale = 1.0;
 
 %hook AFDFastSpeedView
 - (void)layoutSubviews {
-	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-		for (UIView *subview in self.subviews) {
-			if ([subview class] == [UIView class]) {
-				[subview setBackgroundColor:[UIColor clearColor]];
-			}
-		}
-	}
+        %orig;
+
+        if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+                return;
+        }
+
+        static char kDYFastSpeedBgKey;
+        NSArray *bgViews = objc_getAssociatedObject(self, &kDYFastSpeedBgKey);
+        if (!bgViews) {
+                NSMutableArray *tmp = [NSMutableArray array];
+                for (UIView *subview in self.subviews) {
+                        if ([subview class] == [UIView class]) {
+                                [tmp addObject:subview];
+                        }
+                }
+                bgViews = [tmp copy];
+                objc_setAssociatedObject(self, &kDYFastSpeedBgKey, bgViews, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        }
+
+        for (UIView *view in bgViews) {
+                view.backgroundColor = [UIColor clearColor];
+        }
 }
 %end
 
