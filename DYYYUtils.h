@@ -11,20 +11,25 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark - Public UI/Window/Controller Utilities (公共 UI/窗口/控制器 工具)
 
 /**
- * 获取当前显示的顶层视图控制器
- * @return 顶层视图控制器
- */
-+ (UIViewController *)topView;
-
-/**
  * 获取当前活动窗口
  */
 + (UIWindow *)getActiveWindow;
 
 /**
- * 获取当前顶层控制器
+ * 获取当前显示的顶层视图控制器
+ * @return 顶层视图控制器
  */
-+ (UIViewController *)getActiveTopController;
++ (UIViewController *)topView;
+
++ (UIViewController *)firstAvailableViewControllerFromView:(UIView *)view;
+/* 在视图控制器层级中查找指定类的控制器 */
++ (UIViewController *)findViewControllerOfClass:(Class)targetClass inViewController:(UIViewController *)vc;
++ (NSArray<UIView *> *)findAllSubviewsOfClass:(Class)targetClass inView:(UIView *)view;
++ (UIView *)findSubviewOfClass:(Class)targetClass inView:(UIView *)view;
+/* 判断视图是否包含指定类型的子视图 */
++ (BOOL)containsSubviewOfClass:(Class)targetClass inView:(UIView *)view;
++ (void)applyBlurEffectToView:(UIView *)view transparency:(float)userTransparency blurViewTag:(NSInteger)tag;
++ (void)clearBackgroundRecursivelyInView:(UIView *)view;
 
 /**
  * 显示提示信息
@@ -131,20 +136,6 @@ NSString * _Nullable cleanShareURL(NSString * _Nullable url);
  * @return 顶层视图控制器
  */
 UIViewController * _Nullable topView(void);
-
-/**
- * 判断视图是否包含指定类型的子视图
- */
-BOOL viewContainsSubviewOfClass(UIView * _Nullable view, Class _Nullable viewClass);
-
-/** 判断是否为右侧互动区域 */
-BOOL isRightInteractionStack(UIView * _Nullable stackView);
-
-/** 判断是否为左侧互动区域 */
-BOOL isLeftInteractionStack(UIView * _Nullable stackView);
-
-/** 在视图控制器层级中查找指定类的控制器 */
-UIViewController * _Nullable findViewControllerOfClass(UIViewController * _Nullable rootVC, Class _Nullable targetClass);
 
 /**
  * 递归将任意对象转换为 JSON 可序列化对象

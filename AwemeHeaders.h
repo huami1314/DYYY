@@ -1217,12 +1217,6 @@ static CGFloat gStartVal = 0.0;
 - (void)adjustContainerViewLayout:(UICollectionViewCell *)cell;
 @end
 
-@interface UIView (Helper)
-- (BOOL)containsClassNamed:(NSString *)className;
-- (UIView *)findViewWithClassName:(NSString *)className;
-- (NSArray<UIView *> *)findAllViewsWithClassName:(NSString *)className;
-@end
-
 @interface AWESettingsTableViewController : AWESettingBaseViewController
 - (id)viewModel;
 - (void)removeAboutSection;

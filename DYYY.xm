@@ -256,12 +256,7 @@
 
 	// 保险起见再fallback,遍历 subviews
 	if (!gFeedCV) {
-		for (UIView *v in self.view.subviews) {
-			if ([v isKindOfClass:[UICollectionView class]]) {
-				gFeedCV = (UICollectionView *)v;
-				break;
-			}
-		}
+		gFeedCV = [DYYYUtils findSubviewOfClass:[UICollectionView class] inView:self.view];
 	}
 }
 %end
@@ -499,7 +494,7 @@
 			dispatch_source_set_event_handler(timer, ^{
 			  UIWindow *keyWindow = [DYYYUtils getActiveWindow];
 			  if (keyWindow && keyWindow.rootViewController) {
-				  UIViewController *feedVC = findViewControllerOfClass(keyWindow.rootViewController, NSClassFromString(@"AWEFeedTableViewController"));
+				  UIViewController *feedVC = [DYYYUtils findViewControllerOfClass:NSClassFromString(@"AWEFeedTableViewController") inViewController:keyWindow.rootViewController];
 				  if (feedVC) {
 					  [feedVC setValue:@YES forKey:@"pureMode"];
 					  pureModeSet = YES;
@@ -647,7 +642,7 @@
 - (void)layoutSubviews {
 	%orig;
 
-	UIViewController *vc = [self firstAvailableUIViewController];
+	UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
 
 	if ([vc isKindOfClass:%c(AWEPlayInteractionViewController)]) {
 		if (self.markLabel) {
@@ -759,23 +754,8 @@
 	    [self isKindOfClass:NSClassFromString(@"AWECommentPanelContainerSwiftImpl.CommentContainerInnerViewController")]) {
 
 		self.view.backgroundColor = [UIColor clearColor];
-		for (UIView *subview in self.view.subviews) {
-			if (![subview isKindOfClass:[UIVisualEffectView class]]) {
-				subview.backgroundColor = [UIColor clearColor];
-			}
-		}
-
-		UIVisualEffectView *existingBlurView = nil;
-		for (UIView *subview in self.view.subviews) {
-			if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == 999) {
-				existingBlurView = (UIVisualEffectView *)subview;
-				break;
-			}
-		}
-
-		BOOL isDarkMode = [DYYYUtils isDarkMode];
-
-		UIBlurEffectStyle blurStyle = isDarkMode ? UIBlurEffectStyleDark : UIBlurEffectStyleLight;
+		// 递归清除所有子视图的背景色，防止遮挡模糊效果
+		[DYYYUtils clearBackgroundRecursivelyInView:self.view];
 
 		// 动态获取用户设置的透明度
 		float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
@@ -783,36 +763,8 @@
 			userTransparency = 0.5; // 默认值0.5（半透明）
 		}
 
-		if (!existingBlurView) {
-			UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurStyle];
-			UIVisualEffectView *blurEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
-			blurEffectView.frame = self.view.bounds;
-			blurEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-			blurEffectView.alpha = userTransparency; // 设置为用户自定义透明度
-			blurEffectView.tag = 999;
-
-			UIView *overlayView = [[UIView alloc] initWithFrame:self.view.bounds];
-			CGFloat alpha = isDarkMode ? 0.2 : 0.1;
-			overlayView.backgroundColor = [UIColor colorWithWhite:(isDarkMode ? 0 : 1) alpha:alpha];
-			overlayView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-			[blurEffectView.contentView addSubview:overlayView];
-
-			[self.view insertSubview:blurEffectView atIndex:0];
-		} else {
-			UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurStyle];
-			[existingBlurView setEffect:blurEffect];
-
-			existingBlurView.alpha = userTransparency; // 动态更新已有视图的透明度
-
-			for (UIView *subview in existingBlurView.contentView.subviews) {
-				if (subview.tag != 999) {
-					CGFloat alpha = isDarkMode ? 0.2 : 0.1;
-					subview.backgroundColor = [UIColor colorWithWhite:(isDarkMode ? 0 : 1) alpha:alpha];
-				}
-			}
-
-			[self.view insertSubview:existingBlurView atIndex:0];
-		}
+		// 应用毛玻璃效果
+		[DYYYUtils applyBlurEffectToView:self.view transparency:userTransparency blurViewTag:999];
 	}
 }
 %end
@@ -821,14 +773,7 @@
 // 关键方法,勿删！
 %new
 - (UIViewController *)firstAvailableUIViewController {
-	UIResponder *responder = [self nextResponder];
-	while (responder != nil) {
-		if ([responder isKindOfClass:[UIViewController class]]) {
-			return (UIViewController *)responder;
-		}
-		responder = [responder nextResponder];
-	}
-	return nil;
+	return [DYYYUtils firstAvailableViewControllerFromView:self];
 }
 
 %end
@@ -1120,7 +1065,7 @@ static CGFloat rightLabelRightMargin = -1;
 				rightFrame.size.height = 15.0;
 				rightLabel.frame = rightFrame;
 			}
-			[DYYYUtils applyColorSettingsToLabel:leftLabel colorHexString:labelColorHex];
+			[DYYYUtils applyColorSettingsToLabel:rightLabel colorHexString:labelColorHex];
 		}
 	}
 }
@@ -1709,57 +1654,24 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 - (void)setupBlurEffectForNotificationView {
 	for (UIView *subview in self.subviews) {
 		if ([NSStringFromClass([subview class]) containsString:@"AWEInnerNotificationContainerView"]) {
-			[self applyBlurEffectToView:subview];
+			// 动态获取用户设置的圆角半径
+			float userRadius = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNotificationCornerRadius"] floatValue];
+			if (!userRadius || userRadius < 0 || userRadius > 50) {
+				userRadius = 12;
+			}
+			subview.layer.cornerRadius = userRadius;
+			subview.layer.masksToBounds = YES;
+
+			float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
+			if (userTransparency <= 0 || userTransparency > 1) {
+				userTransparency = 0.5;
+			}
+			[DYYYUtils applyBlurEffectToView:subview transparency:userTransparency blurViewTag:999];
+			[DYYYUtils clearBackgroundRecursivelyInView:subview]; // 确保背景透明
+			[self setLabelsColorWhiteInView:subview];
 			break;
 		}
 	}
-}
-
-%new
-- (void)applyBlurEffectToView:(UIView *)containerView {
-	if (!containerView) {
-		return;
-	}
-
-	containerView.backgroundColor = [UIColor clearColor];
-
-	float userRadius = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNotificationCornerRadius"] floatValue];
-	if (!userRadius || userRadius < 0 || userRadius > 50) {
-		userRadius = 12;
-	}
-
-	containerView.layer.cornerRadius = userRadius;
-	containerView.layer.masksToBounds = YES;
-
-	for (UIView *subview in containerView.subviews) {
-		if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == 999) {
-			[subview removeFromSuperview];
-		}
-	}
-
-	BOOL isDarkMode = [DYYYUtils isDarkMode];
-	UIBlurEffectStyle blurStyle = isDarkMode ? UIBlurEffectStyleDark : UIBlurEffectStyleLight;
-	UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurStyle];
-	UIVisualEffectView *blurView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
-
-	blurView.frame = containerView.bounds;
-	blurView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-	blurView.tag = 999;
-	blurView.layer.cornerRadius = userRadius;
-	blurView.layer.masksToBounds = YES;
-
-	float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
-	if (userTransparency <= 0 || userTransparency > 1) {
-		userTransparency = 0.5;
-	}
-
-	blurView.alpha = userTransparency;
-
-	[containerView insertSubview:blurView atIndex:0];
-
-	[self clearBackgroundRecursivelyInView:containerView];
-
-	[self setLabelsColorWhiteInView:containerView];
 }
 
 %new
@@ -1774,18 +1686,6 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 			}
 		}
 		[self setLabelsColorWhiteInView:subview];
-	}
-}
-
-%new
-- (void)clearBackgroundRecursivelyInView:(UIView *)view {
-	for (UIView *subview in view.subviews) {
-		if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == 999 && [subview isKindOfClass:[UIButton class]]) {
-			continue;
-		}
-		subview.backgroundColor = [UIColor clearColor];
-		subview.opaque = NO;
-		[self clearBackgroundRecursivelyInView:subview];
 	}
 }
 
@@ -1807,27 +1707,14 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 	if (self.containerView) {
 		self.containerView.backgroundColor = [UIColor clearColor];
 
-		for (UIView *subview in self.containerView.subviews) {
-			if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == 9999) {
-				[subview removeFromSuperview];
-			}
-		}
-
 		// 动态获取用户设置的透明度
 		float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYSheetBlurTransparent"] floatValue];
 		if (userTransparency <= 0 || userTransparency > 1) {
 			userTransparency = 0.9; // 默认值0.9
 		}
-
-		UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
-		UIVisualEffectView *blurEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
-		blurEffectView.frame = self.containerView.bounds;
-		blurEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-		blurEffectView.alpha = userTransparency; // 设置为用户自定义透明度
-		blurEffectView.tag = 9999;
-
-		[self.containerView insertSubview:blurEffectView atIndex:0];
-
+		[DYYYUtils applyBlurEffectToView:self.containerView transparency:userTransparency blurViewTag:9999];
+		// 确保所有子视图背景透明，以便模糊效果可见
+		[DYYYUtils clearBackgroundRecursivelyInView:self.containerView];
 		[self setTextColorWhiteRecursivelyInView:self.containerView];
 	}
 }
@@ -1835,10 +1722,6 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 %new
 - (void)setTextColorWhiteRecursivelyInView:(UIView *)view {
 	for (UIView *subview in view.subviews) {
-		if (![subview isKindOfClass:[UIVisualEffectView class]]) {
-			subview.backgroundColor = [UIColor clearColor];
-		}
-
 		if ([subview isKindOfClass:[UILabel class]]) {
 			UILabel *label = (UILabel *)subview;
 			label.textColor = [UIColor whiteColor];
@@ -2900,10 +2783,8 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 	%orig;
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenBottomDot"]) {
-		for (UIView *subview in [self subviews]) {
-			if ([subview isKindOfClass:NSClassFromString(@"DUXBadge")]) {
-				[subview setHidden:YES];
-			}
+		for (UIView *subview in [DYYYUtils findAllSubviewsOfClass:NSClassFromString(@"DUXBadge") inView:self]) {
+			[subview setHidden:YES];
 		}
 	}
 }
@@ -3951,11 +3832,9 @@ static AWEIMReusableCommonCell *currentCell;
 
 - (void)layoutSubviews {
 	%orig;
-	for (UIView *subview in self.subviews) {
-		if ([subview isKindOfClass:[%c(DUXBadge) class]]) {
-			if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenSidebarDot"]) {
-				subview.hidden = YES;
-			}
+	for (UIView *subview in [DYYYUtils findAllSubviewsOfClass:NSClassFromString(@"DUXBadge") inView:self]) {
+		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenSidebarDot"]) {
+			subview.hidden = YES;
 		}
 	}
 }
@@ -5070,63 +4949,13 @@ static CGFloat customTabBarHeight() {
         return 0;
 }
 
-static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
-	if (!parentView)
-		return;
-
-	parentView.backgroundColor = [UIColor clearColor];
-
-	UIVisualEffectView *existingBlurView = nil;
-	for (UIView *subview in parentView.subviews) {
-		if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == 999) {
-			existingBlurView = (UIVisualEffectView *)subview;
-			break;
-		}
-	}
-
-	BOOL isDarkMode = [DYYYUtils isDarkMode];
-	UIBlurEffectStyle blurStyle = isDarkMode ? UIBlurEffectStyleDark : UIBlurEffectStyleLight;
-
-	if (transparency <= 0 || transparency > 1) {
-		transparency = 0.5;
-	}
-
-	if (!existingBlurView) {
-		UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurStyle];
-		UIVisualEffectView *blurEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
-		blurEffectView.frame = parentView.bounds;
-		blurEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-		blurEffectView.alpha = transparency;
-		blurEffectView.tag = 999;
-
-		UIView *overlayView = [[UIView alloc] initWithFrame:parentView.bounds];
-		CGFloat alpha = isDarkMode ? 0.2 : 0.1;
-		overlayView.backgroundColor = [UIColor colorWithWhite:(isDarkMode ? 0 : 1) alpha:alpha];
-		overlayView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-		[blurEffectView.contentView addSubview:overlayView];
-
-		[parentView insertSubview:blurEffectView atIndex:0];
-	} else {
-		UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurStyle];
-		[existingBlurView setEffect:blurEffect];
-		existingBlurView.alpha = transparency;
-
-		for (UIView *subview in existingBlurView.contentView.subviews) {
-			CGFloat alpha = isDarkMode ? 0.2 : 0.1;
-			subview.backgroundColor = [UIColor colorWithWhite:(isDarkMode ? 0 : 1) alpha:alpha];
-		}
-
-		[parentView insertSubview:existingBlurView atIndex:0];
-	}
-}
-
 %hook UIView
 - (void)layoutSubviews {
 	%orig;
 
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
 		if (self.frame.size.height == tabHeight && tabHeight > 0) {
-			UIViewController *vc = [self firstAvailableUIViewController];
+			UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
 			if ([vc isKindOfClass:NSClassFromString(@"AWEMixVideoPanelDetailTableViewController")] || [vc isKindOfClass:NSClassFromString(@"AWECommentInputViewController")]) {
 				self.backgroundColor = [UIColor clearColor];
 			}
@@ -5174,7 +5003,8 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 						if (userTransparency <= 0 || userTransparency > 1) {
 							userTransparency = 0.95;
 						}
-						DYYYAddCustomViewToParent(subview, userTransparency);
+						[DYYYUtils applyBlurEffectToView:subview transparency:userTransparency blurViewTag:999];
+						[DYYYUtils clearBackgroundRecursivelyInView:subview];
 					}
 				}
 			}
@@ -5198,7 +5028,8 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 							if (userTransparency <= 0 || userTransparency > 1) {
 								userTransparency = 0.95;
 							}
-							DYYYAddCustomViewToParent(innerSubview, userTransparency);
+							[DYYYUtils applyBlurEffectToView:innerSubview transparency:userTransparency blurViewTag:999];
+							[DYYYUtils clearBackgroundRecursivelyInView:innerSubview];
 							break;
 						}
 					}
@@ -5208,7 +5039,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 	}
 
 	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"] || [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"]) {
-		UIViewController *vc = [self firstAvailableUIViewController];
+		UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
 		if ([vc isKindOfClass:%c(AWEPlayInteractionViewController)]) {
 			BOOL shouldHideSubview = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"] ||
 						 [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"];
@@ -5243,7 +5074,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 		return;
 	}
 
-	UIViewController *vc = [self firstAvailableUIViewController];
+	UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
 	Class DetailVCClass = NSClassFromString(@"AWEMixVideoPanelDetailTableViewController");
 	Class PlayVCClass1 = NSClassFromString(@"AWEAwemePlayVideoViewController");
 	Class PlayVCClass2 = NSClassFromString(@"AWEDPlayerFeedPlayerViewController");
@@ -5369,7 +5200,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 static CGFloat currentScale = 1.0;
 - (void)layoutSubviews {
 	%orig;
-	UIViewController *vc = [self firstAvailableUIViewController];
+	UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
 	if ([vc isKindOfClass:%c(AWECommentInputViewController)]) {
 		NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
 		if (transparentValue.length > 0) {
@@ -5392,7 +5223,7 @@ static CGFloat currentScale = 1.0;
 	UIResponder *nextResponder = [self nextResponder];
 	if ([nextResponder isKindOfClass:[UIView class]]) {
 		UIView *parentView = (UIView *)nextResponder;
-		UIViewController *viewController = [parentView firstAvailableUIViewController];
+		UIViewController *viewController = [DYYYUtils firstAvailableViewControllerFromView:parentView];
 		if ([viewController isKindOfClass:%c(AWELiveNewPreStreamViewController)]) {
 			NSString *vcScaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
 			if (vcScaleValue.length > 0) {
@@ -5419,7 +5250,7 @@ static CGFloat currentScale = 1.0;
 		UIResponder *nextResponder = [self nextResponder];
 		if ([nextResponder isKindOfClass:[UIView class]]) {
 			UIView *parentView = (UIView *)nextResponder;
-			UIViewController *viewController = [parentView firstAvailableUIViewController];
+			UIViewController *viewController = [DYYYUtils firstAvailableViewControllerFromView:parentView];
 			if ([viewController isKindOfClass:%c(AWELiveNewPreStreamViewController)]) {
 				CGRect frame = self.frame;
 				frame.origin.y -= tabHeight;
@@ -5428,12 +5259,12 @@ static CGFloat currentScale = 1.0;
 		}
 	}
 
-	UIViewController *viewController = [self firstAvailableUIViewController];
+	UIViewController *viewController = [DYYYUtils firstAvailableViewControllerFromView:self];
 	if ([viewController isKindOfClass:%c(AWEPlayInteractionViewController)]) {
 
 		// 右侧元素的处理逻辑
 		if ([self.accessibilityLabel isEqualToString:@"right"] || 
-			viewContainsSubviewOfClass(self, NSClassFromString(@"AWEPlayInteractionUserAvatarView"))) {
+			[DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEPlayInteractionUserAvatarView") inView:self]) {
 			NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYElementScale"];
 			self.transform = CGAffineTransformIdentity;
 			if (scaleValue.length > 0) {
@@ -5456,7 +5287,7 @@ static CGFloat currentScale = 1.0;
 		}
 		// 左侧元素的处理逻辑
 		else if ([self.accessibilityLabel isEqualToString:@"left"] || 
-                 viewContainsSubviewOfClass(self, NSClassFromString(@"AWEFeedAnchorContainerView"))) {
+                 [DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEFeedAnchorContainerView") inView:self]) {
 			NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
 			if (scaleValue.length > 0) {
 				CGFloat scale = [scaleValue floatValue];
@@ -5480,11 +5311,11 @@ static CGFloat currentScale = 1.0;
 }
 - (NSArray<__kindof UIView *> *)arrangedSubviews {
 
-	UIViewController *viewController = [self firstAvailableUIViewController];
+	UIViewController *viewController = [DYYYUtils firstAvailableViewControllerFromView:self];
 	if ([viewController isKindOfClass:%c(AWEPlayInteractionViewController)]) {
 
 		if ([self.accessibilityLabel isEqualToString:@"left"] || 
-            viewContainsSubviewOfClass(self, NSClassFromString(@"AWEFeedAnchorContainerView"))) {
+            [DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEFeedAnchorContainerView") inView:self]) {
 			NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
 			if (scaleValue.length > 0) {
 				CGFloat scale = [scaleValue floatValue];
@@ -6031,45 +5862,6 @@ static CGFloat currentScale = 1.0;
 }
 %end
 
-@implementation UIView (Helper)
-- (BOOL)containsClassNamed:(NSString *)className {
-	if ([[[self class] description] isEqualToString:className]) {
-		return YES;
-	}
-	for (UIView *subview in self.subviews) {
-		if ([subview containsClassNamed:className]) {
-			return YES;
-		}
-	}
-	return NO;
-}
-
-- (UIView *)findViewWithClassName:(NSString *)className {
-	if ([[[self class] description] isEqualToString:className]) {
-		return self;
-	}
-	for (UIView *subview in self.subviews) {
-		UIView *result = [subview findViewWithClassName:className];
-		if (result) {
-			return result;
-		}
-	}
-	return nil;
-}
-
-- (NSArray<UIView *> *)findAllViewsWithClassName:(NSString *)className {
-    NSMutableArray *foundViews = [NSMutableArray array];
-    if ([[[self class] description] isEqualToString:className]) {
-        [foundViews addObject:self];
-    }
-    for (UIView *subview in self.subviews) {
-        [foundViews addObjectsFromArray:[subview findAllViewsWithClassName:className]];
-    }
-    return [foundViews copy];
-}
-
-@end
-
 static NSMutableDictionary *keepCellsInfo;
 static NSMutableDictionary *sectionKeepInfo;
 
@@ -6118,8 +5910,9 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 		return cell;
 
 	@try {
-		BOOL shouldKeep = [cell.contentView containsClassNamed:kAWELeftSideBarTopRightLayoutView] || [cell.contentView containsClassNamed:kAWELeftSideBarFunctionContainerView] ||
-				  [cell.contentView containsClassNamed:kAWELeftSideBarWeatherView];
+		BOOL shouldKeep = [DYYYUtils containsSubviewOfClass:NSClassFromString(kAWELeftSideBarTopRightLayoutView) inView:cell.contentView] || 
+						  [DYYYUtils containsSubviewOfClass:NSClassFromString(kAWELeftSideBarFunctionContainerView) inView:cell.contentView] ||
+						  [DYYYUtils containsSubviewOfClass:NSClassFromString(kAWELeftSideBarWeatherView) inView:cell.contentView];
 
 		NSString *key = [NSString stringWithFormat:@"%ld-%ld", (long)indexPath.section, (long)indexPath.row];
 		keepCellsInfo[key] = @(shouldKeep);
@@ -6136,7 +5929,7 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 			frame.size.width = 0;
 			frame.size.height = 0;
 			cell.frame = frame;
-		} else if ([cell.contentView containsClassNamed:kAWELeftSideBarFunctionContainerView]) {
+		} else if ([DYYYUtils containsSubviewOfClass:NSClassFromString(kAWELeftSideBarFunctionContainerView) inView:cell.contentView]) {
 			[self adjustContainerViewLayout:cell];
 		}
 	} @catch (NSException *exception) {
@@ -6189,7 +5982,7 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 	if (!collectionView || !containerCell)
 		return;
 
-	UIView *containerView = [containerCell.contentView findViewWithClassName:kAWELeftSideBarFunctionContainerView];
+	UIView *containerView = [DYYYUtils findSubviewOfClass:NSClassFromString(kAWELeftSideBarFunctionContainerView) inView:containerCell.contentView];
 	if (!containerView)
 		return;
 
