@@ -24,6 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
 + (UIViewController *)firstAvailableViewControllerFromView:(UIView *)view;
 /* 在视图控制器层级中查找指定类的控制器 */
 + (UIViewController *)findViewControllerOfClass:(Class)targetClass inViewController:(UIViewController *)vc;
++ (UIResponder *)findAncestorResponderOfClass:(Class)targetClass fromView:(UIView *)view;
 + (NSArray<UIView *> *)findAllSubviewsOfClass:(Class)targetClass inView:(UIView *)view;
 + (UIView *)findSubviewOfClass:(Class)targetClass inView:(UIView *)view;
 /* 判断视图是否包含指定类型的子视图 */

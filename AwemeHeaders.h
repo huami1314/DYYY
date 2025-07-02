@@ -1,7 +1,11 @@
 #import <UIKit/UIKit.h>
 #import <Photos/Photos.h>
 
+// 获取指定类型设置，键名不存在或类型错误时返回nil
 #define DYYYGetBool(key) [[NSUserDefaults standardUserDefaults] boolForKey:key]
+#define DYYYGetFloat(key) [[NSUserDefaults standardUserDefaults] floatForKey:key]
+#define DYYYGetInteger(key) [[NSUserDefaults standardUserDefaults] integerForKey:key]
+#define DYYYGetString(key) [[NSUserDefaults standardUserDefaults] stringForKey:key]
 #define DYYY_IGNORE_GLOBAL_ALPHA_TAG 114514
 typedef NS_ENUM(NSInteger, MediaType) {
   MediaTypeVideo,

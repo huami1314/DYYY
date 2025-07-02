@@ -64,6 +64,18 @@
     return [self findViewControllerOfClass:targetClass inViewController:vc.presentedViewController];
 }
 
++ (UIResponder *)findAncestorResponderOfClass:(Class)targetClass fromView:(UIView *)view {
+    if (!view) return nil;
+    UIResponder *responder = view.superview;
+    while (responder) {
+        if ([responder isKindOfClass:targetClass]) {
+            return responder;
+        }
+        responder = [responder nextResponder];
+    }
+    return nil;
+}
+
 + (NSArray<UIView *> *)findAllSubviewsOfClass:(Class)targetClass inView:(UIView *)view {
     if (!view) return @[];
     NSMutableArray *foundViews = [NSMutableArray array];
