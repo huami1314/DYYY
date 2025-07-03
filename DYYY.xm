@@ -765,7 +765,7 @@
 		// 动态获取用户设置的透明度
 		float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
 		if (userTransparency <= 0 || userTransparency > 1) {
-			usertransparency = 0.9;
+			userTransparency = 0.9;
 		}
 
 		// 应用毛玻璃效果
@@ -1709,7 +1709,7 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 
 		float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
 		if (userTransparency <= 0 || userTransparency > 1) {
-			usertransparency = 0.9;
+			userTransparency = 0.9;
 		}
 		existingBlur.alpha = userTransparency;
 	}
@@ -1750,7 +1750,7 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 
 	float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
 	if (userTransparency <= 0 || userTransparency > 1) {
-		usertransparency = 0.9;
+		userTransparency = 0.9;
 	}
 
 	blurView.alpha = userTransparency;
@@ -1771,7 +1771,7 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 
 			float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
 			if (userTransparency <= 0 || userTransparency > 1) {
-				usertransparency = 0.9;
+				userTransparency = 0.9;
 			}
 
 			[DYYYUtils applyBlurEffectToView:subview transparency:userTransparency blurViewTag:999];
@@ -5072,7 +5072,7 @@ static CGFloat customTabBarHeight() {
 						if ([innerSubview isKindOfClass:[UIView class]]) {
 							float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
 							if (userTransparency <= 0 || userTransparency > 1) {
-								usertransparency = 0.9;
+								userTransparency = 0.9;
 							}
 							[DYYYUtils applyBlurEffectToView:innerSubview transparency:userTransparency blurViewTag:999];
 							[DYYYUtils clearBackgroundRecursivelyInView:innerSubview];
@@ -5092,7 +5092,7 @@ static CGFloat customTabBarHeight() {
 					if ((red == 22 / 255.0 && green == 22 / 255.0 && blue == 22 / 255.0) || (red == 1.0 && green == 1.0 && blue == 1.0)) {
 						float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
 						if (userTransparency <= 0 || userTransparency > 1) {
-							usertransparency = 0.9;
+							userTransparency = 0.9;
 						}
 						[DYYYUtils applyBlurEffectToView:subview transparency:userTransparency blurViewTag:999];
 						[DYYYUtils clearBackgroundRecursivelyInView:subview];
