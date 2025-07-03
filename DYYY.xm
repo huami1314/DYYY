@@ -6190,17 +6190,30 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 %end
 %end
 
-// Comment image view scaling fix when comment blur is enabled
+// View scaling fix when comment blur is enabled
 %group BDMultiContentImageViewGroup
 %hook BDMultiContentContainer_ImageContentView
-- (void)layoutSubviews {
-        UIView *view = (UIView *)self;
-        CGRect currentFrame = view.frame;
-        %orig;
-        if (DYYYGetBool(@"DYYYisEnableCommentBlur")) {
-                view.frame = currentFrame;
-        }
+
+- (void)setTransform:(CGAffineTransform)transform {
+	if (DYYYGetBool(@"DYYYisEnableCommentBlur")) {
+		return;
+	}
+	%orig(transform);
 }
+
+%end
+%end
+
+%group BDMultiContentVideoViewGroup
+%hook BDMultiContentContainer_VideoContentView
+
+- (void)setTransform:(CGAffineTransform)transform {
+	if (DYYYGetBool(@"DYYYisEnableCommentBlur")) {
+		return;
+	}
+	%orig(transform);
+}
+
 %end
 %end
 
@@ -6208,14 +6221,18 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 %ctor {
 
 	// 初始化红包激励挂件容器视图类组
-        Class incentivePendantClass = objc_getClass("AWEIncentiveSwiftImplDOUYINLite.IncentivePendantContainerView");
-        if (incentivePendantClass) {
-                %init(IncentivePendantGroup, AWEIncentiveSwiftImplDOUYINLite_IncentivePendantContainerView = incentivePendantClass);
-        }
-        Class imageContentClass = objc_getClass("BDMultiContentContainer.ImageContentView");
-        if (imageContentClass) {
-                %init(BDMultiContentImageViewGroup, BDMultiContentContainer_ImageContentView = imageContentClass);
-        }
+	Class incentivePendantClass = objc_getClass("AWEIncentiveSwiftImplDOUYINLite.IncentivePendantContainerView");
+	if (incentivePendantClass) {
+		%init(IncentivePendantGroup, AWEIncentiveSwiftImplDOUYINLite_IncentivePendantContainerView = incentivePendantClass);
+	}
+	Class imageContentClass = objc_getClass("BDMultiContentContainer.ImageContentView");
+	if (imageContentClass) {
+		%init(BDMultiContentImageViewGroup, BDMultiContentContainer_ImageContentView = imageContentClass);
+	}
+	Class videoContentClass = objc_getClass("BDMultiContentContainer.VideoContentView");
+	if (videoContentClass) {
+		%init(BDMultiContentVideoViewGroup, BDMultiContentContainer_VideoContentView = videoContentClass);
+	}
 }
 
 %ctor {
