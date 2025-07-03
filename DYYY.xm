@@ -6193,11 +6193,12 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 // Comment image view scaling fix when comment blur is enabled
 %group BDMultiContentImageViewGroup
 %hook BDMultiContentContainer_ImageContentView
-- (void)setFrame:(CGRect)frame {
+- (void)layoutSubviews {
+        CGRect currentFrame = self.frame;
+        %orig;
         if (DYYYGetBool(@"DYYYisEnableCommentBlur")) {
-                return; // keep original frame when comment blur is active
+                self.frame = currentFrame;
         }
-        %orig(frame);
 }
 %end
 %end
