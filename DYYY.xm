@@ -604,31 +604,31 @@
 
 %hook AWEDanmakuContentLabel
 - (void)setTextColor:(UIColor *)textColor {
-    if (DYYYGetBool(@"DYYYEnableDanmuColor")) {
-        NSString *danmuColor = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYdanmuColor"];
-        if (DYYYGetBool(@"DYYYDanmuRainbowRotating")) {
-            danmuColor = @"rainbow_rotating";
-        }
-        [DYYYUtils applyColorSettingsToLabel:self colorHexString:danmuColor];
-    } else {
-        %orig(textColor);
-    }
+	if (DYYYGetBool(@"DYYYEnableDanmuColor")) {
+		NSString *danmuColor = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYdanmuColor"];
+		if (DYYYGetBool(@"DYYYDanmuRainbowRotating")) {
+			danmuColor = @"rainbow_rotating";
+		}
+		[DYYYUtils applyColorSettingsToLabel:self colorHexString:danmuColor];
+	} else {
+		%orig(textColor);
+	}
 }
 
 - (void)setStrokeWidth:(double)strokeWidth {
-    if (DYYYGetBool(@"DYYYEnableDanmuColor")) {
-        %orig(FLT_MIN);
-    } else {
-        %orig(strokeWidth);
-    }
+	if (DYYYGetBool(@"DYYYEnableDanmuColor")) {
+		%orig(FLT_MIN);
+	} else {
+		%orig(strokeWidth);
+	}
 }
 
 - (void)setStrokeColor:(UIColor *)strokeColor {
-    if (DYYYGetBool(@"DYYYEnableDanmuColor")) {
-        %orig(nil);
-    } else {
-        %orig(strokeColor);
-    }
+	if (DYYYGetBool(@"DYYYEnableDanmuColor")) {
+		%orig(nil);
+	} else {
+		%orig(strokeColor);
+	}
 }
 
 %end
@@ -636,11 +636,11 @@
 %hook XIGDanmakuPlayerView
 
 - (id)initWithFrame:(CGRect)frame {
-    id orig = %orig;
+	id orig = %orig;
 
-    ((UIView *)orig).tag = DYYY_IGNORE_GLOBAL_ALPHA_TAG;
+	((UIView *)orig).tag = DYYY_IGNORE_GLOBAL_ALPHA_TAG;
 
-    return orig;
+	return orig;
 }
 
 %end
@@ -758,8 +758,7 @@
 
 %new
 - (void)applyBlurEffectIfNeeded {
-	if (DYYYGetBool(@"DYYYisEnableCommentBlur") &&
-	    [self isKindOfClass:NSClassFromString(@"AWECommentPanelContainerSwiftImpl.CommentContainerInnerViewController")]) {
+	if (DYYYGetBool(@"DYYYisEnableCommentBlur") && [self isKindOfClass:NSClassFromString(@"AWECommentPanelContainerSwiftImpl.CommentContainerInnerViewController")]) {
 
 		self.view.backgroundColor = [UIColor clearColor];
 		// 递归清除所有子视图的背景色，防止遮挡模糊效果
@@ -814,35 +813,35 @@
 %hook AWEAwemeDetailNaviBarContainerView
 
 - (void)layoutSubviews {
-        %orig;
+	%orig;
 
-        NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
-        if (!transparentValue.length)
-                return;
+	NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
+	if (!transparentValue.length)
+		return;
 
-        CGFloat alphaValue = transparentValue.floatValue;
-        if (alphaValue < 0.0 || alphaValue > 1.0)
-                return;
+	CGFloat alphaValue = transparentValue.floatValue;
+	if (alphaValue < 0.0 || alphaValue > 1.0)
+		return;
 
-        if ([NSStringFromClass([self.superview class]) isEqualToString:NSStringFromClass([self class])])
-                return;
+	if ([NSStringFromClass([self.superview class]) isEqualToString:NSStringFromClass([self class])])
+		return;
 
-        static char kDYYNaviAlphaCacheKey;
-        NSArray *alphaViews = objc_getAssociatedObject(self, &kDYYNaviAlphaCacheKey);
-        if (!alphaViews) {
-                NSMutableArray *tmp = [NSMutableArray array];
-                for (UIView *subview in self.subviews) {
-                        if (subview.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG && subview.superview == self && subview.alpha > 0) {
-                                [tmp addObject:subview];
-                        }
-                }
-                alphaViews = [tmp copy];
-                objc_setAssociatedObject(self, &kDYYNaviAlphaCacheKey, alphaViews, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-        }
+	static char kDYYNaviAlphaCacheKey;
+	NSArray *alphaViews = objc_getAssociatedObject(self, &kDYYNaviAlphaCacheKey);
+	if (!alphaViews) {
+		NSMutableArray *tmp = [NSMutableArray array];
+		for (UIView *subview in self.subviews) {
+			if (subview.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG && subview.superview == self && subview.alpha > 0) {
+				[tmp addObject:subview];
+			}
+		}
+		alphaViews = [tmp copy];
+		objc_setAssociatedObject(self, &kDYYNaviAlphaCacheKey, alphaViews, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+	}
 
-        for (UIView *v in alphaViews) {
-                v.alpha = alphaValue;
-        }
+	for (UIView *v in alphaViews) {
+		v.alpha = alphaValue;
+	}
 }
 
 %end
@@ -878,28 +877,28 @@
 
 %hook AWEPlayInteractionProgressContainerView
 - (void)layoutSubviews {
-        %orig;
+	%orig;
 
-        if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-                return;
-        }
+	if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+		return;
+	}
 
-        static char kDYProgressBgKey;
-        NSArray *bgViews = objc_getAssociatedObject(self, &kDYProgressBgKey);
-        if (!bgViews) {
-                NSMutableArray *tmp = [NSMutableArray array];
-                for (UIView *subview in self.subviews) {
-                        if ([subview class] == [UIView class]) {
-                                [tmp addObject:subview];
-                        }
-                }
-                bgViews = [tmp copy];
-                objc_setAssociatedObject(self, &kDYProgressBgKey, bgViews, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-        }
+	static char kDYProgressBgKey;
+	NSArray *bgViews = objc_getAssociatedObject(self, &kDYProgressBgKey);
+	if (!bgViews) {
+		NSMutableArray *tmp = [NSMutableArray array];
+		for (UIView *subview in self.subviews) {
+			if ([subview class] == [UIView class]) {
+				[tmp addObject:subview];
+			}
+		}
+		bgViews = [tmp copy];
+		objc_setAssociatedObject(self, &kDYProgressBgKey, bgViews, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+	}
 
-        for (UIView *v in bgViews) {
-                v.backgroundColor = [UIColor clearColor];
-        }
+	for (UIView *v in bgViews) {
+		v.backgroundColor = [UIColor clearColor];
+	}
 }
 
 %end
@@ -1121,45 +1120,45 @@ static CGFloat rightLabelRightMargin = -1;
 %hook AWENormalModeTabBarTextView
 
 - (void)layoutSubviews {
-        %orig;
+	%orig;
 
-        NSString *indexTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYIndexTitle"];
-        NSString *friendsTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYFriendsTitle"];
-        NSString *msgTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYMsgTitle"];
-        NSString *selfTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYSelfTitle"];
+	NSString *indexTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYIndexTitle"];
+	NSString *friendsTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYFriendsTitle"];
+	NSString *msgTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYMsgTitle"];
+	NSString *selfTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYSelfTitle"];
 
-        if (!(indexTitle.length || friendsTitle.length || msgTitle.length || selfTitle.length)) {
-                return;
-        }
+	if (!(indexTitle.length || friendsTitle.length || msgTitle.length || selfTitle.length)) {
+		return;
+	}
 
-        static char kDYTabLabelCacheKey;
-        NSArray *labelCache = objc_getAssociatedObject(self, &kDYTabLabelCacheKey);
-        if (!labelCache) {
-                NSMutableArray *tmp = [NSMutableArray array];
-                for (UIView *subview in [self subviews]) {
-                        if ([subview isKindOfClass:[UILabel class]]) {
-                                [tmp addObject:subview];
-                        }
-                }
-                labelCache = [tmp copy];
-                objc_setAssociatedObject(self, &kDYTabLabelCacheKey, labelCache, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-        }
+	static char kDYTabLabelCacheKey;
+	NSArray *labelCache = objc_getAssociatedObject(self, &kDYTabLabelCacheKey);
+	if (!labelCache) {
+		NSMutableArray *tmp = [NSMutableArray array];
+		for (UIView *subview in [self subviews]) {
+			if ([subview isKindOfClass:[UILabel class]]) {
+				[tmp addObject:subview];
+			}
+		}
+		labelCache = [tmp copy];
+		objc_setAssociatedObject(self, &kDYTabLabelCacheKey, labelCache, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+	}
 
-        for (UILabel *label in labelCache) {
-                if ([label.text isEqualToString:@"首页"] && indexTitle.length > 0) {
-                        label.text = indexTitle;
-                        [self setNeedsLayout];
-                } else if ([label.text isEqualToString:@"朋友"] && friendsTitle.length > 0) {
-                        label.text = friendsTitle;
-                        [self setNeedsLayout];
-                } else if ([label.text isEqualToString:@"消息"] && msgTitle.length > 0) {
-                        label.text = msgTitle;
-                        [self setNeedsLayout];
-                } else if ([label.text isEqualToString:@"我"] && selfTitle.length > 0) {
-                        label.text = selfTitle;
-                        [self setNeedsLayout];
-                }
-        }
+	for (UILabel *label in labelCache) {
+		if ([label.text isEqualToString:@"首页"] && indexTitle.length > 0) {
+			label.text = indexTitle;
+			[self setNeedsLayout];
+		} else if ([label.text isEqualToString:@"朋友"] && friendsTitle.length > 0) {
+			label.text = friendsTitle;
+			[self setNeedsLayout];
+		} else if ([label.text isEqualToString:@"消息"] && msgTitle.length > 0) {
+			label.text = msgTitle;
+			[self setNeedsLayout];
+		} else if ([label.text isEqualToString:@"我"] && selfTitle.length > 0) {
+			label.text = selfTitle;
+			[self setNeedsLayout];
+		}
+	}
 }
 %end
 %hook AWEPlayInteractionTimestampElement
@@ -1667,11 +1666,11 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 	return orig;
 }
 
-- (void)layoutSubviews 
-        %orig;
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableNotificationTransparency"]) {
-                [self setupBlurEffectForNotificationView];
-        }
+- (void)layoutSubviews {
+	%orig;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableNotificationTransparency"]) {
+		[self setupBlurEffectForNotificationView];
+	}
 }
 
 - (void)didMoveToWindow {
@@ -1690,32 +1689,32 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 
 %new
 - (void)setupBlurEffectForNotificationView {
-        UIView *container = nil;
-        for (UIView *subview in self.subviews) {
-                if ([NSStringFromClass([subview class]) containsString:@"AWEInnerNotificationContainerView"]) {
-                        container = subview;
-                        break;
-                }
-        }
+	UIView *container = nil;
+	for (UIView *subview in self.subviews) {
+		if ([NSStringFromClass([subview class]) containsString:@"AWEInnerNotificationContainerView"]) {
+			container = subview;
+			break;
+		}
+	}
 
-        if (!container) {
-                return;
-        }
+	if (!container) {
+		return;
+	}
 
-        UIVisualEffectView *existingBlur = (UIVisualEffectView *)[container viewWithTag:999];
-        if (!existingBlur) {
-                [self applyBlurEffectToView:container];
-        } else {
-                BOOL isDarkMode = [DYYYUtils isDarkMode];
-                UIBlurEffectStyle blurStyle = isDarkMode ? UIBlurEffectStyleDark : UIBlurEffectStyleLight;
-                existingBlur.effect = [UIBlurEffect effectWithStyle:blurStyle];
+	UIVisualEffectView *existingBlur = (UIVisualEffectView *)[container viewWithTag:999];
+	if (!existingBlur) {
+		[self applyBlurEffectToView:container];
+	} else {
+		BOOL isDarkMode = [DYYYUtils isDarkMode];
+		UIBlurEffectStyle blurStyle = isDarkMode ? UIBlurEffectStyleDark : UIBlurEffectStyleLight;
+		existingBlur.effect = [UIBlurEffect effectWithStyle:blurStyle];
 
-                float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
-                if (userTransparency <= 0 || userTransparency > 1) {
-                        userTransparency = 0.5;
-                }
-                existingBlur.alpha = userTransparency;
-        }
+		float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
+		if (userTransparency <= 0 || userTransparency > 1) {
+			userTransparency = 0.5;
+		}
+		existingBlur.alpha = userTransparency;
+	}
 }
 
 %new
@@ -1780,19 +1779,19 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 			[DYYYUtils applyBlurEffectToView:subview transparency:userTransparency blurViewTag:999];
 			[DYYYUtils clearBackgroundRecursivelyInView:subview];
 
-            // 定义排除 Block
-            NSSet *excludedTexts = [NSSet setWithObjects:@"回复", @"查看", @"续火花", nil];
-            BOOL (^excludeBlock)(UIView *) = ^BOOL (UIView *currentView) {
-                if ([currentView isKindOfClass:[UILabel class]]) {
-                    UILabel *label = (UILabel *)currentView;
-                    if (label.text && [excludedTexts containsObject:label.text]) {
-                        return YES;
-                    }
-                }
-                return NO;
-            };
-            // 调用新的通用方法设置文本颜色，并传入排除 Block
-            [DYYYUtils applyTextColorRecursively:[UIColor whiteColor] inView:subview shouldExcludeViewBlock:excludeBlock];
+			// 定义排除 Block
+			NSSet *excludedTexts = [NSSet setWithObjects:@"回复", @"查看", @"续火花", nil];
+			BOOL (^excludeBlock)(UIView *) = ^BOOL(UIView *currentView) {
+			  if ([currentView isKindOfClass:[UILabel class]]) {
+				  UILabel *label = (UILabel *)currentView;
+				  if (label.text && [excludedTexts containsObject:label.text]) {
+					  return YES;
+				  }
+			  }
+			  return NO;
+			};
+			// 调用新的通用方法设置文本颜色，并传入排除 Block
+			[DYYYUtils applyTextColorRecursively:[UIColor whiteColor] inView:subview shouldExcludeViewBlock:excludeBlock];
 
 			break;
 		}
@@ -1826,8 +1825,8 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 		[DYYYUtils applyBlurEffectToView:self.containerView transparency:userTransparency blurViewTag:9999];
 		[DYYYUtils clearBackgroundRecursivelyInView:self.containerView];
 
-        // 调用新的通用方法设置文本颜色，这里没有排除需求，所以传入 nil Block
-        [DYYYUtils applyTextColorRecursively:[UIColor whiteColor] inView:self.containerView shouldExcludeViewBlock:nil];
+		// 调用新的通用方法设置文本颜色，这里没有排除需求，所以传入 nil Block
+		[DYYYUtils applyTextColorRecursively:[UIColor whiteColor] inView:self.containerView shouldExcludeViewBlock:nil];
 	}
 }
 
@@ -1935,49 +1934,49 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 // 强制启用新版抖音长按 UI（现代风）
 %hook AWELongPressPanelDataManager
 + (BOOL)enableModernLongPressPanelConfigWithSceneIdentifier:(id)arg1 {
-    return DYYYGetBool(@"DYYYisEnableModernPanel");
+	return DYYYGetBool(@"DYYYisEnableModernPanel");
 }
 %end
 
 %hook AWELongPressPanelABSettings
 + (NSUInteger)modernLongPressPanelStyleMode {
-    if (!DYYYGetBool(@"DYYYisEnableModernPanel")) {
-        return %orig;
-    }
-    
-    BOOL forceBlur = DYYYGetBool(@"DYYYisLongPressPanelBlur");
-    BOOL forceDark = DYYYGetBool(@"DYYYisLongPressPanelDark");
-    
-    if (forceBlur && forceDark) {
-        return 1;
-    } else if (!forceBlur && !forceDark) {
-        return 2;
-    } else if (!forceBlur && forceDark) {
-        return 3;
-    } else { // forceBlur && !forceDark
-        return 4;
-    }
+	if (!DYYYGetBool(@"DYYYisEnableModernPanel")) {
+		return %orig;
+	}
+
+	BOOL forceBlur = DYYYGetBool(@"DYYYisLongPressPanelBlur");
+	BOOL forceDark = DYYYGetBool(@"DYYYisLongPressPanelDark");
+
+	if (forceBlur && forceDark) {
+		return 1;
+	} else if (!forceBlur && !forceDark) {
+		return 2;
+	} else if (!forceBlur && forceDark) {
+		return 3;
+	} else { // forceBlur && !forceDark
+		return 4;
+	}
 }
 %end
 
 %hook AWEModernLongPressPanelUIConfig
 + (NSUInteger)modernLongPressPanelStyleMode {
-    if (!DYYYGetBool(@"DYYYisEnableModernPanel")) {
-        return %orig;
-    }
-    
-    BOOL forceBlur = DYYYGetBool(@"DYYYisLongPressPanelBlur");
-    BOOL forceDark = DYYYGetBool(@"DYYYisLongPressPanelDark");
-    
-    if (forceBlur && forceDark) {
-        return 1;
-    } else if (!forceBlur && !forceDark) {
-        return 2;
-    } else if (!forceBlur && forceDark) {
-        return 3;
-    } else { // forceBlur && !forceDark
-        return 4;
-    }
+	if (!DYYYGetBool(@"DYYYisEnableModernPanel")) {
+		return %orig;
+	}
+
+	BOOL forceBlur = DYYYGetBool(@"DYYYisLongPressPanelBlur");
+	BOOL forceDark = DYYYGetBool(@"DYYYisLongPressPanelDark");
+
+	if (forceBlur && forceDark) {
+		return 1;
+	} else if (!forceBlur && !forceDark) {
+		return 2;
+	} else if (!forceBlur && forceDark) {
+		return 3;
+	} else { // forceBlur && !forceDark
+		return 4;
+	}
 }
 %end
 
@@ -2891,27 +2890,27 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWENormalModeTabBarBadgeContainerView
 
 - (void)layoutSubviews {
-        %orig;
-        if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenBottomDot"]) {
-                return;
-        }
+	%orig;
+	if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenBottomDot"]) {
+		return;
+	}
 
-        static char kDYBadgeCacheKey;
-        NSArray *badges = objc_getAssociatedObject(self, &kDYBadgeCacheKey);
-        if (!badges) {
-                NSMutableArray *tmp = [NSMutableArray array];
-                for (UIView *subview in [self subviews]) {
-                        if ([subview isKindOfClass:NSClassFromString(@"DUXBadge")]) {
-                                [tmp addObject:subview];
-                        }
-                }
-                badges = [tmp copy];
-                objc_setAssociatedObject(self, &kDYBadgeCacheKey, badges, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-        }
+	static char kDYBadgeCacheKey;
+	NSArray *badges = objc_getAssociatedObject(self, &kDYBadgeCacheKey);
+	if (!badges) {
+		NSMutableArray *tmp = [NSMutableArray array];
+		for (UIView *subview in [self subviews]) {
+			if ([subview isKindOfClass:NSClassFromString(@"DUXBadge")]) {
+				[tmp addObject:subview];
+			}
+		}
+		badges = [tmp copy];
+		objc_setAssociatedObject(self, &kDYBadgeCacheKey, badges, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+	}
 
-        for (UIView *badge in badges) {
-                badge.hidden = YES;
-        }
+	for (UIView *badge in badges) {
+		badge.hidden = YES;
+	}
 }
 
 %end
@@ -2929,26 +2928,26 @@ static AWEIMReusableCommonCell *currentCell;
 		}
 	}
 
-        if (!(parentVC && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenLeftSideBar"])) {
-                return;
-        }
+	if (!(parentVC && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenLeftSideBar"])) {
+		return;
+	}
 
-        static char kDYLeftSideViewCacheKey;
-        NSArray *cachedViews = objc_getAssociatedObject(self, &kDYLeftSideViewCacheKey);
-        if (!cachedViews) {
-                NSMutableArray *views = [NSMutableArray array];
-                for (UIView *subview in self.subviews) {
-                        if ([subview isKindOfClass:%c(DUXBaseImageView)]) {
-                                [views addObject:subview];
-                        }
-                }
-                cachedViews = [views copy];
-                objc_setAssociatedObject(self, &kDYLeftSideViewCacheKey, cachedViews, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-        }
+	static char kDYLeftSideViewCacheKey;
+	NSArray *cachedViews = objc_getAssociatedObject(self, &kDYLeftSideViewCacheKey);
+	if (!cachedViews) {
+		NSMutableArray *views = [NSMutableArray array];
+		for (UIView *subview in self.subviews) {
+			if ([subview isKindOfClass:%c(DUXBaseImageView)]) {
+				[views addObject:subview];
+			}
+		}
+		cachedViews = [views copy];
+		objc_setAssociatedObject(self, &kDYLeftSideViewCacheKey, cachedViews, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+	}
 
-        for (UIView *v in cachedViews) {
-                v.hidden = YES;
-        }
+	for (UIView *v in cachedViews) {
+		v.hidden = YES;
+	}
 }
 
 %end
@@ -2956,52 +2955,52 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWEFeedVideoButton
 
 - (void)layoutSubviews {
-        %orig;
+	%orig;
 
-        NSString *accessibilityLabel = self.accessibilityLabel;
+	NSString *accessibilityLabel = self.accessibilityLabel;
 
-        BOOL hideBtn = NO;
-        BOOL hideLabel = NO;
+	BOOL hideBtn = NO;
+	BOOL hideLabel = NO;
 
-        if ([accessibilityLabel isEqualToString:@"点赞"]) {
-                hideBtn = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLikeButton"];
-                hideLabel = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLikeLabel"];
-        } else if ([accessibilityLabel isEqualToString:@"评论"]) {
-                hideBtn = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentButton"];
-                hideLabel = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentLabel"];
-        } else if ([accessibilityLabel isEqualToString:@"分享"]) {
-                hideBtn = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShareButton"];
-                hideLabel = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShareLabel"];
-        } else if ([accessibilityLabel isEqualToString:@"收藏"]) {
-                hideBtn = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCollectButton"];
-                hideLabel = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCollectLabel"];
-        }
+	if ([accessibilityLabel isEqualToString:@"点赞"]) {
+		hideBtn = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLikeButton"];
+		hideLabel = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLikeLabel"];
+	} else if ([accessibilityLabel isEqualToString:@"评论"]) {
+		hideBtn = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentButton"];
+		hideLabel = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentLabel"];
+	} else if ([accessibilityLabel isEqualToString:@"分享"]) {
+		hideBtn = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShareButton"];
+		hideLabel = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShareLabel"];
+	} else if ([accessibilityLabel isEqualToString:@"收藏"]) {
+		hideBtn = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCollectButton"];
+		hideLabel = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCollectLabel"];
+	}
 
-        if (!hideBtn && !hideLabel) {
-                return; // 设置未启用，无需额外处理
-        }
+	if (!hideBtn && !hideLabel) {
+		return; // 设置未启用，无需额外处理
+	}
 
-        if (hideBtn) {
-                [self removeFromSuperview];
-                return;
-        }
+	if (hideBtn) {
+		[self removeFromSuperview];
+		return;
+	}
 
-        static char kDYLabelCacheKey;
-        NSArray *cachedLabels = objc_getAssociatedObject(self, &kDYLabelCacheKey);
-        if (!cachedLabels) {
-                NSMutableArray *labels = [NSMutableArray array];
-                for (UIView *subview in self.subviews) {
-                        if ([subview isKindOfClass:[UILabel class]]) {
-                                [labels addObject:subview];
-                        }
-                }
-                cachedLabels = [labels copy];
-                objc_setAssociatedObject(self, &kDYLabelCacheKey, cachedLabels, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-        }
+	static char kDYLabelCacheKey;
+	NSArray *cachedLabels = objc_getAssociatedObject(self, &kDYLabelCacheKey);
+	if (!cachedLabels) {
+		NSMutableArray *labels = [NSMutableArray array];
+		for (UIView *subview in self.subviews) {
+			if ([subview isKindOfClass:[UILabel class]]) {
+				[labels addObject:subview];
+			}
+		}
+		cachedLabels = [labels copy];
+		objc_setAssociatedObject(self, &kDYLabelCacheKey, cachedLabels, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+	}
 
-        for (UILabel *label in cachedLabels) {
-                label.hidden = hideLabel;
-        }
+	for (UILabel *label in cachedLabels) {
+		label.hidden = hideLabel;
+	}
 }
 
 %end
@@ -3416,25 +3415,24 @@ static AWEIMReusableCommonCell *currentCell;
 		self.hidden = YES;
 		return;
 	}
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideSearchEntranceIndicator"]) {
-                static char kDYSearchIndicatorKey;
-                NSArray *indicatorViews = objc_getAssociatedObject(self, &kDYSearchIndicatorKey);
-                if (!indicatorViews) {
-                        NSMutableArray *tmp = [NSMutableArray array];
-                        for (UIView *subviews in self.subviews) {
-                                if ([subviews isKindOfClass:%c(UIImageView)] &&
-                                        [NSStringFromClass([((UIImageView *)subviews).image class]) isEqualToString:@"_UIResizableImage"]) {
-                                        [tmp addObject:subviews];
-                                }
-                        }
-                        indicatorViews = [tmp copy];
-                        objc_setAssociatedObject(self, &kDYSearchIndicatorKey, indicatorViews, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-                }
+	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideSearchEntranceIndicator"]) {
+		static char kDYSearchIndicatorKey;
+		NSArray *indicatorViews = objc_getAssociatedObject(self, &kDYSearchIndicatorKey);
+		if (!indicatorViews) {
+			NSMutableArray *tmp = [NSMutableArray array];
+			for (UIView *subviews in self.subviews) {
+				if ([subviews isKindOfClass:%c(UIImageView)] && [NSStringFromClass([((UIImageView *)subviews).image class]) isEqualToString:@"_UIResizableImage"]) {
+					[tmp addObject:subviews];
+				}
+			}
+			indicatorViews = [tmp copy];
+			objc_setAssociatedObject(self, &kDYSearchIndicatorKey, indicatorViews, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+		}
 
-                for (UIImageView *imgView in indicatorViews) {
-                        imgView.hidden = YES;
-                }
-        }
+		for (UIImageView *imgView in indicatorViews) {
+			imgView.hidden = YES;
+		}
+	}
 
 	// NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
 	// if (transparentValue.length > 0) {
@@ -3455,27 +3453,27 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 	%orig;
 
-        BOOL shouldHide = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideStoryProgressSlide"];
-        if (!shouldHide)
-                return;
+	BOOL shouldHide = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideStoryProgressSlide"];
+	if (!shouldHide)
+		return;
 
-        static char kDYStoryProgressCacheKey;
-        UIView *targetView = objc_getAssociatedObject(self, &kDYStoryProgressCacheKey);
-        if (!targetView) {
-                for (UIView *obj in self.subviews) {
-                        if ([obj isKindOfClass:NSClassFromString(@"UISlider")] || obj.frame.size.height < 5) {
-                                targetView = obj.superview;
-                                break;
-                        }
-                }
-                if (targetView) {
-                        objc_setAssociatedObject(self, &kDYStoryProgressCacheKey, targetView, OBJC_ASSOCIATION_ASSIGN);
-                }
-        }
+	static char kDYStoryProgressCacheKey;
+	UIView *targetView = objc_getAssociatedObject(self, &kDYStoryProgressCacheKey);
+	if (!targetView) {
+		for (UIView *obj in self.subviews) {
+			if ([obj isKindOfClass:NSClassFromString(@"UISlider")] || obj.frame.size.height < 5) {
+				targetView = obj.superview;
+				break;
+			}
+		}
+		if (targetView) {
+			objc_setAssociatedObject(self, &kDYStoryProgressCacheKey, targetView, OBJC_ASSOCIATION_ASSIGN);
+		}
+	}
 
-        if (targetView) {
-                targetView.hidden = YES;
-        }
+	if (targetView) {
+		targetView.hidden = YES;
+	}
 }
 
 %end
@@ -3970,28 +3968,28 @@ static AWEIMReusableCommonCell *currentCell;
 }
 
 - (void)layoutSubviews {
-        %orig;
+	%orig;
 
-        if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenSidebarDot"]) {
-                return;
-        }
+	if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenSidebarDot"]) {
+		return;
+	}
 
-        static char kDYSidebarBadgeCacheKey;
-        NSArray *cachedBadges = objc_getAssociatedObject(self, &kDYSidebarBadgeCacheKey);
-        if (!cachedBadges) {
-                NSMutableArray *badges = [NSMutableArray array];
-                for (UIView *subview in self.subviews) {
-                        if ([subview isKindOfClass:%c(DUXBadge)]) {
-                                [badges addObject:subview];
-                        }
-                }
-                cachedBadges = [badges copy];
-                objc_setAssociatedObject(self, &kDYSidebarBadgeCacheKey, cachedBadges, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-        }
+	static char kDYSidebarBadgeCacheKey;
+	NSArray *cachedBadges = objc_getAssociatedObject(self, &kDYSidebarBadgeCacheKey);
+	if (!cachedBadges) {
+		NSMutableArray *badges = [NSMutableArray array];
+		for (UIView *subview in self.subviews) {
+			if ([subview isKindOfClass:%c(DUXBadge)]) {
+				[badges addObject:subview];
+			}
+		}
+		cachedBadges = [badges copy];
+		objc_setAssociatedObject(self, &kDYSidebarBadgeCacheKey, cachedBadges, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+	}
 
-        for (UIView *badge in cachedBadges) {
-                badge.hidden = YES;
-        }
+	for (UIView *badge in cachedBadges) {
+		badge.hidden = YES;
+	}
 }
 %end
 
@@ -4075,31 +4073,31 @@ static AWEIMReusableCommonCell *currentCell;
 %hook IESLiveButton
 
 - (void)layoutSubviews {
-        %orig;
-        BOOL hideClear = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveRoomClear"];
-        BOOL hideMirror = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveRoomMirroring"];
-        BOOL hideFull = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveRoomFullscreen"];
+	%orig;
+	BOOL hideClear = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveRoomClear"];
+	BOOL hideMirror = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveRoomMirroring"];
+	BOOL hideFull = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveRoomFullscreen"];
 
-        if (!(hideClear || hideMirror || hideFull)) {
-                return;
-        }
+	if (!(hideClear || hideMirror || hideFull)) {
+		return;
+	}
 
-        NSString *label = self.accessibilityLabel;
-        if (hideClear && [label isEqualToString:@"退出清屏"] && self.superview) {
-                [self.superview removeFromSuperview];
-        } else if (hideMirror && [label isEqualToString:@"投屏"] && self.superview) {
-                [self.superview removeFromSuperview];
-        } else if (hideFull && [label isEqualToString:@"横屏"] && self.superview) {
-                static char kDYLiveButtonCacheKey;
-                NSArray *cached = objc_getAssociatedObject(self, &kDYLiveButtonCacheKey);
-                if (!cached) {
-                        cached = [self.subviews copy];
-                        objc_setAssociatedObject(self, &kDYLiveButtonCacheKey, cached, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-                }
-                for (UIView *subview in cached) {
-                        subview.hidden = YES;
-                }
-        }
+	NSString *label = self.accessibilityLabel;
+	if (hideClear && [label isEqualToString:@"退出清屏"] && self.superview) {
+		[self.superview removeFromSuperview];
+	} else if (hideMirror && [label isEqualToString:@"投屏"] && self.superview) {
+		[self.superview removeFromSuperview];
+	} else if (hideFull && [label isEqualToString:@"横屏"] && self.superview) {
+		static char kDYLiveButtonCacheKey;
+		NSArray *cached = objc_getAssociatedObject(self, &kDYLiveButtonCacheKey);
+		if (!cached) {
+			cached = [self.subviews copy];
+			objc_setAssociatedObject(self, &kDYLiveButtonCacheKey, cached, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+		}
+		for (UIView *subview in cached) {
+			subview.hidden = YES;
+		}
+	}
 }
 
 %end
@@ -4244,13 +4242,15 @@ static AWEIMReusableCommonCell *currentCell;
 
 - (id)initWithDictionary:(id)arg1 error:(id *)arg2 {
 	id orig = %orig;
-    if (orig && [self contentFilter]) return nil;
+	if (orig && [self contentFilter])
+		return nil;
 	return orig;
 }
 
 - (id)init {
 	id orig = %orig;
-    if (orig && [self contentFilter]) return nil;
+	if (orig && [self contentFilter])
+		return nil;
 	return orig;
 }
 
@@ -4393,7 +4393,6 @@ static AWEIMReusableCommonCell *currentCell;
 	return %orig;
 }
 
-
 - (bool)preventDownload {
 	if (DYYYGetBool(@"DYYYNoAds")) {
 		return NO;
@@ -4424,7 +4423,8 @@ static AWEIMReusableCommonCell *currentCell;
 	if (colorHex && colorHex.length > 0) {
 		CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
 		UIColor *customColor = [DYYYUtils colorFromSchemeHexString:colorHex targetWidth:screenWidth];
-		if (customColor) return customColor;
+		if (customColor)
+			return customColor;
 	}
 	return %orig;
 }
@@ -4439,7 +4439,8 @@ static AWEIMReusableCommonCell *currentCell;
 	if (colorHex && colorHex.length > 0) {
 		CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
 		UIColor *customColor = [DYYYUtils colorFromSchemeHexString:colorHex targetWidth:screenWidth];
-		if (customColor) self.backgroundColor = customColor;
+		if (customColor)
+			self.backgroundColor = customColor;
 	}
 }
 
@@ -4480,30 +4481,30 @@ static AWEIMReusableCommonCell *currentCell;
 
 %hook AWEPlayInteractionUserAvatarView
 - (void)layoutSubviews {
-        %orig;
+	%orig;
 
-        if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFollowPromptView"]) {
-                return;
-        }
+	if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFollowPromptView"]) {
+		return;
+	}
 
-        static char kDYAvatarCacheKey;
-        NSArray *viewCache = objc_getAssociatedObject(self, &kDYAvatarCacheKey);
-        if (!viewCache) {
-                NSMutableArray *tmp = [NSMutableArray array];
-                for (UIView *subview in self.subviews) {
-                        if ([subview isMemberOfClass:[UIView class]]) {
-                                [tmp addObject:subview];
-                        }
-                }
-                viewCache = [tmp copy];
-                objc_setAssociatedObject(self, &kDYAvatarCacheKey, viewCache, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-        }
+	static char kDYAvatarCacheKey;
+	NSArray *viewCache = objc_getAssociatedObject(self, &kDYAvatarCacheKey);
+	if (!viewCache) {
+		NSMutableArray *tmp = [NSMutableArray array];
+		for (UIView *subview in self.subviews) {
+			if ([subview isMemberOfClass:[UIView class]]) {
+				[tmp addObject:subview];
+			}
+		}
+		viewCache = [tmp copy];
+		objc_setAssociatedObject(self, &kDYAvatarCacheKey, viewCache, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+	}
 
-        for (UIView *container in viewCache) {
-                for (UIView *child in container.subviews) {
-                        child.alpha = 0.0;
-                }
-        }
+	for (UIView *container in viewCache) {
+		for (UIView *child in container.subviews) {
+			child.alpha = 0.0;
+		}
+	}
 }
 %end
 
@@ -5007,12 +5008,12 @@ static AWEIMReusableCommonCell *currentCell;
 static CGFloat tabHeight = 0;
 
 static CGFloat customTabBarHeight() {
-        NSString *value = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTabBarHeight"];
-        if (value.length > 0) {
-                CGFloat h = [value floatValue];
-                return h > 0 ? h : 0;
-        }
-        return 0;
+	NSString *value = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTabBarHeight"];
+	if (value.length > 0) {
+		CGFloat h = [value floatValue];
+		return h > 0 ? h : 0;
+	}
+	return 0;
 }
 
 %hook UIView
@@ -5107,8 +5108,7 @@ static CGFloat customTabBarHeight() {
 	if (DYYYGetBool(@"DYYYisEnableFullScreen") || DYYYGetBool(@"DYYYisEnableCommentBlur")) {
 		UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
 		if ([vc isKindOfClass:%c(AWEPlayInteractionViewController)]) {
-			BOOL shouldHideSubview = DYYYGetBool(@"DYYYisEnableFullScreen") ||
-						 DYYYGetBool(@"DYYYisEnableCommentBlur");
+			BOOL shouldHideSubview = DYYYGetBool(@"DYYYisEnableFullScreen") || DYYYGetBool(@"DYYYisEnableCommentBlur");
 
 			if (shouldHideSubview) {
 				for (UIView *subview in self.subviews) {
@@ -5329,13 +5329,13 @@ static CGFloat currentScale = 1.0;
 	if ([viewController isKindOfClass:%c(AWEPlayInteractionViewController)]) {
 
 		// 右侧元素的处理逻辑
-		if ([self.accessibilityLabel isEqualToString:@"right"] || 
-			[DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEPlayInteractionUserAvatarView") inView:self]) {
+		if ([self.accessibilityLabel isEqualToString:@"right"] || [DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEPlayInteractionUserAvatarView") inView:self]) {
 			NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYElementScale"];
 			self.transform = CGAffineTransformIdentity;
 			if (scaleValue.length > 0) {
 				CGFloat scale = [scaleValue floatValue];
-				if (currentScale != scale) currentScale = scale;
+				if (currentScale != scale)
+					currentScale = scale;
 				if (scale > 0 && scale != 1.0) {
 					NSArray *subviews = [self.subviews copy];
 					CGFloat ty = 0;
@@ -5352,8 +5352,7 @@ static CGFloat currentScale = 1.0;
 			}
 		}
 		// 左侧元素的处理逻辑
-		else if ([self.accessibilityLabel isEqualToString:@"left"] || 
-                 [DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEFeedAnchorContainerView") inView:self]) {
+		else if ([self.accessibilityLabel isEqualToString:@"left"] || [DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEFeedAnchorContainerView") inView:self]) {
 			NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
 			if (scaleValue.length > 0) {
 				CGFloat scale = [scaleValue floatValue];
@@ -5380,8 +5379,7 @@ static CGFloat currentScale = 1.0;
 	UIViewController *viewController = [DYYYUtils firstAvailableViewControllerFromView:self];
 	if ([viewController isKindOfClass:%c(AWEPlayInteractionViewController)]) {
 
-		if ([self.accessibilityLabel isEqualToString:@"left"] || 
-            [DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEFeedAnchorContainerView") inView:self]) {
+		if ([self.accessibilityLabel isEqualToString:@"left"] || [DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEFeedAnchorContainerView") inView:self]) {
 			NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
 			if (scaleValue.length > 0) {
 				CGFloat scale = [scaleValue floatValue];
@@ -5411,46 +5409,45 @@ static CGFloat currentScale = 1.0;
 // 新增直播间文案调整
 %hook IESLiveStackView
 - (void)layoutSubviews {
-    %orig;
+	%orig;
 
-    UIView *superView = self.superview;
-    if (![superView isKindOfClass:%c(HTSEventForwardingView)] ||
-        ![superView.accessibilityLabel isEqualToString:@"ContentContainerLayer"]) {
-        return;
+	UIView *superView = self.superview;
+	if (![superView isKindOfClass:%c(HTSEventForwardingView)] || ![superView.accessibilityLabel isEqualToString:@"ContentContainerLayer"]) {
+		return;
 	}
 
-    NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
-    if (transparentValue.length > 0) {
-        CGFloat alphaValue = transparentValue.floatValue;
-        if (alphaValue >= 0.0 && alphaValue <= 1.0) {
-            self.alpha = alphaValue;
-        }
-    }
+	NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
+	if (transparentValue.length > 0) {
+		CGFloat alphaValue = transparentValue.floatValue;
+		if (alphaValue >= 0.0 && alphaValue <= 1.0) {
+			self.alpha = alphaValue;
+		}
+	}
 
-    NSString *vcScaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
-    if (vcScaleValue.length > 0) {
-        CGFloat scale = vcScaleValue.floatValue;
-        self.transform = CGAffineTransformIdentity;
-        if (scale > 0 && scale != 1.0) {
-            NSArray *subviews = [self.subviews copy];
-            CGFloat ty = 0;
-            for (UIView *view in subviews) {
-                CGFloat viewHeight = view.frame.size.height;
-                CGFloat contribution = (viewHeight - viewHeight * scale) / 2;
-                ty += contribution;
-            }
-            CGFloat frameWidth = self.frame.size.width;
-            CGFloat tx = (frameWidth - frameWidth * scale) / 2 - frameWidth * (1 - scale);
-            CGAffineTransform newTransform = CGAffineTransformMakeScale(scale, scale);
-            newTransform = CGAffineTransformTranslate(newTransform, tx / scale, ty / scale);
-            self.transform = newTransform;
-        }
-    }
+	NSString *vcScaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
+	if (vcScaleValue.length > 0) {
+		CGFloat scale = vcScaleValue.floatValue;
+		self.transform = CGAffineTransformIdentity;
+		if (scale > 0 && scale != 1.0) {
+			NSArray *subviews = [self.subviews copy];
+			CGFloat ty = 0;
+			for (UIView *view in subviews) {
+				CGFloat viewHeight = view.frame.size.height;
+				CGFloat contribution = (viewHeight - viewHeight * scale) / 2;
+				ty += contribution;
+			}
+			CGFloat frameWidth = self.frame.size.width;
+			CGFloat tx = (frameWidth - frameWidth * scale) / 2 - frameWidth * (1 - scale);
+			CGAffineTransform newTransform = CGAffineTransformMakeScale(scale, scale);
+			newTransform = CGAffineTransformTranslate(newTransform, tx / scale, ty / scale);
+			self.transform = newTransform;
+		}
+	}
 	if (DYYYGetBool(@"DYYYisEnableFullScreen")) {
-        CGRect frame = self.frame;
-        frame.origin.y -= tabHeight;
-        self.frame = frame;
-    }
+		CGRect frame = self.frame;
+		frame.origin.y -= tabHeight;
+		self.frame = frame;
+	}
 }
 %end
 
@@ -5522,28 +5519,28 @@ static CGFloat currentScale = 1.0;
 
 %hook AFDFastSpeedView
 - (void)layoutSubviews {
-        %orig;
+	%orig;
 
-        if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
-                return;
-        }
+	if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+		return;
+	}
 
-        static char kDYFastSpeedBgKey;
-        NSArray *bgViews = objc_getAssociatedObject(self, &kDYFastSpeedBgKey);
-        if (!bgViews) {
-                NSMutableArray *tmp = [NSMutableArray array];
-                for (UIView *subview in self.subviews) {
-                        if ([subview class] == [UIView class]) {
-                                [tmp addObject:subview];
-                        }
-                }
-                bgViews = [tmp copy];
-                objc_setAssociatedObject(self, &kDYFastSpeedBgKey, bgViews, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-        }
+	static char kDYFastSpeedBgKey;
+	NSArray *bgViews = objc_getAssociatedObject(self, &kDYFastSpeedBgKey);
+	if (!bgViews) {
+		NSMutableArray *tmp = [NSMutableArray array];
+		for (UIView *subview in self.subviews) {
+			if ([subview class] == [UIView class]) {
+				[tmp addObject:subview];
+			}
+		}
+		bgViews = [tmp copy];
+		objc_setAssociatedObject(self, &kDYFastSpeedBgKey, bgViews, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+	}
 
-        for (UIView *view in bgViews) {
-                view.backgroundColor = [UIColor clearColor];
-        }
+	for (UIView *view in bgViews) {
+		view.backgroundColor = [UIColor clearColor];
+	}
 }
 %end
 
@@ -5820,22 +5817,22 @@ static CGFloat currentScale = 1.0;
 		}
 	}
 
-        if (parentVC && ([parentVC isKindOfClass:%c(AWEAwemeDetailTableViewController)] || [parentVC isKindOfClass:%c(AWEAwemeDetailCellViewController)])) {
-                static char kDYCommentHideCacheKey;
-                UIView *target = objc_getAssociatedObject(self, &kDYCommentHideCacheKey);
-                if (!target) {
-                        for (UIView *subview in [self subviews]) {
-                                if ([subview class] == [UIView class]) {
-                                        target = subview;
-                                        objc_setAssociatedObject(self, &kDYCommentHideCacheKey, target, OBJC_ASSOCIATION_ASSIGN);
-                                        break;
-                                }
-                        }
-                }
-                if (target) {
-                        target.hidden = ([(UIView *)self frame].size.height == tabHeight);
-                }
-        }
+	if (parentVC && ([parentVC isKindOfClass:%c(AWEAwemeDetailTableViewController)] || [parentVC isKindOfClass:%c(AWEAwemeDetailCellViewController)])) {
+		static char kDYCommentHideCacheKey;
+		UIView *target = objc_getAssociatedObject(self, &kDYCommentHideCacheKey);
+		if (!target) {
+			for (UIView *subview in [self subviews]) {
+				if ([subview class] == [UIView class]) {
+					target = subview;
+					objc_setAssociatedObject(self, &kDYCommentHideCacheKey, target, OBJC_ASSOCIATION_ASSIGN);
+					break;
+				}
+			}
+		}
+		if (target) {
+			target.hidden = ([(UIView *)self frame].size.height == tabHeight);
+		}
+	}
 }
 
 %end
@@ -5904,30 +5901,30 @@ static CGFloat currentScale = 1.0;
 // 隐藏双栏入口
 %hook AWENormalModeTabBarFeedView
 - (void)layoutSubviews {
-        %orig;
-        if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideDoubleColumnEntry"]) {
-                return;
-        }
+	%orig;
+	if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideDoubleColumnEntry"]) {
+		return;
+	}
 
-        static char kDYDoubleColumnCacheKey;
-        static char kDYDoubleColumnCountKey;
-        NSArray *cachedViews = objc_getAssociatedObject(self, &kDYDoubleColumnCacheKey);
-        NSNumber *cachedCount = objc_getAssociatedObject(self, &kDYDoubleColumnCountKey);
-        if (!cachedViews || cachedCount.unsignedIntegerValue != self.subviews.count) {
-                NSMutableArray *views = [NSMutableArray array];
-                for (UIView *subview in self.subviews) {
-                        if (![subview isKindOfClass:[UILabel class]]) {
-                                [views addObject:subview];
-                        }
-                }
-                cachedViews = [views copy];
-                objc_setAssociatedObject(self, &kDYDoubleColumnCacheKey, cachedViews, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-                objc_setAssociatedObject(self, &kDYDoubleColumnCountKey, @(self.subviews.count), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-        }
+	static char kDYDoubleColumnCacheKey;
+	static char kDYDoubleColumnCountKey;
+	NSArray *cachedViews = objc_getAssociatedObject(self, &kDYDoubleColumnCacheKey);
+	NSNumber *cachedCount = objc_getAssociatedObject(self, &kDYDoubleColumnCountKey);
+	if (!cachedViews || cachedCount.unsignedIntegerValue != self.subviews.count) {
+		NSMutableArray *views = [NSMutableArray array];
+		for (UIView *subview in self.subviews) {
+			if (![subview isKindOfClass:[UILabel class]]) {
+				[views addObject:subview];
+			}
+		}
+		cachedViews = [views copy];
+		objc_setAssociatedObject(self, &kDYDoubleColumnCacheKey, cachedViews, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+		objc_setAssociatedObject(self, &kDYDoubleColumnCountKey, @(self.subviews.count), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+	}
 
-        for (UIView *v in cachedViews) {
-                v.hidden = YES;
-        }
+	for (UIView *v in cachedViews) {
+		v.hidden = YES;
+	}
 }
 %end
 
@@ -6009,9 +6006,9 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 		return cell;
 
 	@try {
-		BOOL shouldKeep = [DYYYUtils containsSubviewOfClass:NSClassFromString(kAWELeftSideBarTopRightLayoutView) inView:cell.contentView] || 
-						  [DYYYUtils containsSubviewOfClass:NSClassFromString(kAWELeftSideBarFunctionContainerView) inView:cell.contentView] ||
-						  [DYYYUtils containsSubviewOfClass:NSClassFromString(kAWELeftSideBarWeatherView) inView:cell.contentView];
+		BOOL shouldKeep = [DYYYUtils containsSubviewOfClass:NSClassFromString(kAWELeftSideBarTopRightLayoutView) inView:cell.contentView] ||
+				  [DYYYUtils containsSubviewOfClass:NSClassFromString(kAWELeftSideBarFunctionContainerView) inView:cell.contentView] ||
+				  [DYYYUtils containsSubviewOfClass:NSClassFromString(kAWELeftSideBarWeatherView) inView:cell.contentView];
 
 		NSString *key = [NSString stringWithFormat:@"%ld-%ld", (long)indexPath.section, (long)indexPath.row];
 		keepCellsInfo[key] = @(shouldKeep);
