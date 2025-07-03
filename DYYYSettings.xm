@@ -3043,14 +3043,17 @@ extern "C"
 	[cleanupItems addObject:cleanSettingsItem];
 
 	NSArray<NSString *> *customDirs = @[ @"Application Support/gurd_cache", @"Caches", @"BDByteCast", @"kitelog" ];
+	NSMutableSet<NSString *> *uniquePaths = [NSMutableSet set];
+	[uniquePaths addObject:NSTemporaryDirectory()];
+	[uniquePaths addObject:NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject];
 	NSString *libraryDir = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES).firstObject;
-	NSMutableArray<NSString *> *allPaths = [NSMutableArray arrayWithObject:[DYYYUtils cacheDirectory]];
 	for (NSString *sub in customDirs) {
 		NSString *fullPath = [libraryDir stringByAppendingPathComponent:sub];
 		if ([[NSFileManager defaultManager] fileExistsAtPath:fullPath]) {
-			[allPaths addObject:fullPath];
+			[uniquePaths addObject:fullPath];
 		}
 	}
+	NSArray<NSString *> *allPaths = [uniquePaths allObjects];
 
 	AWESettingItemModel *cleanCacheItem = [[%c(AWESettingItemModel) alloc] init];
 	__weak AWESettingItemModel *weakCleanCacheItem = cleanCacheItem;
@@ -3087,9 +3090,15 @@ extern "C"
 	  [strongCleanCacheItem refreshCell];
 
 	  dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-	    [DYYYUtils clearCacheDirectory];
 	    for (NSString *basePath in allPaths) {
 		    [DYYYUtils removeAllContentsAtPath:basePath];
+	    }
+
+	    // 修复搜索界面的猜你想搜和猜你想看
+		NSFileManager *fileManager = [NSFileManager defaultManager];
+	    NSString *activeMetadataFilePath = [libraryDir stringByAppendingPathComponent:@"Application Support/gurd_cache/.active_metadata"];
+	    if ([fileManager fileExistsAtPath:activeMetadataFilePath]) {
+		    [fileManager removeItemAtPath:activeMetadataFilePath error:nil];
 	    }
 
 	    unsigned long long afterSize = 0;

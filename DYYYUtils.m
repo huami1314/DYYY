@@ -1,3 +1,4 @@
+#import <os/lock.h>
 #import <stdatomic.h>
 #import <UIKit/UIKit.h>
 #import <MobileCoreServices/UTCoreTypes.h>
@@ -116,57 +117,59 @@
 }
 
 + (void)applyBlurEffectToView:(UIView *)view transparency:(float)userTransparency blurViewTag:(NSInteger)tag {
-    if (!view) return;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (!view) return;
 
-    view.backgroundColor = [UIColor clearColor];
+        view.backgroundColor = [UIColor clearColor];
 
-    UIVisualEffectView *existingBlurView = nil;
-    for (UIView *subview in view.subviews) {
-        if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == tag) {
-            existingBlurView = (UIVisualEffectView *)subview;
-            break;
-        }
-    }
-
-    BOOL isDarkMode = [DYYYUtils isDarkMode];
-    UIBlurEffectStyle blurStyle = isDarkMode ? UIBlurEffectStyleDark : UIBlurEffectStyleLight;
-
-    UIView *overlayView = nil;
-
-    if (!existingBlurView) {
-        UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurStyle];
-        UIVisualEffectView *blurEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
-        blurEffectView.frame = view.bounds;
-        blurEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-        blurEffectView.alpha = userTransparency;
-        blurEffectView.tag = tag;
-
-        overlayView = [[UIView alloc] initWithFrame:view.bounds];
-        overlayView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-        [blurEffectView.contentView addSubview:overlayView];
-
-        [view insertSubview:blurEffectView atIndex:0];
-    } else {
-        UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurStyle];
-        [existingBlurView setEffect:blurEffect];
-        existingBlurView.alpha = userTransparency;
-
-        for (UIView *subview in existingBlurView.contentView.subviews) {
-            if ([subview isKindOfClass:[UIView class]]) {
-                overlayView = subview;
+        UIVisualEffectView *existingBlurView = nil;
+        for (UIView *subview in view.subviews) {
+            if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == tag) {
+                existingBlurView = (UIVisualEffectView *)subview;
                 break;
             }
         }
-        if (!overlayView) {
-            overlayView = [[UIView alloc] initWithFrame:existingBlurView.bounds];
+
+        BOOL isDarkMode = [DYYYUtils isDarkMode];
+        UIBlurEffectStyle blurStyle = isDarkMode ? UIBlurEffectStyleDark : UIBlurEffectStyleLight;
+
+        UIView *overlayView = nil;
+
+        if (!existingBlurView) {
+            UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurStyle];
+            UIVisualEffectView *blurEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
+            blurEffectView.frame = view.bounds;
+            blurEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+            blurEffectView.alpha = userTransparency;
+            blurEffectView.tag = tag;
+
+            overlayView = [[UIView alloc] initWithFrame:view.bounds];
             overlayView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-            [existingBlurView.contentView addSubview:overlayView];
+            [blurEffectView.contentView addSubview:overlayView];
+
+            [view insertSubview:blurEffectView atIndex:0];
+        } else {
+            UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurStyle];
+            [existingBlurView setEffect:blurEffect];
+            existingBlurView.alpha = userTransparency;
+
+            for (UIView *subview in existingBlurView.contentView.subviews) {
+                if ([subview isKindOfClass:[UIView class]]) {
+                    overlayView = subview;
+                    break;
+                }
+            }
+            if (!overlayView) {
+                overlayView = [[UIView alloc] initWithFrame:existingBlurView.bounds];
+                overlayView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+                [existingBlurView.contentView addSubview:overlayView];
+            }
         }
-    }
-    if (overlayView) {
-        CGFloat alpha = isDarkMode ? 0.2 : 0.1;
-        overlayView.backgroundColor = [UIColor colorWithWhite:(isDarkMode ? 0 : 1) alpha:alpha];
-    }
+        if (overlayView) {
+            CGFloat alpha = isDarkMode ? 0.2 : 0.1;
+            overlayView.backgroundColor = [UIColor colorWithWhite:(isDarkMode ? 0 : 1) alpha:alpha];
+        }
+    });
 }
 
 + (void)clearBackgroundRecursivelyInView:(UIView *)view {
@@ -223,35 +226,39 @@
 + (unsigned long long)directorySizeAtPath:(NSString *)directoryPath {
     NSFileManager *fileManager = [NSFileManager defaultManager];
     unsigned long long totalSize = 0;
-    BOOL isDir = NO;
-    if (![fileManager fileExistsAtPath:directoryPath isDirectory:&isDir] || !isDir) {
-        return 0;
-    }
-    NSError *error = nil;
-    NSArray<NSString *> *contents = [fileManager contentsOfDirectoryAtPath:directoryPath error:&error];
-    if (error) return 0;
-    for (NSString *item in contents) {
-        if ([item hasPrefix:@"."]) continue;
-        NSString *fullPath = [directoryPath stringByAppendingPathComponent:item];
-        // 跳过符号链接，防止递归死循环
-        NSDictionary *lstatAttrs = [fileManager attributesOfItemAtPath:fullPath error:nil];
-        NSString *fileType = lstatAttrs[NSFileType];
-        if ([fileType isEqualToString:NSFileTypeSymbolicLink]) {
+
+    NSURL *directoryURL = [NSURL fileURLWithPath:directoryPath];
+
+    NSArray<NSURLResourceKey> *keys = @[NSURLIsDirectoryKey, NSURLIsSymbolicLinkKey, NSURLFileSizeKey];
+
+    NSDirectoryEnumerator *enumerator = [fileManager enumeratorAtURL:directoryURL
+                                          includingPropertiesForKeys:keys
+                                                             options:NSDirectoryEnumerationSkipsHiddenFiles
+                                                        errorHandler:^BOOL(NSURL *url, NSError *error) {
+        NSLog(@"Error enumerating %@: %@", url.path, error);
+        return YES;
+    }];
+
+    for (NSURL *fileURL in enumerator) {
+        NSError *resourceError;
+        NSDictionary<NSURLResourceKey, id> *resourceValues = [fileURL resourceValuesForKeys:keys error:&resourceError];
+
+        if (resourceError) {
+            NSLog(@"Error getting resource values for %@: %@", fileURL.path, resourceError);
             continue;
         }
-        BOOL isSubDir = NO;
-        @try {
-            if ([fileManager fileExistsAtPath:fullPath isDirectory:&isSubDir]) {
-                if (isSubDir) {
-                    totalSize += [self directorySizeAtPath:fullPath];
-                } else {
-                    NSDictionary *attrs = [fileManager attributesOfItemAtPath:fullPath error:nil];
-                    totalSize += attrs ? [attrs fileSize] : 0;
-                }
-            }
-        } @catch (__unused NSException *exception) {
-            // 忽略异常，防止递归卡死
+
+        NSNumber *isDirectory = resourceValues[NSURLIsDirectoryKey];
+        NSNumber *isSymbolicLink = resourceValues[NSURLIsSymbolicLinkKey];
+        if (isDirectory.boolValue || isSymbolicLink.boolValue) {
             continue;
+        }
+        
+        NSNumber *fileSize = resourceValues[NSURLFileSizeKey];
+        if (fileSize) {
+            totalSize += fileSize.unsignedLongLongValue;
+        } else {
+            NSLog(@"Missing file size for %@", fileURL.path);
         }
     }
     return totalSize;
@@ -260,40 +267,40 @@
 + (void)removeAllContentsAtPath:(NSString *)directoryPath {
     NSFileManager *fileManager = [NSFileManager defaultManager];
     BOOL isDir = NO;
+    
     if (![fileManager fileExistsAtPath:directoryPath isDirectory:&isDir] || !isDir) {
+        NSLog(@"[CacheClean] Path is not a directory or does not exist: %@", directoryPath);
         return;
     }
-    NSError *error = nil;
-    NSArray<NSString *> *contents = [fileManager contentsOfDirectoryAtPath:directoryPath error:&error];
-    if (error) return;
-    for (NSString *item in contents) {
-        if ([item hasPrefix:@"."]) continue;
-        NSString *fullPath = [directoryPath stringByAppendingPathComponent:item];
-        BOOL isSubDir = NO;
-        if ([fileManager fileExistsAtPath:fullPath isDirectory:&isSubDir]) {
-            if (isSubDir) {
-                [self removeAllContentsAtPath:fullPath];
-                // 删除空文件夹本身
-                [fileManager removeItemAtPath:fullPath error:nil];
-            } else {
-                [fileManager removeItemAtPath:fullPath error:nil];
-            }
+    
+    NSURL *directoryURL = [NSURL fileURLWithPath:directoryPath];
+    
+    NSDirectoryEnumerator *enumerator = [fileManager enumeratorAtURL:directoryURL
+                                          includingPropertiesForKeys:@[NSURLIsDirectoryKey, NSURLIsSymbolicLinkKey]
+                                                             options:NSDirectoryEnumerationSkipsHiddenFiles
+                                                        errorHandler:^BOOL(NSURL *url, NSError *enumError) {
+        NSLog(@"[CacheClean] Error enumerating directory %@: %@", url, enumError);
+        return YES;
+    }];
+    
+    NSMutableArray<NSURL *> *itemsToDelete = [NSMutableArray array];
+    for (NSURL *itemURL in enumerator) {
+        NSNumber *isSymbolicLink;
+        [itemURL getResourceValue:&isSymbolicLink forKey:NSURLIsSymbolicLinkKey error:nil];
+        if ([isSymbolicLink boolValue]) {
+            continue;
+        }
+        [itemsToDelete addObject:itemURL];
+    }
+    
+    for (NSURL *itemURL in [itemsToDelete reverseObjectEnumerator]) {
+        NSError *removeError = nil;
+        if ([fileManager removeItemAtURL:itemURL error:&removeError]) {
+            // NSLog(@"[CacheClean] Successfully removed: %@", itemURL.lastPathComponent);
+        } else {
+            NSLog(@"[CacheClean] Error removing %@: %@", itemURL.path, removeError);
         }
     }
-}
-
-+ (NSString *)cacheDirectory {
-    NSString *tmp = NSTemporaryDirectory();
-    NSString *cacheDir = [tmp stringByAppendingPathComponent:@"DYYY"];
-    NSFileManager *fm = [NSFileManager defaultManager];
-    if (![fm fileExistsAtPath:cacheDir]) {
-        [fm createDirectoryAtPath:cacheDir withIntermediateDirectories:YES attributes:nil error:nil];
-    }
-    return cacheDir;
-}
-
-+ (void)clearCacheDirectory {
-    [self removeAllContentsAtPath:[self cacheDirectory]];
 }
 
 + (NSString *)cachePathForFilename:(NSString *)filename {
@@ -301,9 +308,11 @@
 }
 
 #pragma mark - Public Color Scheme Methods (公共颜色方案方法)
-    static NSArray<UIColor *> *_baseRainbowColors;
-    static NSCache *_gradientColorCache;
-    static atomic_uint_fast64_t _rainbowRotationCounter = 0;
+
+static NSCache *_gradientColorCache;
+static NSArray<UIColor *> *_baseRainbowColors;
+static atomic_uint_fast64_t _rainbowRotationCounter = 0;
+static os_unfair_lock _staticColorCreationLock = OS_UNFAIR_LOCK_INIT;
 
 // +initialize 方法在类第一次被使用时调用，且只调用一次，是线程安全的
 + (void)initialize {
@@ -486,26 +495,35 @@
         return cachedColor;
     }
 
-    UIColor *finalColor = nil;
-    NSArray<UIColor *> *gradientColors = [self _staticGradientColorsForHexString:hexString];
-    if (gradientColors && gradientColors.count > 0) {
-        CGSize patternSize = CGSizeMake(MAX(1.0, quantizedWidth), 1);
-        UIImage *gradientImage = [self _imageWithGradientColors:gradientColors size:patternSize];
+    os_unfair_lock_lock(&_staticColorCreationLock);
+    @try {
+        cachedColor = [_gradientColorCache objectForKey:cacheKey];
+        if (cachedColor) return cachedColor;
 
-        if (gradientImage) {
-            finalColor = [UIColor colorWithPatternImage:gradientImage];
-        }
-    } else {
-        UIColor *singleColor = [self _colorFromHexString:trimmedHexString];
-        if (singleColor) {
-            finalColor = singleColor;
-        }
-    }
+        UIColor *finalColor = nil;
+        NSArray<UIColor *> *gradientColors = [self _staticGradientColorsForHexString:hexString];
+        if (gradientColors && gradientColors.count > 0) {
+            CGSize patternSize = CGSizeMake(MAX(1.0, quantizedWidth), 1);
+            UIImage *gradientImage = [self _imageWithGradientColors:gradientColors size:patternSize];
 
-    if (finalColor) {
-        [_gradientColorCache setObject:finalColor forKey:cacheKey];
+            if (gradientImage) {
+                finalColor = [UIColor colorWithPatternImage:gradientImage];
+            }
+        } else {
+            UIColor *singleColor = [self _colorFromHexString:trimmedHexString];
+            if (singleColor) {
+                finalColor = singleColor;
+            }
+        }
+
+        if (finalColor) {
+            [_gradientColorCache setObject:finalColor forKey:cacheKey];
+        }
         return finalColor;
+    } @finally {
+        os_unfair_lock_unlock(&_staticColorCreationLock);
     }
+
     return [UIColor whiteColor];
 }
 
