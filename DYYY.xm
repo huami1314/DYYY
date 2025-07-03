@@ -37,7 +37,7 @@
 - (void)layoutSubviews {
 	%orig;
 
-	if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYBioCopyText"]) {
+	if (!DYYYGetBool(@"DYYYBioCopyText")) {
 		return;
 	}
 
@@ -74,7 +74,7 @@
 %hook AWEVideoModel
 
 - (AWEURLModel *)playURL {
-	if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableVideoHighestQuality"]) {
+	if (!DYYYGetBool(@"DYYYEnableVideoHighestQuality")) {
 		return %orig;
 	}
 
@@ -121,7 +121,7 @@
 
 	NSArray *originalModels = %orig;
 
-	if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableVideoHighestQuality"]) {
+	if (!DYYYGetBool(@"DYYYEnableVideoHighestQuality")) {
 		return originalModels;
 	}
 
@@ -167,14 +167,14 @@
 %hook AWELiveGuideElement
 
 - (BOOL)enableAutoEnterRoom {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableAutoEnterLive"]) {
+	if (DYYYGetBool(@"DYYYDisableAutoEnterLive")) {
 		return NO;
 	}
 	return %orig;
 }
 
 - (BOOL)enableNewAutoEnter {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableAutoEnterLive"]) {
+	if (DYYYGetBool(@"DYYYDisableAutoEnterLive")) {
 		return NO;
 	}
 	return %orig;
@@ -256,12 +256,7 @@
 
 	// 保险起见再fallback,遍历 subviews
 	if (!gFeedCV) {
-		for (UIView *v in self.view.subviews) {
-			if ([v isKindOfClass:[UICollectionView class]]) {
-				gFeedCV = (UICollectionView *)v;
-				break;
-			}
-		}
+		gFeedCV = [DYYYUtils findSubviewOfClass:[UICollectionView class] inView:self.view];
 	}
 }
 %end
@@ -272,7 +267,7 @@
 - (void)handlePan:(UIPanGestureRecognizer *)pan {
 
 	/* 仅处理横屏Feed列表。其余collectionView直接走系统逻辑 */
-	if (self != gFeedCV || ![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYVideoGesture"]) {
+	if (self != gFeedCV || !DYYYGetBool(@"DYYYVideoGesture")) {
 		%orig;
 		return;
 	}
@@ -342,7 +337,7 @@
 %hook AWELeftSideBarAddChildTransitionObject
 
 - (void)handleShowSliderPanGesture:(id)gr {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableSidebarGesture"]) {
+	if (DYYYGetBool(@"DYYYDisableSidebarGesture")) {
 		// 禁用侧边栏手势
 		return;
 	}
@@ -354,7 +349,7 @@
 
 %hook AWEPlayInteractionUserAvatarElement
 - (void)onFollowViewClicked:(UITapGestureRecognizer *)gesture {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYfollowTips"]) {
+	if (DYYYGetBool(@"DYYYfollowTips")) {
 		// 获取用户信息
 		AWEUserModel *author = nil;
 		NSString *nickname = @"";
@@ -414,7 +409,7 @@
 
 %hook AWEPlayInteractionUserAvatarFollowController
 - (void)onFollowViewClicked:(UITapGestureRecognizer *)gesture {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYfollowTips"]) {
+	if (DYYYGetBool(@"DYYYfollowTips")) {
 		// 获取用户信息
 		AWEUserModel *author = nil;
 		NSString *nickname = @"";
@@ -474,7 +469,7 @@
 
 %hook AWENormalModeTabBarGeneralPlusButton
 + (id)button {
-	BOOL isHiddenJia = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenJia"];
+	BOOL isHiddenJia = DYYYGetBool(@"DYYYisHiddenJia");
 	if (isHiddenJia) {
 		return nil;
 	}
@@ -488,7 +483,7 @@
 	static dispatch_source_t timer = nil;
 	static int attempts = 0;
 	static BOOL pureModeSet = NO;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnablePure"]) {
+	if (DYYYGetBool(@"DYYYisEnablePure")) {
 		%orig(0.0);
 		if (pureModeSet) {
 			return;
@@ -499,7 +494,7 @@
 			dispatch_source_set_event_handler(timer, ^{
 			  UIWindow *keyWindow = [DYYYUtils getActiveWindow];
 			  if (keyWindow && keyWindow.rootViewController) {
-				  UIViewController *feedVC = findViewControllerOfClass(keyWindow.rootViewController, NSClassFromString(@"AWEFeedTableViewController"));
+				  UIViewController *feedVC = [DYYYUtils findViewControllerOfClass:NSClassFromString(@"AWEFeedTableViewController") inViewController:keyWindow.rootViewController];
 				  if (feedVC) {
 					  [feedVC setValue:@YES forKey:@"pureMode"];
 					  pureModeSet = YES;
@@ -609,9 +604,9 @@
 
 %hook AWEDanmakuContentLabel
 - (void)setTextColor:(UIColor *)textColor {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableDanmuColor"]) {
+    if (DYYYGetBool(@"DYYYEnableDanmuColor")) {
         NSString *danmuColor = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYdanmuColor"];
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDanmuRainbowRotating"]) {
+        if (DYYYGetBool(@"DYYYDanmuRainbowRotating")) {
             danmuColor = @"rainbow_rotating";
         }
         [DYYYUtils applyColorSettingsToLabel:self colorHexString:danmuColor];
@@ -621,7 +616,7 @@
 }
 
 - (void)setStrokeWidth:(double)strokeWidth {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableDanmuColor"]) {
+    if (DYYYGetBool(@"DYYYEnableDanmuColor")) {
         %orig(FLT_MIN);
     } else {
         %orig(strokeWidth);
@@ -629,7 +624,7 @@
 }
 
 - (void)setStrokeColor:(UIColor *)strokeColor {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableDanmuColor"]) {
+    if (DYYYGetBool(@"DYYYEnableDanmuColor")) {
         %orig(nil);
     } else {
         %orig(strokeColor);
@@ -655,7 +650,7 @@
 - (void)layoutSubviews {
 	%orig;
 
-	UIViewController *vc = [self firstAvailableUIViewController];
+	UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
 
 	if ([vc isKindOfClass:%c(AWEPlayInteractionViewController)]) {
 		if (self.markLabel) {
@@ -663,7 +658,7 @@
 		}
 	}
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLocation"]) {
+	if (DYYYGetBool(@"DYYYHideLocation")) {
 		self.hidden = YES;
 		return;
 	}
@@ -763,27 +758,12 @@
 
 %new
 - (void)applyBlurEffectIfNeeded {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"] &&
+	if (DYYYGetBool(@"DYYYisEnableCommentBlur") &&
 	    [self isKindOfClass:NSClassFromString(@"AWECommentPanelContainerSwiftImpl.CommentContainerInnerViewController")]) {
 
 		self.view.backgroundColor = [UIColor clearColor];
-		for (UIView *subview in self.view.subviews) {
-			if (![subview isKindOfClass:[UIVisualEffectView class]]) {
-				subview.backgroundColor = [UIColor clearColor];
-			}
-		}
-
-		UIVisualEffectView *existingBlurView = nil;
-		for (UIView *subview in self.view.subviews) {
-			if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == 999) {
-				existingBlurView = (UIVisualEffectView *)subview;
-				break;
-			}
-		}
-
-		BOOL isDarkMode = [DYYYUtils isDarkMode];
-
-		UIBlurEffectStyle blurStyle = isDarkMode ? UIBlurEffectStyleDark : UIBlurEffectStyleLight;
+		// 递归清除所有子视图的背景色，防止遮挡模糊效果
+		[DYYYUtils clearBackgroundRecursivelyInView:self.view];
 
 		// 动态获取用户设置的透明度
 		float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
@@ -791,36 +771,8 @@
 			userTransparency = 0.5; // 默认值0.5（半透明）
 		}
 
-		if (!existingBlurView) {
-			UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurStyle];
-			UIVisualEffectView *blurEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
-			blurEffectView.frame = self.view.bounds;
-			blurEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-			blurEffectView.alpha = userTransparency; // 设置为用户自定义透明度
-			blurEffectView.tag = 999;
-
-			UIView *overlayView = [[UIView alloc] initWithFrame:self.view.bounds];
-			CGFloat alpha = isDarkMode ? 0.2 : 0.1;
-			overlayView.backgroundColor = [UIColor colorWithWhite:(isDarkMode ? 0 : 1) alpha:alpha];
-			overlayView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-			[blurEffectView.contentView addSubview:overlayView];
-
-			[self.view insertSubview:blurEffectView atIndex:0];
-		} else {
-			UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurStyle];
-			[existingBlurView setEffect:blurEffect];
-
-			existingBlurView.alpha = userTransparency; // 动态更新已有视图的透明度
-
-			for (UIView *subview in existingBlurView.contentView.subviews) {
-				if (subview.tag != 999) {
-					CGFloat alpha = isDarkMode ? 0.2 : 0.1;
-					subview.backgroundColor = [UIColor colorWithWhite:(isDarkMode ? 0 : 1) alpha:alpha];
-				}
-			}
-
-			[self.view insertSubview:existingBlurView atIndex:0];
-		}
+		// 应用毛玻璃效果
+		[DYYYUtils applyBlurEffectToView:self.view transparency:userTransparency blurViewTag:999];
 	}
 }
 %end
@@ -829,14 +781,7 @@
 // 关键方法,勿删！
 %new
 - (UIViewController *)firstAvailableUIViewController {
-	UIResponder *responder = [self nextResponder];
-	while (responder != nil) {
-		if ([responder isKindOfClass:[UIViewController class]]) {
-			return (UIViewController *)responder;
-		}
-		responder = [responder nextResponder];
-	}
-	return nil;
+	return [DYYYUtils firstAvailableViewControllerFromView:self];
 }
 
 %end
@@ -847,7 +792,7 @@
 - (UIView *)view {
 	UIView *originalView = %orig;
 
-	NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
+	NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
 	if (transparentValue.length > 0) {
 		CGFloat alphaValue = transparentValue.floatValue;
 		if (alphaValue >= 0.0 && alphaValue <= 1.0) {
@@ -871,11 +816,11 @@
 - (void)layoutSubviews {
 	%orig;
 
-	NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
+	NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
+	if ([NSStringFromClass([self.superview class]) isEqualToString:NSStringFromClass([self class])]) return;
 	if (!transparentValue.length) return;
 	CGFloat alphaValue = transparentValue.floatValue;
 	if (alphaValue < 0.0 || alphaValue > 1.0) return;
-	if ([NSStringFromClass([self.superview class]) isEqualToString:NSStringFromClass([self class])]) return;
 	for (UIView *subview in self.subviews) {
 		if (subview.tag == DYYY_IGNORE_GLOBAL_ALPHA_TAG) continue;
 		if (subview.superview == self && subview.alpha > 0) {
@@ -891,7 +836,7 @@
 	id r = %orig;
 
 	// 只有收藏按钮才显示确认弹窗
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYcollectTips"] && [self.accessibilityLabel isEqualToString:@"收藏"]) {
+	if (DYYYGetBool(@"DYYYcollectTips") && [self.accessibilityLabel isEqualToString:@"收藏"]) {
 
 		dispatch_async(dispatch_get_main_queue(), ^{
 		  [DYYYBottomAlertView showAlertWithTitle:@"收藏确认"
@@ -918,7 +863,7 @@
 %hook AWEPlayInteractionProgressContainerView
 - (void)layoutSubviews {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+	if (DYYYGetBool(@"DYYYisEnableFullScreen")) {
 		for (UIView *subview in self.subviews) {
 			if ([subview class] == [UIView class]) {
 				[subview setBackgroundColor:[UIColor clearColor]];
@@ -937,8 +882,8 @@
 }
 
 - (void)setAlpha:(CGFloat)alpha {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisShowScheduleDisplay"]) {
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideVideoProgress"]) {
+	if (DYYYGetBool(@"DYYYisShowScheduleDisplay")) {
+		if (DYYYGetBool(@"DYYYHideVideoProgress")) {
 			%orig(0);
 		} else {
 			%orig(1.0);
@@ -956,7 +901,7 @@ static CGFloat rightLabelRightMargin = -1;
 
 	NSString *durationFormatted = [self.progressSliderDelegate formatTimeFromSeconds:floor(self.progressSliderDelegate.model.videoDuration / 1000)];
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisShowScheduleDisplay"]) {
+	if (DYYYGetBool(@"DYYYisShowScheduleDisplay")) {
 		UIView *parentView = self.superview;
 		if (!parentView)
 			return;
@@ -1066,7 +1011,7 @@ static CGFloat rightLabelRightMargin = -1;
 - (void)updateProgressSliderWithTime:(CGFloat)arg1 totalDuration:(CGFloat)arg2 {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisShowScheduleDisplay"]) {
+	if (DYYYGetBool(@"DYYYisShowScheduleDisplay")) {
 		AWEFeedProgressSlider *progressSlider = self.progressSlider;
 		UIView *parentView = progressSlider.superview;
 		if (!parentView)
@@ -1128,15 +1073,15 @@ static CGFloat rightLabelRightMargin = -1;
 				rightFrame.size.height = 15.0;
 				rightLabel.frame = rightFrame;
 			}
-			[DYYYUtils applyColorSettingsToLabel:leftLabel colorHexString:labelColorHex];
+			[DYYYUtils applyColorSettingsToLabel:rightLabel colorHexString:labelColorHex];
 		}
 	}
 }
 
 - (void)setHidden:(BOOL)hidden {
 	%orig;
-	BOOL hideVideoProgress = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideVideoProgress"];
-	BOOL showScheduleDisplay = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisShowScheduleDisplay"];
+	BOOL hideVideoProgress = DYYYGetBool(@"DYYYHideVideoProgress");
+	BOOL showScheduleDisplay = DYYYGetBool(@"DYYYisShowScheduleDisplay");
 	if (hideVideoProgress && showScheduleDisplay && !hidden) {
 		self.alpha = 0;
 	}
@@ -1189,10 +1134,10 @@ static CGFloat rightLabelRightMargin = -1;
 - (id)timestampLabel {
 	UILabel *label = %orig;
 	NSString *labelColorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYLabelColor"];
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnabsuijiyanse"]) {
+	if (DYYYGetBool(@"DYYYEnabsuijiyanse")) {
 		labelColorHex = @"random_gradient";
 	}
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableArea"]) {
+	if (DYYYGetBool(@"DYYYisEnableArea")) {
 		NSString *originalText = label.text ?: @"";
 		NSString *cityCode = self.model.cityCode;
 
@@ -1272,7 +1217,6 @@ static CGFloat rightLabelRightMargin = -1;
 					  }
 
 					  [DYYYUtils applyColorSettingsToLabel:label colorHexString:labelColorHex];
-					  ;
 					});
 				} else {
 					[CityManager
@@ -1332,7 +1276,6 @@ static CGFloat rightLabelRightMargin = -1;
 								 }
 
 								 [DYYYUtils applyColorSettingsToLabel:label colorHexString:labelColorHex];
-								 ;
 							       });
 						       }
 						     }];
@@ -1363,7 +1306,7 @@ static CGFloat rightLabelRightMargin = -1;
 	if (ipScaleValue.length > 0) {
 		UIFont *originalFont = label.font;
 		CGRect originalFrame = label.frame;
-		CGFloat offset = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYIPLabelVerticalOffset"];
+		CGFloat offset = DYYYGetFloat(@"DYYYIPLabelVerticalOffset");
 		if (offset > 0) {
 			CGAffineTransform translationTransform = CGAffineTransformMakeTranslation(0, -offset);
 			label.transform = translationTransform;
@@ -1376,13 +1319,12 @@ static CGFloat rightLabelRightMargin = -1;
 	}
 
 	[DYYYUtils applyColorSettingsToLabel:label colorHexString:labelColorHex];
-	;
 
 	return label;
 }
 
 + (BOOL)shouldActiveWithData:(id)arg1 context:(id)arg2 {
-	return [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableArea"];
+	return DYYYGetBool(@"DYYYisEnableArea");
 }
 
 %end
@@ -1424,7 +1366,7 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 - (void)didMoveToWindow {
 	%orig;
 
-	BOOL longPressCopyEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:kDYYYLongPressCopyEnabledKey];
+	BOOL longPressCopyEnabled = DYYYGetBool(kDYYYLongPressCopyEnabledKey);
 
 	if (![[NSUserDefaults standardUserDefaults] objectForKey:kDYYYLongPressCopyEnabledKey]) {
 		longPressCopyEnabled = NO;
@@ -1648,7 +1590,7 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 
 - (BOOL)enableRefresh {
 	if ([self.accessibilityLabel isEqualToString:@"首页"]) {
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHomeRefresh"]) {
+		if (DYYYGetBool(@"DYYYDisableHomeRefresh")) {
 			return NO;
 		}
 	}
@@ -1661,7 +1603,7 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 %hook AWEVersionUpdateManager
 
 - (void)startVersionUpdateWorkflow:(id)arg1 completion:(id)arg2 {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYNoUpdates"]) {
+	if (DYYYGetBool(@"DYYYNoUpdates")) {
 		if (arg2) {
 			void (^completionBlock)(void) = arg2;
 			completionBlock();
@@ -1672,11 +1614,11 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 }
 
 - (id)workflow {
-	return [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYNoUpdates"] ? nil : %orig;
+	return DYYYGetBool(@"DYYYNoUpdates") ? nil : %orig;
 }
 
 - (id)badgeModule {
-	return [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYNoUpdates"] ? nil : %orig;
+	return DYYYGetBool(@"DYYYNoUpdates") ? nil : %orig;
 }
 
 %end
@@ -1686,7 +1628,7 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 
 - (id)initWithFrame:(CGRect)frame {
 	id orig = %orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableNotificationTransparency"]) {
+	if (DYYYGetBool(@"DYYYEnableNotificationTransparency")) {
 		[self setupBlurEffectForNotificationView];
 	}
 	return orig;
@@ -1694,21 +1636,21 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 
 - (void)layoutSubviews {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableNotificationTransparency"]) {
+	if (DYYYGetBool(@"DYYYEnableNotificationTransparency")) {
 		[self setupBlurEffectForNotificationView];
 	}
 }
 
 - (void)didMoveToWindow {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableNotificationTransparency"]) {
+	if (DYYYGetBool(@"DYYYEnableNotificationTransparency")) {
 		[self setupBlurEffectForNotificationView];
 	}
 }
 
 - (void)didAddSubview:(UIView *)subview {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableNotificationTransparency"] && [NSStringFromClass([subview class]) containsString:@"AWEInnerNotificationContainerView"]) {
+	if (DYYYGetBool(@"DYYYEnableNotificationTransparency") && [NSStringFromClass([subview class]) containsString:@"AWEInnerNotificationContainerView"]) {
 		[self setupBlurEffectForNotificationView];
 	}
 }
@@ -1717,83 +1659,38 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 - (void)setupBlurEffectForNotificationView {
 	for (UIView *subview in self.subviews) {
 		if ([NSStringFromClass([subview class]) containsString:@"AWEInnerNotificationContainerView"]) {
-			[self applyBlurEffectToView:subview];
+			// 动态获取用户设置的圆角半径
+			float userRadius = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNotificationCornerRadius"] floatValue];
+			if (!userRadius || userRadius < 0 || userRadius > 50) {
+				userRadius = 12;
+			}
+			subview.layer.cornerRadius = userRadius;
+			subview.layer.masksToBounds = YES;
+
+			float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
+			if (userTransparency <= 0 || userTransparency > 1) {
+				userTransparency = 0.5;
+			}
+
+			[DYYYUtils applyBlurEffectToView:subview transparency:userTransparency blurViewTag:999];
+			[DYYYUtils clearBackgroundRecursivelyInView:subview];
+
+            // 定义排除 Block
+            NSSet *excludedTexts = [NSSet setWithObjects:@"回复", @"查看", @"续火花", nil];
+            BOOL (^excludeBlock)(UIView *) = ^BOOL (UIView *currentView) {
+                if ([currentView isKindOfClass:[UILabel class]]) {
+                    UILabel *label = (UILabel *)currentView;
+                    if (label.text && [excludedTexts containsObject:label.text]) {
+                        return YES;
+                    }
+                }
+                return NO;
+            };
+            // 调用新的通用方法设置文本颜色，并传入排除 Block
+            [DYYYUtils applyTextColorRecursively:[UIColor whiteColor] inView:subview shouldExcludeViewBlock:excludeBlock];
+
 			break;
 		}
-	}
-}
-
-%new
-- (void)applyBlurEffectToView:(UIView *)containerView {
-	if (!containerView) {
-		return;
-	}
-
-	containerView.backgroundColor = [UIColor clearColor];
-
-	float userRadius = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNotificationCornerRadius"] floatValue];
-	if (!userRadius || userRadius < 0 || userRadius > 50) {
-		userRadius = 12;
-	}
-
-	containerView.layer.cornerRadius = userRadius;
-	containerView.layer.masksToBounds = YES;
-
-	for (UIView *subview in containerView.subviews) {
-		if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == 999) {
-			[subview removeFromSuperview];
-		}
-	}
-
-	BOOL isDarkMode = [DYYYUtils isDarkMode];
-	UIBlurEffectStyle blurStyle = isDarkMode ? UIBlurEffectStyleDark : UIBlurEffectStyleLight;
-	UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurStyle];
-	UIVisualEffectView *blurView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
-
-	blurView.frame = containerView.bounds;
-	blurView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-	blurView.tag = 999;
-	blurView.layer.cornerRadius = userRadius;
-	blurView.layer.masksToBounds = YES;
-
-	float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
-	if (userTransparency <= 0 || userTransparency > 1) {
-		userTransparency = 0.5;
-	}
-
-	blurView.alpha = userTransparency;
-
-	[containerView insertSubview:blurView atIndex:0];
-
-	[self clearBackgroundRecursivelyInView:containerView];
-
-	[self setLabelsColorWhiteInView:containerView];
-}
-
-%new
-- (void)setLabelsColorWhiteInView:(UIView *)view {
-	for (UIView *subview in view.subviews) {
-		if ([subview isKindOfClass:[UILabel class]]) {
-			UILabel *label = (UILabel *)subview;
-			NSString *text = label.text;
-
-			if (![text isEqualToString:@"回复"] && ![text isEqualToString:@"查看"] && ![text isEqualToString:@"续火花"]) {
-				label.textColor = [UIColor whiteColor];
-			}
-		}
-		[self setLabelsColorWhiteInView:subview];
-	}
-}
-
-%new
-- (void)clearBackgroundRecursivelyInView:(UIView *)view {
-	for (UIView *subview in view.subviews) {
-		if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == 999 && [subview isKindOfClass:[UIButton class]]) {
-			continue;
-		}
-		subview.backgroundColor = [UIColor clearColor];
-		subview.opaque = NO;
-		[self clearBackgroundRecursivelyInView:subview];
 	}
 }
 
@@ -1804,7 +1701,7 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 
 - (void)layoutSubviews {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableSheetBlur"]) {
+	if (DYYYGetBool(@"DYYYisEnableSheetBlur")) {
 		[self applyBlurEffectAndWhiteText];
 	}
 }
@@ -1815,57 +1712,26 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 	if (self.containerView) {
 		self.containerView.backgroundColor = [UIColor clearColor];
 
-		for (UIView *subview in self.containerView.subviews) {
-			if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == 9999) {
-				[subview removeFromSuperview];
-			}
-		}
-
 		// 动态获取用户设置的透明度
 		float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYSheetBlurTransparent"] floatValue];
 		if (userTransparency <= 0 || userTransparency > 1) {
 			userTransparency = 0.9; // 默认值0.9
 		}
 
-		UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
-		UIVisualEffectView *blurEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
-		blurEffectView.frame = self.containerView.bounds;
-		blurEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-		blurEffectView.alpha = userTransparency; // 设置为用户自定义透明度
-		blurEffectView.tag = 9999;
+		[DYYYUtils applyBlurEffectToView:self.containerView transparency:userTransparency blurViewTag:9999];
+		[DYYYUtils clearBackgroundRecursivelyInView:self.containerView];
 
-		[self.containerView insertSubview:blurEffectView atIndex:0];
-
-		[self setTextColorWhiteRecursivelyInView:self.containerView];
+        // 调用新的通用方法设置文本颜色，这里没有排除需求，所以传入 nil Block
+        [DYYYUtils applyTextColorRecursively:[UIColor whiteColor] inView:self.containerView shouldExcludeViewBlock:nil];
 	}
 }
 
-%new
-- (void)setTextColorWhiteRecursivelyInView:(UIView *)view {
-	for (UIView *subview in view.subviews) {
-		if (![subview isKindOfClass:[UIVisualEffectView class]]) {
-			subview.backgroundColor = [UIColor clearColor];
-		}
-
-		if ([subview isKindOfClass:[UILabel class]]) {
-			UILabel *label = (UILabel *)subview;
-			label.textColor = [UIColor whiteColor];
-		}
-
-		if ([subview isKindOfClass:[UIButton class]]) {
-			UIButton *button = (UIButton *)subview;
-			[button setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-		}
-
-		[self setTextColorWhiteRecursivelyInView:subview];
-	}
-}
 %end
 
 %hook _TtC33AWECommentLongPressPanelSwiftImpl32CommentLongPressPanelCopyElement
 
 - (void)elementTapped {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYCommentCopyText"]) {
+	if (DYYYGetBool(@"DYYYCommentCopyText")) {
 		AWECommentLongPressPanelContext *commentPageContext = [self commentPageContext];
 		AWECommentModel *selectdComment = [commentPageContext selectdComment];
 		if (!selectdComment) {
@@ -1883,7 +1749,7 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 %hook AWEIMPhotoPickerFunctionModel
 
 - (void)setUseShadowIcon:(BOOL)arg1 {
-	BOOL enabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisAutoSelectOriginalPhoto"];
+	BOOL enabled = DYYYGetBool(@"DYYYisAutoSelectOriginalPhoto");
 	if (enabled) {
 		%orig(YES);
 	} else {
@@ -1892,7 +1758,7 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 }
 
 - (BOOL)isSelected {
-	BOOL enabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisAutoSelectOriginalPhoto"];
+	BOOL enabled = DYYYGetBool(@"DYYYisAutoSelectOriginalPhoto");
 	if (enabled) {
 		return YES;
 	}
@@ -1905,7 +1771,7 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 %hook HTSLiveStreamPcdnManager
 
 + (void)start {
-	BOOL disablePCDN = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableLivePCDN"];
+	BOOL disablePCDN = DYYYGetBool(@"DYYYDisableLivePCDN");
 	if (!disablePCDN) {
 		%orig;
 	} else {
@@ -1914,7 +1780,7 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 }
 
 + (void)configAndStartLiveIO {
-	BOOL disablePCDN = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableLivePCDN"];
+	BOOL disablePCDN = DYYYGetBool(@"DYYYDisableLivePCDN");
 	if (!disablePCDN) {
 		%orig;
 	} else {
@@ -1928,7 +1794,7 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 %hook IESLiveLaunchTaskPcdn
 
 - (void)excute {
-	BOOL disablePCDN = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableLivePCDN"];
+	BOOL disablePCDN = DYYYGetBool(@"DYYYDisableLivePCDN");
 	if (disablePCDN) {
 		NSLog(@"[DYYY] IESLiveLaunchTaskPcdn excute blocked");
 		return;
@@ -1944,7 +1810,7 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 - (void)setupStreamQuality:(id)arg1 {
 	%orig;
 
-	BOOL enableHighestQuality = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableLiveHighestQuality"];
+	BOOL enableHighestQuality = DYYYGetBool(@"DYYYEnableLiveHighestQuality");
 	if (enableHighestQuality) {
 		NSArray *qualities = self.streamQualityArray;
 		if (!qualities || qualities.count == 0) {
@@ -1964,35 +1830,49 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 // 强制启用新版抖音长按 UI（现代风）
 %hook AWELongPressPanelDataManager
 + (BOOL)enableModernLongPressPanelConfigWithSceneIdentifier:(id)arg1 {
-	return DYYYGetBool(@"DYYYisEnableModern") || DYYYGetBool(@"DYYYisEnableModernLight") || DYYYGetBool(@"DYYYModernPanelFollowSystem");
+    return DYYYGetBool(@"DYYYisEnableModernPanel");
 }
 %end
 
 %hook AWELongPressPanelABSettings
 + (NSUInteger)modernLongPressPanelStyleMode {
-	if (DYYYGetBool(@"DYYYModernPanelFollowSystem")) {
-		BOOL isDarkMode = [DYYYUtils isDarkMode];
-		return isDarkMode ? 1 : 2;
-	} else if (DYYYGetBool(@"DYYYisEnableModernLight")) {
-		return 2;
-	} else if (DYYYGetBool(@"DYYYisEnableModern")) {
-		return 1;
-	}
-	return 0;
+    if (!DYYYGetBool(@"DYYYisEnableModernPanel")) {
+        return %orig;
+    }
+    
+    BOOL forceBlur = DYYYGetBool(@"DYYYisLongPressPanelBlur");
+    BOOL forceDark = DYYYGetBool(@"DYYYisLongPressPanelDark");
+    
+    if (forceBlur && forceDark) {
+        return 1;
+    } else if (!forceBlur && !forceDark) {
+        return 2;
+    } else if (!forceBlur && forceDark) {
+        return 3;
+    } else { // forceBlur && !forceDark
+        return 4;
+    }
 }
 %end
 
 %hook AWEModernLongPressPanelUIConfig
 + (NSUInteger)modernLongPressPanelStyleMode {
-	if (DYYYGetBool(@"DYYYModernPanelFollowSystem")) {
-		BOOL isDarkMode = [DYYYUtils isDarkMode];
-		return isDarkMode ? 1 : 2;
-	} else if (DYYYGetBool(@"DYYYisEnableModernLight")) {
-		return 2;
-	} else if (DYYYGetBool(@"DYYYisEnableModern")) {
-		return 1;
-	}
-	return 0;
+    if (!DYYYGetBool(@"DYYYisEnableModernPanel")) {
+        return %orig;
+    }
+    
+    BOOL forceBlur = DYYYGetBool(@"DYYYisLongPressPanelBlur");
+    BOOL forceDark = DYYYGetBool(@"DYYYisLongPressPanelDark");
+    
+    if (forceBlur && forceDark) {
+        return 1;
+    } else if (!forceBlur && !forceDark) {
+        return 2;
+    } else if (!forceBlur && forceDark) {
+        return 3;
+    } else { // forceBlur && !forceDark
+        return 4;
+    }
 }
 %end
 
@@ -2000,7 +1880,7 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 %hook AWEUserTabListModel
 
 - (NSInteger)profileLandingTab {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDefaultEnterWorks"]) {
+	if (DYYYGetBool(@"DYYYDefaultEnterWorks")) {
 		return 0;
 	} else {
 		return %orig;
@@ -2057,7 +1937,7 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 static BOOL hasChangedSpeed = NO;
 
 - (CGFloat)longPressFastSpeedValue {
-	float longPressSpeed = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYLongPressSpeed"];
+	float longPressSpeed = DYYYGetFloat(@"DYYYLongPressSpeed");
 	if (longPressSpeed == 0) {
 		longPressSpeed = 2.0;
 	}
@@ -2065,7 +1945,7 @@ static BOOL hasChangedSpeed = NO;
 }
 
 - (void)changeSpeed:(double)speed {
-	float longPressSpeed = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYLongPressSpeed"];
+	float longPressSpeed = DYYYGetFloat(@"DYYYLongPressSpeed");
 
 	if (speed == 2.0) {
 		if (!hasChangedSpeed) {
@@ -2095,7 +1975,7 @@ static BOOL hasChangedSpeed = NO;
 	UIView *superview = self.superview;
 
 	if ([superview isKindOfClass:%c(AFDFastSpeedView)] && text) {
-		float longPressSpeed = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYLongPressSpeed"];
+		float longPressSpeed = DYYYGetFloat(@"DYYYLongPressSpeed");
 		if (longPressSpeed == 0) {
 			longPressSpeed = 2.0;
 		}
@@ -2119,7 +1999,7 @@ static BOOL hasChangedSpeed = NO;
 // 强制启用保存他人头像
 %hook AFDProfileAvatarFunctionManager
 - (BOOL)shouldShowSaveAvatarItem {
-	BOOL shouldEnable = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableSaveAvatar"];
+	BOOL shouldEnable = DYYYGetBool(@"DYYYEnableSaveAvatar");
 	if (shouldEnable) {
 		return YES;
 	}
@@ -2129,7 +2009,7 @@ static BOOL hasChangedSpeed = NO;
 
 %hook AWECommentMediaDownloadConfigLivePhoto
 
-bool commentLivePhotoNotWaterMark = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYCommentLivePhotoNotWaterMark"];
+bool commentLivePhotoNotWaterMark = DYYYGetBool(@"DYYYCommentLivePhotoNotWaterMark");
 
 - (bool)needClientWaterMark {
 	return commentLivePhotoNotWaterMark ? 0 : %orig;
@@ -2147,7 +2027,7 @@ bool commentLivePhotoNotWaterMark = [[NSUserDefaults standardUserDefaults] boolF
 
 %hook AWECommentImageModel
 - (id)downloadUrl {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYCommentNotWaterMark"]) {
+	if (DYYYGetBool(@"DYYYCommentNotWaterMark")) {
 		return self.originUrl;
 	}
 	return %orig;
@@ -2159,7 +2039,7 @@ bool commentLivePhotoNotWaterMark = [[NSUserDefaults standardUserDefaults] boolF
 static BOOL isDownloadFlied = NO;
 
 - (BOOL)elementShouldShow {
-	BOOL DYYYForceDownloadEmotion = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYForceDownloadEmotion"];
+	BOOL DYYYForceDownloadEmotion = DYYYGetBool(@"DYYYForceDownloadEmotion");
 	if (DYYYForceDownloadEmotion) {
 		AWECommentLongPressPanelContext *commentPageContext = [self commentPageContext];
 		AWECommentModel *selectdComment = [commentPageContext selectdComment];
@@ -2180,7 +2060,7 @@ static BOOL isDownloadFlied = NO;
 }
 
 - (void)elementTapped {
-	BOOL DYYYForceDownloadEmotion = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYForceDownloadEmotion"];
+	BOOL DYYYForceDownloadEmotion = DYYYGetBool(@"DYYYForceDownloadEmotion");
 	if (DYYYForceDownloadEmotion) {
 		AWECommentLongPressPanelContext *commentPageContext = [self commentPageContext];
 		AWECommentModel *selectdComment = [commentPageContext selectdComment];
@@ -2287,7 +2167,7 @@ static __weak YYAnimatedImageView *targetStickerView = nil;
 - (void)layoutSubviews {
 	%orig;
 	static char kHasSaveButtonKey;
-	BOOL DYYYForceDownloadPreviewEmotion = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYForceDownloadPreviewEmotion"];
+	BOOL DYYYForceDownloadPreviewEmotion = DYYYGetBool(@"DYYYForceDownloadPreviewEmotion");
 	if (DYYYForceDownloadPreviewEmotion) {
 		if (!objc_getAssociatedObject(self, &kHasSaveButtonKey)) {
 			UIButton *saveButton = [UIButton buttonWithType:UIButtonTypeSystem];
@@ -2364,7 +2244,7 @@ static AWEIMReusableCommonCell *currentCell;
 
 %hook AWEIMCustomMenuComponent
 - (void)msg_showMenuForBubbleFrameInScreen:(CGRect)bubbleFrame tapLocationInScreen:(CGPoint)tapLocation menuItemList:(id)menuItems moreEmoticon:(BOOL)moreEmoticon onCell:(id)cell extra:(id)extra {
-	if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYForceDownloadIMEmotion"]) {
+	if (!DYYYGetBool(@"DYYYForceDownloadIMEmotion")) {
 		%orig(bubbleFrame, tapLocation, menuItems, moreEmoticon, cell, extra);
 		return;
 	}
@@ -2422,7 +2302,7 @@ static AWEIMReusableCommonCell *currentCell;
 
 %hook AWEFeedLiveMarkView
 - (void)setHidden:(BOOL)hidden {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAvatarButton"]) {
+	if (DYYYGetBool(@"DYYYHideAvatarButton")) {
 		hidden = YES;
 	}
 
@@ -2434,7 +2314,7 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideComment"]) {
+	if (DYYYGetBool(@"DYYYHideComment")) {
 		[self removeFromSuperview];
 		return;
 	}
@@ -2447,7 +2327,7 @@ static AWEIMReusableCommonCell *currentCell;
 	%orig;
 
 	// 检查是否需要隐藏加号
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLOTAnimationView"]) {
+	if (DYYYGetBool(@"DYYYHideLOTAnimationView")) {
 		[self removeFromSuperview];
 		return;
 	}
@@ -2469,7 +2349,7 @@ static AWEIMReusableCommonCell *currentCell;
 	%orig;
 
 	// 检查是否需要隐藏头像
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAvatarButton"]) {
+	if (DYYYGetBool(@"DYYYHideAvatarButton")) {
 		[self removeFromSuperview];
 		return;
 	}
@@ -2488,7 +2368,7 @@ static AWEIMReusableCommonCell *currentCell;
 // 移除同城吃喝玩乐提示框
 %hook AWENearbySkyLightCapsuleView
 - (void)layoutSubviews {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideNearbyCapsuleView"]) {
+	if (DYYYGetBool(@"DYYYHideNearbyCapsuleView")) {
 		if ([self respondsToSelector:@selector(removeFromSuperview)]) {
 			[self removeFromSuperview];
 		}
@@ -2502,7 +2382,7 @@ static AWEIMReusableCommonCell *currentCell;
 // 移除共创头像列表
 %hook AWEPlayInteractionCoCreatorNewInfoView
 - (void)layoutSubviews {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideGongChuang"]) {
+	if (DYYYGetBool(@"DYYYHideGongChuang")) {
 		if ([self respondsToSelector:@selector(removeFromSuperview)]) {
 			[self removeFromSuperview];
 		}
@@ -2521,7 +2401,7 @@ static AWEIMReusableCommonCell *currentCell;
 	UIView *superview = self.superview;
 
 	if ([superview isKindOfClass:NSClassFromString(@"AWEBaseElementView")]) {
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCancelMute"]) {
+		if (DYYYGetBool(@"DYYYHideCancelMute")) {
 			self.hidden = YES;
 		}
 	}
@@ -2534,7 +2414,7 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideDanmuButton"]) {
+	if (DYYYGetBool(@"DYYYHideDanmuButton")) {
 		self.hidden = YES;
 	}
 }
@@ -2547,7 +2427,7 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideHisShop"]) {
+	if (DYYYGetBool(@"DYYYHideHisShop")) {
 		UIView *parentView = self.superview;
 		if (parentView) {
 			parentView.hidden = YES;
@@ -2564,7 +2444,7 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"]) {
+	if (DYYYGetBool(@"DYYYHideCommentViews")) {
 		[self setHidden:YES];
 	}
 }
@@ -2575,7 +2455,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWEPOIEntryAnchorView
 
 - (void)p_addViews {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"]) {
+	if (DYYYGetBool(@"DYYYHideCommentViews")) {
 		return;
 	}
 	%orig;
@@ -2588,11 +2468,11 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"]) {
+	if (DYYYGetBool(@"DYYYHideCommentViews")) {
 		[self setHidden:YES];
 	}
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYMusicCopyText"]) {
+	if (DYYYGetBool(@"DYYYMusicCopyText")) {
 		UILabel *label = nil;
 		if ([self respondsToSelector:@selector(preTitleLabel)]) {
 			label = [self valueForKey:@"preTitleLabel"];
@@ -2604,7 +2484,7 @@ static AWEIMReusableCommonCell *currentCell;
 }
 
 - (void)p_didClickSong {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYMusicCopyText"]) {
+	if (DYYYGetBool(@"DYYYMusicCopyText")) {
 		// 通过 KVC 拿到内部的 songButton
 		UIButton *btn = nil;
 		if ([self respondsToSelector:@selector(songButton)]) {
@@ -2632,7 +2512,7 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"]) {
+	if (DYYYGetBool(@"DYYYHideCommentViews")) {
 		[self setHidden:YES];
 	}
 }
@@ -2643,7 +2523,7 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"]) {
+	if (DYYYGetBool(@"DYYYHideCommentViews")) {
 		[self setHidden:YES];
 	}
 }
@@ -2654,7 +2534,7 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"]) {
+	if (DYYYGetBool(@"DYYYHideCommentViews")) {
 		[self setHidden:YES];
 	}
 }
@@ -2664,7 +2544,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWECommentPanelListSwiftImpl_CommentBottomTipsContainerViewController
 - (void)viewWillAppear:(BOOL)animated {
 	%orig(animated);
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentTips"]) {
+	if (DYYYGetBool(@"DYYYHideCommentTips")) {
 		((UIViewController *)self).view.hidden = YES;
 	}
 }
@@ -2699,7 +2579,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWESearchAnchorListModel
 
 - (BOOL)hideWords {
-	return [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentViews"];
+	return DYYYGetBool(@"DYYYHideCommentViews");
 }
 
 %end
@@ -2707,7 +2587,7 @@ static AWEIMReusableCommonCell *currentCell;
 // 隐藏观看历史搜索
 %hook AWEDiscoverFeedEntranceView
 - (id)init {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideInteractionSearch"]) {
+	if (DYYYGetBool(@"DYYYHideInteractionSearch")) {
 		return nil;
 	}
 	return %orig;
@@ -2720,7 +2600,7 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTemplateTags"]) {
+	if (DYYYGetBool(@"DYYYHideTemplateTags")) {
 		UIView *parentView = self.superview;
 		if (parentView) {
 			parentView.hidden = YES;
@@ -2737,12 +2617,12 @@ static AWEIMReusableCommonCell *currentCell;
 
 - (BOOL)isHidden {
 	BOOL origHidden = %orig;
-	BOOL hideRecommend = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideChallengeStickers"];
+	BOOL hideRecommend = DYYYGetBool(@"DYYYHideChallengeStickers");
 	return origHidden || hideRecommend;
 }
 
 - (void)setHidden:(BOOL)hidden {
-	BOOL forceHide = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideChallengeStickers"];
+	BOOL forceHide = DYYYGetBool(@"DYYYHideChallengeStickers");
 	%orig(forceHide ? YES : hidden);
 }
 
@@ -2753,7 +2633,7 @@ static AWEIMReusableCommonCell *currentCell;
 - (BOOL)isDouGuideTipViewShow {
 	BOOL r = %orig;
 	NSLog(@"Original value: %@", @(r));
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideChallengeStickers"]) {
+	if (DYYYGetBool(@"DYYYHideChallengeStickers")) {
 		NSLog(@"Force return YES");
 		return YES;
 	}
@@ -2766,7 +2646,7 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenAvatarBubble"]) {
+	if (DYYYGetBool(@"DYYYisHiddenAvatarBubble")) {
 		[self removeFromSuperview];
 		return;
 	}
@@ -2777,7 +2657,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWEIMMessageTabOptPushBannerView
 
 - (instancetype)initWithFrame:(CGRect)frame {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePushBanner"]) {
+	if (DYYYGetBool(@"DYYYHidePushBanner")) {
 		return %orig(CGRectMake(frame.origin.x, frame.origin.y, 0, 0));
 	}
 	return %orig;
@@ -2800,14 +2680,14 @@ static AWEIMReusableCommonCell *currentCell;
 			// 明确判断是合集还是作者声明
 			if ([labelText containsString:@"合集"]) {
 				// 如果是合集，只检查合集的开关
-				if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTemplateVideo"]) {
+				if (DYYYGetBool(@"DYYYHideTemplateVideo")) {
 					[self removeFromSuperview];
-				} else if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+				} else if (DYYYGetBool(@"DYYYisEnableFullScreen")) {
 					self.backgroundColor = [UIColor clearColor];
 				}
 			} else {
 				// 如果不是合集（即作者声明），只检查声明的开关
-				if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAntiAddictedNotice"]) {
+				if (DYYYGetBool(@"DYYYHideAntiAddictedNotice")) {
 					[self removeFromSuperview];
 				}
 			}
@@ -2816,7 +2696,7 @@ static AWEIMReusableCommonCell *currentCell;
 }
 - (void)setBackgroundColor:(UIColor *)backgroundColor {
 	// 禁用背景色设置
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideGradient"]) {
+	if (DYYYGetBool(@"DYYYHideGradient")) {
 		%orig(UIColor.clearColor);
 	} else {
 		%orig(backgroundColor);
@@ -2828,7 +2708,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWEProfileNavigationButton
 - (void)setupUI {
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideButton"]) {
+	if (DYYYGetBool(@"DYYYHideButton")) {
 		return;
 	}
 	%orig;
@@ -2838,7 +2718,7 @@ static AWEIMReusableCommonCell *currentCell;
 // 隐藏朋友"关注/不关注"按钮
 %hook AWEFeedUnfollowFamiliarFollowAndDislikeView
 - (void)showUnfollowFamiliarView {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFamiliar"]) {
+	if (DYYYGetBool(@"DYYYHideFamiliar")) {
 		self.hidden = YES;
 		return;
 	}
@@ -2850,7 +2730,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWEFamiliarNavView
 - (void)layoutSubviews {
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFamiliar"]) {
+	if (DYYYGetBool(@"DYYYHideFamiliar")) {
 		self.hidden = YES;
 	}
 
@@ -2864,7 +2744,7 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShareContentView"]) {
+	if (DYYYGetBool(@"DYYYHideShareContentView")) {
 		UIView *parentView = self.superview;
 		if (parentView) {
 			parentView.hidden = YES;
@@ -2879,7 +2759,7 @@ static AWEIMReusableCommonCell *currentCell;
 // 移除下面推荐框黑条
 %hook AWEPlayInteractionRelatedVideoView
 - (void)layoutSubviews {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideBottomRelated"]) {
+	if (DYYYGetBool(@"DYYYHideBottomRelated")) {
 		if ([self respondsToSelector:@selector(removeFromSuperview)]) {
 			[self removeFromSuperview];
 		}
@@ -2892,7 +2772,7 @@ static AWEIMReusableCommonCell *currentCell;
 
 %hook AWEFeedRelatedSearchTipView
 - (void)layoutSubviews {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideBottomRelated"]) {
+	if (DYYYGetBool(@"DYYYHideBottomRelated")) {
 		if ([self respondsToSelector:@selector(removeFromSuperview)]) {
 			[self removeFromSuperview];
 		}
@@ -2907,11 +2787,9 @@ static AWEIMReusableCommonCell *currentCell;
 
 - (void)layoutSubviews {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenBottomDot"]) {
-		for (UIView *subview in [self subviews]) {
-			if ([subview isKindOfClass:NSClassFromString(@"DUXBadge")]) {
-				[subview setHidden:YES];
-			}
+	if (DYYYGetBool(@"DYYYisHiddenBottomDot")) {
+		for (UIView *subview in [DYYYUtils findAllSubviewsOfClass:NSClassFromString(@"DUXBadge") inView:self]) {
+			[subview setHidden:YES];
 		}
 	}
 }
@@ -2931,7 +2809,7 @@ static AWEIMReusableCommonCell *currentCell;
 		}
 	}
 
-	if (parentVC && [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenLeftSideBar"]) {
+	if (parentVC && DYYYGetBool(@"DYYYisHiddenLeftSideBar")) {
 		for (UIView *subview in self.subviews) {
 			if ([subview isKindOfClass:%c(DUXBaseImageView)]) {
 				subview.hidden = YES;
@@ -2950,13 +2828,13 @@ static AWEIMReusableCommonCell *currentCell;
 	NSString *accessibilityLabel = self.accessibilityLabel;
 
 	if ([accessibilityLabel isEqualToString:@"点赞"]) {
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLikeButton"]) {
+		if (DYYYGetBool(@"DYYYHideLikeButton")) {
 			[self removeFromSuperview];
 			return;
 		}
 
 		// 隐藏点赞数值标签
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLikeLabel"]) {
+		if (DYYYGetBool(@"DYYYHideLikeLabel")) {
 			for (UIView *subview in self.subviews) {
 				if ([subview isKindOfClass:[UILabel class]]) {
 					subview.hidden = YES;
@@ -2964,13 +2842,13 @@ static AWEIMReusableCommonCell *currentCell;
 			}
 		}
 	} else if ([accessibilityLabel isEqualToString:@"评论"]) {
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentButton"]) {
+		if (DYYYGetBool(@"DYYYHideCommentButton")) {
 			[self removeFromSuperview];
 			return;
 		}
 
 		// 隐藏评论数值标签
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentLabel"]) {
+		if (DYYYGetBool(@"DYYYHideCommentLabel")) {
 			for (UIView *subview in self.subviews) {
 				if ([subview isKindOfClass:[UILabel class]]) {
 					subview.hidden = YES;
@@ -2978,13 +2856,13 @@ static AWEIMReusableCommonCell *currentCell;
 			}
 		}
 	} else if ([accessibilityLabel isEqualToString:@"分享"]) {
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShareButton"]) {
+		if (DYYYGetBool(@"DYYYHideShareButton")) {
 			[self removeFromSuperview];
 			return;
 		}
 
 		// 隐藏分享数值标签
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShareLabel"]) {
+		if (DYYYGetBool(@"DYYYHideShareLabel")) {
 			for (UIView *subview in self.subviews) {
 				if ([subview isKindOfClass:[UILabel class]]) {
 					subview.hidden = YES;
@@ -2992,13 +2870,13 @@ static AWEIMReusableCommonCell *currentCell;
 			}
 		}
 	} else if ([accessibilityLabel isEqualToString:@"收藏"]) {
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCollectButton"]) {
+		if (DYYYGetBool(@"DYYYHideCollectButton")) {
 			[self removeFromSuperview];
 			return;
 		}
 
 		// 隐藏收藏数值标签
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCollectLabel"]) {
+		if (DYYYGetBool(@"DYYYHideCollectLabel")) {
 			for (UIView *subview in self.subviews) {
 				if ([subview isKindOfClass:[UILabel class]]) {
 					subview.hidden = YES;
@@ -3017,7 +2895,7 @@ static AWEIMReusableCommonCell *currentCell;
 
 	if ([title isEqualToString:@"加入挑战"]) {
 		dispatch_async(dispatch_get_main_queue(), ^{
-		  if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideChallengeStickers"]) {
+		  if (DYYYGetBool(@"DYYYHideChallengeStickers")) {
 			  UIResponder *responder = self;
 			  BOOL isInPlayInteractionViewController = NO;
 
@@ -3052,14 +2930,14 @@ static AWEIMReusableCommonCell *currentCell;
 	NSString *accessibilityLabel = self.accessibilityLabel;
 
 	if ([accessibilityLabel isEqualToString:@"拍照搜同款"] || [accessibilityLabel isEqualToString:@"扫一扫"]) {
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideScancode"]) {
+		if (DYYYGetBool(@"DYYYHideScancode")) {
 			[self removeFromSuperview];
 			return;
 		}
 	}
 
 	if ([accessibilityLabel isEqualToString:@"返回"]) {
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideBack"]) {
+		if (DYYYGetBool(@"DYYYHideBack")) {
 			UIView *parent = self.superview;
 			// 父视图是AWEBaseElementView(排除用户主页返回按钮) 按钮类不是AWENoxusHighlightButton(排除横屏返回按钮)
 			if ([parent isKindOfClass:%c(AWEBaseElementView)] && ![self isKindOfClass:%c(AWENoxusHighlightButton)]) {
@@ -3077,7 +2955,7 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)viewDidLayoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideReply"]) {
+	if (DYYYGetBool(@"DYYYHideReply")) {
 		[self.view removeFromSuperview];
 	}
 }
@@ -3088,7 +2966,7 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideSearchBubble"]) {
+	if (DYYYGetBool(@"DYYYHideSearchBubble")) {
 		[self removeFromSuperview];
 		return;
 	}
@@ -3100,7 +2978,7 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideChallengeStickers"]) {
+	if (DYYYGetBool(@"DYYYHideChallengeStickers")) {
 		[self removeFromSuperview];
 		return;
 	}
@@ -3115,7 +2993,7 @@ static AWEIMReusableCommonCell *currentCell;
 	NSString *accessibilityLabel = self.accessibilityLabel;
 
 	if ([accessibilityLabel isEqualToString:@"音乐详情"]) {
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMusicButton"]) {
+		if (DYYYGetBool(@"DYYYHideMusicButton")) {
 			[self removeFromSuperview];
 			return;
 		}
@@ -3128,7 +3006,7 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMusicButton"]) {
+	if (DYYYGetBool(@"DYYYHideMusicButton")) {
 		[self removeFromSuperview];
 		return;
 	}
@@ -3143,11 +3021,11 @@ static AWEIMReusableCommonCell *currentCell;
 	NSString *accessibilityLabel = self.accessibilityLabel;
 
 	if ([accessibilityLabel isEqualToString:@"关注"]) {
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideAvatarButton"]) {
+		if (DYYYGetBool(@"DYYYHideAvatarButton")) {
 			[self removeFromSuperview];
 			return;
 		}
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFollowPromptView"]) {
+		if (DYYYGetBool(@"DYYYHideFollowPromptView")) {
 			self.userInteractionEnabled = NO;
 			[self removeFromSuperview];
 			return;
@@ -3161,7 +3039,7 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideGradient"]) {
+	if (DYYYGetBool(@"DYYYHideGradient")) {
 		[self removeFromSuperview];
 		return;
 	}
@@ -3171,7 +3049,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWEGradientView
 - (void)layoutSubviews {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideGradient"]) {
+	if (DYYYGetBool(@"DYYYHideGradient")) {
 		UIView *parent = self.superview;
 		if ([parent.accessibilityLabel isEqualToString:@"暂停，按钮"] || [parent.accessibilityLabel isEqualToString:@"播放，按钮"] ||
 		    [parent.accessibilityLabel isEqualToString:@"“切换视角，按钮"]) {
@@ -3186,7 +3064,7 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideGradient"]) {
+	if (DYYYGetBool(@"DYYYHideGradient")) {
 		[self removeFromSuperview];
 		return;
 	}
@@ -3197,7 +3075,7 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideHotSearch"]) {
+	if (DYYYGetBool(@"DYYYHideHotSearch")) {
 		[self removeFromSuperview];
 		return;
 	}
@@ -3222,7 +3100,7 @@ static AWEIMReusableCommonCell *currentCell;
 // 隐藏状态栏
 %hook AWEFeedRootViewController
 - (BOOL)prefersStatusBarHidden {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHideStatusbar"]) {
+	if (DYYYGetBool(@"DYYYisHideStatusbar")) {
 		return YES;
 	} else {
 		if (class_getInstanceMethod([self class], @selector(prefersStatusBarHidden)) !=
@@ -3237,7 +3115,7 @@ static AWEIMReusableCommonCell *currentCell;
 // 直播状态栏
 %hook IESLiveAudienceViewController
 - (BOOL)prefersStatusBarHidden {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHideStatusbar"]) {
+	if (DYYYGetBool(@"DYYYisHideStatusbar")) {
 		return YES;
 	} else {
 		if (class_getInstanceMethod([self class], @selector(prefersStatusBarHidden)) !=
@@ -3252,7 +3130,7 @@ static AWEIMReusableCommonCell *currentCell;
 // 主页状态栏
 %hook AWEAwemeDetailTableViewController
 - (BOOL)prefersStatusBarHidden {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHideStatusbar"]) {
+	if (DYYYGetBool(@"DYYYisHideStatusbar")) {
 		return YES;
 	} else {
 		if (class_getInstanceMethod([self class], @selector(prefersStatusBarHidden)) !=
@@ -3267,7 +3145,7 @@ static AWEIMReusableCommonCell *currentCell;
 // 热点状态栏
 %hook AWEAwemeHotSpotTableViewController
 - (BOOL)prefersStatusBarHidden {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHideStatusbar"]) {
+	if (DYYYGetBool(@"DYYYisHideStatusbar")) {
 		return YES;
 	} else {
 		if (class_getInstanceMethod([self class], @selector(prefersStatusBarHidden)) !=
@@ -3282,7 +3160,7 @@ static AWEIMReusableCommonCell *currentCell;
 // 图文状态栏
 %hook AWEFullPageFeedNewContainerViewController
 - (BOOL)prefersStatusBarHidden {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHideStatusbar"]) {
+	if (DYYYGetBool(@"DYYYisHideStatusbar")) {
 		return YES;
 	} else {
 		if (class_getInstanceMethod([self class], @selector(prefersStatusBarHidden)) !=
@@ -3300,8 +3178,8 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 	%orig;
 
-	BOOL hideFeedAnchor = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFeedAnchorContainer"];
-	BOOL hideLocation = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLocation"];
+	BOOL hideFeedAnchor = DYYYGetBool(@"DYYYHideFeedAnchorContainer");
+	BOOL hideLocation = DYYYGetBool(@"DYYYHideLocation");
 
 	if (!hideFeedAnchor && !hideLocation)
 		return;
@@ -3328,7 +3206,7 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideInteractionSearch"]) {
+	if (DYYYGetBool(@"DYYYHideInteractionSearch")) {
 		[self removeFromSuperview];
 		return;
 	}
@@ -3341,7 +3219,7 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideQuqishuiting"]) {
+	if (DYYYGetBool(@"DYYYHideQuqishuiting")) {
 		UIView *parentView = self.superview;
 		if (parentView) {
 			parentView.hidden = YES;
@@ -3357,28 +3235,28 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWEFeedPauseRelatedWordComponent
 
 - (id)updateViewWithModel:(id)arg0 {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePauseVideoRelatedWord"]) {
+	if (DYYYGetBool(@"DYYYHidePauseVideoRelatedWord")) {
 		return nil;
 	}
 	return %orig;
 }
 
 - (id)pauseContentWithModel:(id)arg0 {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePauseVideoRelatedWord"]) {
+	if (DYYYGetBool(@"DYYYHidePauseVideoRelatedWord")) {
 		return nil;
 	}
 	return %orig;
 }
 
 - (id)recommendsWords {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePauseVideoRelatedWord"]) {
+	if (DYYYGetBool(@"DYYYHidePauseVideoRelatedWord")) {
 		return nil;
 	}
 	return %orig;
 }
 
 - (void)showRelatedRecommendPanelControllerWithSelectedText:(id)arg0 {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePauseVideoRelatedWord"]) {
+	if (DYYYGetBool(@"DYYYHidePauseVideoRelatedWord")) {
 		return;
 	}
 	%orig;
@@ -3386,7 +3264,7 @@ static AWEIMReusableCommonCell *currentCell;
 
 - (void)setupUI {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePauseVideoRelatedWord"]) {
+	if (DYYYGetBool(@"DYYYHidePauseVideoRelatedWord")) {
 		if (self.relatedView) {
 			self.relatedView.hidden = YES;
 		}
@@ -3400,7 +3278,7 @@ static AWEIMReusableCommonCell *currentCell;
 
 - (void)layoutSubviews {
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTemplatePlaylet"]) {
+	if (DYYYGetBool(@"DYYYHideTemplatePlaylet")) {
 		if ([self respondsToSelector:@selector(removeFromSuperview)]) {
 			[self removeFromSuperview];
 		}
@@ -3416,12 +3294,12 @@ static AWEIMReusableCommonCell *currentCell;
 
 - (void)layoutSubviews {
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideSearchEntrance"]) {
+	if (DYYYGetBool(@"DYYYHideSearchEntrance")) {
 		self.hidden = YES;
 		return;
 	}
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideSearchEntranceIndicator"]) {
+	if (DYYYGetBool(@"DYYYHideSearchEntranceIndicator")) {
 		for (UIView *subviews in self.subviews) {
 			if ([subviews isKindOfClass:%c(UIImageView)] && 
 				[NSStringFromClass([((UIImageView *)subviews).image class]) isEqualToString:@"_UIResizableImage"]) {
@@ -3430,7 +3308,7 @@ static AWEIMReusableCommonCell *currentCell;
 		}
 	}
 
-	// NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
+	// NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
 	// if (transparentValue.length > 0) {
 	//     CGFloat alphaValue = transparentValue.floatValue;
 	//     if (alphaValue >= 0.0 && alphaValue <= 1.0) {
@@ -3449,7 +3327,7 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 	%orig;
 
-	BOOL shouldHide = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideStoryProgressSlide"];
+	BOOL shouldHide = DYYYGetBool(@"DYYYHideStoryProgressSlide");
 	if (!shouldHide)
 		return;
 	__block UIView *targetView = nil;
@@ -3474,7 +3352,7 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePrivateMessages"]) {
+	if (DYYYGetBool(@"DYYYHidePrivateMessages")) {
 		UIView *parentView = self.superview;
 		if (parentView) {
 			parentView.hidden = YES;
@@ -3489,7 +3367,7 @@ static AWEIMReusableCommonCell *currentCell;
 // 隐藏下面底部热点框
 %hook AWENewHotSpotBottomBarView
 - (void)layoutSubviews {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideHotspot"]) {
+	if (DYYYGetBool(@"DYYYHideHotspot")) {
 		if ([self respondsToSelector:@selector(removeFromSuperview)]) {
 			[self removeFromSuperview];
 		}
@@ -3505,7 +3383,7 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideHotspot"]) {
+	if (DYYYGetBool(@"DYYYHideHotspot")) {
 		[self removeFromSuperview];
 		return;
 	}
@@ -3516,7 +3394,7 @@ static AWEIMReusableCommonCell *currentCell;
 // 隐藏关注直播
 %hook AWEConcernSkylightCapsuleView
 - (void)setHidden:(BOOL)hidden {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideConcernCapsuleView"]) {
+	if (DYYYGetBool(@"DYYYHideConcernCapsuleView")) {
 		[self removeFromSuperview];
 		return;
 	}
@@ -3531,7 +3409,7 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveDiscovery"]) {
+	if (DYYYGetBool(@"DYYYHideLiveDiscovery")) {
 		if ([self respondsToSelector:@selector(removeFromSuperview)]) {
 			[self removeFromSuperview];
 		}
@@ -3544,7 +3422,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook IESLiveDynamicRankListEntranceView
 - (void)layoutSubviews {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveDetail"]) {
+	if (DYYYGetBool(@"DYYYHideLiveDetail")) {
 		[self removeFromSuperview];
 	}
 }
@@ -3553,7 +3431,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook IESLiveMatrixEntranceView
 - (void)layoutSubviews {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveDetail"]) {
+	if (DYYYGetBool(@"DYYYHideLiveDetail")) {
 		[self removeFromSuperview];
 	}
 }
@@ -3562,7 +3440,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook IESLiveShortTouchActionView
 - (void)layoutSubviews {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTouchView"]) {
+	if (DYYYGetBool(@"DYYYHideTouchView")) {
 		[self removeFromSuperview];
 	}
 }
@@ -3571,7 +3449,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook IESLiveLotteryAnimationViewNew
 - (void)layoutSubviews {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTouchView"]) {
+	if (DYYYGetBool(@"DYYYHideTouchView")) {
 		[self removeFromSuperview];
 	}
 }
@@ -3580,7 +3458,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook IESLiveConfigurableShortTouchEntranceView
 - (void)layoutSubviews {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTouchView"]) {
+	if (DYYYGetBool(@"DYYYHideTouchView")) {
 		[self removeFromSuperview];
 	}
 }
@@ -3589,7 +3467,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook IESLiveRedEnvelopeAniLynxView
 - (void)layoutSubviews {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTouchView"]) {
+	if (DYYYGetBool(@"DYYYHideTouchView")) {
 		[self removeFromSuperview];
 	}
 }
@@ -3599,7 +3477,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook IESLiveKTVSongIndicatorView
 - (void)layoutSubviews {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideKTVSongIndicator"]) {
+	if (DYYYGetBool(@"DYYYHideKTVSongIndicator")) {
 		self.hidden = YES;
 		[self removeFromSuperview];
 	}
@@ -3610,12 +3488,12 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWEStoryProgressContainerView
 - (BOOL)isHidden {
 	BOOL originalValue = %orig;
-	BOOL customHide = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideDotsIndicator"];
+	BOOL customHide = DYYYGetBool(@"DYYYHideDotsIndicator");
 	return originalValue || customHide;
 }
 
 - (void)setHidden:(BOOL)hidden {
-	BOOL forceHide = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideDotsIndicator"];
+	BOOL forceHide = DYYYGetBool(@"DYYYHideDotsIndicator");
 	%orig(forceHide ? YES : hidden);
 }
 %end
@@ -3625,7 +3503,7 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 	%orig;
 
-	BOOL hideRightLabel = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideRightLable"];
+	BOOL hideRightLabel = DYYYGetBool(@"DYYYHideRightLable");
 	if (!hideRightLabel)
 		return;
 
@@ -3664,7 +3542,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWEFeedMultiTabSelectedContainerView
 
 - (void)setHidden:(BOOL)hidden {
-	BOOL forceHide = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidentopbarprompt"];
+	BOOL forceHide = DYYYGetBool(@"DYYYHidentopbarprompt");
 
 	if (forceHide) {
 		%orig(YES);
@@ -3678,7 +3556,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AFDRecommendToFriendEntranceLabel
 - (void)layoutSubviews {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideRecommendTips"]) {
+	if (DYYYGetBool(@"DYYYHideRecommendTips")) {
 		if (self.accessibilityLabel) {
 			[self removeFromSuperview];
 		}
@@ -3691,7 +3569,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWEProfileMixItemCollectionViewCell
 - (void)layoutSubviews {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePostView"]) {
+	if (DYYYGetBool(@"DYYYHidePostView")) {
 		if ([self.accessibilityLabel isEqualToString:@"私密作品"]) {
 			[self removeFromSuperview];
 		}
@@ -3701,7 +3579,7 @@ static AWEIMReusableCommonCell *currentCell;
 
 %hook AWEProfileTaskCardStyleListCollectionViewCell
 - (BOOL)shouldShowPublishGuide {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePostView"]) {
+	if (DYYYGetBool(@"DYYYHidePostView")) {
 		return NO;
 	}
 	return %orig;
@@ -3711,14 +3589,14 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWEProfileRichEmptyView
 
 - (void)setTitle:(id)title {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePostView"]) {
+	if (DYYYGetBool(@"DYYYHidePostView")) {
 		return;
 	}
 	%orig(title);
 }
 
 - (void)setDetail:(id)detail {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePostView"]) {
+	if (DYYYGetBool(@"DYYYHidePostView")) {
 		return;
 	}
 	%orig(detail);
@@ -3730,14 +3608,14 @@ static AWEIMReusableCommonCell *currentCell;
 
 // 隐藏顶部直播视图 - 添加条件判断
 - (void)showSkylight:(BOOL)arg0 animated:(BOOL)arg1 actionMethod:(unsigned long long)arg2 {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidenLiveView"]) {
+	if (DYYYGetBool(@"DYYYHidenLiveView")) {
 		return;
 	}
 	%orig(arg0, arg1, arg2);
 }
 
 - (void)updateIsSkylightShowing:(BOOL)arg0 {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidenLiveView"]) {
+	if (DYYYGetBool(@"DYYYHidenLiveView")) {
 		%orig(NO);
 	} else {
 		%orig(arg0);
@@ -3751,7 +3629,7 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidenLiveView"]) {
+	if (DYYYGetBool(@"DYYYHidenLiveView")) {
 		[self removeFromSuperview];
 		return;
 	}
@@ -3763,14 +3641,14 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWENearbyFullScreenViewModel
 
 - (void)setShowSkyLight:(id)arg1 {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMenuView"]) {
+	if (DYYYGetBool(@"DYYYHideMenuView")) {
 		arg1 = nil;
 	}
 	%orig(arg1);
 }
 
 - (void)setHaveSkyLight:(id)arg1 {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMenuView"]) {
+	if (DYYYGetBool(@"DYYYHideMenuView")) {
 		arg1 = nil;
 	}
 	%orig(arg1);
@@ -3783,7 +3661,7 @@ static AWEIMReusableCommonCell *currentCell;
 
 - (void)layoutSubviews {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideItemTag"]) {
+	if (DYYYGetBool(@"DYYYHideItemTag")) {
 		self.frame = CGRectMake(0, 0, 0, 0);
 		self.hidden = YES;
 	}
@@ -3794,7 +3672,7 @@ static AWEIMReusableCommonCell *currentCell;
 // 隐藏话题
 %hook AWEPlayInteractionTemplateButtonGroup
 - (void)layoutSubviews {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTemplateGroup"]) {
+	if (DYYYGetBool(@"DYYYHideTemplateGroup")) {
 		if ([self respondsToSelector:@selector(removeFromSuperview)]) {
 			[self removeFromSuperview];
 		}
@@ -3808,7 +3686,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWEPlayInteractionViewController
 
 - (void)onVideoPlayerViewDoubleClicked:(id)arg1 {
-	BOOL isSwitchOn = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDouble"];
+	BOOL isSwitchOn = DYYYGetBool(@"DYYYDouble");
 	if (!isSwitchOn) {
 		%orig;
 	}
@@ -3821,7 +3699,7 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideDiscover"]) {
+	if (DYYYGetBool(@"DYYYHideDiscover")) {
 		UIView *firstSubview = self.subviews.firstObject;
 		if ([firstSubview isKindOfClass:[UIImageView class]]) {
 			((UIImageView *)firstSubview).image = nil;
@@ -3835,7 +3713,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWELiveFeedStatusLabel
 - (void)layoutSubviews {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideEnterLive"]) {
+	if (DYYYGetBool(@"DYYYHideEnterLive")) {
 		UIView *parentView = self.superview;
 		UIView *grandparentView = parentView.superview;
 
@@ -3862,7 +3740,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWELiveStatusIndicatorView
 
 - (void)layoutSubviews {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYGroupLiving"]) {
+	if (DYYYGetBool(@"DYYYGroupLiving")) {
 		if ([self respondsToSelector:@selector(removeFromSuperview)]) {
 			[self removeFromSuperview];
 		}
@@ -3876,7 +3754,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWELiveSkylightCatchView
 - (void)layoutSubviews {
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidenLiveCapsuleView"]) {
+	if (DYYYGetBool(@"DYYYHidenLiveCapsuleView")) {
 		if ([self respondsToSelector:@selector(removeFromSuperview)]) {
 			[self removeFromSuperview];
 		}
@@ -3893,7 +3771,7 @@ static AWEIMReusableCommonCell *currentCell;
 
 - (void)layoutSubviews {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveCapsuleView"]) {
+	if (DYYYGetBool(@"DYYYHideLiveCapsuleView")) {
 		self.frame = CGRectMake(0, 0, 0, 0);
 		self.hidden = YES;
 	}
@@ -3904,7 +3782,7 @@ static AWEIMReusableCommonCell *currentCell;
 // 隐藏群商店
 %hook AWEIMFansGroupTopDynamicDomainTemplateView
 - (void)layoutSubviews {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideGroupShop"]) {
+	if (DYYYGetBool(@"DYYYHideGroupShop")) {
 		if ([self respondsToSelector:@selector(removeFromSuperview)]) {
 			[self removeFromSuperview];
 		}
@@ -3919,7 +3797,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWEIMInputActionBarInteractor
 
 - (void)p_setupUI {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideGroupInputActionBar"]) {
+	if (DYYYGetBool(@"DYYYHideGroupInputActionBar")) {
 		if ([self respondsToSelector:@selector(removeFromSuperview)]) {
 			[self removeFromSuperview];
 		}
@@ -3933,7 +3811,7 @@ static AWEIMReusableCommonCell *currentCell;
 // 隐藏相机定位
 %hook AWETemplateCommonView
 - (void)layoutSubviews {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCameraLocation"]) {
+	if (DYYYGetBool(@"DYYYHideCameraLocation")) {
 		if ([self respondsToSelector:@selector(removeFromSuperview)]) {
 			[self removeFromSuperview];
 		}
@@ -3959,11 +3837,9 @@ static AWEIMReusableCommonCell *currentCell;
 
 - (void)layoutSubviews {
 	%orig;
-	for (UIView *subview in self.subviews) {
-		if ([subview isKindOfClass:[%c(DUXBadge) class]]) {
-			if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenSidebarDot"]) {
-				subview.hidden = YES;
-			}
+	for (UIView *subview in [DYYYUtils findAllSubviewsOfClass:NSClassFromString(@"DUXBadge") inView:self]) {
+		if (DYYYGetBool(@"DYYYisHiddenSidebarDot")) {
+			subview.hidden = YES;
 		}
 	}
 }
@@ -3984,7 +3860,7 @@ static AWEIMReusableCommonCell *currentCell;
 // 隐藏搜同款
 %hook ACCStickerContainerView
 - (void)layoutSubviews {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideSearchSame"]) {
+	if (DYYYGetBool(@"DYYYHideSearchSame")) {
 		if ([self respondsToSelector:@selector(removeFromSuperview)]) {
 			[self removeFromSuperview];
 		}
@@ -4000,7 +3876,7 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 	%orig;
 
-	BOOL enabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideGiftPavilion"];
+	BOOL enabled = DYYYGetBool(@"DYYYHideGiftPavilion");
 	if (!enabled)
 		return;
 
@@ -4025,7 +3901,7 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLivePlayground"]) {
+	if (DYYYGetBool(@"DYYYHideLivePlayground")) {
 		self.hidden = YES;
 	}
 }
@@ -4035,7 +3911,7 @@ static AWEIMReusableCommonCell *currentCell;
 // 隐藏顶栏红点
 %hook AWEHPTopTabItemBadgeContentView
 - (id)showBadgeWithBadgeStyle:(NSUInteger)style badgeConfig:(id)config count:(NSInteger)count text:(id)text {
-	BOOL hideEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTopBarBadge"];
+	BOOL hideEnabled = DYYYGetBool(@"DYYYHideTopBarBadge");
 
 	if (hideEnabled) {
 		return nil;
@@ -4052,21 +3928,21 @@ static AWEIMReusableCommonCell *currentCell;
 	%orig;
 
 	// 处理清屏按钮
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveRoomClear"]) {
+	if (DYYYGetBool(@"DYYYHideLiveRoomClear")) {
 		if ([self.accessibilityLabel isEqualToString:@"退出清屏"] && self.superview) {
 			[self.superview removeFromSuperview];
 		}
 	}
 
 	// 投屏按钮
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveRoomMirroring"]) {
+	if (DYYYGetBool(@"DYYYHideLiveRoomMirroring")) {
 		if ([self.accessibilityLabel isEqualToString:@"投屏"] && self.superview) {
 			[self.superview removeFromSuperview];
 		}
 	}
 
 	// 横屏按钮,可点击
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveRoomFullscreen"]) {
+	if (DYYYGetBool(@"DYYYHideLiveRoomFullscreen")) {
 		if ([self.accessibilityLabel isEqualToString:@"横屏"] && self.superview) {
 			for (UIView *subview in self.subviews) {
 				subview.hidden = YES;
@@ -4081,7 +3957,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook IESLiveLayoutPlaceholderView
 - (void)layoutSubviews {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveRoomClose"]) {
+	if (DYYYGetBool(@"DYYYHideLiveRoomClose")) {
 		self.hidden = YES;
 	}
 }
@@ -4091,7 +3967,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWELiveFlowAlertView
 - (void)layoutSubviews {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCellularAlert"]) {
+	if (DYYYGetBool(@"DYYYHideCellularAlert")) {
 		self.hidden = YES;
 	}
 }
@@ -4101,7 +3977,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook IESECLivePluginLayoutView
 - (void)layoutSubviews {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveGoodsMsg"]) {
+	if (DYYYGetBool(@"DYYYHideLiveGoodsMsg")) {
 		[self removeFromSuperview];
 	}
 }
@@ -4110,7 +3986,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook IESLiveBottomRightCardView
 - (void)layoutSubviews {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveGoodsMsg"]) {
+	if (DYYYGetBool(@"DYYYHideLiveGoodsMsg")) {
 		[self removeFromSuperview];
 	}
 }
@@ -4119,7 +3995,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook IESLiveGameCPExplainCardContainerImpl
 - (void)layoutSubviews {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveGoodsMsg"]) {
+	if (DYYYGetBool(@"DYYYHideLiveGoodsMsg")) {
 		[self removeFromSuperview];
 	}
 }
@@ -4128,7 +4004,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWEPOILivePurchaseAtmosphereView
 - (void)layoutSubviews {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveGoodsMsg"] && self.superview) {
+	if (DYYYGetBool(@"DYYYHideLiveGoodsMsg") && self.superview) {
 		[self.superview removeFromSuperview];
 	}
 }
@@ -4137,7 +4013,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook IESLiveActivityBannnerView
 - (void)layoutSubviews {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveGoodsMsg"]) {
+	if (DYYYGetBool(@"DYYYHideLiveGoodsMsg")) {
 		[self removeFromSuperview];
 	}
 }
@@ -4158,7 +4034,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook IESLiveStickerView
 - (void)layoutSubviews {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideStickerView"]) {
+	if (DYYYGetBool(@"DYYYHideStickerView")) {
 		[self removeFromSuperview];
 	}
 }
@@ -4168,7 +4044,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook IESLivePreAnnouncementPanelViewNew
 - (void)layoutSubviews {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideStickerView"]) {
+	if (DYYYGetBool(@"DYYYHideStickerView")) {
 		[self removeFromSuperview];
 	}
 }
@@ -4178,7 +4054,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook IESLiveDynamicUserEnterView
 - (void)layoutSubviews {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLivePopup"]) {
+	if (DYYYGetBool(@"DYYYHideLivePopup")) {
 		[self removeFromSuperview];
 	}
 }
@@ -4187,7 +4063,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook PlatformCanvasView
 - (void)layoutSubviews {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLivePopup"]) {
+	if (DYYYGetBool(@"DYYYHideLivePopup")) {
 		[self removeFromSuperview];
 	}
 }
@@ -4196,7 +4072,7 @@ static AWEIMReusableCommonCell *currentCell;
 // 屏蔽青少年模式弹窗
 %hook AWETeenModeAlertView
 - (BOOL)show {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideteenmode"]) {
+	if (DYYYGetBool(@"DYYYHideteenmode")) {
 		return NO;
 	}
 	return %orig;
@@ -4206,7 +4082,7 @@ static AWEIMReusableCommonCell *currentCell;
 // 屏蔽青少年模式弹窗
 %hook AWETeenModeSimpleAlertView
 - (BOOL)show {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideteenmode"]) {
+	if (DYYYGetBool(@"DYYYHideteenmode")) {
 		return NO;
 	}
 	return %orig;
@@ -4217,11 +4093,22 @@ static AWEIMReusableCommonCell *currentCell;
 
 - (id)initWithDictionary:(id)arg1 error:(id *)arg2 {
 	id orig = %orig;
+    if (orig && [self contentFilter]) return nil;
+	return orig;
+}
 
-	BOOL noAds = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYNoAds"];
-	BOOL skipLive = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipLive"];
-	BOOL skipHotSpot = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipHotSpot"];
-	BOOL filterHDR = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYfilterFeedHDR"];
+- (id)init {
+	id orig = %orig;
+    if (orig && [self contentFilter]) return nil;
+	return orig;
+}
+
+%new
+- (BOOL)contentFilter {
+	BOOL noAds = DYYYGetBool(@"DYYYNoAds");
+	BOOL skipLive = DYYYGetBool(@"DYYYisSkipLive");
+	BOOL skipHotSpot = DYYYGetBool(@"DYYYisSkipHotSpot");
+	BOOL filterHDR = DYYYGetBool(@"DYYYfilterFeedHDR");
 
 	BOOL shouldFilterAds = noAds && (self.hotSpotLynxCardModel || self.isAds);
 	BOOL shouldFilterRec = skipLive && (self.liveReason != nil);
@@ -4229,9 +4116,9 @@ static AWEIMReusableCommonCell *currentCell;
 	BOOL shouldFilterHDR = NO;
 	BOOL shouldFilterLowLikes = NO;
 	BOOL shouldFilterKeywords = NO;
+	BOOL shouldFilterProp = NO;
 	BOOL shouldFilterTime = NO;
 	BOOL shouldFilterUser = NO;
-	BOOL shouldFilterProp = NO;
 
 	// 获取用户设置的需要过滤的关键词
 	NSString *filterKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterKeywords"];
@@ -4241,7 +4128,7 @@ static AWEIMReusableCommonCell *currentCell;
 		keywordsList = [filterKeywords componentsSeparatedByString:@","];
 	}
 
-	// 获取需要过滤的道具关键词
+	// 过滤包含指定拍同款的视频
 	NSString *filterProp = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterProp"];
 	NSArray *propKeywordsList = nil;
 
@@ -4275,118 +4162,9 @@ static AWEIMReusableCommonCell *currentCell;
 		}
 	}
 
-	NSInteger filterLowLikesThreshold = [[NSUserDefaults standardUserDefaults] integerForKey:@"DYYYfilterLowLikes"];
+	NSInteger filterLowLikesThreshold = DYYYGetInteger(@"DYYYfilterLowLikes");
 
 	// 只有当shareRecExtra不为空时才过滤点赞量低的视频和关键词
-	if (self.shareRecExtra && ![self.shareRecExtra isEqual:@""]) {
-		// 过滤低点赞量视频
-		if (filterLowLikesThreshold > 0) {
-			AWESearchAwemeExtraModel *searchExtraModel = [self searchExtraModel];
-			if (!searchExtraModel) {
-				AWEAwemeStatisticsModel *statistics = self.statistics;
-				if (statistics && statistics.diggCount) {
-					shouldFilterLowLikes = statistics.diggCount.integerValue < filterLowLikesThreshold;
-				}
-			}
-		}
-
-		// 过滤包含特定关键词的视频
-		if (keywordsList.count > 0) {
-			// 检查视频标题
-			if (self.descriptionString.length > 0) {
-				for (NSString *keyword in keywordsList) {
-					NSString *trimmedKeyword = [keyword stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-					if (trimmedKeyword.length > 0 && [self.descriptionString containsString:trimmedKeyword]) {
-						shouldFilterKeywords = YES;
-						break;
-					}
-				}
-			}
-		}
-
-		// 过滤包含指定拍同款的视频
-		if (propKeywordsList.count > 0 && self.propGuideV2) {
-			NSString *propName = self.propGuideV2.propName;
-			if (propName.length > 0) {
-				for (NSString *propKeyword in propKeywordsList) {
-					NSString *trimmedKeyword = [propKeyword stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-					if (trimmedKeyword.length > 0 && [propName containsString:trimmedKeyword]) {
-						shouldFilterProp = YES;
-						break;
-					}
-				}
-			}
-		}
-
-		// 过滤视频发布时间
-		long long currentTimestamp = (long long)[[NSDate date] timeIntervalSince1970];
-		NSInteger daysThreshold = [[NSUserDefaults standardUserDefaults] integerForKey:@"DYYYfiltertimelimit"];
-		if (daysThreshold > 0) {
-			NSTimeInterval videoTimestamp = [self.createTime doubleValue];
-			if (videoTimestamp > 0) {
-				NSTimeInterval threshold = daysThreshold * 86400.0;
-				NSTimeInterval current = (NSTimeInterval)currentTimestamp;
-				NSTimeInterval timeDifference = current - videoTimestamp;
-				shouldFilterTime = (timeDifference > threshold);
-			}
-		}
-	}
-	// 检查是否为HDR视频
-	if (filterHDR && self.video && self.video.bitrateModels) {
-		for (id bitrateModel in self.video.bitrateModels) {
-			NSNumber *hdrType = [bitrateModel valueForKey:@"hdrType"];
-			NSNumber *hdrBit = [bitrateModel valueForKey:@"hdrBit"];
-
-			// 如果hdrType=1且hdrBit=10，则视为HDR视频
-			if (hdrType && [hdrType integerValue] == 1 && hdrBit && [hdrBit integerValue] == 10) {
-				shouldFilterHDR = YES;
-				break;
-			}
-		}
-	}
-	if (shouldFilterAds || shouldFilterRec || shouldFilterHotSpot || shouldFilterHDR || shouldFilterLowLikes || shouldFilterKeywords || shouldFilterTime || shouldFilterUser || shouldFilterProp) {
-		return nil;
-	}
-
-	return orig;
-}
-
-- (id)init {
-	id orig = %orig;
-
-	BOOL noAds = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYNoAds"];
-	BOOL skipLive = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipLive"];
-	BOOL skipHotSpot = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisSkipHotSpot"];
-	BOOL filterHDR = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYfilterFeedHDR"];
-
-	BOOL shouldFilterAds = noAds && (self.hotSpotLynxCardModel || self.isAds);
-	BOOL shouldFilterRec = skipLive && (self.liveReason != nil);
-	BOOL shouldFilterHotSpot = skipHotSpot && self.hotSpotLynxCardModel;
-	BOOL shouldFilterHDR = NO;
-	BOOL shouldFilterLowLikes = NO;
-	BOOL shouldFilterKeywords = NO;
-	BOOL shouldFilterProp = NO;
-	BOOL shouldFilterTime = NO;
-
-	// 获取用户设置的需要过滤的关键词
-	NSString *filterKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterKeywords"];
-	NSArray *keywordsList = nil;
-
-	if (filterKeywords.length > 0) {
-		keywordsList = [filterKeywords componentsSeparatedByString:@","];
-	}
-
-	// 过滤包含指定拍同款的视频
-	NSString *filterProp = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterProp"];
-	NSArray *propKeywordsList = nil;
-
-	if (filterProp.length > 0) {
-		propKeywordsList = [filterProp componentsSeparatedByString:@","];
-	}
-
-	NSInteger filterLowLikesThreshold = [[NSUserDefaults standardUserDefaults] integerForKey:@"DYYYfilterLowLikes"];
-
-	// 只有当shareRecExtra不为空时才过滤
 	if (self.shareRecExtra && ![self.shareRecExtra isEqual:@""]) {
 		// 过滤低点赞量视频
 		if (filterLowLikesThreshold > 0) {
@@ -4429,7 +4207,7 @@ static AWEIMReusableCommonCell *currentCell;
 
 		// 过滤视频发布时间
 		long long currentTimestamp = (long long)[[NSDate date] timeIntervalSince1970];
-		NSInteger daysThreshold = [[NSUserDefaults standardUserDefaults] integerForKey:@"DYYYfiltertimelimit"];
+		NSInteger daysThreshold = DYYYGetInteger(@"DYYYfiltertimelimit");
 		if (daysThreshold > 0) {
 			NSTimeInterval videoTimestamp = [self.createTime doubleValue];
 			if (videoTimestamp > 0) {
@@ -4454,16 +4232,11 @@ static AWEIMReusableCommonCell *currentCell;
 			}
 		}
 	}
-
-	if (shouldFilterAds || shouldFilterRec || shouldFilterHotSpot || shouldFilterHDR || shouldFilterLowLikes || shouldFilterKeywords || shouldFilterProp || shouldFilterTime) {
-		return nil;
-	}
-
-	return orig;
+	return shouldFilterAds || shouldFilterRec || shouldFilterHotSpot || shouldFilterHDR || shouldFilterLowLikes || shouldFilterKeywords || shouldFilterProp || shouldFilterTime || shouldFilterUser;
 }
 
 - (AWEECommerceLabel *)ecommerceBelowLabel {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideHisShop"]) {
+	if (DYYYGetBool(@"DYYYHideHisShop")) {
 		return nil;
 	}
 	return %orig;
@@ -4471,7 +4244,7 @@ static AWEIMReusableCommonCell *currentCell;
 
 
 - (bool)preventDownload {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYNoAds"]) {
+	if (DYYYGetBool(@"DYYYNoAds")) {
 		return NO;
 	} else {
 		return %orig;
@@ -4479,7 +4252,7 @@ static AWEIMReusableCommonCell *currentCell;
 }
 
 - (void)setAdLinkType:(long long)arg1 {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYNoAds"]) {
+	if (DYYYGetBool(@"DYYYNoAds")) {
 		arg1 = 0;
 	} else {
 	}
@@ -4524,7 +4297,7 @@ static AWEIMReusableCommonCell *currentCell;
 // 拦截开屏广告
 %hook BDASplashControllerView
 + (id)alloc {
-	BOOL noAds = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYNoAds"];
+	BOOL noAds = DYYYGetBool(@"DYYYNoAds");
 	if (noAds) {
 		return nil;
 	}
@@ -4536,7 +4309,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWEAwesomeSplashFeedCellOldAccessoryView
 
 - (id)ddExtraView {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYNoAds"]) {
+	if (DYYYGetBool(@"DYYYNoAds")) {
 		return NULL;
 	}
 
@@ -4548,7 +4321,7 @@ static AWEIMReusableCommonCell *currentCell;
 // 去广告功能
 %hook AwemeAdManager
 - (void)showAd {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYNoAds"])
+	if (DYYYGetBool(@"DYYYNoAds"))
 		return;
 	%orig;
 }
@@ -4558,7 +4331,7 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFollowPromptView"]) {
+	if (DYYYGetBool(@"DYYYHideFollowPromptView")) {
 		for (UIView *subview in self.subviews) {
 			if ([subview isMemberOfClass:[UIView class]]) {
 				for (UIView *childView in subview.subviews) {
@@ -4573,8 +4346,8 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWEPlayInteractionViewController
 
 - (void)onPlayer:(id)arg0 didDoubleClick:(id)arg1 {
-	BOOL isPopupEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableDoubleOpenAlertController"];
-	BOOL isDirectCommentEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableDoubleOpenComment"];
+	BOOL isPopupEnabled = DYYYGetBool(@"DYYYEnableDoubleOpenAlertController");
+	BOOL isDirectCommentEnabled = DYYYGetBool(@"DYYYEnableDoubleOpenComment");
 
 	// 直接打开评论区的情况
 	if (isDirectCommentEnabled) {
@@ -4619,7 +4392,7 @@ static AWEIMReusableCommonCell *currentCell;
 		NSMutableArray *actions = [NSMutableArray array];
 
 		// 添加下载选项
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDoubleTapDownload"] || ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleTapDownload"]) {
+		if (DYYYGetBool(@"DYYYDoubleTapDownload") || ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleTapDownload"]) {
 
 			AWEUserSheetAction *downloadAction = [NSClassFromString(@"AWEUserSheetAction")
 			    actionWithTitle:downloadTitle
@@ -4787,7 +4560,7 @@ static AWEIMReusableCommonCell *currentCell;
 		}
 
 		// 添加下载音频选项
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDoubleTapDownloadAudio"] || ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleTapDownloadAudio"]) {
+		if (DYYYGetBool(@"DYYYDoubleTapDownloadAudio") || ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleTapDownloadAudio"]) {
 
 			AWEUserSheetAction *downloadAudioAction = [NSClassFromString(@"AWEUserSheetAction")
 			    actionWithTitle:@"保存音频"
@@ -4802,7 +4575,7 @@ static AWEIMReusableCommonCell *currentCell;
 		}
 
 		// 添加接口保存选项
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDoubleInterfaceDownload"]) {
+		if (DYYYGetBool(@"DYYYDoubleInterfaceDownload")) {
 			NSString *apiKey = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYInterfaceDownload"];
 			if (apiKey.length > 0) {
 				AWEUserSheetAction *apiDownloadAction = [NSClassFromString(@"AWEUserSheetAction") actionWithTitle:@"接口保存"
@@ -4822,7 +4595,7 @@ static AWEIMReusableCommonCell *currentCell;
 		}
 
 		// 添加制作视频功能
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDoubleCreateVideo"] || ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleCreateVideo"]) {
+		if (DYYYGetBool(@"DYYYDoubleCreateVideo") || ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleCreateVideo"]) {
 			if (isImageContent) {
 				AWEUserSheetAction *createVideoAction = [NSClassFromString(@"AWEUserSheetAction")
 				    actionWithTitle:@"制作视频"
@@ -4888,7 +4661,7 @@ static AWEIMReusableCommonCell *currentCell;
 		}
 
 		// 添加复制文案选项
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDoubleTapCopyDesc"] || ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleTapCopyDesc"]) {
+		if (DYYYGetBool(@"DYYYDoubleTapCopyDesc") || ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleTapCopyDesc"]) {
 
 			AWEUserSheetAction *copyTextAction = [NSClassFromString(@"AWEUserSheetAction") actionWithTitle:@"复制文案"
 													       imgName:nil
@@ -4901,7 +4674,7 @@ static AWEIMReusableCommonCell *currentCell;
 		}
 
 		// 添加打开评论区选项
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDoubleTapComment"] || ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleTapComment"]) {
+		if (DYYYGetBool(@"DYYYDoubleTapComment") || ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleTapComment"]) {
 
 			AWEUserSheetAction *openCommentAction = [NSClassFromString(@"AWEUserSheetAction") actionWithTitle:@"打开评论"
 														  imgName:nil
@@ -4912,7 +4685,7 @@ static AWEIMReusableCommonCell *currentCell;
 		}
 
 		// 添加分享选项
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDoubleTapshowSharePanel"] || ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleTapshowSharePanel"]) {
+		if (DYYYGetBool(@"DYYYDoubleTapshowSharePanel") || ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleTapshowSharePanel"]) {
 
 			AWEUserSheetAction *showSharePanel = [NSClassFromString(@"AWEUserSheetAction") actionWithTitle:@"分享视频"
 													       imgName:nil
@@ -4923,7 +4696,7 @@ static AWEIMReusableCommonCell *currentCell;
 		}
 
 		// 添加点赞视频选项
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDoubleTapLike"] || ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleTapLike"]) {
+		if (DYYYGetBool(@"DYYYDoubleTapLike") || ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleTapLike"]) {
 
 			AWEUserSheetAction *likeAction = [NSClassFromString(@"AWEUserSheetAction") actionWithTitle:@"点赞视频"
 													   imgName:nil
@@ -4934,7 +4707,7 @@ static AWEIMReusableCommonCell *currentCell;
 		}
 
 		// 添加长按面板
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDoubleTapshowDislikeOnVideo"] || ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleTapshowDislikeOnVideo"]) {
+		if (DYYYGetBool(@"DYYYDoubleTapshowDislikeOnVideo") || ![[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDoubleTapshowDislikeOnVideo"]) {
 
 			AWEUserSheetAction *showDislikeOnVideo = [NSClassFromString(@"AWEUserSheetAction") actionWithTitle:@"长按面板"
 														   imgName:nil
@@ -5078,70 +4851,20 @@ static CGFloat customTabBarHeight() {
         return 0;
 }
 
-static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
-	if (!parentView)
-		return;
-
-	parentView.backgroundColor = [UIColor clearColor];
-
-	UIVisualEffectView *existingBlurView = nil;
-	for (UIView *subview in parentView.subviews) {
-		if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == 999) {
-			existingBlurView = (UIVisualEffectView *)subview;
-			break;
-		}
-	}
-
-	BOOL isDarkMode = [DYYYUtils isDarkMode];
-	UIBlurEffectStyle blurStyle = isDarkMode ? UIBlurEffectStyleDark : UIBlurEffectStyleLight;
-
-	if (transparency <= 0 || transparency > 1) {
-		transparency = 0.5;
-	}
-
-	if (!existingBlurView) {
-		UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurStyle];
-		UIVisualEffectView *blurEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
-		blurEffectView.frame = parentView.bounds;
-		blurEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-		blurEffectView.alpha = transparency;
-		blurEffectView.tag = 999;
-
-		UIView *overlayView = [[UIView alloc] initWithFrame:parentView.bounds];
-		CGFloat alpha = isDarkMode ? 0.2 : 0.1;
-		overlayView.backgroundColor = [UIColor colorWithWhite:(isDarkMode ? 0 : 1) alpha:alpha];
-		overlayView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-		[blurEffectView.contentView addSubview:overlayView];
-
-		[parentView insertSubview:blurEffectView atIndex:0];
-	} else {
-		UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurStyle];
-		[existingBlurView setEffect:blurEffect];
-		existingBlurView.alpha = transparency;
-
-		for (UIView *subview in existingBlurView.contentView.subviews) {
-			CGFloat alpha = isDarkMode ? 0.2 : 0.1;
-			subview.backgroundColor = [UIColor colorWithWhite:(isDarkMode ? 0 : 1) alpha:alpha];
-		}
-
-		[parentView insertSubview:existingBlurView atIndex:0];
-	}
-}
-
 %hook UIView
 - (void)layoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+	if (DYYYGetBool(@"DYYYisEnableFullScreen")) {
 		if (self.frame.size.height == tabHeight && tabHeight > 0) {
-			UIViewController *vc = [self firstAvailableUIViewController];
+			UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
 			if ([vc isKindOfClass:NSClassFromString(@"AWEMixVideoPanelDetailTableViewController")] || [vc isKindOfClass:NSClassFromString(@"AWECommentInputViewController")]) {
 				self.backgroundColor = [UIColor clearColor];
 			}
 		}
 	}
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"]) {
+	if (DYYYGetBool(@"DYYYisEnableCommentBlur")) {
 		for (UIView *subview in self.subviews) {
 			if ([subview isKindOfClass:NSClassFromString(@"AWECommentInputViewSwiftImpl.CommentInputViewMiddleContainer")]) {
 				BOOL containsDanmu = NO;
@@ -5182,14 +4905,15 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 						if (userTransparency <= 0 || userTransparency > 1) {
 							userTransparency = 0.95;
 						}
-						DYYYAddCustomViewToParent(subview, userTransparency);
+						[DYYYUtils applyBlurEffectToView:subview transparency:userTransparency blurViewTag:999];
+						[DYYYUtils clearBackgroundRecursivelyInView:subview];
 					}
 				}
 			}
 		}
 	}
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBarBlur"]) {
+	if (DYYYGetBool(@"DYYYisEnableCommentBarBlur")) {
 		for (UIView *subview in self.subviews) {
 			if ([subview isKindOfClass:NSClassFromString(@"AWECommentInputViewSwiftImpl.CommentInputViewMiddleContainer")]) {
 				BOOL containsDanmu = NO;
@@ -5206,7 +4930,8 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 							if (userTransparency <= 0 || userTransparency > 1) {
 								userTransparency = 0.95;
 							}
-							DYYYAddCustomViewToParent(innerSubview, userTransparency);
+							[DYYYUtils applyBlurEffectToView:innerSubview transparency:userTransparency blurViewTag:999];
+							[DYYYUtils clearBackgroundRecursivelyInView:innerSubview];
 							break;
 						}
 					}
@@ -5215,11 +4940,11 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 		}
 	}
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"] || [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"]) {
-		UIViewController *vc = [self firstAvailableUIViewController];
+	if (DYYYGetBool(@"DYYYisEnableFullScreen") || DYYYGetBool(@"DYYYisEnableCommentBlur")) {
+		UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
 		if ([vc isKindOfClass:%c(AWEPlayInteractionViewController)]) {
-			BOOL shouldHideSubview = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"] ||
-						 [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"];
+			BOOL shouldHideSubview = DYYYGetBool(@"DYYYisEnableFullScreen") ||
+						 DYYYGetBool(@"DYYYisEnableCommentBlur");
 
 			if (shouldHideSubview) {
 				for (UIView *subview in self.subviews) {
@@ -5240,9 +4965,9 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 		return;
 	}
 
-	BOOL enableBlur = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"];
-	BOOL enableFS = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"];
-	BOOL hideAvatar = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenAvatarList"];
+	BOOL enableBlur = DYYYGetBool(@"DYYYisEnableCommentBlur");
+	BOOL enableFS = DYYYGetBool(@"DYYYisEnableFullScreen");
+	BOOL hideAvatar = DYYYGetBool(@"DYYYisHiddenAvatarList");
 
 	Class SkylightListViewClass = NSClassFromString(@"AWEIMSkylightListView");
 	if (hideAvatar && SkylightListViewClass && [self isKindOfClass:SkylightListViewClass]) {
@@ -5251,7 +4976,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 		return;
 	}
 
-	UIViewController *vc = [self firstAvailableUIViewController];
+	UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
 	Class DetailVCClass = NSClassFromString(@"AWEMixVideoPanelDetailTableViewController");
 	Class PlayVCClass1 = NSClassFromString(@"AWEAwemePlayVideoViewController");
 	Class PlayVCClass2 = NSClassFromString(@"AWEDPlayerFeedPlayerViewController");
@@ -5298,7 +5023,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 		parentVC = parentVC.parentViewController;
 	}
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+	if (DYYYGetBool(@"DYYYisEnableFullScreen")) {
 		NSString *currentReferString = self.referString;
 		CGRect frame = self.view.frame;
 
@@ -5329,7 +5054,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 
 - (void)viewDidLayoutSubviews {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+	if (DYYYGetBool(@"DYYYisEnableFullScreen")) {
 		UIView *contentView = self.contentView;
 		if (contentView && contentView.superview) {
 			CGRect frame = contentView.frame;
@@ -5352,7 +5077,7 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 - (void)layoutSubviews {
 	%orig;
 	CGFloat customHeight = customTabBarHeight();
-	BOOL enableFS = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"];
+	BOOL enableFS = DYYYGetBool(@"DYYYisEnableFullScreen");
 
 	if (enableFS || customHeight > 0) {
 		if (self.superview) {
@@ -5374,15 +5099,12 @@ static void DYYYAddCustomViewToParent(UIView *parentView, float transparency) {
 %end
 
 %hook AWEElementStackView
-static CGFloat stream_frame_y = 0;
-static CGFloat right_tx = 0;
-static CGFloat left_tx = 0;
 static CGFloat currentScale = 1.0;
 - (void)layoutSubviews {
 	%orig;
-	UIViewController *vc = [self firstAvailableUIViewController];
+	UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
 	if ([vc isKindOfClass:%c(AWECommentInputViewController)]) {
-		NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
+		NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
 		if (transparentValue.length > 0) {
 			CGFloat alphaValue = transparentValue.floatValue;
 			if (alphaValue >= 0.0 && alphaValue <= 1.0) {
@@ -5391,7 +5113,7 @@ static CGFloat currentScale = 1.0;
 		}
 	}
 	if ([vc isKindOfClass:%c(AWELiveNewPreStreamViewController)]) {
-		NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
+		NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
 		if (transparentValue.length > 0) {
 			CGFloat alphaValue = transparentValue.floatValue;
 			if (alphaValue >= 0.0 && alphaValue <= 1.0) {
@@ -5403,7 +5125,7 @@ static CGFloat currentScale = 1.0;
 	UIResponder *nextResponder = [self nextResponder];
 	if ([nextResponder isKindOfClass:[UIView class]]) {
 		UIView *parentView = (UIView *)nextResponder;
-		UIViewController *viewController = [parentView firstAvailableUIViewController];
+		UIViewController *viewController = [DYYYUtils firstAvailableViewControllerFromView:parentView];
 		if ([viewController isKindOfClass:%c(AWELiveNewPreStreamViewController)]) {
 			NSString *vcScaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
 			if (vcScaleValue.length > 0) {
@@ -5426,43 +5148,39 @@ static CGFloat currentScale = 1.0;
 			}
 		}
 	}
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+	if (DYYYGetBool(@"DYYYisEnableFullScreen")) {
 		UIResponder *nextResponder = [self nextResponder];
 		if ([nextResponder isKindOfClass:[UIView class]]) {
 			UIView *parentView = (UIView *)nextResponder;
-			UIViewController *viewController = [parentView firstAvailableUIViewController];
+			UIViewController *viewController = [DYYYUtils firstAvailableViewControllerFromView:parentView];
 			if ([viewController isKindOfClass:%c(AWELiveNewPreStreamViewController)]) {
 				CGRect frame = self.frame;
 				frame.origin.y -= tabHeight;
-				stream_frame_y = frame.origin.y;
 				self.frame = frame;
 			}
 		}
 	}
 
-	UIViewController *viewController = [self firstAvailableUIViewController];
+	UIViewController *viewController = [DYYYUtils firstAvailableViewControllerFromView:self];
 	if ([viewController isKindOfClass:%c(AWEPlayInteractionViewController)]) {
-		BOOL isRightElement = isRightInteractionStack(self);
-		BOOL isLeftElement = isLeftInteractionStack(self);
 
 		// 右侧元素的处理逻辑
-		if (isRightElement) {
+		if ([self.accessibilityLabel isEqualToString:@"right"] || 
+			[DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEPlayInteractionUserAvatarView") inView:self]) {
 			NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYElementScale"];
 			self.transform = CGAffineTransformIdentity;
 			if (scaleValue.length > 0) {
 				CGFloat scale = [scaleValue floatValue];
-				if (currentScale != scale) {
-					currentScale = scale;
-				}
+				if (currentScale != scale) currentScale = scale;
 				if (scale > 0 && scale != 1.0) {
+					NSArray *subviews = [self.subviews copy];
 					CGFloat ty = 0;
-					for (UIView *view in self.subviews) {
+					for (UIView *view in subviews) {
 						CGFloat viewHeight = view.frame.size.height;
-						CGFloat contribution = (viewHeight - viewHeight * scale) / 2;
-						ty += contribution;
+						ty += (viewHeight - viewHeight * scale) / 2;
 					}
 					CGFloat frameWidth = self.frame.size.width;
-					right_tx = (frameWidth - frameWidth * scale) / 2;
+					CGFloat right_tx = (frameWidth - frameWidth * scale) / 2;
 					self.transform = CGAffineTransformMake(scale, 0, 0, scale, right_tx, ty);
 				} else {
 					self.transform = CGAffineTransformIdentity;
@@ -5470,7 +5188,8 @@ static CGFloat currentScale = 1.0;
 			}
 		}
 		// 左侧元素的处理逻辑
-		else if (isLeftElement) {
+		else if ([self.accessibilityLabel isEqualToString:@"left"] || 
+                 [DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEFeedAnchorContainerView") inView:self]) {
 			NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
 			if (scaleValue.length > 0) {
 				CGFloat scale = [scaleValue floatValue];
@@ -5480,8 +5199,7 @@ static CGFloat currentScale = 1.0;
 					CGFloat ty = 0;
 					for (UIView *view in subviews) {
 						CGFloat viewHeight = view.frame.size.height;
-						CGFloat contribution = (viewHeight - viewHeight * scale) / 2;
-						ty += contribution;
+						ty += (viewHeight - viewHeight * scale) / 2;
 					}
 					CGFloat frameWidth = self.frame.size.width;
 					CGFloat left_tx = (frameWidth - frameWidth * scale) / 2 - frameWidth * (1 - scale);
@@ -5495,11 +5213,11 @@ static CGFloat currentScale = 1.0;
 }
 - (NSArray<__kindof UIView *> *)arrangedSubviews {
 
-	UIViewController *viewController = [self firstAvailableUIViewController];
+	UIViewController *viewController = [DYYYUtils firstAvailableViewControllerFromView:self];
 	if ([viewController isKindOfClass:%c(AWEPlayInteractionViewController)]) {
-		BOOL isLeftElement = isLeftInteractionStack(self);
 
-		if (isLeftElement) {
+		if ([self.accessibilityLabel isEqualToString:@"left"] || 
+            [DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEFeedAnchorContainerView") inView:self]) {
 			NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
 			if (scaleValue.length > 0) {
 				CGFloat scale = [scaleValue floatValue];
@@ -5509,8 +5227,7 @@ static CGFloat currentScale = 1.0;
 					CGFloat ty = 0;
 					for (UIView *view in subviews) {
 						CGFloat viewHeight = view.frame.size.height;
-						CGFloat contribution = (viewHeight - viewHeight * scale) / 2;
-						ty += contribution;
+						ty += (viewHeight - viewHeight * scale) / 2;
 					}
 					CGFloat frameWidth = self.frame.size.width;
 					CGFloat left_tx = (frameWidth - frameWidth * scale) / 2 - frameWidth * (1 - scale);
@@ -5538,7 +5255,7 @@ static CGFloat currentScale = 1.0;
         return;
 	}
 
-    NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
+    NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
     if (transparentValue.length > 0) {
         CGFloat alphaValue = transparentValue.floatValue;
         if (alphaValue >= 0.0 && alphaValue <= 1.0) {
@@ -5565,10 +5282,9 @@ static CGFloat currentScale = 1.0;
             self.transform = newTransform;
         }
     }
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+	if (DYYYGetBool(@"DYYYisEnableFullScreen")) {
         CGRect frame = self.frame;
         frame.origin.y -= tabHeight;
-        stream_frame_y = frame.origin.y;
         self.frame = frame;
     }
 }
@@ -5610,7 +5326,7 @@ static CGFloat currentScale = 1.0;
 				}
 
 				CGRect frame = subview.frame;
-				if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+				if (DYYYGetBool(@"DYYYisEnableFullScreen")) {
 					frame.size.height = subview.superview.frame.size.height - tabHeight;
 					subview.frame = frame;
 				}
@@ -5643,7 +5359,7 @@ static CGFloat currentScale = 1.0;
 %hook AFDFastSpeedView
 - (void)layoutSubviews {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+	if (DYYYGetBool(@"DYYYisEnableFullScreen")) {
 		for (UIView *subview in self.subviews) {
 			if ([subview class] == [UIView class]) {
 				[subview setBackgroundColor:[UIColor clearColor]];
@@ -5655,7 +5371,7 @@ static CGFloat currentScale = 1.0;
 
 %hook AWELandscapeFeedEntryView
 - (void)setCenter:(CGPoint)center {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"] || [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableCommentBlur"]) {
+	if (DYYYGetBool(@"DYYYisEnableFullScreen") || DYYYGetBool(@"DYYYisEnableCommentBlur")) {
 		center.y += 60;
 	}
 
@@ -5664,7 +5380,7 @@ static CGFloat currentScale = 1.0;
 
 - (void)layoutSubviews {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenEntry"]) {
+	if (DYYYGetBool(@"DYYYisHiddenEntry")) {
 		[self removeFromSuperview];
 	}
 }
@@ -5691,10 +5407,10 @@ static CGFloat currentScale = 1.0;
 		}
 	}
 
-	BOOL hideShop = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideShopButton"];
-	BOOL hideMsg = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMessageButton"];
-	BOOL hideFri = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFriendsButton"];
-	BOOL hideMe = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideMyButton"];
+	BOOL hideShop = DYYYGetBool(@"DYYYHideShopButton");
+	BOOL hideMsg = DYYYGetBool(@"DYYYHideMessageButton");
+	BOOL hideFri = DYYYGetBool(@"DYYYHideFriendsButton");
+	BOOL hideMe = DYYYGetBool(@"DYYYHideMyButton");
 
 	NSMutableArray *visibleButtons = [NSMutableArray array];
 	Class generalButtonClass = %c(AWENormalModeTabBarGeneralButton);
@@ -5775,7 +5491,7 @@ static CGFloat currentScale = 1.0;
 	%orig(hidden);
 
 	Class generalButtonClass = %c(AWENormalModeTabBarGeneralButton);
-	BOOL disableHomeRefresh = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYDisableHomeRefresh"];
+	BOOL disableHomeRefresh = DYYYGetBool(@"DYYYDisableHomeRefresh");
 
 	for (UIView *subview in self.subviews) {
 		if ([subview isKindOfClass:generalButtonClass]) {
@@ -5786,7 +5502,7 @@ static CGFloat currentScale = 1.0;
 		}
 	}
 
-	BOOL hideBottomBg = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisHiddenBottomBg"];
+	BOOL hideBottomBg = DYYYGetBool(@"DYYYisHiddenBottomBg");
 
 	// 如果开启了隐藏底部背景，则直接隐藏背景视图
 	if (hideBottomBg) {
@@ -5809,9 +5525,9 @@ static CGFloat currentScale = 1.0;
 		}
 	} else {
 		// 仅对全屏模式处理背景显示逻辑
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+		if (DYYYGetBool(@"DYYYisEnableFullScreen")) {
 			UIView *backgroundView = nil;
-			BOOL hideFriendsButton = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideFriendsButton"];
+			BOOL hideFriendsButton = DYYYGetBool(@"DYYYHideFriendsButton");
 			BOOL isHomeSelected = NO;
 			BOOL isFriendsSelected = NO;
 
@@ -5855,7 +5571,7 @@ static CGFloat currentScale = 1.0;
 	}
 
 	// 隐藏分隔线
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+	if (DYYYGetBool(@"DYYYisEnableFullScreen")) {
 		for (UIView *subview in self.subviews) {
 			if (![subview isKindOfClass:[UIView class]])
 				continue;
@@ -5875,7 +5591,7 @@ static CGFloat currentScale = 1.0;
 %hook AWEAwemeDetailTableView
 
 - (void)setFrame:(CGRect)frame {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+	if (DYYYGetBool(@"DYYYisEnableFullScreen")) {
 		CGFloat screenHeight = [UIScreen mainScreen].bounds.size.height;
 
 		CGFloat remainder = fmod(frame.size.height, screenHeight);
@@ -5891,7 +5607,7 @@ static CGFloat currentScale = 1.0;
 %hook AWEMixVideoPanelMoreView
 
 - (void)setFrame:(CGRect)frame {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+	if (DYYYGetBool(@"DYYYisEnableFullScreen")) {
 		CGFloat targetY = frame.origin.y - tabHeight;
 		CGFloat screenHeightMinusGDiff = [UIScreen mainScreen].bounds.size.height - tabHeight;
 
@@ -5907,7 +5623,7 @@ static CGFloat currentScale = 1.0;
 - (void)layoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+	if (DYYYGetBool(@"DYYYisEnableFullScreen")) {
 		self.backgroundColor = [UIColor clearColor];
 	}
 }
@@ -5948,7 +5664,7 @@ static CGFloat currentScale = 1.0;
 - (void)layoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+	if (DYYYGetBool(@"DYYYisEnableFullScreen")) {
 		UIView *parentView = self.superview;
 		while (parentView) {
 			if ([NSStringFromClass([parentView class]) isEqualToString:@"UIView"]) {
@@ -5972,7 +5688,7 @@ static CGFloat currentScale = 1.0;
 - (void)layoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideChapterProgress"]) {
+	if (DYYYGetBool(@"DYYYHideChapterProgress")) {
 		[self removeFromSuperview];
 	}
 }
@@ -5984,7 +5700,7 @@ static CGFloat currentScale = 1.0;
 - (void)layoutSubviews {
 	%orig;
 
-	if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePopover"]) {
+	if (!DYYYGetBool(@"DYYYHidePopover")) {
 		return;
 	}
 
@@ -6008,7 +5724,7 @@ static CGFloat currentScale = 1.0;
 - (void)layoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideDoubleColumnEntry"]) {
+	if (DYYYGetBool(@"DYYYHideDoubleColumnEntry")) {
 		for (UIView *subview in self.subviews) {
 			if (![subview isKindOfClass:[UILabel class]]) {
 				subview.hidden = YES;
@@ -6021,7 +5737,7 @@ static CGFloat currentScale = 1.0;
 %hook UIImageView
 - (void)layoutSubviews {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideCommentDiscover"]) {
+	if (DYYYGetBool(@"DYYYHideCommentDiscover")) {
 		if (!self.accessibilityLabel) {
 			UIView *parentView = self.superview;
 
@@ -6048,45 +5764,6 @@ static CGFloat currentScale = 1.0;
 }
 %end
 
-@implementation UIView (Helper)
-- (BOOL)containsClassNamed:(NSString *)className {
-	if ([[[self class] description] isEqualToString:className]) {
-		return YES;
-	}
-	for (UIView *subview in self.subviews) {
-		if ([subview containsClassNamed:className]) {
-			return YES;
-		}
-	}
-	return NO;
-}
-
-- (UIView *)findViewWithClassName:(NSString *)className {
-	if ([[[self class] description] isEqualToString:className]) {
-		return self;
-	}
-	for (UIView *subview in self.subviews) {
-		UIView *result = [subview findViewWithClassName:className];
-		if (result) {
-			return result;
-		}
-	}
-	return nil;
-}
-
-- (NSArray<UIView *> *)findAllViewsWithClassName:(NSString *)className {
-    NSMutableArray *foundViews = [NSMutableArray array];
-    if ([[[self class] description] isEqualToString:className]) {
-        [foundViews addObject:self];
-    }
-    for (UIView *subview in self.subviews) {
-        [foundViews addObjectsFromArray:[subview findAllViewsWithClassName:className]];
-    }
-    return [foundViews copy];
-}
-
-@end
-
 static NSMutableDictionary *keepCellsInfo;
 static NSMutableDictionary *sectionKeepInfo;
 
@@ -6101,7 +5778,7 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 - (void)viewDidLoad {
 	%orig;
 
-	if (![[NSUserDefaults standardUserDefaults] boolForKey:kStreamlineSidebarKey]) {
+	if (!DYYYGetBool(kStreamlineSidebarKey)) {
 		return;
 	}
 
@@ -6116,7 +5793,7 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 - (void)viewDidDisappear:(BOOL)animated {
 	%orig;
 
-	if (![[NSUserDefaults standardUserDefaults] boolForKey:kStreamlineSidebarKey]) {
+	if (!DYYYGetBool(kStreamlineSidebarKey)) {
 		return;
 	}
 
@@ -6127,7 +5804,7 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 - (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {
 	UICollectionViewCell *cell = %orig;
 
-	if (![[NSUserDefaults standardUserDefaults] boolForKey:kStreamlineSidebarKey]) {
+	if (!DYYYGetBool(kStreamlineSidebarKey)) {
 		return cell;
 	}
 
@@ -6135,8 +5812,9 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 		return cell;
 
 	@try {
-		BOOL shouldKeep = [cell.contentView containsClassNamed:kAWELeftSideBarTopRightLayoutView] || [cell.contentView containsClassNamed:kAWELeftSideBarFunctionContainerView] ||
-				  [cell.contentView containsClassNamed:kAWELeftSideBarWeatherView];
+		BOOL shouldKeep = [DYYYUtils containsSubviewOfClass:NSClassFromString(kAWELeftSideBarTopRightLayoutView) inView:cell.contentView] || 
+						  [DYYYUtils containsSubviewOfClass:NSClassFromString(kAWELeftSideBarFunctionContainerView) inView:cell.contentView] ||
+						  [DYYYUtils containsSubviewOfClass:NSClassFromString(kAWELeftSideBarWeatherView) inView:cell.contentView];
 
 		NSString *key = [NSString stringWithFormat:@"%ld-%ld", (long)indexPath.section, (long)indexPath.row];
 		keepCellsInfo[key] = @(shouldKeep);
@@ -6153,7 +5831,7 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 			frame.size.width = 0;
 			frame.size.height = 0;
 			cell.frame = frame;
-		} else if ([cell.contentView containsClassNamed:kAWELeftSideBarFunctionContainerView]) {
+		} else if ([DYYYUtils containsSubviewOfClass:NSClassFromString(kAWELeftSideBarFunctionContainerView) inView:cell.contentView]) {
 			[self adjustContainerViewLayout:cell];
 		}
 	} @catch (NSException *exception) {
@@ -6166,7 +5844,7 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 - (CGSize)collectionView:(UICollectionView *)collectionView layout:(id)layout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
 	CGSize originalSize = %orig;
 
-	if (![[NSUserDefaults standardUserDefaults] boolForKey:kStreamlineSidebarKey]) {
+	if (!DYYYGetBool(kStreamlineSidebarKey)) {
 		return originalSize;
 	}
 
@@ -6183,7 +5861,7 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 - (UIEdgeInsets)collectionView:(UICollectionView *)collectionView layout:(id)layout insetForSectionAtIndex:(NSInteger)section {
 	UIEdgeInsets originalInsets = %orig;
 
-	if (![[NSUserDefaults standardUserDefaults] boolForKey:kStreamlineSidebarKey]) {
+	if (!DYYYGetBool(kStreamlineSidebarKey)) {
 		return originalInsets;
 	}
 
@@ -6198,7 +5876,7 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 
 %new
 - (void)adjustContainerViewLayout:(UICollectionViewCell *)containerCell {
-	if (![[NSUserDefaults standardUserDefaults] boolForKey:kStreamlineSidebarKey]) {
+	if (!DYYYGetBool(kStreamlineSidebarKey)) {
 		return;
 	}
 
@@ -6206,7 +5884,7 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 	if (!collectionView || !containerCell)
 		return;
 
-	UIView *containerView = [containerCell.contentView findViewWithClassName:kAWELeftSideBarFunctionContainerView];
+	UIView *containerView = [DYYYUtils findSubviewOfClass:NSClassFromString(kAWELeftSideBarFunctionContainerView) inView:containerCell.contentView];
 	if (!containerView)
 		return;
 
@@ -6229,7 +5907,7 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 - (void)viewDidLoad {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideSettingsAbout"]) {
+	if (DYYYGetBool(@"DYYYHideSettingsAbout")) {
 		[self removeAboutSection];
 	}
 }
@@ -6273,7 +5951,7 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 - (void)layoutSubviews {
 	%orig;
 
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableFullScreen"]) {
+	if (DYYYGetBool(@"DYYYisEnableFullScreen")) {
 
 		self.backgroundColor = [UIColor clearColor];
 
@@ -6311,7 +5989,7 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 %hook AWEIncentiveSwiftImplDOUYINLite_IncentivePendantContainerView
 - (void)layoutSubviews {
 	%orig;
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidePendantGroup"]) {
+	if (DYYYGetBool(@"DYYYHidePendantGroup")) {
 		[self removeFromSuperview];
 	}
 }
@@ -6330,17 +6008,17 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 
 %ctor {
 	%init(DYYYSettingsGesture);
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {
+	if (DYYYGetBool(@"DYYYUserAgreementAccepted")) {
 		static dispatch_once_t onceToken;
 		dispatch_once(&onceToken, ^{
 		  Class wSwiftImpl = objc_getClass("AWECommentInputViewSwiftImpl.CommentInputContainerView");
 		  %init(CommentInputContainerView = wSwiftImpl);
 		});
-		BOOL isAutoPlayEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnableAutoPlay"];
+		BOOL isAutoPlayEnabled = DYYYGetBool(@"DYYYisEnableAutoPlay");
 		if (isAutoPlayEnabled) {
 			%init(AutoPlay);
 		}
-		if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYForceDownloadEmotion"]) {
+		if (DYYYGetBool(@"DYYYForceDownloadEmotion")) {
 			%init(EnableStickerSaveMenu);
 		}
 	}
@@ -6382,12 +6060,12 @@ static void findTargetViewInView(UIView *view) {
 
 %ctor {
 	// 注册键盘通知
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {
+	if (DYYYGetBool(@"DYYYUserAgreementAccepted")) {
 		[[NSNotificationCenter defaultCenter] addObserverForName:UIKeyboardWillShowNotification
 								  object:nil
 								   queue:[NSOperationQueue mainQueue]
 							      usingBlock:^(NSNotification *notification) {
-								if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHidekeyboardai"]) {
+								if (DYYYGetBool(@"DYYYHidekeyboardai")) {
 									if (cachedHideView) {
 										for (UIView *subview in cachedHideView.subviews) {
 											subview.hidden = YES;

@@ -2354,24 +2354,22 @@ extern "C"
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_image_outlined_20"},
-		  @{
-			  @"identifier" : @"DYYYisEnableModern",
-			  @"title" : @"启用新版玻璃面板",
-			  @"subTitle" : @"启用抖音灰度测试的长按毛玻璃面板功能",
-			  @"detail" : @"",
-			  @"cellType" : @37,
-			  @"imageName" : @"ic_moon_outlined"
-		  },
-		  @{@"identifier" : @"DYYYisEnableModernLight",
-		    @"title" : @"启用新版浅色面板",
-		    @"detail" : @"",
-		    @"cellType" : @6,
-		    @"imageName" : @"ic_sun_outlined"},
-		  @{@"identifier" : @"DYYYModernPanelFollowSystem",
-		    @"title" : @"新版面板跟随系统",
+		  @{@"identifier" : @"DYYYisEnableModernPanel",
+			@"title" : @"启用新版长按面板",
+			@"subTitle" : @"启用抖音灰度测试的新版长按面板",
+			@"detail" : @"",
+			@"cellType" : @37,
+		    @"imageName" : @"ic_squaresplit_outlined_20"},
+		  @{@"identifier" : @"DYYYisLongPressPanelBlur",
+		    @"title" : @"长按面板玻璃效果",
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_squaresplit_outlined_20"},
+		  @{@"identifier" : @"DYYYisLongPressPanelDark",
+		    @"title" : @"长按面板深色模式",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+			@"imageName" : @"ic_sun_outlined"},
 		  @{@"identifier" : @"DYYYDisableHomeRefresh",
 		    @"title" : @"禁用点击首页刷新",
 		    @"detail" : @"",
@@ -2482,6 +2480,30 @@ extern "C"
 			    [sections addObject:[DYYYSettingsHelper createSectionWithTitle:@"双击菜单设置" items:doubleTapItems]];
 			    AWESettingBaseViewController *subVC = [DYYYSettingsHelper createSubSettingsViewController:@"双击菜单设置" sections:sections];
 			    [rootVC.navigationController pushViewController:(UIViewController *)subVC animated:YES];
+			  };
+		  }
+
+		  if ([item.identifier isEqualToString:@"DYYYisLongPressPanelDark"]) {
+			  BOOL isDarkPanelEnabled = [DYYYSettingsHelper getUserDefaults:item.identifier];
+			  item.svgIconImageName = isDarkPanelEnabled ? @"ic_moon_outlined" : @"ic_sun_outlined";
+
+			  void (^originalSwitchChangedBlock)(void) = item.switchChangedBlock;
+
+			  __weak AWESettingItemModel *weakItem = item;
+			  item.switchChangedBlock = ^{
+				  __strong AWESettingItemModel *strongItem = weakItem;
+				  if (!strongItem) return;
+
+				  if (originalSwitchChangedBlock) {
+					  originalSwitchChangedBlock();
+				  }
+
+				  if (strongItem.isSwitchOn) {
+					  strongItem.svgIconImageName = @"ic_moon_outlined";
+				  } else {
+					  strongItem.svgIconImageName = @"ic_sun_outlined";
+				  }
+				  [strongItem refreshCell];
 			  };
 		  }
 

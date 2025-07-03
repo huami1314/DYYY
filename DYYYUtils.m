@@ -8,17 +8,7 @@
 
 @implementation DYYYUtils
 
-#pragma mark - Public UI/Window/Controller Utilities (公共 UI/窗口/控制器 工具)
-
-+ (UIViewController *)topView {
-    UIViewController *topViewController = [UIApplication sharedApplication].keyWindow.rootViewController;
-    
-    while (topViewController.presentedViewController) {
-        topViewController = topViewController.presentedViewController;
-    }
-    
-    return topViewController;
-}
+#pragma mark - Public UI Utilities (公共 UI/窗口/控制器 工具)
 
 + (UIWindow *)getActiveWindow {
   if (@available(iOS 15.0, *)) {
@@ -40,19 +30,165 @@
   }
 }
 
-+ (UIViewController *)getActiveTopController {
-  UIWindow *window = [self getActiveWindow];
-  if (!window)
-    return nil;
++ (UIViewController *)topView {
+    UIWindow *window = [self getActiveWindow];
+    if (!window) return nil;
 
-  UIViewController *topController = window.rootViewController;
-  while (topController.presentedViewController) {
-    topController = topController.presentedViewController;
-  }
-
-  return topController;
+    UIViewController *topViewController = window.rootViewController;
+    while (topViewController.presentedViewController) {
+        topViewController = topViewController.presentedViewController;
+    }
+    return topViewController;
 }
 
++ (UIViewController *)firstAvailableViewControllerFromView:(UIView *)view {
+    UIResponder *responder = view;
+    while ((responder = [responder nextResponder])) {
+        if ([responder isKindOfClass:[UIViewController class]]) {
+            return (UIViewController *)responder;
+        }
+    }
+    return nil;
+}
+
++ (UIViewController *)findViewControllerOfClass:(Class)targetClass inViewController:(UIViewController *)vc {
+    if (!vc) return nil;
+    if ([vc isKindOfClass:targetClass]) {
+        return vc;
+    }
+    for (UIViewController *childVC in vc.childViewControllers) {
+        UIViewController *found = [self findViewControllerOfClass:targetClass inViewController:childVC];
+        if (found)
+            return found;
+    }
+    return [self findViewControllerOfClass:targetClass inViewController:vc.presentedViewController];
+}
+
++ (UIResponder *)findAncestorResponderOfClass:(Class)targetClass fromView:(UIView *)view {
+    if (!view) return nil;
+    UIResponder *responder = view.superview;
+    while (responder) {
+        if ([responder isKindOfClass:targetClass]) {
+            return responder;
+        }
+        responder = [responder nextResponder];
+    }
+    return nil;
+}
+
++ (NSArray<UIView *> *)findAllSubviewsOfClass:(Class)targetClass inView:(UIView *)view {
+    if (!view) return @[];
+    NSMutableArray *foundViews = [NSMutableArray array];
+    if ([view isKindOfClass:targetClass]) {
+        [foundViews addObject:view];
+    }
+    for (UIView *subview in view.subviews) {
+        [foundViews addObjectsFromArray:[self findAllSubviewsOfClass:targetClass inView:subview]];
+    }
+    return [foundViews copy];
+}
+
++ (UIView *)findSubviewOfClass:(Class)targetClass inView:(UIView *)view {
+    if (!view) return nil;
+    if ([view isKindOfClass:targetClass]) {
+        return view;
+    }
+    for (UIView *subview in view.subviews) {
+        UIView *result = [self findSubviewOfClass:targetClass inView:subview];
+        if (result) {
+            return result;
+        }
+    }
+    return nil;
+}
+
++ (BOOL)containsSubviewOfClass:(Class)targetClass inView:(UIView *)view {
+    if (!view) return NO;
+    if ([view isKindOfClass:targetClass]) {
+        return YES;
+    }
+    for (UIView *subview in view.subviews) {
+        if ([self containsSubviewOfClass:targetClass inView:subview]) {
+            return YES;
+        }
+    }
+    return NO;
+}
+
++ (void)applyBlurEffectToView:(UIView *)view transparency:(float)userTransparency blurViewTag:(NSInteger)tag {
+    if (!view) return;
+
+    view.backgroundColor = [UIColor clearColor];
+
+    UIVisualEffectView *existingBlurView = nil;
+    for (UIView *subview in view.subviews) {
+        if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == tag) {
+            existingBlurView = (UIVisualEffectView *)subview;
+            break;
+        }
+    }
+
+    BOOL isDarkMode = [DYYYUtils isDarkMode];
+    UIBlurEffectStyle blurStyle = isDarkMode ? UIBlurEffectStyleDark : UIBlurEffectStyleLight;
+
+    UIView *overlayView = nil;
+
+    if (!existingBlurView) {
+        UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurStyle];
+        UIVisualEffectView *blurEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
+        blurEffectView.frame = view.bounds;
+        blurEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        blurEffectView.alpha = userTransparency;
+        blurEffectView.tag = tag;
+
+        overlayView = [[UIView alloc] initWithFrame:view.bounds];
+        overlayView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        [blurEffectView.contentView addSubview:overlayView];
+
+        [view insertSubview:blurEffectView atIndex:0];
+    } else {
+        UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurStyle];
+        [existingBlurView setEffect:blurEffect];
+        existingBlurView.alpha = userTransparency;
+
+        for (UIView *subview in existingBlurView.contentView.subviews) {
+            if ([subview isKindOfClass:[UIView class]]) {
+                overlayView = subview;
+                break;
+            }
+        }
+        if (!overlayView) {
+            overlayView = [[UIView alloc] initWithFrame:existingBlurView.bounds];
+            overlayView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+            [existingBlurView.contentView addSubview:overlayView];
+        }
+    }
+    if (overlayView) {
+        CGFloat alpha = isDarkMode ? 0.2 : 0.1;
+        overlayView.backgroundColor = [UIColor colorWithWhite:(isDarkMode ? 0 : 1) alpha:alpha];
+    }
+}
+
++ (void)clearBackgroundRecursivelyInView:(UIView *)view {
+    if (!view) return;
+
+    BOOL shouldClear = YES;
+
+    if ([view isKindOfClass:[UIVisualEffectView class]]) {
+        shouldClear = NO; // 不清除 UIVisualEffectView 本身的背景
+    } else if (view.superview && [view.superview isKindOfClass:[UIVisualEffectView class]]) {
+        shouldClear = NO; // 不清除 UIVisualEffectView 的 contentView 的背景
+    }
+
+    if (shouldClear) {
+        view.backgroundColor = [UIColor clearColor];
+        view.opaque = NO;
+     }
+
+    for (UIView *subview in view.subviews) {
+        [self clearBackgroundRecursivelyInView:subview];
+    }
+}
 + (void)showToast:(NSString *)text {
   Class toastClass = NSClassFromString(@"DUXToast");
   if (toastClass && [toastClass respondsToSelector:@selector(showText:)]) {
@@ -189,6 +325,25 @@
         ];
 
         atomic_init(&_rainbowRotationCounter, 0);
+    }
+}
+
++ (void)applyTextColorRecursively:(UIColor *)color inView:(UIView *)view shouldExcludeViewBlock:(BOOL (^)(UIView *subview))excludeBlock {
+    if (!view || !color) return;
+
+    BOOL shouldExclude = NO;
+    if (excludeBlock) shouldExclude = excludeBlock(view);
+
+    if (!shouldExclude) {
+        if ([view isKindOfClass:[UILabel class]]) {
+            ((UILabel *)view).textColor = color;
+        } else if ([view isKindOfClass:[UIButton class]]) {
+            [(UIButton *)view setTitleColor:color forState:UIControlStateNormal];
+        }
+    }
+
+    for (UIView *subview in view.subviews) {
+        [self applyTextColorRecursively:color inView:subview shouldExcludeViewBlock:excludeBlock];
     }
 }
 
@@ -339,18 +494,19 @@
 
         if (gradientImage) {
             finalColor = [UIColor colorWithPatternImage:gradientImage];
-            if (finalColor) [_gradientColorCache setObject:finalColor forKey:cacheKey];
         }
     } else {
         UIColor *singleColor = [self _colorFromHexString:trimmedHexString];
         if (singleColor) {
             finalColor = singleColor;
-            [_gradientColorCache setObject:finalColor forKey:cacheKey];
         }
     }
 
-    if (!finalColor) finalColor = [UIColor whiteColor];
-    return finalColor;
+    if (finalColor) {
+        [_gradientColorCache setObject:finalColor forKey:cacheKey];
+        return finalColor;
+    }
+    return [UIColor whiteColor];
 }
 
 + (CALayer *)layerFromSchemeHexString:(NSString *)hexString frame:(CGRect)frame {

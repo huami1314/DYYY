@@ -1,7 +1,11 @@
 #import <UIKit/UIKit.h>
 #import <Photos/Photos.h>
 
+// 获取指定类型设置，键名不存在或类型错误时返回nil
 #define DYYYGetBool(key) [[NSUserDefaults standardUserDefaults] boolForKey:key]
+#define DYYYGetFloat(key) [[NSUserDefaults standardUserDefaults] floatForKey:key]
+#define DYYYGetInteger(key) [[NSUserDefaults standardUserDefaults] integerForKey:key]
+#define DYYYGetString(key) [[NSUserDefaults standardUserDefaults] stringForKey:key]
 #define DYYY_IGNORE_GLOBAL_ALPHA_TAG 114514
 typedef NS_ENUM(NSInteger, MediaType) {
   MediaTypeVideo,
@@ -133,6 +137,7 @@ static CGFloat gStartVal = 0.0;
 @property(nonatomic, strong) AWEPropGuideV2Model *propGuideV2;
 @property(nonatomic, strong) AWEECommerceLabel *ecommerceBelowLabel;
 - (BOOL)isLive;
+- (BOOL)contentFilter;
 - (AWESearchAwemeExtraModel *)searchExtraModel;
 @end
 
@@ -1215,12 +1220,6 @@ static CGFloat gStartVal = 0.0;
 @interface AWELeftSideBarViewController : UIViewController <UICollectionViewDelegate, UICollectionViewDataSource>
 - (UICollectionView *)collectionView;
 - (void)adjustContainerViewLayout:(UICollectionViewCell *)cell;
-@end
-
-@interface UIView (Helper)
-- (BOOL)containsClassNamed:(NSString *)className;
-- (UIView *)findViewWithClassName:(NSString *)className;
-- (NSArray<UIView *> *)findAllViewsWithClassName:(NSString *)className;
 @end
 
 @interface AWESettingsTableViewController : AWESettingBaseViewController
