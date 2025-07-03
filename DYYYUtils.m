@@ -223,35 +223,39 @@
 + (unsigned long long)directorySizeAtPath:(NSString *)directoryPath {
     NSFileManager *fileManager = [NSFileManager defaultManager];
     unsigned long long totalSize = 0;
-    BOOL isDir = NO;
-    if (![fileManager fileExistsAtPath:directoryPath isDirectory:&isDir] || !isDir) {
-        return 0;
-    }
-    NSError *error = nil;
-    NSArray<NSString *> *contents = [fileManager contentsOfDirectoryAtPath:directoryPath error:&error];
-    if (error) return 0;
-    for (NSString *item in contents) {
-        if ([item hasPrefix:@"."]) continue;
-        NSString *fullPath = [directoryPath stringByAppendingPathComponent:item];
-        // 跳过符号链接，防止递归死循环
-        NSDictionary *lstatAttrs = [fileManager attributesOfItemAtPath:fullPath error:nil];
-        NSString *fileType = lstatAttrs[NSFileType];
-        if ([fileType isEqualToString:NSFileTypeSymbolicLink]) {
+
+    NSURL *directoryURL = [NSURL fileURLWithPath:directoryPath];
+
+    NSArray<NSURLResourceKey> *keys = @[NSURLIsDirectoryKey, NSURLIsSymbolicLinkKey, NSURLFileSizeKey];
+
+    NSDirectoryEnumerator *enumerator = [fileManager enumeratorAtURL:directoryURL
+                                          includingPropertiesForKeys:keys
+                                                             options:NSDirectoryEnumerationSkipsHiddenFiles
+                                                        errorHandler:^BOOL(NSURL *url, NSError *error) {
+        NSLog(@"Error enumerating %@: %@", url.path, error);
+        return YES;
+    }];
+
+    for (NSURL *fileURL in enumerator) {
+        NSError *resourceError;
+        NSDictionary<NSURLResourceKey, id> *resourceValues = [fileURL resourceValuesForKeys:keys error:&resourceError];
+
+        if (resourceError) {
+            NSLog(@"Error getting resource values for %@: %@", fileURL.path, resourceError);
             continue;
         }
-        BOOL isSubDir = NO;
-        @try {
-            if ([fileManager fileExistsAtPath:fullPath isDirectory:&isSubDir]) {
-                if (isSubDir) {
-                    totalSize += [self directorySizeAtPath:fullPath];
-                } else {
-                    NSDictionary *attrs = [fileManager attributesOfItemAtPath:fullPath error:nil];
-                    totalSize += attrs ? [attrs fileSize] : 0;
-                }
-            }
-        } @catch (__unused NSException *exception) {
-            // 忽略异常，防止递归卡死
+
+        NSNumber *isDirectory = resourceValues[NSURLIsDirectoryKey];
+        NSNumber *isSymbolicLink = resourceValues[NSURLIsSymbolicLinkKey];
+        if (isDirectory.boolValue || isSymbolicLink.boolValue) {
             continue;
+        }
+        
+        NSNumber *fileSize = resourceValues[NSURLFileSizeKey];
+        if (fileSize) {
+            totalSize += fileSize.unsignedLongLongValue;
+        } else {
+            NSLog(@"Missing file size for %@", fileURL.path);
         }
     }
     return totalSize;
@@ -260,40 +264,40 @@
 + (void)removeAllContentsAtPath:(NSString *)directoryPath {
     NSFileManager *fileManager = [NSFileManager defaultManager];
     BOOL isDir = NO;
+    
     if (![fileManager fileExistsAtPath:directoryPath isDirectory:&isDir] || !isDir) {
+        NSLog(@"[CacheClean] Path is not a directory or does not exist: %@", directoryPath);
         return;
     }
-    NSError *error = nil;
-    NSArray<NSString *> *contents = [fileManager contentsOfDirectoryAtPath:directoryPath error:&error];
-    if (error) return;
-    for (NSString *item in contents) {
-        if ([item hasPrefix:@"."]) continue;
-        NSString *fullPath = [directoryPath stringByAppendingPathComponent:item];
-        BOOL isSubDir = NO;
-        if ([fileManager fileExistsAtPath:fullPath isDirectory:&isSubDir]) {
-            if (isSubDir) {
-                [self removeAllContentsAtPath:fullPath];
-                // 删除空文件夹本身
-                [fileManager removeItemAtPath:fullPath error:nil];
-            } else {
-                [fileManager removeItemAtPath:fullPath error:nil];
-            }
+    
+    NSURL *directoryURL = [NSURL fileURLWithPath:directoryPath];
+    
+    NSDirectoryEnumerator *enumerator = [fileManager enumeratorAtURL:directoryURL
+                                          includingPropertiesForKeys:@[NSURLIsDirectoryKey, NSURLIsSymbolicLinkKey]
+                                                             options:NSDirectoryEnumerationSkipsHiddenFiles
+                                                        errorHandler:^BOOL(NSURL *url, NSError *enumError) {
+        NSLog(@"[CacheClean] Error enumerating directory %@: %@", url, enumError);
+        return YES;
+    }];
+    
+    NSMutableArray<NSURL *> *itemsToDelete = [NSMutableArray array];
+    for (NSURL *itemURL in enumerator) {
+        NSNumber *isSymbolicLink;
+        [itemURL getResourceValue:&isSymbolicLink forKey:NSURLIsSymbolicLinkKey error:nil];
+        if ([isSymbolicLink boolValue]) {
+            continue;
+        }
+        [itemsToDelete addObject:itemURL];
+    }
+    
+    for (NSURL *itemURL in [itemsToDelete reverseObjectEnumerator]) {
+        NSError *removeError = nil;
+        if ([fileManager removeItemAtURL:itemURL error:&removeError]) {
+            // NSLog(@"[CacheClean] Successfully removed: %@", itemURL.lastPathComponent);
+        } else {
+            NSLog(@"[CacheClean] Error removing %@: %@", itemURL.path, removeError);
         }
     }
-}
-
-+ (NSString *)cacheDirectory {
-    NSString *tmp = NSTemporaryDirectory();
-    NSString *cacheDir = [tmp stringByAppendingPathComponent:@"DYYY"];
-    NSFileManager *fm = [NSFileManager defaultManager];
-    if (![fm fileExistsAtPath:cacheDir]) {
-        [fm createDirectoryAtPath:cacheDir withIntermediateDirectories:YES attributes:nil error:nil];
-    }
-    return cacheDir;
-}
-
-+ (void)clearCacheDirectory {
-    [self removeAllContentsAtPath:[self cacheDirectory]];
 }
 
 + (NSString *)cachePathForFilename:(NSString *)filename {
