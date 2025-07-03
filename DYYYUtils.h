@@ -148,6 +148,23 @@ NSString * _Nullable cleanShareURL(NSString * _Nullable url);
 UIViewController * _Nullable topView(void);
 
 /**
+ * 判断视图是否包含指定类型的子视图
+ */
+BOOL viewContainsSubviewOfClass(UIView * _Nullable view, Class _Nullable viewClass);
+
+/** 判断是否为右侧互动区域 */
+BOOL isRightInteractionStack(UIView * _Nullable stackView);
+
+/** 判断是否为左侧互动区域 */
+BOOL isLeftInteractionStack(UIView * _Nullable stackView);
+
+/** 在视图控制器层级中查找指定类的控制器 */
+UIViewController * _Nullable findViewControllerOfClass(UIViewController * _Nullable rootVC, Class _Nullable targetClass);
+
+/** 根据设置应用顶栏透明度 */
+void applyTopBarTransparency(UIView * _Nullable topBar);
+
+/**
  * 递归将任意对象转换为 JSON 可序列化对象
  */
 id DYYYJSONSafeObject(id _Nullable obj);
