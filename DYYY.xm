@@ -6194,10 +6194,11 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 %group BDMultiContentImageViewGroup
 %hook BDMultiContentContainer_ImageContentView
 - (void)layoutSubviews {
-        CGRect currentFrame = self.frame;
+        UIView *view = (UIView *)self;
+        CGRect currentFrame = view.frame;
         %orig;
         if (DYYYGetBool(@"DYYYisEnableCommentBlur")) {
-                self.frame = currentFrame;
+                view.frame = currentFrame;
         }
 }
 %end
