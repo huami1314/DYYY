@@ -5055,25 +5055,6 @@ static CGFloat customTabBarHeight() {
 				}
 			}
 		}
-
-		NSString *className = NSStringFromClass([self class]);
-		if ([className isEqualToString:@"AWECommentInputViewSwiftImpl.CommentInputContainerView"]) {
-			for (UIView *subview in self.subviews) {
-				if ([subview isKindOfClass:[UIView class]] && subview.backgroundColor) {
-					CGFloat red = 0, green = 0, blue = 0, alpha = 0;
-					[subview.backgroundColor getRed:&red green:&green blue:&blue alpha:&alpha];
-
-					if ((red == 22 / 255.0 && green == 22 / 255.0 && blue == 22 / 255.0) || (red == 1.0 && green == 1.0 && blue == 1.0)) {
-						float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
-						if (userTransparency <= 0 || userTransparency > 1) {
-							userTransparency = 0.95;
-						}
-						[DYYYUtils applyBlurEffectToView:subview transparency:userTransparency blurViewTag:999];
-						[DYYYUtils clearBackgroundRecursivelyInView:subview];
-					}
-				}
-			}
-		}
 	}
 
 	if (DYYYGetBool(@"DYYYisEnableCommentBarBlur")) {
@@ -5097,6 +5078,24 @@ static CGFloat customTabBarHeight() {
 							[DYYYUtils clearBackgroundRecursivelyInView:innerSubview];
 							break;
 						}
+					}
+				}
+			}
+		}
+		NSString *className = NSStringFromClass([self class]);
+		if ([className isEqualToString:@"AWECommentInputViewSwiftImpl.CommentInputContainerView"]) {
+			for (UIView *subview in self.subviews) {
+				if ([subview isKindOfClass:[UIView class]] && subview.backgroundColor) {
+					CGFloat red = 0, green = 0, blue = 0, alpha = 0;
+					[subview.backgroundColor getRed:&red green:&green blue:&blue alpha:&alpha];
+
+					if ((red == 22 / 255.0 && green == 22 / 255.0 && blue == 22 / 255.0) || (red == 1.0 && green == 1.0 && blue == 1.0)) {
+						float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
+						if (userTransparency <= 0 || userTransparency > 1) {
+							userTransparency = 0.95;
+						}
+						[DYYYUtils applyBlurEffectToView:subview transparency:userTransparency blurViewTag:999];
+						[DYYYUtils clearBackgroundRecursivelyInView:subview];
 					}
 				}
 			}
