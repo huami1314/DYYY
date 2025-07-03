@@ -303,6 +303,32 @@
     }
 }
 
+// MARK: - Cache Utilities
+
++ (NSString *)cacheDirectory {
+    NSString *tmpDir = NSTemporaryDirectory();
+    if (!tmpDir) {
+        tmpDir = @"/tmp";
+    }
+    NSString *cacheDir = [tmpDir stringByAppendingPathComponent:@"DYYY"];
+
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    BOOL isDir = NO;
+    if (![fileManager fileExistsAtPath:cacheDir isDirectory:&isDir] || !isDir) {
+        [fileManager createDirectoryAtPath:cacheDir
+               withIntermediateDirectories:YES
+                                attributes:nil
+                                     error:nil];
+    }
+
+    return cacheDir;
+}
+
++ (void)clearCacheDirectory {
+    NSString *cacheDir = [self cacheDirectory];
+    [self removeAllContentsAtPath:cacheDir];
+}
+
 + (NSString *)cachePathForFilename:(NSString *)filename {
     return [[self cacheDirectory] stringByAppendingPathComponent:filename];
 }
