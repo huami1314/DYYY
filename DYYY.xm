@@ -338,10 +338,8 @@
 
 - (void)handleShowSliderPanGesture:(id)gr {
 	if (DYYYGetBool(@"DYYYDisableSidebarGesture")) {
-		// 禁用侧边栏手势
 		return;
 	}
-	// 如果没有禁用侧边栏手势，则执行原有逻辑
 	%orig(gr);
 }
 
@@ -6217,7 +6215,7 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 %end
 %end
 
-// Swift 红包类初始化
+// Swift 类初始化
 %ctor {
 
 	// 初始化红包激励挂件容器视图类组
@@ -6253,7 +6251,7 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 	}
 }
 
-// 隐藏键盘ai
+// 隐藏键盘 AI
 static __weak UIView *cachedHideView = nil;
 static void hideParentViewsSubviews(UIView *view) {
 	if (!view)
