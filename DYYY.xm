@@ -1687,31 +1687,11 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 
 %new
 - (void)setupBlurEffectForNotificationView {
-	UIView *container = nil;
 	for (UIView *subview in self.subviews) {
 		if ([NSStringFromClass([subview class]) containsString:@"AWEInnerNotificationContainerView"]) {
-			container = subview;
+			[self applyBlurEffectToView:subview];
 			break;
 		}
-	}
-
-	if (!container) {
-		return;
-	}
-
-	UIVisualEffectView *existingBlur = (UIVisualEffectView *)[container viewWithTag:999];
-	if (!existingBlur) {
-		[self applyBlurEffectToView:container];
-	} else {
-		BOOL isDarkMode = [DYYYUtils isDarkMode];
-		UIBlurEffectStyle blurStyle = isDarkMode ? UIBlurEffectStyleDark : UIBlurEffectStyleLight;
-		existingBlur.effect = [UIBlurEffect effectWithStyle:blurStyle];
-
-		float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
-		if (userTransparency <= 0 || userTransparency > 1) {
-			userTransparency = 0.9;
-		}
-		existingBlur.alpha = userTransparency;
 	}
 }
 
@@ -1750,7 +1730,7 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 
 	float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
 	if (userTransparency <= 0 || userTransparency > 1) {
-		userTransparency = 0.9;
+		userTransparency = 0.5;
 	}
 
 	blurView.alpha = userTransparency;
@@ -1769,30 +1749,23 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 			UILabel *label = (UILabel *)subview;
 			NSString *text = label.text;
 
-			float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
-			if (userTransparency <= 0 || userTransparency > 1) {
-				userTransparency = 0.9;
+			if (![text isEqualToString:@"回复"] && ![text isEqualToString:@"查看"] && ![text isEqualToString:@"续火花"]) {
+				label.textColor = [UIColor whiteColor];
 			}
-
-			[DYYYUtils applyBlurEffectToView:subview transparency:userTransparency blurViewTag:999];
-			[DYYYUtils clearBackgroundRecursivelyInView:subview];
-
-			// 定义排除 Block
-			NSSet *excludedTexts = [NSSet setWithObjects:@"回复", @"查看", @"续火花", nil];
-			BOOL (^excludeBlock)(UIView *) = ^BOOL(UIView *currentView) {
-			  if ([currentView isKindOfClass:[UILabel class]]) {
-				  UILabel *label = (UILabel *)currentView;
-				  if (label.text && [excludedTexts containsObject:label.text]) {
-					  return YES;
-				  }
-			  }
-			  return NO;
-			};
-			// 调用新的通用方法设置文本颜色，并传入排除 Block
-			[DYYYUtils applyTextColorRecursively:[UIColor whiteColor] inView:subview shouldExcludeViewBlock:excludeBlock];
-
-			break;
 		}
+		[self setLabelsColorWhiteInView:subview];
+	}
+}
+
+%new
+- (void)clearBackgroundRecursivelyInView:(UIView *)view {
+	for (UIView *subview in view.subviews) {
+		if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == 999 && [subview isKindOfClass:[UIButton class]]) {
+			continue;
+		}
+		subview.backgroundColor = [UIColor clearColor];
+		subview.opaque = NO;
+		[self clearBackgroundRecursivelyInView:subview];
 	}
 }
 
