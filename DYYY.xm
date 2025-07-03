@@ -6190,14 +6190,30 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 %end
 %end
 
+// Comment image view scaling fix when comment blur is enabled
+%group BDMultiContentImageViewGroup
+%hook BDMultiContentContainer_ImageContentView
+- (void)setFrame:(CGRect)frame {
+        if (DYYYGetBool(@"DYYYisEnableCommentBlur")) {
+                return; // keep original frame when comment blur is active
+        }
+        %orig(frame);
+}
+%end
+%end
+
 // Swift 红包类初始化
 %ctor {
 
 	// 初始化红包激励挂件容器视图类组
-	Class incentivePendantClass = objc_getClass("AWEIncentiveSwiftImplDOUYINLite.IncentivePendantContainerView");
-	if (incentivePendantClass) {
-		%init(IncentivePendantGroup, AWEIncentiveSwiftImplDOUYINLite_IncentivePendantContainerView = incentivePendantClass);
-	}
+        Class incentivePendantClass = objc_getClass("AWEIncentiveSwiftImplDOUYINLite.IncentivePendantContainerView");
+        if (incentivePendantClass) {
+                %init(IncentivePendantGroup, AWEIncentiveSwiftImplDOUYINLite_IncentivePendantContainerView = incentivePendantClass);
+        }
+        Class imageContentClass = objc_getClass("BDMultiContentContainer.ImageContentView");
+        if (imageContentClass) {
+                %init(BDMultiContentImageViewGroup, BDMultiContentContainer_ImageContentView = imageContentClass);
+        }
 }
 
 %ctor {
