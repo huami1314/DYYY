@@ -6190,6 +6190,33 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 %end
 %end
 
+// View scaling fix when comment blur is enabled
+%group BDMultiContentImageViewGroup
+%hook BDMultiContentContainer_ImageContentView
+
+- (void)setTransform:(CGAffineTransform)transform {
+	if (DYYYGetBool(@"DYYYisEnableCommentBlur")) {
+		return;
+	}
+	%orig(transform);
+}
+
+%end
+%end
+
+%group BDMultiContentVideoViewGroup
+%hook BDMultiContentContainer_VideoContentView
+
+- (void)setTransform:(CGAffineTransform)transform {
+	if (DYYYGetBool(@"DYYYisEnableCommentBlur")) {
+		return;
+	}
+	%orig(transform);
+}
+
+%end
+%end
+
 // Swift 红包类初始化
 %ctor {
 
@@ -6197,6 +6224,14 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 	Class incentivePendantClass = objc_getClass("AWEIncentiveSwiftImplDOUYINLite.IncentivePendantContainerView");
 	if (incentivePendantClass) {
 		%init(IncentivePendantGroup, AWEIncentiveSwiftImplDOUYINLite_IncentivePendantContainerView = incentivePendantClass);
+	}
+	Class imageContentClass = objc_getClass("BDMultiContentContainer.ImageContentView");
+	if (imageContentClass) {
+		%init(BDMultiContentImageViewGroup, BDMultiContentContainer_ImageContentView = imageContentClass);
+	}
+	Class videoContentClass = objc_getClass("BDMultiContentContainer.VideoContentView");
+	if (videoContentClass) {
+		%init(BDMultiContentVideoViewGroup, BDMultiContentContainer_VideoContentView = videoContentClass);
 	}
 }
 
