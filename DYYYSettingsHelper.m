@@ -61,6 +61,7 @@
               @"DYYYEnableNotificationTransparency" : @[ @"DYYYNotificationCornerRadius" ],
               @"DYYYEnableFloatSpeedButton" : @[ @"DYYYAutoRestoreSpeed", @"DYYYSpeedButtonShowX", @"DYYYSpeedButtonSize", @"DYYYSpeedSettings" ],
               @"DYYYEnableFloatClearButton" : @[ @"DYYYClearButtonIcon", @"DYYYEnableFloatClearButtonSize", @"DYYYEnabshijianjindu", @"DYYYHideTimeProgress", @"DYYYHideDanmaku", @"DYYYHideSlider", @"DYYYHideTabBar", @"DYYYHideSpeed", @"DYYYHideChapter" ],
+              @"DYYYisEnableModernPanel" : @[ @"DYYYisLongPressPanelBlur", @"DYYYisLongPressPanelDark" ],
           },
 
           // ===== 条件依赖配置 =====
@@ -78,15 +79,13 @@
               @"DYYYHideTimeProgress" : @[ @"DYYYEnabshijianjindu" ],
               @"DYYYHideLOTAnimationView" : @[ @"DYYYHideFollowPromptView" ],
               @"DYYYHideFollowPromptView" : @[ @"DYYYHideLOTAnimationView" ],
-              @"DYYYisEnableModern" : @[ @"DYYYisEnableModernLight" ],
-              @"DYYYisEnableModernLight" : @[ @"DYYYisEnableModern" ],
               @"DYYYDanmuRainbowRotating" : @[ @"DYYYdanmuColor" ],
               @"DYYYEnabsuijiyanse" : @[ @"DYYYLabelColor" ]
           },
 
           // ===== 互斥激活配置 =====
           // 当源设置项关闭时，目标设置项才能激活
-          @"mutualExclusive" : @{
+          @"mutualExclusions" : @{
               @"DYYYEnableDoubleOpenComment" : @[ @"DYYYEnableDoubleOpenAlertController" ],
               @"DYYYEnableDoubleOpenAlertController" : @[ @"DYYYEnableDoubleOpenComment" ],
               @"DYYYEnabshijianjindu" : @[ @"DYYYHideTimeProgress" ],
@@ -101,6 +100,13 @@
           // 基于字符串值的依赖关系
           @"valueDependencies" :
               @{@"DYYYInterfaceDownload" : @{@"valueType" : @"string", @"condition" : @"isNotEmpty", @"dependents" : @[ @"DYYYShowAllVideoQuality", @"DYYYDoubleInterfaceDownload" ]}},
+
+          // ===== 同步配置 =====
+          // 当源设置项打开时目标设置项也同步打开，当源设置项关闭时目标设置项也同步关闭
+          @"synchronizations" : @{
+              @"DYYYisLongPressPanelBlur" : @[ @"DYYYisLongPressPanelDark" ],
+              @"DYYYisLongPressPanelDark" : @[ @"DYYYisLongPressPanelBlur" ],
+          },
       };
     });
 
@@ -149,7 +155,7 @@ static NSArray *allSettingsViewControllers(void) {
 + (void)applyDependencyRulesForItem:(AWESettingItemModel *)item {
     NSDictionary *dependencies = [self settingsDependencyConfig][@"dependencies"];
     NSDictionary *conditionalDependencies = [self settingsDependencyConfig][@"conditionalDependencies"];
-    NSDictionary *mutualExclusive = [self settingsDependencyConfig][@"mutualExclusive"];
+    NSDictionary *mutualExclusions = [self settingsDependencyConfig][@"mutualExclusions"];
     NSDictionary *valueDependencies = [self settingsDependencyConfig][@"valueDependencies"];
 
     BOOL enableState = YES;
@@ -207,8 +213,8 @@ static NSArray *allSettingsViewControllers(void) {
         }
     }
 
-    for (NSString *sourceKey in mutualExclusive) {
-        NSArray *exclusiveItems = mutualExclusive[sourceKey];
+    for (NSString *sourceKey in mutualExclusions) {
+        NSArray *exclusiveItems = mutualExclusions[sourceKey];
         if ([exclusiveItems containsObject:item.identifier] && settingActive(sourceKey)) {
             enableState = NO;
             break;
@@ -220,6 +226,8 @@ static NSArray *allSettingsViewControllers(void) {
 
 + (void)handleConflictsAndDependenciesForSetting:(NSString *)identifier isEnabled:(BOOL)isEnabled {
     NSDictionary *conflicts = [self settingsDependencyConfig][@"conflicts"];
+    NSDictionary *synchronizations = [self settingsDependencyConfig][@"synchronizations"];
+
     if (isEnabled) {
         NSArray *conflictingItems = conflicts[identifier];
         if (conflictingItems) {
@@ -227,6 +235,15 @@ static NSArray *allSettingsViewControllers(void) {
                 [self updateConflictingItemUIState:conflictItem withValue:NO];
                 [self updateDependentItemsForSetting:conflictItem value:@(NO)];
             }
+        }
+    }
+
+    // Handle synchronizations rules
+    NSArray *synchronizedItems = synchronizations[identifier];
+    if (synchronizedItems) {
+        for (NSString *syncItem in synchronizedItems) {
+            [self updateConflictingItemUIState:syncItem withValue:isEnabled];
+            [self updateDependentItemsForSetting:syncItem value:@(isEnabled)];
         }
     }
 
@@ -263,9 +280,10 @@ static NSArray *allSettingsViewControllers(void) {
 + (void)updateDependentItemsForSetting:(NSString *)identifier value:(id)value {
     NSDictionary *dependencies = [self settingsDependencyConfig][@"dependencies"];
     NSDictionary *conditionalDependencies = [self settingsDependencyConfig][@"conditionalDependencies"];
-    NSDictionary *mutualExclusive = [self settingsDependencyConfig][@"mutualExclusive"];
+    NSDictionary *mutualExclusions = [self settingsDependencyConfig][@"mutualExclusions"];
     NSDictionary *valueDependencies = [self settingsDependencyConfig][@"valueDependencies"];
     NSDictionary *conflicts = [self settingsDependencyConfig][@"conflicts"];
+    NSDictionary *synchronizations = [self settingsDependencyConfig][@"synchronizations"];
 
     NSArray *allVCs = allSettingsViewControllers();
     for (AWESettingBaseViewController *settingsVC in allVCs) {
@@ -282,7 +300,7 @@ static NSArray *allSettingsViewControllers(void) {
             [itemsToUpdate addObjectsFromArray:directDependents];
         }
 
-        NSArray *exclusiveItems = mutualExclusive[identifier];
+        NSArray *exclusiveItems = mutualExclusions[identifier];
         if (exclusiveItems) {
             [itemsToUpdate addObjectsFromArray:exclusiveItems];
         }
@@ -290,6 +308,12 @@ static NSArray *allSettingsViewControllers(void) {
         NSArray *conflictItems = conflicts[identifier];
         if (conflictItems) {
             [itemsToUpdate addObjectsFromArray:conflictItems];
+        }
+
+        // Add synchronized items to the update list
+        NSArray *itemsSynchronizedByMe = synchronizations[identifier];
+        if (itemsSynchronizedByMe) {
+            [itemsToUpdate addObjectsFromArray:itemsSynchronizedByMe];
         }
 
         for (NSString *targetItem in conditionalDependencies) {

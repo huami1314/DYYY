@@ -90,7 +90,7 @@
         [vc setUseCardUIStyle:YES];
     }
     
-    UIViewController *topVC = topView();
+    UIViewController *topVC = [DYYYUtils topView];
     if (topVC
         && [vc respondsToSelector:@selector(presentOnViewController:)]
 	    && !topVC.presentedViewController
