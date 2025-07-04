@@ -192,6 +192,7 @@
         [self clearBackgroundRecursivelyInView:subview];
     }
 }
+
 + (void)showToast:(NSString *)text {
   Class toastClass = NSClassFromString(@"DUXToast");
   if (toastClass && [toastClass respondsToSelector:@selector(showText:)]) {
