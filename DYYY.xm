@@ -639,6 +639,16 @@
 	((UIView *)orig).tag = DYYY_IGNORE_GLOBAL_ALPHA_TAG;
 
 	return orig;
+
+
+}
+
+- (void)setAlpha:(CGFloat)alpha {
+	if(DYYYGetBool(@"DYYYCommentShowDanmaku")){
+		return;
+	} else{
+		%orig(alpha);
+	}
 }
 
 %end

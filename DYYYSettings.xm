@@ -2393,6 +2393,11 @@ extern "C"
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_comment_outlined_20"},
+		 @{@"identifier" : @"DYYYCommentShowDanmaku",
+		    @"title" : @"查看评论显示弹幕",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_comment_outlined_20"},
 		  @{
 			  @"identifier" : @"DYYYDefaultEnterWorks",
 			  @"title" : @"资料默认进入作品",
