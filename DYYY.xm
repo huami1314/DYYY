@@ -1931,11 +1931,8 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 	if (forceBlur && forceDark) {
 		return 1;
 	} else if (!forceBlur && !forceDark) {
-		return 2;
-	} else if (!forceBlur && forceDark) {
-		return 3;
-	} else { // forceBlur && !forceDark
-		return 4;
+		BOOL isDarkMode = [DYYYUtils isDarkMode];
+		return isDarkMode ? 1 : 2;
 	}
 }
 %end
@@ -1952,11 +1949,8 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 	if (forceBlur && forceDark) {
 		return 1;
 	} else if (!forceBlur && !forceDark) {
-		return 2;
-	} else if (!forceBlur && forceDark) {
-		return 3;
-	} else { // forceBlur && !forceDark
-		return 4;
+		BOOL isDarkMode = [DYYYUtils isDarkMode];
+		return isDarkMode ? 1 : 2;
 	}
 }
 %end
