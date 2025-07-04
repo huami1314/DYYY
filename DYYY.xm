@@ -2505,9 +2505,9 @@ static AWEIMReusableCommonCell *currentCell;
 	if (DYYYGetBool(@"DYYYHideHisShop")) {
 		UIView *parentView = self.superview;
 		if (parentView) {
-			parentView.hidden = YES;
+			[parentView removeFromSuperview];
 		} else {
-			self.hidden = YES;
+			[self removeFromSuperview];
 		}
 	}
 }
@@ -3282,7 +3282,7 @@ static AWEIMReusableCommonCell *currentCell;
 	if ((hideFeedAnchor && !isPoi) || (hideLocation && isPoi)) {
 		UIView *parentView = self.superview;
 		if (parentView) {
-			parentView.hidden = YES;
+			[parentView removeFromSuperview];
 		}
 	}
 }
@@ -3503,6 +3503,24 @@ static AWEIMReusableCommonCell *currentCell;
 	}
 
 	%orig(hidden);
+}
+%end
+
+%hook AWEHomePageBubbleLiveHeadLabelContentView
+- (void)layoutSubviews {
+	%orig;
+	if (DYYYGetBool(@"DYYYHideConcernCapsuleView")) {
+		UIView *parentView = self.superview;
+		UIView *grandparentView = parentView.superview;
+
+		if (grandparentView) {
+			[grandparentView removeFromSuperview];
+		} else if (parentView) {
+			[parentView removeFromSuperview];
+		} else {
+			[self removeFromSuperview];
+		}
+	}
 }
 %end
 
@@ -4175,6 +4193,15 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 	%orig;
 	if (DYYYGetBool(@"DYYYHideLivePopup")) {
+		[self removeFromSuperview];
+	}
+}
+%end
+
+%hook IESLiveHotMessageView
+- (void)layoutSubviews {
+	%orig;
+	if (DYYYGetBool(@"DYYYHideLiveHotMessage")) {
 		[self removeFromSuperview];
 	}
 }

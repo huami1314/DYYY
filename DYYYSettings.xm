@@ -1374,6 +1374,14 @@ extern "C"
 			  @"imageName" : @"ic_eyeslash_outlined_16"
 		  },
 		  @{
+			  @"identifier" : @"DYYYHideLiveHotMessage",
+			  @"title" : @"隐藏大家在说",
+			  @"subTitle" : @"隐藏出现在弹幕顶部的大家说热搜词",
+			  @"detail" : @"",
+			  @"cellType" : @37,
+			  @"imageName" : @"ic_eyeslash_outlined_16"
+		  },
+		  @{
 			  @"identifier" : @"DYYYHideStickerView",
 			  @"title" : @"隐藏文字贴纸",
 			  @"subTitle" : @"隐藏主播设置的预约直播和文字贴纸",
