@@ -58,7 +58,7 @@ static void DYYYQueueSync(dispatch_block_t block) {
  */
 + (BOOL)isPatchMode {
     NSString *savedMode = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYABTestModeString"];
-    return ![savedMode isEqualToString:@"替换模式：忽略原配置，写入新数据"];
+    return ![savedMode isEqualToString:@"替换模式：忽略原配置，使用新数据"];
 }
 
 /**
