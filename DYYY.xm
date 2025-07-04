@@ -2779,14 +2779,6 @@ static AWEIMReusableCommonCell *currentCell;
 		}
 	}
 }
-- (void)setBackgroundColor:(UIColor *)backgroundColor {
-	// 禁用背景色设置
-	if (DYYYGetBool(@"DYYYHideGradient")) {
-		%orig(UIColor.clearColor);
-	} else {
-		%orig(backgroundColor);
-	}
-}
 %end
 
 // 隐藏我的添加朋友
