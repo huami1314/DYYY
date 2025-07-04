@@ -204,54 +204,54 @@ static CGFloat gStartVal = 0.0;
 @end
 
 @interface AWEDanmakuContentLabel : UILabel
-@property (nonatomic, assign) long long type;
-@property (nonatomic, copy) NSString *danmakuText;
-@property (nonatomic, copy) NSArray *danmakuStyleList;
-@property (nonatomic, strong) UIColor *strokeColor;
-@property (nonatomic, assign) double strokeWidth;
-- (id)colorFromHexString:(id)arg0 baseColor:(id)arg1 ;
-- (void)setTextColor:(id)arg0 ;
-- (id)initWithFrame:(id)arg0 textColor:(id)arg1 type:(long long)arg2 ;
+@property(nonatomic, assign) long long type;
+@property(nonatomic, copy) NSString *danmakuText;
+@property(nonatomic, copy) NSArray *danmakuStyleList;
+@property(nonatomic, strong) UIColor *strokeColor;
+@property(nonatomic, assign) double strokeWidth;
+- (id)colorFromHexString:(id)arg0 baseColor:(id)arg1;
+- (void)setTextColor:(id)arg0;
+- (id)initWithFrame:(id)arg0 textColor:(id)arg1 type:(long long)arg2;
 - (id)danmakuText;
-- (void)setDanmakuText:(id)arg0 ;
+- (void)setDanmakuText:(id)arg0;
 - (id)danmakuStyleList;
-- (void)drawUnderLineWithStart:(long long)arg0 len:(long long)arg1 ;
-- (void)setDanmakuStyleList:(id)arg0 ;
+- (void)drawUnderLineWithStart:(long long)arg0 len:(long long)arg1;
+- (void)setDanmakuStyleList:(id)arg0;
 - (double)strokeWidth;
 - (id)accessibilityLabel;
-- (void)setStrokeWidth:(double)arg0 ;
-- (void)setAccessibilityLabel:(id)arg0 ;
-- (void)setStrokeColor:(id)arg0 ;
+- (void)setStrokeWidth:(double)arg0;
+- (void)setAccessibilityLabel:(id)arg0;
+- (void)setStrokeColor:(id)arg0;
 - (id)strokeColor;
 - (long long)type;
-- (id)initWithFrame:(id)arg0 ;
-- (id)boundingRectForCharacterRange:(id)arg0 ;
-- (void)drawTextInRect:(id)arg0 ;
-- (void)setType:(long long)arg0 ;
+- (id)initWithFrame:(id)arg0;
+- (id)boundingRectForCharacterRange:(id)arg0;
+- (void)drawTextInRect:(id)arg0;
+- (void)setType:(long long)arg0;
 @end
 
 @interface XIGDanmakuPlayerView : UIView
 @end
 
 @interface AWEDanmakuItemTextInfo : NSObject
-@property (nonatomic, strong) NSAttributedString *danmakuText;
-@property (nonatomic, assign) id danmakuTextFrame;
-@property (nonatomic, assign) double strokeWidth;
-@property (nonatomic, strong) UIColor *strokeColor;
-@property (nonatomic, strong) UIFont *danmakuFont;
-@property (nonatomic, strong) UIColor *danmakuTextColor;
-- (id)colorFromHexStringForTextInfo:(id)arg0 ;
-- (void)setDanmakuFont:(id)arg0 ;
+@property(nonatomic, strong) NSAttributedString *danmakuText;
+@property(nonatomic, assign) id danmakuTextFrame;
+@property(nonatomic, assign) double strokeWidth;
+@property(nonatomic, strong) UIColor *strokeColor;
+@property(nonatomic, strong) UIFont *danmakuFont;
+@property(nonatomic, strong) UIColor *danmakuTextColor;
+- (id)colorFromHexStringForTextInfo:(id)arg0;
+- (void)setDanmakuFont:(id)arg0;
 - (id)danmakuFont;
 - (id)danmakuText;
-- (void)setDanmakuText:(id)arg0 ;
+- (void)setDanmakuText:(id)arg0;
 - (id)danmakuTextFrame;
-- (void)setDanmakuTextFrame:(id)arg0 ;
+- (void)setDanmakuTextFrame:(id)arg0;
 - (id)danmakuTextColor;
-- (void)setDanmakuTextColor:(id)arg0 ;
+- (void)setDanmakuTextColor:(id)arg0;
 - (double)strokeWidth;
-- (void)setStrokeWidth:(double)arg0 ;
-- (void)setStrokeColor:(id)arg0 ;
+- (void)setStrokeWidth:(double)arg0;
+- (void)setStrokeColor:(id)arg0;
 - (id)strokeColor;
 @end
 
@@ -1081,6 +1081,10 @@ static CGFloat gStartVal = 0.0;
 @interface IESLiveGameCPExplainCardContainerImpl : UIView
 @end
 @interface AWEPOILivePurchaseAtmosphereView : UIView
+@end
+@interface IESLiveHotMessageView : UIView
+@end
+@interface AWEHomePageBubbleLiveHeadLabelContentView : UIView
 @end
 
 // 隐藏状态栏

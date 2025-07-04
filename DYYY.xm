@@ -639,6 +639,16 @@
 	((UIView *)orig).tag = DYYY_IGNORE_GLOBAL_ALPHA_TAG;
 
 	return orig;
+
+
+}
+
+- (void)setAlpha:(CGFloat)alpha {
+	if(DYYYGetBool(@"DYYYCommentShowDanmaku")){
+		return;
+	} else{
+		%orig(alpha);
+	}
 }
 
 %end
@@ -2505,9 +2515,9 @@ static AWEIMReusableCommonCell *currentCell;
 	if (DYYYGetBool(@"DYYYHideHisShop")) {
 		UIView *parentView = self.superview;
 		if (parentView) {
-			parentView.hidden = YES;
+			[parentView removeFromSuperview];
 		} else {
-			self.hidden = YES;
+			[self removeFromSuperview];
 		}
 	}
 }
@@ -2767,14 +2777,6 @@ static AWEIMReusableCommonCell *currentCell;
 				}
 			}
 		}
-	}
-}
-- (void)setBackgroundColor:(UIColor *)backgroundColor {
-	// 禁用背景色设置
-	if (DYYYGetBool(@"DYYYHideGradient")) {
-		%orig(UIColor.clearColor);
-	} else {
-		%orig(backgroundColor);
 	}
 }
 %end
@@ -3282,7 +3284,7 @@ static AWEIMReusableCommonCell *currentCell;
 	if ((hideFeedAnchor && !isPoi) || (hideLocation && isPoi)) {
 		UIView *parentView = self.superview;
 		if (parentView) {
-			parentView.hidden = YES;
+			[parentView removeFromSuperview];
 		}
 	}
 }
@@ -3503,6 +3505,24 @@ static AWEIMReusableCommonCell *currentCell;
 	}
 
 	%orig(hidden);
+}
+%end
+
+%hook AWEHomePageBubbleLiveHeadLabelContentView
+- (void)layoutSubviews {
+	%orig;
+	if (DYYYGetBool(@"DYYYHideConcernCapsuleView")) {
+		UIView *parentView = self.superview;
+		UIView *grandparentView = parentView.superview;
+
+		if (grandparentView) {
+			[grandparentView removeFromSuperview];
+		} else if (parentView) {
+			[parentView removeFromSuperview];
+		} else {
+			[self removeFromSuperview];
+		}
+	}
 }
 %end
 
@@ -4175,6 +4195,15 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 	%orig;
 	if (DYYYGetBool(@"DYYYHideLivePopup")) {
+		[self removeFromSuperview];
+	}
+}
+%end
+
+%hook IESLiveHotMessageView
+- (void)layoutSubviews {
+	%orig;
+	if (DYYYGetBool(@"DYYYHideLiveHotMessage")) {
 		[self removeFromSuperview];
 	}
 }

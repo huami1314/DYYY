@@ -926,11 +926,14 @@ extern "C"
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_eyeslash_outlined_16"},
-		  @{@"identifier" : @"DYYYHideGradient",
-		    @"title" : @"隐藏遮罩效果",
-		    @"detail" : @"",
-		    @"cellType" : @6,
-		    @"imageName" : @"ic_eyeslash_outlined_16"}
+		  @{
+			@"identifier" : @"DYYYHideGradient",
+			@"title" : @"隐藏遮罩效果",
+			@"subTitle" : @"优化视频文案展开时出现的黑色背景遮罩效果，但可能对部分视频的文案可读性产生一定影响。",
+			@"detail" : @"",
+			@"cellType" : @37,
+			@"imageName" : @"ic_eyeslash_outlined_16"
+		  }
 	  ];
 
 	  for (NSDictionary *dict in videoUiSettings) {
@@ -1369,6 +1372,14 @@ extern "C"
 			  @"identifier" : @"DYYYHideLivePopup",
 			  @"title" : @"隐藏进场特效",
 			  @"subTitle" : @"隐藏会员用户进入直播间时出现在弹幕顶部的动画特效",
+			  @"detail" : @"",
+			  @"cellType" : @37,
+			  @"imageName" : @"ic_eyeslash_outlined_16"
+		  },
+		  @{
+			  @"identifier" : @"DYYYHideLiveHotMessage",
+			  @"title" : @"隐藏大家在说",
+			  @"subTitle" : @"隐藏出现在弹幕顶部的大家说热搜词",
 			  @"detail" : @"",
 			  @"cellType" : @37,
 			  @"imageName" : @"ic_eyeslash_outlined_16"
@@ -2382,6 +2393,11 @@ extern "C"
 		    @"imageName" : @"ic_thumbsup_outlined_20"},
 		  @{@"identifier" : @"DYYYEnableDoubleOpenComment",
 		    @"title" : @"启用双击打开评论",
+		    @"detail" : @"",
+		    @"cellType" : @6,
+		    @"imageName" : @"ic_comment_outlined_20"},
+		 @{@"identifier" : @"DYYYCommentShowDanmaku",
+		    @"title" : @"查看评论显示弹幕",
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_comment_outlined_20"},

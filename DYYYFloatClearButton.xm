@@ -17,6 +17,7 @@ void hideClearButton(void);
 
 static BOOL isInPlayInteractionVC = NO;
 static BOOL isCommentViewVisible = NO;
+static BOOL isPureViewVisible = NO;
 static BOOL isForceHidden = NO;
 static BOOL isAppActive = YES;
 static BOOL isInteractionViewVisible = NO;
@@ -85,7 +86,7 @@ void updateClearButtonVisibility() {
             return;
         }
         
-        BOOL shouldHide = isCommentViewVisible || isForceHidden;
+        BOOL shouldHide = isCommentViewVisible || isForceHidden || isPureViewVisible;
         if (hideButton.hidden != shouldHide) {
             hideButton.hidden = shouldHide;
         }
@@ -591,27 +592,32 @@ static void initTargetClassNames(void) {
 
 %hook AWECommentContainerViewController
 
-- (void)viewWillAppear:(BOOL)animated {
-    %orig;
-    isCommentViewVisible = YES;
-    updateClearButtonVisibility();
-}
-
 - (void)viewDidAppear:(BOOL)animated {
-    %orig;
-    isCommentViewVisible = YES;
-    updateClearButtonVisibility();
-}
-
-- (void)viewWillDisappear:(BOOL)animated {
-    %orig;
-    updateClearButtonVisibility();
+	%orig;
+	isCommentViewVisible = YES;
+	updateClearButtonVisibility();
 }
 
 - (void)viewDidDisappear:(BOOL)animated {
-    %orig;
-    isCommentViewVisible = NO;
-    updateClearButtonVisibility();
+	%orig;
+	isCommentViewVisible = NO;
+	updateClearButtonVisibility();
+}
+
+%end
+
+%hook AFDPureModePageContainerViewController
+
+- (void)viewDidAppear:(BOOL)animated {
+	%orig;
+	isPureViewVisible = YES;
+	updateClearButtonVisibility();
+}
+
+- (void)viewDidDisappear:(BOOL)animated {
+	%orig;
+	isPureViewVisible = NO;
+	updateClearButtonVisibility();
 }
 
 %end
@@ -699,7 +705,7 @@ static void initTargetClassNames(void) {
                                                          object:nil
                                                           queue:[NSOperationQueue mainQueue]
                                                      usingBlock:^(NSNotification * _Nonnull notification) {
-            if (isInteractionViewVisible && !isCommentViewVisible && !isForceHidden) {
+            if (isInteractionViewVisible && !isCommentViewVisible && !isForceHidden && !isPureViewVisible) {
                 updateClearButtonVisibility();
             }
         }];
