@@ -67,7 +67,7 @@
           // ===== 条件依赖配置 =====
           // 一些设置项依赖于多个其他设置项的复杂条件
           @"conditionalDependencies" : @{
-              @"DYYYCommentBlurTransparent" : @{@"condition" : @"OR", @"settings" : @[ @"DYYYisEnableCommentBlur", @"DYYYisEnableCommentBarBlur", @"DYYYEnableNotificationTransparency" ]},
+              @"DYYYCommentBlurTransparent" : @{@"condition" : @"OR", @"settings" : @[ @"DYYYisEnableCommentBlur", @"DYYYEnableNotificationTransparency" ]},
           },
 
           // ===== 冲突配置 =====

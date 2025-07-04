@@ -5081,33 +5081,6 @@ static CGFloat customTabBarHeight() {
 			}
 		}
 	}
-
-	if (DYYYGetBool(@"DYYYisEnableCommentBarBlur")) {
-		for (UIView *subview in self.subviews) {
-			if ([subview isKindOfClass:NSClassFromString(@"AWECommentInputViewSwiftImpl.CommentInputViewMiddleContainer")]) {
-				BOOL containsDanmu = NO;
-				for (UIView *innerSubviewCheck in subview.subviews) {
-					if ([innerSubviewCheck isKindOfClass:[UILabel class]] && [((UILabel *)innerSubviewCheck).text containsString:@"弹幕"]) {
-						containsDanmu = YES;
-						break;
-					}
-				}
-				if (!containsDanmu) {
-					for (UIView *innerSubview in subview.subviews) {
-						if ([innerSubview isKindOfClass:[UIView class]] && [innerSubview.backgroundColor isEqual:[UIColor clearColor]]) {
-							float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
-							if (userTransparency <= 0 || userTransparency > 1) {
-								userTransparency = 0.9;
-							}
-							[DYYYUtils applyBlurEffectToView:innerSubview transparency:userTransparency blurViewTag:999];
-							[DYYYUtils clearBackgroundRecursivelyInView:innerSubview];
-							break;
-						}
-					}
-				}
-			}
-		}
-	}
 }
 
 - (void)setFrame:(CGRect)frame {
