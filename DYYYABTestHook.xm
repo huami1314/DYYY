@@ -67,17 +67,17 @@ static void DYYYQueueSync(dispatch_block_t block) {
     if (savedMode) {
         if ([savedMode isEqualToString:DYYY_REMOTE_MODE_STRING] || [[savedMode lowercaseString] isEqualToString:@"remote"]) {
             if (s_fileMode) {
-                return ![[s_fileMode lowercaseString] isEqualToString:@"replace"];
+                return ![[s_fileMode lowercaseString] isEqualToString:@"DYYY_MODE_REPLACE"];
             }
             return YES;
         }
-        if ([savedMode isEqualToString:@"替换模式：忽略原配置，使用新数据"] || [[savedMode lowercaseString] isEqualToString:@"replace"]) {
+        if ([savedMode isEqualToString:@"替换模式：忽略原配置，使用新数据"] || [[savedMode lowercaseString] isEqualToString:@"DYYY_MODE_REPLACE"]) {
             return NO;
         }
         return YES;
     }
     if (s_fileMode) {
-        return ![[s_fileMode lowercaseString] isEqualToString:@"replace"];
+        return ![[s_fileMode lowercaseString] isEqualToString:@"DYYY_MODE_REPLACE"];
     }
     return YES;
 }
