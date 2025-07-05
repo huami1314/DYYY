@@ -5534,8 +5534,8 @@ static CGFloat currentScale = 1.0;
 
 %hook AWELandscapeFeedEntryView
 - (void)setCenter:(CGPoint)center {
-	if (DYYYGetBool(@"DYYYisEnableFullScreen") || DYYYGetBool(@"DYYYisEnableCommentBlur")) {
-		center.y += 60;
+	if (DYYYGetBool(@"DYYYisEnableFullScreen")) {
+		center.y += 50;
 	}
 
 	%orig(center);
