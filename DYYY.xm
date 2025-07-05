@@ -639,14 +639,12 @@
 	((UIView *)orig).tag = DYYY_IGNORE_GLOBAL_ALPHA_TAG;
 
 	return orig;
-
-
 }
 
 - (void)setAlpha:(CGFloat)alpha {
-	if(DYYYGetBool(@"DYYYCommentShowDanmaku")){
+	if (DYYYGetBool(@"DYYYCommentShowDanmaku")) {
 		return;
-	} else{
+	} else {
 		%orig(alpha);
 	}
 }
@@ -4257,8 +4255,8 @@ static AWEIMReusableCommonCell *currentCell;
 	BOOL filterHDR = DYYYGetBool(@"DYYYfilterFeedHDR");
 
 	BOOL shouldFilterAds = noAds && (self.hotSpotLynxCardModel || self.isAds);
-	BOOL shouldFilterRec = skipLive && (self.liveReason != nil);
 	BOOL shouldFilterHotSpot = skipHotSpot && self.hotSpotLynxCardModel;
+	BOOL shouldFilterRecLive = skipLive && (self.liveReason != nil);
 	BOOL shouldFilterHDR = NO;
 	BOOL shouldFilterLowLikes = NO;
 	BOOL shouldFilterKeywords = NO;
@@ -4286,7 +4284,7 @@ static AWEIMReusableCommonCell *currentCell;
 	NSString *filterUsers = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterUsers"];
 
 	// 检查是否需要过滤特定用户
-	if (self.shareRecExtra && filterUsers.length > 0 && self.author) {
+	if (self.shareRecExtra && ![self.shareRecExtra isEqual:@""] && filterUsers.length > 0 && self.author) {
 		NSArray *usersList = [filterUsers componentsSeparatedByString:@","];
 		NSString *currentShortID = self.author.shortID;
 		NSString *currentNickname = self.author.nickname;
@@ -4308,10 +4306,9 @@ static AWEIMReusableCommonCell *currentCell;
 		}
 	}
 
-	NSInteger filterLowLikesThreshold = DYYYGetInteger(@"DYYYfilterLowLikes");
-
 	// 只有当shareRecExtra不为空时才过滤点赞量低的视频和关键词
 	if (self.shareRecExtra && ![self.shareRecExtra isEqual:@""]) {
+		NSInteger filterLowLikesThreshold = DYYYGetInteger(@"DYYYfilterLowLikes");
 		// 过滤低点赞量视频
 		if (filterLowLikesThreshold > 0) {
 			AWESearchAwemeExtraModel *searchExtraModel = [self searchExtraModel];
@@ -4378,7 +4375,7 @@ static AWEIMReusableCommonCell *currentCell;
 			}
 		}
 	}
-	return shouldFilterAds || shouldFilterRec || shouldFilterHotSpot || shouldFilterHDR || shouldFilterLowLikes || shouldFilterKeywords || shouldFilterProp || shouldFilterTime || shouldFilterUser;
+	return shouldFilterAds || shouldFilterRecLive || shouldFilterHotSpot || shouldFilterHDR || shouldFilterLowLikes || shouldFilterKeywords || shouldFilterProp || shouldFilterTime || shouldFilterUser;
 }
 
 - (AWEECommerceLabel *)ecommerceBelowLabel {
@@ -4429,18 +4426,18 @@ static AWEIMReusableCommonCell *currentCell;
 %hook MTKView
 
 - (void)layoutSubviews {
-        %orig;
-        UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
-        Class playVCClass = NSClassFromString(@"AWEPlayVideoViewController");
-        if (vc && playVCClass && [vc isKindOfClass:playVCClass]) {
-                NSString *colorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYVideoBGColor"];
-                if (colorHex && colorHex.length > 0) {
-                        CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
-                        UIColor *customColor = [DYYYUtils colorFromSchemeHexString:colorHex targetWidth:screenWidth];
-                        if (customColor)
-                                self.backgroundColor = customColor;
-                }
-        }
+	%orig;
+	UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
+	Class playVCClass = NSClassFromString(@"AWEPlayVideoViewController");
+	if (vc && playVCClass && [vc isKindOfClass:playVCClass]) {
+		NSString *colorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYVideoBGColor"];
+		if (colorHex && colorHex.length > 0) {
+			CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
+			UIColor *customColor = [DYYYUtils colorFromSchemeHexString:colorHex targetWidth:screenWidth];
+			if (customColor)
+				self.backgroundColor = customColor;
+		}
+	}
 }
 
 %end
