@@ -3254,7 +3254,7 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
-// 隐藏昵称上方
+// 隐藏昵称上方元素
 %hook AWEFeedTemplateAnchorView
 
 - (void)layoutSubviews {
@@ -3276,7 +3276,10 @@ static AWEIMReusableCommonCell *currentCell;
 	if ((hideFeedAnchor && !isPoi) || (hideLocation && isPoi)) {
 		UIView *parentView = self.superview;
 		if (parentView) {
-			[parentView removeFromSuperview];
+			UIView *grandparentView = parentView.superview; // 获取祖父视图
+			if (grandparentView) { // 确保祖父视图存在
+				[grandparentView removeFromSuperview]; // 将祖父视图从其父视图中移除
+			}
 		}
 	}
 }
