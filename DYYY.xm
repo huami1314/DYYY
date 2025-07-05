@@ -4202,15 +4202,6 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
-%hook PlatformCanvasView
-- (void)layoutSubviews {
-	%orig;
-	if (DYYYGetBool(@"DYYYHideLivePopup")) {
-		[self removeFromSuperview];
-	}
-}
-%end
-
 // 屏蔽青少年模式弹窗
 %hook AWETeenModeAlertView
 - (BOOL)show {
