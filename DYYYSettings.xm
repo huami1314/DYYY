@@ -1983,9 +1983,9 @@ extern "C"
   };
 
   void (^refreshConfigConflictState)(void) = ^{
-    BOOL useRemote = [[NSUserDefaults standardUserDefaults] boolForKey:DYYY_REMOTE_CONFIG_FLAG_KEY];
+    BOOL remoteMode = [DYYYABTestHook isRemoteMode];
     BOOL localLoaded = [DYYYABTestHook isLocalConfigLoaded];
-    if (useRemote) {
+    if (remoteMode) {
         if (loadConfigItemRef) { loadConfigItemRef.isEnable = NO; [loadConfigItemRef refreshCell]; }
         if (deleteConfigItemRef) { deleteConfigItemRef.isEnable = NO; [deleteConfigItemRef refreshCell]; }
         if (remoteURLItemRef) { remoteURLItemRef.isEnable = YES; [remoteURLItemRef refreshCell]; }
@@ -2037,35 +2037,58 @@ extern "C"
 				    [DYYYUtils showToast:@"已允许热更新下发配置，重启后生效。"];
 			    }
 			  };
-		  } else if ([item.identifier isEqualToString:@"DYYYABTestModeString"]) {
-			  // 使用 DYYYABTestHook 的类方法获取当前的模式
-                  BOOL isPatchMode = [DYYYABTestHook isPatchMode];
-                  item.detail = isPatchMode ? @"覆写模式" : @"替换模式";
+                } else if ([item.identifier isEqualToString:@"DYYYABTestModeString"]) {
+                        BOOL isPatchMode = [DYYYABTestHook isPatchMode];
+                        if ([DYYYABTestHook isRemoteMode]) {
+                            item.detail = isPatchMode ? @"远程模式(覆写)" : @"远程模式(替换)";
+                        } else {
+                            item.detail = isPatchMode ? @"覆写模式" : @"替换模式";
+                        }
 
-			  item.cellTappedBlock = ^{
-			    NSString *currentMode = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYABTestModeString"] ?: @"替换模式：忽略原配置，使用新数据";
+                        item.cellTappedBlock = ^{
+                            if (!item.isEnable) return;
+                            NSString *currentMode = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYABTestModeString"] ?: @"替换模式：忽略原配置，使用新数据";
 
-			    NSArray *modeOptions = @[ @"覆写模式：保留原设置，覆盖同名项", @"替换模式：忽略原配置，使用新数据" ];
+                            NSArray *modeOptions = @[ @"覆写模式：保留原设置，覆盖同名项", @"替换模式：忽略原配置，使用新数据", DYYY_REMOTE_MODE_STRING ];
 
-			    [DYYYOptionsSelectionView showWithPreferenceKey:@"DYYYABTestModeString"
-							       optionsArray:modeOptions
-								 headerText:@"选择本地配置的应用方式"
-							     onPresentingVC:topView()
-							   selectionChanged:^(NSString *selectedValue) {
-							     BOOL isPatchMode = [DYYYABTestHook isPatchMode];
-							     item.detail = isPatchMode ? @"覆写模式" : @"替换模式";
+                            [DYYYOptionsSelectionView showWithPreferenceKey:@"DYYYABTestModeString"
+                                                               optionsArray:modeOptions
+                                                                 headerText:@"选择本地配置的应用方式"
+                                                             onPresentingVC:topView()
+                                                           selectionChanged:^(NSString *selectedValue) {
+                                                             BOOL isPatchMode = [DYYYABTestHook isPatchMode];
+                                                             if ([DYYYABTestHook isRemoteMode]) {
+                                                                 item.detail = isPatchMode ? @"远程模式(覆写)" : @"远程模式(替换)";
+                                                             } else {
+                                                                 item.detail = isPatchMode ? @"覆写模式" : @"替换模式";
+                                                             }
 
-							     if (![selectedValue isEqualToString:currentMode]) {
-								     [DYYYABTestHook applyFixedABTestData];
-							     }
-                                                           [item refreshCell];
+                                                             BOOL wasRemote = [[NSUserDefaults standardUserDefaults] boolForKey:DYYY_REMOTE_CONFIG_FLAG_KEY];
+
+                                                             if ([selectedValue isEqualToString:DYYY_REMOTE_MODE_STRING]) {
+                                                                 [[NSUserDefaults standardUserDefaults] setBool:YES forKey:DYYY_REMOTE_CONFIG_FLAG_KEY];
+                                                                 [[NSUserDefaults standardUserDefaults] synchronize];
+                                                                 refreshConfigConflictState();
+                                                             } else {
+                                                                 if (wasRemote) {
+                                                                     [[NSUserDefaults standardUserDefaults] setBool:NO forKey:DYYY_REMOTE_CONFIG_FLAG_KEY];
+                                                                     [[NSUserDefaults standardUserDefaults] synchronize];
+                                                                     refreshConfigConflictState();
+                                                                 }
+                                                             }
+
+                                                             if (![selectedValue isEqualToString:currentMode]) {
+                                                                     [DYYYABTestHook applyFixedABTestData];
+                                                             }
+                                                             [item refreshCell];
                                                          }];
-                          };
+                        };
                 } else if ([item.identifier isEqualToString:@"DYYYRemoteConfigURL"]) {
                         remoteURLItemRef = item;
                         NSString *savedURL = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYRemoteConfigURL"];
                         item.detail = savedURL.length > 0 ? savedURL : DYYY_DEFAULT_ABTEST_URL;
                         item.cellTappedBlock = ^{
+                          if (!item.isEnable) return;
                           NSString *defaultText = item.detail;
                           [DYYYSettingsHelper showTextInputAlert:@"设置远程配置地址"
                                                          defaultText:defaultText
@@ -2081,6 +2104,7 @@ extern "C"
                 } else if ([item.identifier isEqualToString:@"DYYYCheckUpdate"]) {
                         checkUpdateItemRef = item;
                         item.cellTappedBlock = ^{
+                          if (!item.isEnable) return;
                           [DYYYUtils showToast:@"正在检查更新..."];
                           [DYYYABTestHook checkForRemoteConfigUpdate:YES];
                         };
@@ -2179,8 +2203,9 @@ extern "C"
 			  saveABTestConfigFileItemRef = item;
 			  refreshSaveABTestConfigFileItem();
 
-			  item.cellTappedBlock = ^{
-			    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+                        item.cellTappedBlock = ^{
+                            if (!item.isEnable) return;
+                            NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
 			    NSString *documentsDirectory = [paths firstObject];
 
 			    NSString *dyyyFolderPath = [documentsDirectory stringByAppendingPathComponent:@"DYYY"];
@@ -2236,7 +2261,8 @@ extern "C"
                 } else if ([item.identifier isEqualToString:@"LoadABTestConfigFile"]) {
                         loadConfigItemRef = item;
                         item.cellTappedBlock = ^{
-			    BOOL isPatchMode = [DYYYABTestHook isPatchMode];
+                            if (!item.isEnable) return;
+                            BOOL isPatchMode = [DYYYABTestHook isPatchMode];
 
 			    NSString *confirmTitle, *confirmMessage;
 			    if (isPatchMode) {
@@ -2327,7 +2353,8 @@ extern "C"
                 } else if ([item.identifier isEqualToString:@"DeleteABTestConfigFile"]) {
                         deleteConfigItemRef = item;
                         item.cellTappedBlock = ^{
-			    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+                            if (!item.isEnable) return;
+                            NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
 			    NSString *documentsDirectory = [paths firstObject];
 			    NSString *dyyyFolderPath = [documentsDirectory stringByAppendingPathComponent:@"DYYY"];
 			    NSString *configPath = [dyyyFolderPath stringByAppendingPathComponent:@"abtest_data_fixed.json"];

@@ -65,6 +65,12 @@ static void DYYYQueueSync(dispatch_block_t block) {
 + (BOOL)isPatchMode {
     NSString *savedMode = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYABTestModeString"];
     if (savedMode) {
+        if ([savedMode isEqualToString:DYYY_REMOTE_MODE_STRING] || [[savedMode lowercaseString] isEqualToString:@"remote"]) {
+            if (s_fileMode) {
+                return ![[s_fileMode lowercaseString] isEqualToString:@"replace"];
+            }
+            return YES;
+        }
         if ([savedMode isEqualToString:@"替换模式：忽略原配置，使用新数据"] || [[savedMode lowercaseString] isEqualToString:@"replace"]) {
             return NO;
         }
@@ -86,6 +92,17 @@ static void DYYYQueueSync(dispatch_block_t block) {
         loaded = (s_localABTestData != nil);
     });
     return loaded;
+}
+
+/**
+ * 当前是否处于远程模式
+ */
++ (BOOL)isRemoteMode {
+    NSString *savedMode = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYABTestModeString"];
+    if (savedMode) {
+        return [savedMode isEqualToString:DYYY_REMOTE_MODE_STRING] || [[savedMode lowercaseString] isEqualToString:@"remote"];
+    }
+    return NO;
 }
 
 /**
@@ -269,9 +286,11 @@ static void DYYYQueueSync(dispatch_block_t block) {
                     [data writeToFile:jsonFilePath atomically:YES];
                     updated = YES;
                 }
-                [[NSUserDefaults standardUserDefaults] setBool:YES forKey:DYYY_REMOTE_CONFIG_FLAG_KEY];
-                [[NSUserDefaults standardUserDefaults] synchronize];
-                [[NSNotificationCenter defaultCenter] postNotificationName:DYYY_REMOTE_CONFIG_CHANGED_NOTIFICATION object:nil];
+                if ([DYYYABTestHook isRemoteMode]) {
+                    [[NSUserDefaults standardUserDefaults] setBool:YES forKey:DYYY_REMOTE_CONFIG_FLAG_KEY];
+                    [[NSUserDefaults standardUserDefaults] synchronize];
+                    [[NSNotificationCenter defaultCenter] postNotificationName:DYYY_REMOTE_CONFIG_CHANGED_NOTIFICATION object:nil];
+                }
             }
             dispatch_async(dispatch_get_main_queue(), ^{
                 if (error || !data) {
@@ -429,7 +448,12 @@ static void DYYYQueueSync(dispatch_block_t block) {
     dispatch_async(DYYYABTestQueue(), ^{
         s_abTestBlockEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYABTestBlockEnabled"];
 
-        NSString *currentMode = [DYYYABTestHook isPatchMode] ? @"覆写模式" : @"替换模式";
+        NSString *currentMode = nil;
+        if ([DYYYABTestHook isRemoteMode]) {
+            currentMode = [DYYYABTestHook isPatchMode] ? @"远程模式(覆写)" : @"远程模式(替换)";
+        } else {
+            currentMode = [DYYYABTestHook isPatchMode] ? @"覆写模式" : @"替换模式";
+        }
 
         NSLog(@"[DYYY] ABTest Hook已启动: 禁止下发=%@, 当前模式=%@",
               s_abTestBlockEnabled ? @"开启" : @"关闭",
@@ -437,6 +461,8 @@ static void DYYYQueueSync(dispatch_block_t block) {
 
         [DYYYABTestHook loadLocalABTestConfig];
         [DYYYABTestHook applyFixedABTestData];
-        [DYYYABTestHook checkForRemoteConfigUpdate:NO];
+        if ([DYYYABTestHook isRemoteMode]) {
+            [DYYYABTestHook checkForRemoteConfigUpdate:NO];
+        }
     });
 }
