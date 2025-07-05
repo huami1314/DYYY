@@ -48,7 +48,8 @@
 
 /**
  * 从网络检查并下载最新配置
+ * @param notify 是否在完成后显示提示
  */
-+ (void)checkForRemoteConfigUpdate;
++ (void)checkForRemoteConfigUpdate:(BOOL)notify;
 
 @end

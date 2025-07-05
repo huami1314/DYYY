@@ -1891,7 +1891,7 @@ extern "C"
 		    @"cellType" : @26,
                   @"imageName" : @"ic_enterpriseservice_outlined"},
                   @{@"identifier" : @"DYYYRemoteConfigURL",
-                    @"title" : @"配置地址",
+                    @"title" : @"远程配置地址",
                     @"detail" : @"",
                     @"cellType" : @26,
                     @"imageName" : @"ic_cloudarrowdown_outlined_20"},
@@ -2051,7 +2051,7 @@ extern "C"
                 } else if ([item.identifier isEqualToString:@"DYYYCheckUpdate"]) {
                         item.cellTappedBlock = ^{
                           [DYYYUtils showToast:@"正在检查更新..."];
-                          [DYYYABTestHook checkForRemoteConfigUpdate];
+                          [DYYYABTestHook checkForRemoteConfigUpdate:YES];
                         };
                 } else if ([item.identifier isEqualToString:@"SaveCurrentABTestData"]) {
 			  item.detail = @"(获取中...)";

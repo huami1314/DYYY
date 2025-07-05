@@ -241,7 +241,7 @@ static void DYYYQueueSync(dispatch_block_t block) {
 /**
  * 从网络检查并下载最新配置
  */
-+ (void)checkForRemoteConfigUpdate {
++ (void)checkForRemoteConfigUpdate:(BOOL)notify {
     dispatch_async(DYYYABTestQueue(), ^{
         NSString *urlString = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYRemoteConfigURL"];
         if (urlString.length == 0) {
@@ -249,9 +249,11 @@ static void DYYYQueueSync(dispatch_block_t block) {
         }
         NSURL *url = [NSURL URLWithString:urlString];
         if (!url) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                [DYYYUtils showToast:@"配置更新失败"];
-            });
+            if (notify) {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    [DYYYUtils showToast:@"配置更新失败"];
+                });
+            }
             return;
         }
         NSURLSessionDataTask *task = [[NSURLSession sharedSession] dataTaskWithURL:url completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
@@ -270,14 +272,20 @@ static void DYYYQueueSync(dispatch_block_t block) {
             }
             dispatch_async(dispatch_get_main_queue(), ^{
                 if (error || !data) {
-                    [DYYYUtils showToast:@"配置更新失败"];
+                    if (notify) {
+                        [DYYYUtils showToast:@"配置更新失败"];
+                    }
                 } else if (updated) {
-                    [DYYYUtils showToast:@"配置已更新"];
+                    if (notify) {
+                        [DYYYUtils showToast:@"配置已更新"];
+                    }
                     [DYYYABTestHook cleanLocalABTestData];
                     [DYYYABTestHook loadLocalABTestConfig];
                     [DYYYABTestHook applyFixedABTestData];
                 } else {
-                    [DYYYUtils showToast:@"已是最新配置"];
+                    if (notify) {
+                        [DYYYUtils showToast:@"已是最新配置"];
+                    }
                 }
             });
         }];
@@ -426,6 +434,6 @@ static void DYYYQueueSync(dispatch_block_t block) {
 
         [DYYYABTestHook loadLocalABTestConfig];
         [DYYYABTestHook applyFixedABTestData];
-        [DYYYABTestHook checkForRemoteConfigUpdate];
+        [DYYYABTestHook checkForRemoteConfigUpdate:NO];
     });
 }
