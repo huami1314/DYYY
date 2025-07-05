@@ -108,6 +108,9 @@ static CGFloat gStartVal = 0.0;
 @interface AWEECommerceLabel : NSObject
 @end
 
+@interface AWELiveFollowFeedCellModel : NSObject
+@end
+
 @interface AWEAwemeModel : NSObject
 @property(nonatomic, strong, readwrite) NSNumber *createTime;
 @property(nonatomic, assign, readwrite) CGFloat videoDuration;
@@ -125,7 +128,7 @@ static CGFloat gStartVal = 0.0;
 @property(nonatomic, assign) BOOL isLivePhoto;
 @property(nonatomic, strong) NSString *shareURL;
 @property(nonatomic, strong) id hotSpotLynxCardModel;
-@property(nonatomic, copy) NSString *liveReason;
+@property(nonatomic, strong) AWELiveFollowFeedCellModel *cellRoom;
 @property(nonatomic, strong) id shareRecExtra; // 推荐视频专有属性
 @property(nonatomic, strong) NSArray<AWEAwemeTextExtraModel *> *textExtras;
 @property(nonatomic, copy) NSString *itemTitle;
