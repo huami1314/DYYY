@@ -1923,9 +1923,13 @@ extern "C"
 	  ];
 
 	  // --- 声明一个__block变量来持有SaveABTestConfigFileitem ---
-	  __block AWESettingItemModel *saveABTestConfigFileItemRef = nil;
+    __block AWESettingItemModel *saveABTestConfigFileItemRef = nil;
+    __block AWESettingItemModel *remoteURLItemRef = nil;
+    __block AWESettingItemModel *checkUpdateItemRef = nil;
+    __block AWESettingItemModel *loadConfigItemRef = nil;
+    __block AWESettingItemModel *deleteConfigItemRef = nil;
 	  // --- 定义一个用于刷新SaveABTestConfigFileitem的局部block ---
-	  void (^refreshSaveABTestConfigFileItem)(void) = ^{
+  void (^refreshSaveABTestConfigFileItem)(void) = ^{
 	    if (!saveABTestConfigFileItemRef)
 		    return;
 
@@ -1976,7 +1980,32 @@ extern "C"
 		}
 	      });
 	    });
-	  };
+  };
+
+  void (^refreshConfigConflictState)(void) = ^{
+    BOOL useRemote = [[NSUserDefaults standardUserDefaults] boolForKey:DYYY_REMOTE_CONFIG_FLAG_KEY];
+    BOOL localLoaded = [DYYYABTestHook isLocalConfigLoaded];
+    if (useRemote) {
+        if (loadConfigItemRef) { loadConfigItemRef.isEnable = NO; [loadConfigItemRef refreshCell]; }
+        if (deleteConfigItemRef) { deleteConfigItemRef.isEnable = NO; [deleteConfigItemRef refreshCell]; }
+        if (remoteURLItemRef) { remoteURLItemRef.isEnable = YES; [remoteURLItemRef refreshCell]; }
+        if (checkUpdateItemRef) { checkUpdateItemRef.isEnable = YES; [checkUpdateItemRef refreshCell]; }
+    } else if (localLoaded) {
+        if (remoteURLItemRef) { remoteURLItemRef.isEnable = NO; [remoteURLItemRef refreshCell]; }
+        if (checkUpdateItemRef) { checkUpdateItemRef.isEnable = NO; [checkUpdateItemRef refreshCell]; }
+        if (loadConfigItemRef) { loadConfigItemRef.isEnable = YES; [loadConfigItemRef refreshCell]; }
+        if (deleteConfigItemRef) { deleteConfigItemRef.isEnable = YES; [deleteConfigItemRef refreshCell]; }
+    } else {
+        if (remoteURLItemRef) { remoteURLItemRef.isEnable = YES; [remoteURLItemRef refreshCell]; }
+        if (checkUpdateItemRef) { checkUpdateItemRef.isEnable = YES; [checkUpdateItemRef refreshCell]; }
+        if (loadConfigItemRef) { loadConfigItemRef.isEnable = YES; [loadConfigItemRef refreshCell]; }
+        if (deleteConfigItemRef) { deleteConfigItemRef.isEnable = YES; [deleteConfigItemRef refreshCell]; }
+    }
+  };
+
+  [[NSNotificationCenter defaultCenter] addObserverForName:DYYY_REMOTE_CONFIG_CHANGED_NOTIFICATION object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification * _Nonnull note) {
+    refreshConfigConflictState();
+  }];
 
 	  for (NSDictionary *dict in hotUpdateSettings) {
 		  AWESettingItemModel *item = [DYYYSettingsHelper createSettingItem:dict];
@@ -2033,6 +2062,7 @@ extern "C"
                                                          }];
                           };
                 } else if ([item.identifier isEqualToString:@"DYYYRemoteConfigURL"]) {
+                        remoteURLItemRef = item;
                         NSString *savedURL = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYRemoteConfigURL"];
                         item.detail = savedURL.length > 0 ? savedURL : DYYY_DEFAULT_ABTEST_URL;
                         item.cellTappedBlock = ^{
@@ -2049,6 +2079,7 @@ extern "C"
                                                             onCancel:nil];
                         };
                 } else if ([item.identifier isEqualToString:@"DYYYCheckUpdate"]) {
+                        checkUpdateItemRef = item;
                         item.cellTappedBlock = ^{
                           [DYYYUtils showToast:@"正在检查更新..."];
                           [DYYYABTestHook checkForRemoteConfigUpdate:YES];
@@ -2202,8 +2233,9 @@ extern "C"
 			    UIViewController *topVC = topView();
 			    [topVC presentViewController:documentPicker animated:YES completion:nil];
 			  };
-		  } else if ([item.identifier isEqualToString:@"LoadABTestConfigFile"]) {
-			  item.cellTappedBlock = ^{
+                } else if ([item.identifier isEqualToString:@"LoadABTestConfigFile"]) {
+                        loadConfigItemRef = item;
+                        item.cellTappedBlock = ^{
 			    BOOL isPatchMode = [DYYYABTestHook isPatchMode];
 
 			    NSString *confirmTitle, *confirmMessage;
@@ -2252,9 +2284,12 @@ extern "C"
 						  if ([fileManager replaceItemAtURL:destinationURL withItemAtURL:temporaryURL backupItemName:nil options:0 resultingItemURL:nil error:&error]) {
 							  [DYYYABTestHook cleanLocalABTestData];
 							  [DYYYABTestHook loadLocalABTestConfig];
-							  [DYYYABTestHook applyFixedABTestData];
-							  success = YES;
-							  message = @"配置已导入，部分设置需重启应用后生效";
+                                                          [DYYYABTestHook applyFixedABTestData];
+                                                          [[NSUserDefaults standardUserDefaults] setBool:NO forKey:DYYY_REMOTE_CONFIG_FLAG_KEY];
+                                                          [[NSUserDefaults standardUserDefaults] synchronize];
+                                                          [[NSNotificationCenter defaultCenter] postNotificationName:DYYY_REMOTE_CONFIG_CHANGED_NOTIFICATION object:nil];
+                                                          success = YES;
+                                                          message = @"配置已导入，部分设置需重启应用后生效";
 						  } else {
 							  [fileManager removeItemAtURL:temporaryURL error:nil];
 							  message = [NSString stringWithFormat:@"导入失败 (替换文件失败): %@", error.localizedDescription];
@@ -2272,9 +2307,10 @@ extern "C"
 				    [DYYYUtils showToast:message];
 
 				    // 仅在导入成功且 item 仍然存在时更新 UI
-				    if (success && strongSaveItemAgain) {
-					    refreshSaveABTestConfigFileItem();
-				    }
+                                    if (success && strongSaveItemAgain) {
+                                            refreshSaveABTestConfigFileItem();
+                                            refreshConfigConflictState();
+                                    }
 				  });
 				});
 			      };
@@ -2288,8 +2324,9 @@ extern "C"
 			    };
 			    [confirmDialog show];
 			  };
-		  } else if ([item.identifier isEqualToString:@"DeleteABTestConfigFile"]) {
-			  item.cellTappedBlock = ^{
+                } else if ([item.identifier isEqualToString:@"DeleteABTestConfigFile"]) {
+                        deleteConfigItemRef = item;
+                        item.cellTappedBlock = ^{
 			    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
 			    NSString *documentsDirectory = [paths firstObject];
 			    NSString *dyyyFolderPath = [documentsDirectory stringByAppendingPathComponent:@"DYYY"];
@@ -2302,21 +2339,26 @@ extern "C"
 				    NSString *message = success ? @"本地配置已删除成功" : [NSString stringWithFormat:@"删除失败: %@", error.localizedDescription];
 				    [DYYYUtils showToast:message];
 
-				    if (success) {
-					    [DYYYABTestHook cleanLocalABTestData];
-					    // 删除成功后修改 SaveABTestConfigFile item 的状态
-					    saveABTestConfigFileItemRef.detail = @"(文件已删除)";
-					    saveABTestConfigFileItemRef.isEnable = NO;
-					    [saveABTestConfigFileItemRef refreshCell];
-				    }
+                                    if (success) {
+                                            [DYYYABTestHook cleanLocalABTestData];
+                                            [[NSUserDefaults standardUserDefaults] setBool:NO forKey:DYYY_REMOTE_CONFIG_FLAG_KEY];
+                                            [[NSUserDefaults standardUserDefaults] synchronize];
+                                            [[NSNotificationCenter defaultCenter] postNotificationName:DYYY_REMOTE_CONFIG_CHANGED_NOTIFICATION object:nil];
+                                            // 删除成功后修改 SaveABTestConfigFile item 的状态
+                                            saveABTestConfigFileItemRef.detail = @"(文件已删除)";
+                                            saveABTestConfigFileItemRef.isEnable = NO;
+                                            [saveABTestConfigFileItemRef refreshCell];
+                                            refreshConfigConflictState();
+                                    }
 			    } else {
 				    [DYYYUtils showToast:@"本地配置不存在"];
 			    }
 			  };
 		  }
 
-		  [hotUpdateItems addObject:item];
-	  }
+          [hotUpdateItems addObject:item];
+        }
+        refreshConfigConflictState();
 
 	  // 【交互增强】分类
 	  NSMutableArray<AWESettingItemModel *> *interactionItems = [NSMutableArray array];
@@ -2558,7 +2600,7 @@ extern "C"
 	  [sections addObject:[DYYYSettingsHelper createSectionWithTitle:@"长按面板设置" items:longPressItems]];
 	  [sections addObject:[DYYYSettingsHelper createSectionWithTitle:@"媒体保存" items:downloadItems]];
 	  [sections addObject:[DYYYSettingsHelper createSectionWithTitle:@"交互增强" items:interactionItems]];
-	  [sections addObject:[DYYYSettingsHelper createSectionWithTitle:@"热更新" footerTitle:@"允许用户导出或导入抖音的ABTest配置，非必要不需要开启。" items:hotUpdateItems]];
+          [sections addObject:[DYYYSettingsHelper createSectionWithTitle:@"热更新" footerTitle:@"允许用户导出或导入抖音的ABTest配置，远程配置会在启动时自动检查更新。" items:hotUpdateItems]];
 	  // 创建并推入二级设置页面
 	  AWESettingBaseViewController *subVC = [DYYYSettingsHelper createSubSettingsViewController:@"增强设置" sections:sections];
 	  [rootVC.navigationController pushViewController:(UIViewController *)subVC animated:YES];

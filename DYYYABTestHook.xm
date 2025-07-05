@@ -269,6 +269,9 @@ static void DYYYQueueSync(dispatch_block_t block) {
                     [data writeToFile:jsonFilePath atomically:YES];
                     updated = YES;
                 }
+                [[NSUserDefaults standardUserDefaults] setBool:YES forKey:DYYY_REMOTE_CONFIG_FLAG_KEY];
+                [[NSUserDefaults standardUserDefaults] synchronize];
+                [[NSNotificationCenter defaultCenter] postNotificationName:DYYY_REMOTE_CONFIG_CHANGED_NOTIFICATION object:nil];
             }
             dispatch_async(dispatch_get_main_queue(), ^{
                 if (error || !data) {
