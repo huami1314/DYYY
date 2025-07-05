@@ -46,4 +46,9 @@
  */
 + (NSDictionary *)getCurrentABTestData;
 
+/**
+ * 从网络检查并下载最新配置
+ */
++ (void)checkForRemoteConfigUpdate;
+
 @end

@@ -1889,9 +1889,19 @@ extern "C"
 		    @"title" : @"配置应用方式",
 		    @"detail" : @"",
 		    @"cellType" : @26,
-		    @"imageName" : @"ic_enterpriseservice_outlined"},
-		  @{@"identifier" : @"SaveCurrentABTestData",
-		    @"title" : @"导出当前配置",
+                  @"imageName" : @"ic_enterpriseservice_outlined"},
+                  @{@"identifier" : @"DYYYRemoteConfigURL",
+                    @"title" : @"配置地址",
+                    @"detail" : @"",
+                    @"cellType" : @26,
+                    @"imageName" : @"ic_cloudarrowdown_outlined_20"},
+                  @{@"identifier" : @"DYYYCheckUpdate",
+                    @"title" : @"检查配置更新",
+                    @"detail" : @"",
+                    @"cellType" : @26,
+                    @"imageName" : @"ic_cloudarrowdown_outlined_20"},
+                  @{@"identifier" : @"SaveCurrentABTestData",
+                    @"title" : @"导出当前配置",
 		    @"detail" : @"",
 		    @"cellType" : @26,
 		    @"imageName" : @"ic_memorycard_outlined_20"},
@@ -2000,8 +2010,8 @@ extern "C"
 			  };
 		  } else if ([item.identifier isEqualToString:@"DYYYABTestModeString"]) {
 			  // 使用 DYYYABTestHook 的类方法获取当前的模式
-			  BOOL isPatchMode = [DYYYABTestHook isPatchMode];
-			  item.detail = isPatchMode ? @"覆写模式" : @"替换模式";
+                  BOOL isPatchMode = [DYYYABTestHook isPatchMode];
+                  item.detail = isPatchMode ? @"覆写模式" : @"替换模式";
 
 			  item.cellTappedBlock = ^{
 			    NSString *currentMode = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYABTestModeString"] ?: @"替换模式：忽略原配置，使用新数据";
@@ -2019,10 +2029,31 @@ extern "C"
 							     if (![selectedValue isEqualToString:currentMode]) {
 								     [DYYYABTestHook applyFixedABTestData];
 							     }
-							     [item refreshCell];
-							   }];
-			  };
-		  } else if ([item.identifier isEqualToString:@"SaveCurrentABTestData"]) {
+                                                           [item refreshCell];
+                                                         }];
+                          };
+                } else if ([item.identifier isEqualToString:@"DYYYRemoteConfigURL"]) {
+                        NSString *savedURL = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYRemoteConfigURL"];
+                        item.detail = savedURL.length > 0 ? savedURL : DYYY_DEFAULT_ABTEST_URL;
+                        item.cellTappedBlock = ^{
+                          NSString *defaultText = item.detail;
+                          [DYYYSettingsHelper showTextInputAlert:@"设置远程配置地址"
+                                                         defaultText:defaultText
+                                                         placeholder:@"JSON URL"
+                                                           onConfirm:^(NSString *text) {
+                                                             NSString *trimmedText = [text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+                                                             [DYYYSettingsHelper setUserDefaults:trimmedText forKey:@"DYYYRemoteConfigURL"];
+                                                             item.detail = trimmedText.length > 0 ? trimmedText : DYYY_DEFAULT_ABTEST_URL;
+                                                             [item refreshCell];
+                                                           }
+                                                            onCancel:nil];
+                        };
+                } else if ([item.identifier isEqualToString:@"DYYYCheckUpdate"]) {
+                        item.cellTappedBlock = ^{
+                          [DYYYUtils showToast:@"正在检查更新..."];
+                          [DYYYABTestHook checkForRemoteConfigUpdate];
+                        };
+                } else if ([item.identifier isEqualToString:@"SaveCurrentABTestData"]) {
 			  item.detail = @"(获取中...)";
 			  item.isEnable = NO;
 

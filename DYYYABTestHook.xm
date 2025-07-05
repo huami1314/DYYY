@@ -1,5 +1,7 @@
 #import "DYYYABTestHook.h"
 #import <objc/runtime.h>
+#import "DYYYUtils.h"
+#import "DYYYConstants.h"
 
 @interface AWEABTestManager : NSObject
 @property(retain, nonatomic) NSMutableDictionary *consistentABTestDic;
@@ -23,6 +25,10 @@
 static BOOL s_abTestBlockEnabled = NO;
 static BOOL s_isApplyingFixedData = NO;
 static NSDictionary *s_localABTestData = nil;
+static NSString *s_fileMode = nil;
+
+// 默认远程配置地址常量
+static NSString *const kDefaultRemoteConfigURL = DYYY_DEFAULT_ABTEST_URL;
 
 static dispatch_once_t s_loadOnceToken;
 static dispatch_queue_t s_abTestHookQueue;
@@ -58,7 +64,16 @@ static void DYYYQueueSync(dispatch_block_t block) {
  */
 + (BOOL)isPatchMode {
     NSString *savedMode = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYABTestModeString"];
-    return ![savedMode isEqualToString:@"替换模式：忽略原配置，使用新数据"];
+    if (savedMode) {
+        if ([savedMode isEqualToString:@"替换模式：忽略原配置，使用新数据"] || [[savedMode lowercaseString] isEqualToString:@"replace"]) {
+            return NO;
+        }
+        return YES;
+    }
+    if (s_fileMode) {
+        return ![[s_fileMode lowercaseString] isEqualToString:@"replace"];
+    }
+    return YES;
 }
 
 /**
@@ -139,7 +154,18 @@ static void DYYYQueueSync(dispatch_block_t block) {
             if (jsonData) {
                 NSDictionary *loadedData = [NSJSONSerialization JSONObjectWithData:jsonData options:0 error:&error];
                 if (loadedData && !error) {
-                    s_localABTestData = [loadedData copy];
+                    id modeValue = loadedData[@"mode"];
+                    s_fileMode = nil;
+                    if ([modeValue isKindOfClass:[NSString class]]) {
+                        s_fileMode = [modeValue lowercaseString];
+                    }
+                    NSDictionary *actualData = loadedData[@"data"];
+                    if (!actualData) {
+                        NSMutableDictionary *tmp = [loadedData mutableCopy];
+                        [tmp removeObjectForKey:@"mode"];
+                        actualData = [tmp copy];
+                    }
+                    s_localABTestData = [actualData copy];
                     NSLog(@"[DYYY] ABTest本地配置已从文件加载成功");
                     return;
                 } else {
@@ -210,6 +236,53 @@ static void DYYYQueueSync(dispatch_block_t block) {
 + (NSDictionary *)getCurrentABTestData {
     AWEABTestManager *manager = [%c(AWEABTestManager) sharedManager];
     return manager ? [manager abTestData] : nil;
+}
+
+/**
+ * 从网络检查并下载最新配置
+ */
++ (void)checkForRemoteConfigUpdate {
+    dispatch_async(DYYYABTestQueue(), ^{
+        NSString *urlString = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYRemoteConfigURL"];
+        if (urlString.length == 0) {
+            urlString = kDefaultRemoteConfigURL;
+        }
+        NSURL *url = [NSURL URLWithString:urlString];
+        if (!url) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [DYYYUtils showToast:@"配置更新失败"];
+            });
+            return;
+        }
+        NSURLSessionDataTask *task = [[NSURLSession sharedSession] dataTaskWithURL:url completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+            BOOL updated = NO;
+            if (data && !error) {
+                NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+                NSString *documentsDirectory = [paths firstObject];
+                NSString *dyyyFolderPath = [documentsDirectory stringByAppendingPathComponent:@"DYYY"];
+                NSString *jsonFilePath = [dyyyFolderPath stringByAppendingPathComponent:@"abtest_data_fixed.json"];
+                [[NSFileManager defaultManager] createDirectoryAtPath:dyyyFolderPath withIntermediateDirectories:YES attributes:nil error:nil];
+                NSData *existingData = [NSData dataWithContentsOfFile:jsonFilePath];
+                if (!existingData || ![existingData isEqualToData:data]) {
+                    [data writeToFile:jsonFilePath atomically:YES];
+                    updated = YES;
+                }
+            }
+            dispatch_async(dispatch_get_main_queue(), ^{
+                if (error || !data) {
+                    [DYYYUtils showToast:@"配置更新失败"];
+                } else if (updated) {
+                    [DYYYUtils showToast:@"配置已更新"];
+                    [DYYYABTestHook cleanLocalABTestData];
+                    [DYYYABTestHook loadLocalABTestConfig];
+                    [DYYYABTestHook applyFixedABTestData];
+                } else {
+                    [DYYYUtils showToast:@"已是最新配置"];
+                }
+            });
+        }];
+        [task resume];
+    });
 }
 
 @end
@@ -353,5 +426,6 @@ static void DYYYQueueSync(dispatch_block_t block) {
 
         [DYYYABTestHook loadLocalABTestConfig];
         [DYYYABTestHook applyFixedABTestData];
+        [DYYYABTestHook checkForRemoteConfigUpdate];
     });
 }
