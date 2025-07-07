@@ -369,6 +369,9 @@ static CGFloat gStartVal = 0.0;
 @interface AWEAwemeDetailTableView : UITableView
 @end
 
+@interface AWECommentContainerViewController : UIViewController
+@end
+
 @interface AWECommentInputViewController : UIViewController
 @end
 

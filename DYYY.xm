@@ -5047,6 +5047,70 @@ static CGFloat customTabBarHeight() {
 	return 0;
 }
 
+%hook AWECommentContainerViewController
+
+- (void)viewDidLayoutSubviews {
+	%orig;
+
+	BOOL enableCommentBlur = DYYYGetBool(@"DYYYisEnableCommentBlur");
+	if (!enableCommentBlur) return;
+
+	Class containerViewClass = NSClassFromString(@"AWECommentInputViewSwiftImpl.CommentInputContainerView");
+	UIView *containerView = [DYYYUtils findSubviewOfClass:containerViewClass inView:self.view];
+	if (containerView) {
+		for (UIView *subview in containerView.subviews) {
+			if ([subview isKindOfClass:[UIView class]] && subview.alpha > 0.1f && subview.backgroundColor && CGColorGetAlpha(subview.backgroundColor.CGColor) > 0.1f) {
+				float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
+				if (userTransparency <= 0 || userTransparency > 1) {
+					userTransparency = 0.8;
+				}
+				[DYYYUtils applyBlurEffectToView:subview transparency:userTransparency blurViewTag:999];
+				[DYYYUtils clearBackgroundRecursivelyInView:subview];
+			}
+		}
+	}
+
+	Class middleContainerClass = NSClassFromString(@"AWECommentInputViewSwiftImpl.CommentInputViewMiddleContainer");
+	NSArray<UIView *> *middleContainers = [DYYYUtils findAllSubviewsOfClass:middleContainerClass inView:self.view];
+	for (UIView *middleContainer in middleContainers) {
+		BOOL containsDanmu = NO;
+		for (UIView *innerSubviewCheck in middleContainer.subviews) {
+			if ([innerSubviewCheck isKindOfClass:[UILabel class]] && [((UILabel *)innerSubviewCheck).text containsString:@"弹幕"]) {
+				containsDanmu = YES;
+				break;
+			}
+		}
+
+		if (containsDanmu) {
+			UIView *parentView = middleContainer.superview;
+			for (UIView *innerSubview in parentView.subviews) {
+				if ([innerSubview isKindOfClass:[UIView class]]) {
+					// NSLog(@"[innerSubview] %@", innerSubview);
+					if (innerSubview.subviews.count > 0) {
+						[innerSubview.subviews[0] removeFromSuperview];
+					}
+
+					UIView *whiteBackgroundView = [[UIView alloc] initWithFrame:innerSubview.bounds];
+					whiteBackgroundView.backgroundColor = [UIColor whiteColor];
+					whiteBackgroundView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+					[innerSubview addSubview:whiteBackgroundView];
+					break;
+				}
+			}
+		} else {
+			for (UIView *innerSubview in middleContainer.subviews) {
+				if ([innerSubview isKindOfClass:[UIView class]] && innerSubview.alpha > 0.1f && innerSubview.backgroundColor && CGColorGetAlpha(innerSubview.backgroundColor.CGColor) > 0.1f) {
+					[DYYYUtils applyBlurEffectToView:innerSubview transparency:0.2f blurViewTag:999];
+					[DYYYUtils clearBackgroundRecursivelyInView:innerSubview];
+					break;
+				}
+			}
+		}
+	}
+}
+
+%end
+
 %hook UIView
 - (void)layoutSubviews {
 	%orig;
@@ -5067,75 +5131,6 @@ static CGFloat customTabBarHeight() {
 			for (UIView *subview in self.subviews) {
 				if ([subview isKindOfClass:[UIView class]] && subview.backgroundColor && CGColorEqualToColor(subview.backgroundColor.CGColor, [UIColor blackColor].CGColor)) {
 					subview.hidden = YES;
-				}
-			}
-		}
-	}
-
-	if (DYYYGetBool(@"DYYYisEnableCommentBlur")) {
-		NSString *className = NSStringFromClass([self class]);
-		if ([className isEqualToString:@"AWECommentInputViewSwiftImpl.CommentInputContainerView"]) {
-			for (UIView *subview in self.subviews) {
-				if ([subview isKindOfClass:[UIView class]] && ![subview.backgroundColor isEqual:[UIColor clearColor]]) {
-					float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
-					if (userTransparency <= 0 || userTransparency > 1) {
-						userTransparency = 0.8;
-					}
-					[DYYYUtils applyBlurEffectToView:subview transparency:userTransparency blurViewTag:999];
-					[DYYYUtils clearBackgroundRecursivelyInView:subview];
-				}
-			}
-		}
-	}
-
-	if (DYYYGetBool(@"DYYYisEnableCommentBlur")) {
-		for (UIView *subview in self.subviews) {
-			if ([subview isKindOfClass:NSClassFromString(@"AWECommentInputViewSwiftImpl.CommentInputViewMiddleContainer")]) {
-				BOOL containsDanmu = NO;
-
-				for (UIView *innerSubview in subview.subviews) {
-					if ([innerSubview isKindOfClass:[UILabel class]] && [((UILabel *)innerSubview).text containsString:@"弹幕"]) {
-						containsDanmu = YES;
-						break;
-					}
-				}
-				if (containsDanmu) {
-					UIView *parentView = subview.superview;
-					for (UIView *innerSubview in parentView.subviews) {
-						if ([innerSubview isKindOfClass:[UIView class]]) {
-							// NSLog(@"[innerSubview] %@", innerSubview);
-							[innerSubview.subviews[0] removeFromSuperview];
-
-							UIView *whiteBackgroundView = [[UIView alloc] initWithFrame:innerSubview.bounds];
-							whiteBackgroundView.backgroundColor = [UIColor whiteColor];
-							whiteBackgroundView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-							[innerSubview addSubview:whiteBackgroundView];
-							break;
-						}
-					}
-				}
-			}
-		}
-	}
-
-	if (DYYYGetBool(@"DYYYisEnableCommentBlur")) {
-		for (UIView *subview in self.subviews) {
-			if ([subview isKindOfClass:NSClassFromString(@"AWECommentInputViewSwiftImpl.CommentInputViewMiddleContainer")]) {
-				BOOL containsDanmu = NO;
-				for (UIView *innerSubviewCheck in subview.subviews) {
-					if ([innerSubviewCheck isKindOfClass:[UILabel class]] && [((UILabel *)innerSubviewCheck).text containsString:@"弹幕"]) {
-						containsDanmu = YES;
-						break;
-					}
-				}
-				if (!containsDanmu) {
-					for (UIView *innerSubview in subview.subviews) {
-						if ([innerSubview isKindOfClass:[UIView class]] && ![innerSubview.backgroundColor isEqual:[UIColor clearColor]]) {
-							[DYYYUtils applyBlurEffectToView:innerSubview transparency:0.2f blurViewTag:999];
-							[DYYYUtils clearBackgroundRecursivelyInView:innerSubview];
-							break;
-						}
-					}
 				}
 			}
 		}
