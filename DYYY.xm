@@ -4375,7 +4375,8 @@ static AWEIMReusableCommonCell *currentCell;
 			}
 		}
 	}
-	return shouldFilterAds || shouldFilterRecLive || shouldFilterHotSpot || shouldFilterHDR || shouldFilterLowLikes || shouldFilterKeywords || shouldFilterProp || shouldFilterTime || shouldFilterUser;
+	return shouldFilterAds || shouldFilterRecLive || shouldFilterHotSpot || shouldFilterHDR || shouldFilterLowLikes || shouldFilterKeywords || shouldFilterProp || shouldFilterTime ||
+	       shouldFilterUser;
 }
 
 - (AWEECommerceLabel *)ecommerceBelowLabel {
@@ -5019,7 +5020,8 @@ static CGFloat customTabBarHeight() {
 	if (DYYYGetBool(@"DYYYisEnableFullScreen")) {
 		if (self.frame.size.height == tabHeight && tabHeight > 0) {
 			UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
-			if ([vc isKindOfClass:NSClassFromString(@"AWEMixVideoPanelDetailTableViewController")] || [vc isKindOfClass:NSClassFromString(@"AWECommentInputViewController")]) {
+			if ([vc isKindOfClass:NSClassFromString(@"AWEMixVideoPanelDetailTableViewController")] || [vc isKindOfClass:NSClassFromString(@"AWECommentInputViewController")] ||
+			    [vc isKindOfClass:NSClassFromString(@"AWEAwemeDetailTableViewController")]) {
 				self.backgroundColor = [UIColor clearColor];
 			}
 		}
@@ -5186,6 +5188,8 @@ static CGFloat customTabBarHeight() {
 		} else if ([currentReferString isEqualToString:@"close_friends_moment"] || currentReferString == nil) {
 			frame.size.height = self.view.superview.frame.size.height;
 		} else if ([currentReferString isEqualToString:@"offline_mode"] || currentReferString == nil) {
+			frame.size.height = self.view.superview.frame.size.height;
+		} else if ([currentReferString isEqualToString:@"challenge"] || currentReferString == nil) {
 			frame.size.height = self.view.superview.frame.size.height;
 		} else if ([currentReferString isEqualToString:@"others_homepage"] || currentReferString == nil) {
 			frame.size.height = self.view.superview.frame.size.height - tabHeight;
