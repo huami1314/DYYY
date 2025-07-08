@@ -4200,7 +4200,7 @@ static AWEIMReusableCommonCell *currentCell;
 		UIView *pview = self.superview;
 		UIView *gpview = pview.superview;
 		// 基于accessibilitylabel的判断
-		BOOL isLynxView = [pview isKindOfClass:%c(LynxView)] &&
+		BOOL isLynxView = [pview isKindOfClass:%c(UILynxView)] &&
 				  [gpview isKindOfClass:%c(LynxView)] &&
 				  [gpview.accessibilityLabel isEqualToString:@"lynxview"];
 		// 基于最近的视图控制器IESLiveAudienceViewController的判断
@@ -4211,6 +4211,16 @@ static AWEIMReusableCommonCell *currentCell;
 		}
 	}
 }
+%end
+
+%hook IESEZDanmakuCanvasView
+- (void)layoutSubviews {
+	%orig;
+	if (DYYYGetBool(@"DYYYHideLiveDanmaku")) {
+		[self removeFromSuperview];
+	}
+}
+
 %end
 
 %hook IESLiveHotMessageView
