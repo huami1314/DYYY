@@ -642,7 +642,19 @@
 }
 
 - (void)setAlpha:(CGFloat)alpha {
-	if (DYYYGetBool(@"DYYYCommentShowDanmaku")) {
+	if (DYYYGetBool(@"DYYYCommentShowDanmaku") && alpha == 0.0) {
+		return;
+	} else {
+		%orig(alpha);
+	}
+}
+
+%end
+
+%hook DDanmakuPlayerView
+
+- (void)setAlpha:(CGFloat)alpha {
+	if (DYYYGetBool(@"DYYYCommentShowDanmaku") && alpha == 0.0) {
 		return;
 	} else {
 		%orig(alpha);
@@ -4183,7 +4195,7 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
-// 隐藏进场特效
+// 隐藏会员进场特效
 %hook IESLiveDynamicUserEnterView
 - (void)layoutSubviews {
 	%orig;
@@ -4191,6 +4203,37 @@ static AWEIMReusableCommonCell *currentCell;
 		[self removeFromSuperview];
 	}
 }
+%end
+
+// 隐藏特殊进场特效
+%hook PlatformCanvasView
+- (void)layoutSubviews {
+	%orig;
+	if (DYYYGetBool(@"DYYYHideLivePopup")) {
+		UIView *pview = self.superview;
+		UIView *gpview = pview.superview;
+		// 基于accessibilitylabel的判断
+		BOOL isLynxView = [pview isKindOfClass:%c(UILynxView)] &&
+				  [gpview isKindOfClass:%c(LynxView)] &&
+				  [gpview.accessibilityLabel isEqualToString:@"lynxview"];
+		// 基于最近的视图控制器IESLiveAudienceViewController的判断
+		UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
+		BOOL isLiveAudienceVC = [vc isKindOfClass:%c(IESLiveAudienceViewController)];
+		if (isLynxView && isLiveAudienceVC) {
+			[self removeFromSuperview];
+		}
+	}
+}
+%end
+
+%hook IESLiveDanmakuVariousView
+- (void)layoutSubviews {
+	%orig;
+	if (DYYYGetBool(@"DYYYHideLiveDanmaku")) {
+		[self removeFromSuperview];
+	}
+}
+
 %end
 
 %hook IESLiveHotMessageView
