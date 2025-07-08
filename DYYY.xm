@@ -642,7 +642,19 @@
 }
 
 - (void)setAlpha:(CGFloat)alpha {
-	if (DYYYGetBool(@"DYYYCommentShowDanmaku")) {
+	if (DYYYGetBool(@"DYYYCommentShowDanmaku") && alpha == 0.0) {
+		return;
+	} else {
+		%orig(alpha);
+	}
+}
+
+%end
+
+%hook DDanmakuPlayerView
+
+- (void)setAlpha:(CGFloat)alpha {
+	if (DYYYGetBool(@"DYYYCommentShowDanmaku") && alpha == 0.0) {
 		return;
 	} else {
 		%orig(alpha);
@@ -4183,7 +4195,7 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
-// 隐藏进场特效
+// 隐藏会员进场特效
 %hook IESLiveDynamicUserEnterView
 - (void)layoutSubviews {
 	%orig;
@@ -4193,6 +4205,7 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
+// 隐藏特殊进场特效
 %hook PlatformCanvasView
 - (void)layoutSubviews {
 	%orig;
@@ -4213,7 +4226,7 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
-%hook IESEZDanmakuCanvasView
+%hook IESLiveDanmakuVariousView
 - (void)layoutSubviews {
 	%orig;
 	if (DYYYGetBool(@"DYYYHideLiveDanmaku")) {
