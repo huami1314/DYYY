@@ -434,19 +434,26 @@ void updateSpeedButtonVisibility() {
 %hook AWEAwemePlayVideoViewController
 
 - (void)setIsAutoPlay:(BOOL)arg0 {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {
-		float defaultSpeed = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYDefaultSpeed"];
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+                if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {
+                        float defaultSpeed = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYDefaultSpeed"];
 
-		if (defaultSpeed > 0 && defaultSpeed != 1) {
-			[self setVideoControllerPlaybackRate:defaultSpeed];
-		}
-	}
-	float speed = getCurrentSpeed();
-	if (speed != 1.0) {
-		[self adjustPlaybackSpeed:speed];
-	}
-	%orig(arg0);
+                        if (defaultSpeed > 0 && defaultSpeed != 1) {
+                                dispatch_async(dispatch_get_main_queue(), ^{
+                                        [self setVideoControllerPlaybackRate:defaultSpeed];
+                                });
+                        }
+                }
+                float speed = getCurrentSpeed();
+                if (speed != 1.0) {
+                        dispatch_async(dispatch_get_main_queue(), ^{
+                                [self adjustPlaybackSpeed:speed];
+                        });
+                }
+        });
+        %orig(arg0);
 }
+
 
 - (void)prepareForDisplay {
 	%orig;
@@ -471,19 +478,26 @@ void updateSpeedButtonVisibility() {
 %hook AWEDPlayerFeedPlayerViewController
 
 - (void)setIsAutoPlay:(BOOL)arg0 {
-	if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {
-		float defaultSpeed = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYDefaultSpeed"];
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+                if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {
+                        float defaultSpeed = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYDefaultSpeed"];
 
-		if (defaultSpeed > 0 && defaultSpeed != 1) {
-			[self setVideoControllerPlaybackRate:defaultSpeed];
-		}
-	}
-	float speed = getCurrentSpeed();
-	if (speed != 1.0) {
-		[self adjustPlaybackSpeed:speed];
-	}
-	%orig(arg0);
+                        if (defaultSpeed > 0 && defaultSpeed != 1) {
+                                dispatch_async(dispatch_get_main_queue(), ^{
+                                        [self setVideoControllerPlaybackRate:defaultSpeed];
+                                });
+                        }
+                }
+                float speed = getCurrentSpeed();
+                if (speed != 1.0) {
+                        dispatch_async(dispatch_get_main_queue(), ^{
+                                [self adjustPlaybackSpeed:speed];
+                        });
+                }
+        });
+        %orig(arg0);
 }
+
 
 - (void)prepareForDisplay {
 	%orig;
