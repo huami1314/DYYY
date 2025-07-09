@@ -285,10 +285,6 @@ static CGFloat gStartVal = 0.0;
 - (void)buttonTouchUp:(id)sender;
 @end
 
-@interface UIView (Transparency)
-- (UIViewController *)firstAvailableUIViewController;
-@end
-
 @interface AWEFeedVideoButton : UIButton
 @end
 

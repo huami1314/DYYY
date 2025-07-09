@@ -792,15 +792,6 @@
 }
 %end
 
-%hook UIView
-// 关键方法,勿删！
-%new
-- (UIViewController *)firstAvailableUIViewController {
-	return [DYYYUtils firstAvailableViewControllerFromView:self];
-}
-
-%end
-
 // 重写全局透明方法
 %hook AWEPlayInteractionViewController
 
@@ -4543,7 +4534,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWEPlayInteractionViewController
 
 - (void)onPlayer:(id)arg0 didDoubleClick:(id)arg1 {
-	BOOL isPopupEnabled = DYYYGetBool(@"DYYYEnableDoubleOpenAlertController");
+	BOOL isPopupEnabled = DYYYGetBool(@"DYYYEnableDoubleTapMenu");
 	BOOL isDirectCommentEnabled = DYYYGetBool(@"DYYYEnableDoubleOpenComment");
 
 	// 直接打开评论区的情况
@@ -5068,7 +5059,7 @@ static CGFloat customTabBarHeight() {
 	UIView *containerView = [DYYYUtils findSubviewOfClass:containerViewClass inView:self.view];
 	if (containerView) {
 		for (UIView *subview in containerView.subviews) {
-			if ([subview isKindOfClass:[UIView class]] && subview.alpha > 0.1f && subview.backgroundColor && CGColorGetAlpha(subview.backgroundColor.CGColor) > 0.1f) {
+			if (subview.alpha > 0.1f && subview.backgroundColor && CGColorGetAlpha(subview.backgroundColor.CGColor) > 0.1f) {
 				float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
 				if (userTransparency <= 0 || userTransparency > 1) {
 					userTransparency = 0.8;
@@ -5108,8 +5099,7 @@ static CGFloat customTabBarHeight() {
 			}
 		} else {
 			for (UIView *innerSubview in middleContainer.subviews) {
-				if ([innerSubview isKindOfClass:[UIView class]] && innerSubview.alpha > 0.1f && innerSubview.backgroundColor &&
-				    CGColorGetAlpha(innerSubview.backgroundColor.CGColor) > 0.1f) {
+				if (innerSubview.alpha > 0.1f && innerSubview.backgroundColor && CGColorGetAlpha(innerSubview.backgroundColor.CGColor) > 0.1f) {
 					[DYYYUtils applyBlurEffectToView:innerSubview transparency:0.2f blurViewTag:999];
 					[DYYYUtils clearBackgroundRecursivelyInView:innerSubview];
 					break;
@@ -5452,8 +5442,7 @@ static const void *kDyHasTransformedKey = &kDyHasTransformedKey;
     UIResponder *nextResponder = [self nextResponder];
     if (![nextResponder isKindOfClass:[UIView class]]) return;
 
-    UIView *parentView = (UIView *)nextResponder;
-    UIViewController *viewController = [parentView firstAvailableUIViewController];
+    UIViewController *viewController = [DYYYUtils firstAvailableViewControllerFromView:self];
 
     if ([viewController isKindOfClass:%c(AWELiveNewPreStreamViewController)] &&
         [[self levelName] isEqualToString:@"content"]) {
@@ -5501,6 +5490,7 @@ static const void *kDyHasTransformedKey = &kDyHasTransformedKey;
     }
 }
 %end
+
 %hook AWEStoryContainerCollectionView
 - (void)layoutSubviews {
 	%orig;
