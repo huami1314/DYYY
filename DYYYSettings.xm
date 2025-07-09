@@ -2536,6 +2536,14 @@ extern "C"
 		    @"detail" : @"",
 		    @"cellType" : @6,
 		    @"imageName" : @"ic_sun_outlined"},
+		  @{
+			  @"identifier" : @"DYYYDefaultEnterWorks",
+			  @"title" : @"资料默认进入作品",
+			  @"subTitle" : @"禁止个人资料页自动进入橱窗等页面",
+			  @"detail" : @"",
+			  @"cellType" : @37,
+			  @"imageName" : @"ic_playsquarestack_outlined_20"
+		  },
 		  @{@"identifier" : @"DYYYDisableHomeRefresh",
 		    @"title" : @"禁用点击首页刷新",
 		    @"detail" : @"",
@@ -2548,51 +2556,42 @@ extern "C"
 		    @"imageName" : @"ic_thumbsup_outlined_20"},
 		  @{@"identifier" : @"DYYYEnableDoubleOpenComment",
 		    @"title" : @"启用双击打开评论",
+		    @"subTitle" : @"与“双击打开菜单”互斥",
 		    @"detail" : @"",
-		    @"cellType" : @6,
+		    @"cellType" : @37,
 		    @"imageName" : @"ic_comment_outlined_20"},
 		  @{@"identifier" : @"DYYYCommentShowDanmaku",
 		    @"title" : @"查看评论显示弹幕",
+		    @"subTitle" : @"打开评论区时保持弹幕可见",
 		    @"detail" : @"",
-		    @"cellType" : @6,
+		    @"cellType" : @37,
 		    @"imageName" : @"ic_comment_outlined_20"},
 		  @{
-			  @"identifier" : @"DYYYDefaultEnterWorks",
-			  @"title" : @"资料默认进入作品",
-			  @"subTitle" : @"禁止个人资料页自动进入橱窗等页面",
+			  @"identifier" : @"DYYYEnableDoubleTapMenu",
+			  @"title" : @"启用双击打开菜单",
+			  @"subTitle" : @"与“双击打开评论”互斥，下方自定义",
 			  @"detail" : @"",
 			  @"cellType" : @37,
-			  @"imageName" : @"ic_playsquarestack_outlined_20"
+			  @"imageName" : @"ic_xiaoxihuazhonghua_outlined_20"
 		  },
 		  @{
-			  @"identifier" : @"DYYYEnableDoubleOpenAlertController",
-			  @"title" : @"启用双击打开菜单",
-			  @"subTitle" : @"无法与双击打开评论同时启用",
+			  @"identifier" : @"DYYYDoubleTapMenuSettings",
+			  @"title" : @"设置双击菜单项目",
+			  @"subTitle" : @"自定义双击打开菜单需要显示的项目",
 			  @"detail" : @"",
 			  @"cellType" : @20,
-			  @"imageName" : @"ic_xiaoxihuazhonghua_outlined_20"
+			  @"imageName" : @"ic_squaresplit_outlined_20"
 		  }
 	  ];
 
 	  for (NSDictionary *dict in interactionSettings) {
 		  AWESettingItemModel *item = [DYYYSettingsHelper createSettingItem:dict];
-		  if ([item.identifier isEqualToString:@"DYYYEnableDoubleOpenAlertController"]) {
+		  if ([item.identifier isEqualToString:@"DYYYDoubleTapMenuSettings"]) {
+			  __weak AWESettingItemModel *weakItem = item;
 			  item.cellTappedBlock = ^{
-			    // 检查是否启用了双击打开评论功能
-			    BOOL isEnableDoubleOpenComment = [DYYYSettingsHelper getUserDefaults:@"DYYYEnableDoubleOpenComment"];
-			    if (isEnableDoubleOpenComment) {
-				    return;
-			    }
-
+			    __strong AWESettingItemModel *strongItem = weakItem;
+			    if (!strongItem || !strongItem.isEnable) return;
 			    NSMutableArray<AWESettingItemModel *> *doubleTapItems = [NSMutableArray array];
-			    AWESettingItemModel *enableDoubleTapMenu = [DYYYSettingsHelper createSettingItem:@{
-				    @"identifier" : @"DYYYEnableDoubleOpenAlertController",
-				    @"title" : @"启用双击菜单",
-				    @"detail" : @"",
-				    @"cellType" : @6,
-				    @"imageName" : @"ic_xiaoxihuazhonghua_outlined_20"
-			    }];
-			    [doubleTapItems addObject:enableDoubleTapMenu];
 			    NSArray *doubleTapFunctions = @[
 				    @{@"identifier" : @"DYYYDoubleTapDownload",
 				      @"title" : @"保存视频/图片",
@@ -2648,8 +2647,8 @@ extern "C"
 				    [doubleTapItems addObject:functionItem];
 			    }
 			    NSMutableArray *sections = [NSMutableArray array];
-			    [sections addObject:[DYYYSettingsHelper createSectionWithTitle:@"双击菜单设置" items:doubleTapItems]];
-			    AWESettingBaseViewController *subVC = [DYYYSettingsHelper createSubSettingsViewController:@"双击菜单设置" sections:sections];
+			    [sections addObject:[DYYYSettingsHelper createSectionWithTitle:@"设置双击菜单项目" items:doubleTapItems]];
+			    AWESettingBaseViewController *subVC = [DYYYSettingsHelper createSubSettingsViewController:@"设置双击菜单项目" sections:sections];
 			    [rootVC.navigationController pushViewController:(UIViewController *)subVC animated:YES];
 			  };
 		  }

@@ -62,6 +62,7 @@
               @"DYYYEnableFloatSpeedButton" : @[ @"DYYYAutoRestoreSpeed", @"DYYYSpeedButtonShowX", @"DYYYSpeedButtonSize", @"DYYYSpeedSettings" ],
               @"DYYYEnableFloatClearButton" : @[ @"DYYYClearButtonIcon", @"DYYYEnableFloatClearButtonSize", @"DYYYEnabshijianjindu", @"DYYYHideTimeProgress", @"DYYYHideDanmaku", @"DYYYHideSlider", @"DYYYHideTabBar", @"DYYYHideSpeed", @"DYYYHideChapter" ],
               @"DYYYisEnableModernPanel" : @[ @"DYYYisLongPressPanelBlur", @"DYYYisLongPressPanelDark" ],
+              @"DYYYEnableDoubleTapMenu" : @[ @"DYYYDoubleTapMenuSettings" ],
           },
 
           // ===== 条件依赖配置 =====
@@ -73,25 +74,17 @@
           // ===== 冲突配置 =====
           // 当源设置项开启时，会自动关闭目标设置项
           @"conflicts" : @{
-              @"DYYYEnableDoubleOpenComment" : @[ @"DYYYEnableDoubleOpenAlertController" ],
-              @"DYYYEnableDoubleOpenAlertController" : @[ @"DYYYEnableDoubleOpenComment" ],
+              @"DYYYEnableDoubleOpenComment" : @[ @"DYYYEnableDoubleTapMenu" ],
+              @"DYYYEnableDoubleTapMenu" : @[ @"DYYYEnableDoubleOpenComment" ],
               @"DYYYEnabshijianjindu" : @[ @"DYYYHideTimeProgress" ],
               @"DYYYHideTimeProgress" : @[ @"DYYYEnabshijianjindu" ],
               @"DYYYHideLOTAnimationView" : @[ @"DYYYHideFollowPromptView" ],
               @"DYYYHideFollowPromptView" : @[ @"DYYYHideLOTAnimationView" ],
-              @"DYYYDanmuRainbowRotating" : @[ @"DYYYdanmuColor" ],
-              @"DYYYEnabsuijiyanse" : @[ @"DYYYLabelColor" ]
           },
 
           // ===== 互斥激活配置 =====
           // 当源设置项关闭时，目标设置项才能激活
           @"mutualExclusions" : @{
-              @"DYYYEnableDoubleOpenComment" : @[ @"DYYYEnableDoubleOpenAlertController" ],
-              @"DYYYEnableDoubleOpenAlertController" : @[ @"DYYYEnableDoubleOpenComment" ],
-              @"DYYYEnabshijianjindu" : @[ @"DYYYHideTimeProgress" ],
-              @"DYYYHideTimeProgress" : @[ @"DYYYEnabshijianjindu" ],
-              @"DYYYHideLOTAnimationView" : @[ @"DYYYHideFollowPromptView" ],
-              @"DYYYHideFollowPromptView" : @[ @"DYYYHideLOTAnimationView" ],
               @"DYYYDanmuRainbowRotating" : @[ @"DYYYdanmuColor" ],
               @"DYYYEnabsuijiyanse" : @[ @"DYYYLabelColor" ]
           },
