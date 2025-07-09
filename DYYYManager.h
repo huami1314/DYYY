@@ -49,8 +49,9 @@
  * @param mediaType 媒体类型
  * @param completion 完成回调
  */
-+ (void)downloadMedia:(NSURL *)url 
-            mediaType:(MediaType)mediaType 
++ (void)downloadMedia:(NSURL *)url
+            mediaType:(MediaType)mediaType
+                audio:(NSURL *)audioURL
            completion:(void (^)(BOOL success))completion;
 
 /**
@@ -62,6 +63,7 @@
  */
 + (void)downloadMediaWithProgress:(NSURL *)url
                         mediaType:(MediaType)mediaType
+                            audio:(NSURL *)audioURL
                          progress:(void (^)(float progress))progressBlock
                        completion:(void (^)(BOOL success, NSURL *fileURL))completion;
 
