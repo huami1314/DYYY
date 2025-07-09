@@ -2169,11 +2169,11 @@ static BOOL isDownloadFlied = NO;
 				}
 
 				NSURL *heifURL = [NSURL URLWithString:urlString];
-                                [DYYYManager downloadMedia:heifURL
-                                                 mediaType:MediaTypeHeic
-                                                     audio:nil
-                                                completion:^(BOOL success){
-                                                }];
+				[DYYYManager downloadMedia:heifURL
+						 mediaType:MediaTypeHeic
+						     audio:nil
+						completion:^(BOOL success){
+						}];
 				return;
 			}
 		}
@@ -2320,11 +2320,11 @@ static __weak YYAnimatedImageView *targetStickerView = nil;
 	}
 
 	NSURL *url = [NSURL URLWithString:urlString];
-        [DYYYManager downloadMedia:url
-                         mediaType:MediaTypeHeic
-                             audio:nil
-                        completion:^(BOOL success){
-                        }];
+	[DYYYManager downloadMedia:url
+			 mediaType:MediaTypeHeic
+			     audio:nil
+			completion:^(BOOL success){
+			}];
 }
 
 %end
@@ -2351,11 +2351,11 @@ static AWEIMReusableCommonCell *currentCell;
 		  AWEIMGiphyMessage *giphyMessage = (AWEIMGiphyMessage *)context.message;
 		  if (giphyMessage.giphyURL && giphyMessage.giphyURL.originURLList.count > 0) {
 			  NSURL *url = [NSURL URLWithString:giphyMessage.giphyURL.originURLList.firstObject];
-                          [DYYYManager downloadMedia:url
-                                           mediaType:MediaTypeHeic
-                                               audio:nil
-                                          completion:^(BOOL success){
-                                          }];
+			  [DYYYManager downloadMedia:url
+					   mediaType:MediaTypeHeic
+					       audio:nil
+					  completion:^(BOOL success){
+					  }];
 		  }
 	  }
 	};
@@ -4216,9 +4216,7 @@ static AWEIMReusableCommonCell *currentCell;
 		UIView *pview = self.superview;
 		UIView *gpview = pview.superview;
 		// 基于accessibilitylabel的判断
-		BOOL isLynxView = [pview isKindOfClass:%c(UILynxView)] &&
-				  [gpview isKindOfClass:%c(LynxView)] &&
-				  [gpview.accessibilityLabel isEqualToString:@"lynxview"];
+		BOOL isLynxView = [pview isKindOfClass:%c(UILynxView)] && [gpview isKindOfClass:%c(LynxView)] && [gpview.accessibilityLabel isEqualToString:@"lynxview"];
 		// 基于最近的视图控制器IESLiveAudienceViewController的判断
 		UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
 		BOOL isLiveAudienceVC = [vc isKindOfClass:%c(IESLiveAudienceViewController)];
@@ -4559,12 +4557,12 @@ static AWEIMReusableCommonCell *currentCell;
 
 		awemeModel = [self performSelector:@selector(awemeModel)];
 
-                AWEVideoModel *videoModel = awemeModel.video;
-                AWEMusicModel *musicModel = awemeModel.music;
-                NSURL *audioURL = nil;
-                if (musicModel && musicModel.playURL && musicModel.playURL.originURLList.count > 0) {
-                        audioURL = [NSURL URLWithString:musicModel.playURL.originURLList.firstObject];
-                }
+		AWEVideoModel *videoModel = awemeModel.video;
+		AWEMusicModel *musicModel = awemeModel.music;
+		NSURL *audioURL = nil;
+		if (musicModel && musicModel.playURL && musicModel.playURL.originURLList.count > 0) {
+			audioURL = [NSURL URLWithString:musicModel.playURL.originURLList.firstObject];
+		}
 
 		// 确定内容类型（视频或图片）
 		BOOL isImageContent = (awemeModel.awemeType == 68);
@@ -4629,10 +4627,10 @@ static AWEIMReusableCommonCell *currentCell;
 									  }];
 					      } else if (currentImageModel && currentImageModel.urlList.count > 0) {
 						      if (downloadURL) {
-                                                              [DYYYManager downloadMedia:downloadURL
-                                                                               mediaType:MediaTypeImage
-                                                                                   audio:nil
-                                                                              completion:^(BOOL success) {
+							      [DYYYManager downloadMedia:downloadURL
+									       mediaType:MediaTypeImage
+										   audio:nil
+									      completion:^(BOOL success) {
 										if (success) {
 										} else {
 											[DYYYUtils showToast:@"图片保存已取消"];
@@ -4680,19 +4678,19 @@ static AWEIMReusableCommonCell *currentCell;
 
 						      if (urlList && urlList.count > 0) {
 							      NSURL *url = [NSURL URLWithString:urlList.firstObject];
-                                                              [DYYYManager downloadMedia:url
-                                                                               mediaType:MediaTypeVideo
-                                                                                   audio:audioURL
-                                                                              completion:^(BOOL success){
-                                                                              }];
+							      [DYYYManager downloadMedia:url
+									       mediaType:MediaTypeVideo
+										   audio:audioURL
+									      completion:^(BOOL success){
+									      }];
 						      } else {
 							      // 备用方法：直接使用h264URL
 							      if (videoModel.h264URL && videoModel.h264URL.originURLList.count > 0) {
 								      NSURL *url = [NSURL URLWithString:videoModel.h264URL.originURLList.firstObject];
 								      [DYYYManager downloadMedia:url
 										       mediaType:MediaTypeVideo
-          audio:audioURL
-     completion:^(BOOL success){
+											   audio:audioURL
+										      completion:^(BOOL success){
 										      }];
 							      }
 						      }
@@ -4774,7 +4772,7 @@ static AWEIMReusableCommonCell *currentCell;
 				    handler:^{
 				      if (musicModel && musicModel.playURL && musicModel.playURL.originURLList.count > 0) {
 					      NSURL *url = [NSURL URLWithString:musicModel.playURL.originURLList.firstObject];
-                                              [DYYYManager downloadMedia:url mediaType:MediaTypeAudio audio:nil completion:nil];
+					      [DYYYManager downloadMedia:url mediaType:MediaTypeAudio audio:nil completion:nil];
 				      }
 				    }];
 			[actions addObject:downloadAudioAction];
@@ -5063,7 +5061,8 @@ static CGFloat customTabBarHeight() {
 	%orig;
 
 	BOOL enableCommentBlur = DYYYGetBool(@"DYYYisEnableCommentBlur");
-	if (!enableCommentBlur) return;
+	if (!enableCommentBlur)
+		return;
 
 	Class containerViewClass = NSClassFromString(@"AWECommentInputViewSwiftImpl.CommentInputContainerView");
 	UIView *containerView = [DYYYUtils findSubviewOfClass:containerViewClass inView:self.view];
@@ -5109,7 +5108,8 @@ static CGFloat customTabBarHeight() {
 			}
 		} else {
 			for (UIView *innerSubview in middleContainer.subviews) {
-				if ([innerSubview isKindOfClass:[UIView class]] && innerSubview.alpha > 0.1f && innerSubview.backgroundColor && CGColorGetAlpha(innerSubview.backgroundColor.CGColor) > 0.1f) {
+				if ([innerSubview isKindOfClass:[UIView class]] && innerSubview.alpha > 0.1f && innerSubview.backgroundColor &&
+				    CGColorGetAlpha(innerSubview.backgroundColor.CGColor) > 0.1f) {
 					[DYYYUtils applyBlurEffectToView:innerSubview transparency:0.2f blurViewTag:999];
 					[DYYYUtils clearBackgroundRecursivelyInView:innerSubview];
 					break;
@@ -6232,17 +6232,17 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 %end
 %end
 
-%group BDMultiContentVideoViewGroup
-%hook BDMultiContentContainer_VideoContentView
+%hook AWEStoryContainerCollectionView
 
-- (void)setTransform:(CGAffineTransform)transform {
+- (void)setFrame:(CGRect)frame {
 	if (DYYYGetBool(@"DYYYisEnableCommentBlur")) {
-		return;
+		if (frame.origin.y != 0) {
+			return;
+		}
 	}
-	%orig(transform);
+	%orig(frame);
 }
 
-%end
 %end
 
 // Swift 类初始化
@@ -6256,10 +6256,6 @@ static NSString *const kStreamlineSidebarKey = @"DYYYStreamlinethesidebar";
 	Class imageContentClass = objc_getClass("BDMultiContentContainer.ImageContentView");
 	if (imageContentClass) {
 		%init(BDMultiContentImageViewGroup, BDMultiContentContainer_ImageContentView = imageContentClass);
-	}
-	Class videoContentClass = objc_getClass("BDMultiContentContainer.VideoContentView");
-	if (videoContentClass) {
-		%init(BDMultiContentVideoViewGroup, BDMultiContentContainer_VideoContentView = videoContentClass);
 	}
 }
 
