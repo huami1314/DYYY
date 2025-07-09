@@ -5424,28 +5424,27 @@ static CGFloat currentScale = 1.0;
 }
 %end
 
-%hook HTSEventForwardingView
+%hook IESLiveStackView
 
 static const void *kDyHasTransformedKey = &kDyHasTransformedKey;
 
 - (void)layoutSubviews {
-    %orig;
-
-	NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
-	if (transparentValue.length > 0) {
-		CGFloat alphaValue = transparentValue.floatValue;
-		if (alphaValue >= 0.0 && alphaValue <= 1.0) {
-			self.alpha = alphaValue;
-		}
-	}
-
-    UIResponder *nextResponder = [self nextResponder];
-    if (![nextResponder isKindOfClass:[UIView class]]) return;
+	%orig;
 
     UIViewController *viewController = [DYYYUtils firstAvailableViewControllerFromView:self];
+    UIView *superView = self.superview;
 
     if ([viewController isKindOfClass:%c(AWELiveNewPreStreamViewController)] &&
-        [[self levelName] isEqualToString:@"content"]) {
+        [superView isKindOfClass:%c(HTSEventForwardingView)] &&
+		[superView.accessibilityLabel isEqualToString:@"ContentContainerLayer"]) {
+
+        NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
+        if (transparentValue.length > 0) {
+			CGFloat alphaValue = transparentValue.floatValue;
+			if (alphaValue >= 0.0 && alphaValue <= 1.0) {
+				self.alpha = alphaValue;
+			}
+        }
 
         if ([objc_getAssociatedObject(self, kDyHasTransformedKey) boolValue]) {
             return;
@@ -5462,7 +5461,7 @@ static const void *kDyHasTransformedKey = &kDyHasTransformedKey;
 
         if (scale != 1.0 || shouldShiftUp) {
             
-            CGAffineTransform finalTransform = self.transform;
+            CGAffineTransform finalTransform = CGAffineTransformIdentity;
 
             if (scale != 1.0) {
                 NSArray *subviews = [self.subviews copy];
@@ -5480,7 +5479,7 @@ static const void *kDyHasTransformedKey = &kDyHasTransformedKey;
             }
 
             if (shouldShiftUp) {
-                finalTransform = CGAffineTransformTranslate(finalTransform, 0, -83 / (scale > 0 ? scale : 1.0));
+                finalTransform = CGAffineTransformTranslate(finalTransform, 0, -tabHeight / (scale > 0 ? scale : 1.0));
             }
 
             self.transform = finalTransform;
