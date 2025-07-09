@@ -1307,3 +1307,7 @@ static CGFloat gStartVal = 0.0;
 
 @interface MTKView : UIView
 @end
+
+@interface HTSEventForwardingView : UIView
+@property(copy, nonatomic) NSString *levelName;
+@end
