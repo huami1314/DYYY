@@ -1860,6 +1860,9 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 %end
 
 // 直播默认最高清晰度功能
+
+static NSArray<NSString *> *dyyy_cachedQualityOrder = nil;
+
 %hook HTSLiveStreamQualityFragment
 
 - (void)setupStreamQuality:(id)arg1 {
@@ -1915,9 +1918,12 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
         }
     }
     if (!isDescendingOrder) {
-        NSLog(@"[DYYY] quality list not descending, skip this call");
-        return;
+        NSLog(@"[DYYY] quality list not descending, reuse last order");
+    } else {
+        dyyy_cachedQualityOrder = [availableNames copy];
     }
+
+    NSArray *searchOrder = dyyy_cachedQualityOrder ?: orderedNames;
 
     NSNumber *exactIndex = nameToIndex[preferredQuality];
     if (exactIndex) {
@@ -1926,7 +1932,7 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
         return;
     }
 
-    NSInteger targetPos = [orderedNames indexOfObject:preferredQuality];
+    NSInteger targetPos = [searchOrder indexOfObject:preferredQuality];
     if (targetPos == NSNotFound) {
         NSLog(@"[DYYY] preferred quality %@ not in list", preferredQuality);
         return;
@@ -1934,8 +1940,8 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 
     NSInteger step = preferLower ? 1 : -1;
     BOOL applied = NO;
-    for (NSInteger pos = targetPos + step; pos >= 0 && pos < orderedNames.count; pos += step) {
-        NSString *candidate = orderedNames[pos];
+    for (NSInteger pos = targetPos + step; pos >= 0 && pos < searchOrder.count; pos += step) {
+        NSString *candidate = searchOrder[pos];
         NSNumber *idx = nameToIndex[candidate];
         if (idx) {
             NSLog(@"[DYYY] fallback quality %@ at index %@", candidate, idx);
