@@ -1862,6 +1862,7 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 // 直播默认最高清晰度功能
 
 static NSArray<NSString *> *dyyy_cachedQualityOrder = nil;
+static NSDictionary<NSString *, NSNumber *> *dyyy_cachedQualityIndex = nil;
 
 %hook HTSLiveStreamQualityFragment
 
@@ -1921,14 +1922,35 @@ static NSArray<NSString *> *dyyy_cachedQualityOrder = nil;
         NSLog(@"[DYYY] quality list not descending, reuse last order");
     } else {
         dyyy_cachedQualityOrder = [availableNames copy];
+        dyyy_cachedQualityIndex = [nameToIndex copy];
     }
 
     NSArray *searchOrder = dyyy_cachedQualityOrder ?: orderedNames;
 
-    NSNumber *exactIndex = nameToIndex[preferredQuality];
-    if (exactIndex) {
-        NSLog(@"[DYYY] exact quality %@ found at index %@", preferredQuality, exactIndex);
-        [self setResolutionWithIndex:exactIndex.integerValue isManual:YES beginChange:nil completion:nil];
+    NSNumber *indexToUse = nil;
+    if (!isDescendingOrder) {
+        indexToUse = dyyy_cachedQualityIndex[preferredQuality];
+        if (indexToUse && indexToUse.integerValue < qualities.count) {
+            id q = qualities[indexToUse.integerValue];
+            NSString *nameAtIdx = nil;
+            if ([q respondsToSelector:@selector(name)]) {
+                nameAtIdx = [q name];
+            } else {
+                nameAtIdx = [q valueForKey:@"name"];
+            }
+            if (![nameAtIdx isEqualToString:preferredQuality]) {
+                indexToUse = nil;
+            }
+        }
+    }
+
+    if (!indexToUse) {
+        indexToUse = nameToIndex[preferredQuality];
+    }
+
+    if (indexToUse) {
+        NSLog(@"[DYYY] exact quality %@ found at index %@", preferredQuality, indexToUse);
+        [self setResolutionWithIndex:indexToUse.integerValue isManual:YES beginChange:nil completion:nil];
         return;
     }
 
