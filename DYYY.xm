@@ -1865,18 +1865,72 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 - (void)setupStreamQuality:(id)arg1 {
     %orig;
 
-    BOOL enableHighestQuality = DYYYGetBool(@"DYYYEnableLiveHighestQuality");
-    if (enableHighestQuality) {
-        NSArray *qualities = self.streamQualityArray;
-        if (!qualities || qualities.count == 0) {
-            qualities = [self getQualities];
+    NSString *preferredQuality = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYLiveQuality"];
+    if (!preferredQuality || [preferredQuality isEqualToString:@"自动"]) {
+        return;
+    }
+
+    BOOL preferLower = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYLivePreferLowerQuality"];
+
+    NSArray *qualities = self.streamQualityArray;
+    if (!qualities || qualities.count == 0) {
+        qualities = [self getQualities];
+    }
+
+    if (!qualities || qualities.count == 0) {
+        return;
+    }
+
+    NSDictionary *nameToLevel = @{ @"标清" : @1, @"高清" : @2, @"超清" : @3, @"蓝光" : @4, @"蓝光帧彩" : @7 };
+    NSNumber *targetLevelNum = nameToLevel[preferredQuality];
+    NSInteger targetIndex = -1;
+    NSInteger fallbackIndex = -1;
+    NSInteger fallbackDiff = INT_MAX;
+
+    for (NSInteger i = 0; i < qualities.count; i++) {
+        id q = qualities[i];
+        NSString *name = nil;
+        if ([q respondsToSelector:@selector(name)]) {
+            name = [q name];
+        } else {
+            name = [q valueForKey:@"name"];
         }
 
-        if (!qualities || qualities.count == 0) {
-            return;
+        NSInteger level = 0;
+        id levelObj = nil;
+        if ([q respondsToSelector:@selector(level)]) {
+            levelObj = @([q level]);
+        } else {
+            levelObj = [q valueForKey:@"level"];
         }
-        // 选择索引0作为最高清晰度
-        [self setResolutionWithIndex:0 isManual:YES beginChange:nil completion:nil];
+        if (levelObj) level = [levelObj integerValue];
+
+        if (name && [name isEqualToString:preferredQuality]) {
+            targetIndex = i;
+            break;
+        }
+
+        if (targetLevelNum) {
+            NSInteger targetLevel = [targetLevelNum integerValue];
+            NSInteger diff = INT_MAX;
+            if (preferLower) {
+                if (level < targetLevel) diff = targetLevel - level; else continue;
+            } else {
+                if (level > targetLevel) diff = level - targetLevel; else continue;
+            }
+            if (diff < fallbackDiff) {
+                fallbackDiff = diff;
+                fallbackIndex = i;
+            }
+        }
+    }
+
+    if (targetIndex == -1) {
+        targetIndex = fallbackIndex;
+    }
+
+    if (targetIndex != -1) {
+        [self setResolutionWithIndex:targetIndex isManual:YES beginChange:nil completion:nil];
     }
 }
 

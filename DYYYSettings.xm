@@ -354,8 +354,13 @@ extern "C"
       // 【杂项设置】分类
       NSMutableArray<AWESettingItemModel *> *miscellaneousItems = [NSMutableArray array];
       NSArray *miscellaneousSettings = @[
-          @{@"identifier" : @"DYYYEnableLiveHighestQuality",
-            @"title" : @"直播默认最高画质",
+          @{@"identifier" : @"DYYYLiveQuality",
+            @"title" : @"默认直播画质",
+            @"detail" : @"自动",
+            @"cellType" : @26,
+            @"imageName" : @"ic_video_outlined_20"},
+          @{@"identifier" : @"DYYYLivePreferLowerQuality",
+            @"title" : @"默认更低的画质",
             @"detail" : @"",
             @"cellType" : @6,
             @"imageName" : @"ic_video_outlined_20"},
@@ -383,6 +388,24 @@ extern "C"
 
       for (NSDictionary *dict in miscellaneousSettings) {
           AWESettingItemModel *item = [DYYYSettingsHelper createSettingItem:dict cellTapHandlers:cellTapHandlers];
+
+          if ([item.identifier isEqualToString:@"DYYYLiveQuality"]) {
+              NSString *savedQuality = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYLiveQuality"] ?: @"自动";
+              item.detail = savedQuality;
+              item.cellTappedBlock = ^{
+                NSArray *qualities = @[ @"自动", @"标清", @"高清", @"超清", @"蓝光", @"蓝光帧彩" ];
+
+                [DYYYOptionsSelectionView showWithPreferenceKey:@"DYYYLiveQuality"
+                                                   optionsArray:qualities
+                                                     headerText:@"选择默认直播画质"
+                                                 onPresentingVC:topView()
+                                               selectionChanged:^(NSString *selectedValue) {
+                                                 item.detail = selectedValue;
+                                                 [item refreshCell];
+                                               }];
+              };
+          }
+
           [miscellaneousItems addObject:item];
       }
       // 【过滤与屏蔽】分类
