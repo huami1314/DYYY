@@ -1867,10 +1867,12 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 
     NSString *preferredQuality = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYLiveQuality"];
     if (!preferredQuality || [preferredQuality isEqualToString:@"自动"]) {
+        NSLog(@"[DYYY] Live quality auto - skipping hook");
         return;
     }
 
     BOOL preferLower = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYLivePreferLowerQuality"];
+    NSLog(@"[DYYY] preferredQuality=%@ preferLower=%@", preferredQuality, @(preferLower));
 
     NSArray *qualities = self.streamQualityArray;
     if (!qualities || qualities.count == 0) {
@@ -1883,6 +1885,7 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 
     NSArray *orderedNames = @[ @"标清", @"高清", @"超清", @"蓝光", @"蓝光帧彩" ];
     NSMutableDictionary<NSString *, NSNumber *> *nameToIndex = [NSMutableDictionary dictionary];
+    NSMutableArray<NSString *> *availableNames = [NSMutableArray array];
     for (NSInteger i = 0; i < qualities.count; i++) {
         id q = qualities[i];
         NSString *name = nil;
@@ -1893,28 +1896,38 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
         }
         if (name) {
             nameToIndex[name] = @(i);
+            [availableNames addObject:name];
         }
     }
+    NSLog(@"[DYYY] available qualities: %@", availableNames);
 
     NSNumber *exactIndex = nameToIndex[preferredQuality];
     if (exactIndex) {
+        NSLog(@"[DYYY] exact quality %@ found at index %@", preferredQuality, exactIndex);
         [self setResolutionWithIndex:exactIndex.integerValue isManual:YES beginChange:nil completion:nil];
         return;
     }
 
     NSInteger targetPos = [orderedNames indexOfObject:preferredQuality];
     if (targetPos == NSNotFound) {
+        NSLog(@"[DYYY] preferred quality %@ not in list", preferredQuality);
         return;
     }
 
     NSInteger step = preferLower ? -1 : 1;
+    BOOL applied = NO;
     for (NSInteger pos = targetPos + step; pos >= 0 && pos < orderedNames.count; pos += step) {
         NSString *candidate = orderedNames[pos];
         NSNumber *idx = nameToIndex[candidate];
         if (idx) {
+            NSLog(@"[DYYY] fallback quality %@ at index %@", candidate, idx);
             [self setResolutionWithIndex:idx.integerValue isManual:YES beginChange:nil completion:nil];
+            applied = YES;
             break;
         }
+    }
+    if (!applied) {
+        NSLog(@"[DYYY] no suitable fallback quality found");
     }
 }
 
