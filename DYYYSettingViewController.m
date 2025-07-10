@@ -1,7 +1,13 @@
-#import "DYYYSettingViewController.h"、
+#import "DYYYSettingViewController.h"
 #import "DYYYConstants.h"
+#import "DYYYOptionsSelectionView.h"
 
-typedef NS_ENUM(NSInteger, DYYYSettingItemType) { DYYYSettingItemTypeSwitch, DYYYSettingItemTypeTextField, DYYYSettingItemTypeSpeedPicker };
+typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
+    DYYYSettingItemTypeSwitch,
+    DYYYSettingItemTypeTextField,
+    DYYYSettingItemTypeSpeedPicker,
+    DYYYSettingItemTypeOptions
+};
 
 @interface DYYYSettingItem : NSObject
 
@@ -162,7 +168,8 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) { DYYYSettingItemTypeSwitch, DYY
             [DYYYSettingItem itemWithTitle:@"隐藏系统顶栏" key:@"DYYYisHideStatusbar" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"关注二次确认" key:@"DYYYfollowTips" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"收藏二次确认" key:@"DYYYcollectTips" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"直播默认最高画质" key:@"DYYYEnableLiveHighestQuality" type:DYYYSettingItemTypeSwitch],
+            [DYYYSettingItem itemWithTitle:@"默认直播画质" key:@"DYYYLiveQuality" type:DYYYSettingItemTypeOptions],
+            [DYYYSettingItem itemWithTitle:@"默认更低的画质" key:@"DYYYLivePreferLowerQuality" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"视频默认最高画质" key:@"DYYYEnableVideoHighestQuality" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"禁用直播PCDN功能" key:@"DYYYDisableLivePCDN" type:DYYYSettingItemTypeSwitch]
         ],
@@ -632,6 +639,15 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) { DYYYSettingItemTypeSwitch, DYY
 
         speedField.tag = indexPath.section * 1000 + indexPath.row;
         cell.accessoryView = speedField;
+    } else if (item.type == DYYYSettingItemTypeOptions) {
+        cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+        UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, 80, 30)];
+        NSString *value = [[NSUserDefaults standardUserDefaults] objectForKey:item.key] ?: @"自动";
+        label.text = value;
+        label.textColor = [UIColor whiteColor];
+        label.textAlignment = NSTextAlignmentRight;
+        label.tag = indexPath.section * 1000 + indexPath.row;
+        cell.accessoryView = label;
     }
 
     return cell;
@@ -648,6 +664,8 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) { DYYYSettingItemTypeSwitch, DYY
     DYYYSettingItem *item = self.settingSections[indexPath.section][indexPath.row];
     if (item.type == DYYYSettingItemTypeSpeedPicker) {
         [self showSpeedPickerForIndexPath:indexPath];
+    } else if (item.type == DYYYSettingItemTypeOptions) {
+        [self showOptionsPickerForIndexPath:indexPath];
     }
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
 }
@@ -686,6 +704,24 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) { DYYYSettingItemTypeSwitch, DYY
     }
 
     [self presentViewController:alert animated:YES completion:nil];
+}
+
+- (void)showOptionsPickerForIndexPath:(NSIndexPath *)indexPath {
+    DYYYSettingItem *item = self.settingSections[indexPath.section][indexPath.row];
+    NSArray *options = @[ @"自动", @"标清", @"高清", @"超清", @"蓝光", @"蓝光帧彩" ];
+
+    [DYYYOptionsSelectionView
+        showWithPreferenceKey:item.key
+                   optionsArray:options
+                     headerText:[NSString stringWithFormat:@"选择%@", item.title]
+                 onPresentingVC:self
+               selectionChanged:^(NSString *selected) {
+                 UITableViewCell *cell = [self.tableView cellForRowAtIndexPath:indexPath];
+                 UILabel *label = (UILabel *)cell.accessoryView;
+                 if ([label isKindOfClass:[UILabel class]]) {
+                     label.text = selected;
+                 }
+               }];
 }
 
 #pragma mark - Actions

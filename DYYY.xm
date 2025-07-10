@@ -1859,24 +1859,111 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 
 %end
 
-// 直播默认最高清晰度功能
+// 调整直播默认清晰度功能
+static NSArray<NSString *> *dyyy_qualityRank = nil;
+
 %hook HTSLiveStreamQualityFragment
 
 - (void)setupStreamQuality:(id)arg1 {
     %orig;
 
-    BOOL enableHighestQuality = DYYYGetBool(@"DYYYEnableLiveHighestQuality");
-    if (enableHighestQuality) {
-        NSArray *qualities = self.streamQualityArray;
-        if (!qualities || qualities.count == 0) {
-            qualities = [self getQualities];
-        }
+    NSString *preferredQuality = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYLiveQuality"];
+    if (!preferredQuality || [preferredQuality isEqualToString:@"自动"]) {
+        NSLog(@"[DYYY] Live quality auto - skipping hook");
+        return;
+    }
 
-        if (!qualities || qualities.count == 0) {
-            return;
+    BOOL preferLower = YES;
+    NSLog(@"[DYYY] preferredQuality=%@ preferLower=%@", preferredQuality, @(preferLower));
+
+    NSArray *qualities = self.streamQualityArray;
+    if (!qualities || qualities.count == 0) {
+        qualities = [self getQualities];
+    }
+    if (!qualities || qualities.count == 0) {
+        return;
+    }
+
+    if (!dyyy_qualityRank) {
+        dyyy_qualityRank = @[ @"蓝光帧彩", @"蓝光", @"超清", @"高清", @"标清" ];
+    }
+    NSArray *orderedNames = dyyy_qualityRank;
+
+    // Map available names to their indices in the provided order
+    NSMutableDictionary<NSString *, NSNumber *> *nameToIndex = [NSMutableDictionary dictionary];
+    NSMutableArray<NSString *> *availableNames = [NSMutableArray array];
+    NSMutableArray<NSNumber *> *rankArray = [NSMutableArray array];
+    for (NSInteger i = 0; i < qualities.count; i++) {
+        id q = qualities[i];
+        NSString *name = nil;
+        if ([q respondsToSelector:@selector(name)]) {
+            name = [q name];
+        } else {
+            name = [q valueForKey:@"name"];
         }
-        // 选择索引0作为最高清晰度
-        [self setResolutionWithIndex:0 isManual:YES beginChange:nil completion:nil];
+        if (name) {
+            [availableNames addObject:name];
+            nameToIndex[name] = @(i);
+            NSInteger rank = [orderedNames indexOfObject:name];
+            if (rank != NSNotFound) {
+                [rankArray addObject:@(rank)];
+            }
+        }
+    }
+    NSLog(@"[DYYY] available qualities: %@", availableNames);
+
+    BOOL qualityDesc = YES; // ranks ascending -> high to low
+    BOOL qualityAsc = YES;  // ranks descending -> low to high
+    for (NSInteger i = 1; i < rankArray.count; i++) {
+        NSInteger prev = rankArray[i - 1].integerValue;
+        NSInteger curr = rankArray[i].integerValue;
+        if (curr < prev) {
+            qualityDesc = NO;
+        }
+        if (curr > prev) {
+            qualityAsc = NO;
+        }
+    }
+
+    NSInteger count = availableNames.count;
+    NSInteger (^convertIndex)(NSInteger) = ^NSInteger(NSInteger idx) {
+      if (qualityAsc && !qualityDesc) {
+          return count - 1 - idx;
+      }
+      return idx;
+    };
+
+    NSArray *searchOrder = orderedNames;
+
+    NSNumber *indexToUse = nameToIndex[preferredQuality];
+    if (indexToUse) {
+        NSInteger finalIdx = convertIndex(indexToUse.integerValue);
+        NSLog(@"[DYYY] exact quality %@ found at index %ld", preferredQuality, (long)finalIdx);
+        [self setResolutionWithIndex:finalIdx isManual:YES beginChange:nil completion:nil];
+        return;
+    }
+
+    NSInteger targetPos = [orderedNames indexOfObject:preferredQuality];
+    if (targetPos == NSNotFound) {
+        NSLog(@"[DYYY] preferred quality %@ not in list", preferredQuality);
+        return;
+    }
+
+    NSInteger step = preferLower ? 1 : -1;
+    BOOL applied = NO;
+    for (NSInteger pos = targetPos + step; pos >= 0 && pos < searchOrder.count; pos += step) {
+        NSString *candidate = searchOrder[pos];
+        NSNumber *idx = nameToIndex[candidate];
+        if (idx) {
+            NSInteger finalIdx = convertIndex(idx.integerValue);
+            NSLog(@"[DYYY] fallback quality %@ at index %ld", candidate, (long)finalIdx);
+            [self setResolutionWithIndex:finalIdx isManual:YES beginChange:nil completion:nil];
+            applied = YES;
+            break;
+        }
+    }
+    if (!applied) {
+        NSLog(@"[DYYY] no suitable fallback quality found");
     }
 }
 
@@ -5161,15 +5248,15 @@ static CGFloat customTabBarHeight() {
 %hook AWEPlayInteractionViewController
 - (void)viewDidLayoutSubviews {
     %orig;
-    
+
     if (!DYYYGetBool(@"DYYYisEnableFullScreen")) {
         return;
     }
-    
+
     UIViewController *parentVC = self.parentViewController;
     int maxIterations = 3;
     int count = 0;
-    
+
     while (parentVC && count < maxIterations) {
         if ([parentVC isKindOfClass:%c(AFDPlayRemoteFeedTableViewController)]) {
             return;
@@ -5177,36 +5264,31 @@ static CGFloat customTabBarHeight() {
         parentVC = parentVC.parentViewController;
         count++;
     }
-    
+
     if (!self.view.superview) {
         return;
     }
-    
+
     CGRect frame = self.view.frame;
     CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
     CGFloat superviewHeight = self.view.superview.frame.size.height;
-    
+
     if (frame.size.width != screenWidth && frame.size.height < superviewHeight) {
         return;
     }
-    
+
     NSString *currentReferString = self.referString;
-    
-    BOOL useFullHeight = 
-        [currentReferString isEqualToString:@"general_search"] ||
-        [currentReferString isEqualToString:@"chat"] ||
-        [currentReferString isEqualToString:@"search_result"] ||
-        [currentReferString isEqualToString:@"close_friends_moment"] ||
-        [currentReferString isEqualToString:@"offline_mode"] ||
-        [currentReferString isEqualToString:@"challenge"] ||
-        currentReferString == nil;
-    
+
+    BOOL useFullHeight = [currentReferString isEqualToString:@"general_search"] || [currentReferString isEqualToString:@"chat"] || [currentReferString isEqualToString:@"search_result"] ||
+                         [currentReferString isEqualToString:@"close_friends_moment"] || [currentReferString isEqualToString:@"offline_mode"] || [currentReferString isEqualToString:@"challenge"] ||
+                         currentReferString == nil;
+
     if (useFullHeight) {
         frame.size.height = superviewHeight;
     } else {
         frame.size.height = superviewHeight - tabHeight;
     }
-    
+
     if (fabs(frame.size.height - self.view.frame.size.height) > 0.5) {
         self.view.frame = frame;
     }
