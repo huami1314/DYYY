@@ -1,18 +1,14 @@
 #import "DYYYSettingViewController.h"、
 #import "DYYYConstants.h"
 
-typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
-    DYYYSettingItemTypeSwitch,
-    DYYYSettingItemTypeTextField,
-    DYYYSettingItemTypeSpeedPicker
-};
+typedef NS_ENUM(NSInteger, DYYYSettingItemType) { DYYYSettingItemTypeSwitch, DYYYSettingItemTypeTextField, DYYYSettingItemTypeSpeedPicker };
 
 @interface DYYYSettingItem : NSObject
 
-@property (nonatomic, copy) NSString *title;
-@property (nonatomic, copy) NSString *key;
-@property (nonatomic, assign) DYYYSettingItemType type;
-@property (nonatomic, copy, nullable) NSString *placeholder;
+@property(nonatomic, copy) NSString *title;
+@property(nonatomic, copy) NSString *key;
+@property(nonatomic, assign) DYYYSettingItemType type;
+@property(nonatomic, copy, nullable) NSString *placeholder;
 
 + (instancetype)itemWithTitle:(NSString *)title key:(NSString *)key type:(DYYYSettingItemType)type;
 + (instancetype)itemWithTitle:(NSString *)title key:(NSString *)key type:(DYYYSettingItemType)type placeholder:(nullable NSString *)placeholder;
@@ -38,14 +34,14 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
 
 @interface DYYYSettingViewController () <UITableViewDelegate, UITableViewDataSource>
 
-@property (nonatomic, strong) UITableView *tableView;
-@property (nonatomic, strong) NSArray<NSArray<DYYYSettingItem *> *> *settingSections;
-@property (nonatomic, strong) UILabel *footerLabel;
-@property (nonatomic, strong) NSMutableArray<NSString *> *sectionTitles;
-@property (nonatomic, strong) NSMutableSet *expandedSections;
-@property (nonatomic, strong) UIVisualEffectView *blurEffectView;
-@property (nonatomic, strong) UIVisualEffectView *vibrancyEffectView;
-@property (nonatomic, assign) BOOL isAgreementShown;
+@property(nonatomic, strong) UITableView *tableView;
+@property(nonatomic, strong) NSArray<NSArray<DYYYSettingItem *> *> *settingSections;
+@property(nonatomic, strong) UILabel *footerLabel;
+@property(nonatomic, strong) NSMutableArray<NSString *> *sectionTitles;
+@property(nonatomic, strong) NSMutableSet *expandedSections;
+@property(nonatomic, strong) UIVisualEffectView *blurEffectView;
+@property(nonatomic, strong) UIVisualEffectView *vibrancyEffectView;
+@property(nonatomic, assign) BOOL isAgreementShown;
 
 @end
 
@@ -53,11 +49,11 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    
+
     self.title = @"DYYY设置";
     self.expandedSections = [NSMutableSet set];
     self.isAgreementShown = NO;
-    
+
     [self setupAppearance];
     [self setupBlurEffect];
     [self setupTableView];
@@ -70,23 +66,23 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
 
 - (void)setupDefaultValues {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    
+
     // 如果快捷倍速数值未设置，设置默认值
     if (![defaults objectForKey:@"DYYYSpeedSettings"]) {
         [defaults setObject:@"1.0,1.25,1.5,2.0" forKey:@"DYYYSpeedSettings"];
     }
-    
+
     // 如果按钮大小未设置，设置默认值
     if (![defaults objectForKey:@"DYYYSpeedButtonSize"]) {
         [defaults setFloat:32.0 forKey:@"DYYYSpeedButtonSize"];
     }
-    
+
     [defaults synchronize];
 }
 
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
-    
+
     if (!self.isAgreementShown) {
         [self checkFirstLaunch];
         self.isAgreementShown = YES;
@@ -96,7 +92,7 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
 - (void)setupAppearance {
     self.navigationController.navigationBar.barTintColor = [UIColor clearColor];
     self.navigationController.navigationBar.tintColor = [UIColor whiteColor];
-    self.navigationController.navigationBar.largeTitleTextAttributes = @{NSForegroundColorAttributeName: [UIColor whiteColor]};
+    self.navigationController.navigationBar.largeTitleTextAttributes = @{NSForegroundColorAttributeName : [UIColor whiteColor]};
     self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeAlways;
     self.navigationController.navigationBar.prefersLargeTitles = YES;
 }
@@ -107,13 +103,13 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
     self.blurEffectView.frame = self.view.bounds;
     self.blurEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     [self.view addSubview:self.blurEffectView];
-    
+
     UIVibrancyEffect *vibrancyEffect = [UIVibrancyEffect effectForBlurEffect:blurEffect];
     self.vibrancyEffectView = [[UIVisualEffectView alloc] initWithEffect:vibrancyEffect];
     self.vibrancyEffectView.frame = self.blurEffectView.bounds;
     self.vibrancyEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     [self.blurEffectView.contentView addSubview:self.vibrancyEffectView];
-    
+
     UIView *overlayView = [[UIView alloc] initWithFrame:self.view.bounds];
     overlayView.backgroundColor = [UIColor colorWithWhite:0 alpha:0.3];
     overlayView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
@@ -156,7 +152,7 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
             [DYYYSettingItem itemWithTitle:@"屏蔽检测更新" key:@"DYYYNoUpdates" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"去青少年弹窗" key:@"DYYYHideteenmode" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"评论区毛玻璃" key:@"DYYYisEnableCommentBlur" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"通知玻璃效果" key:@"DYYYEnableNotificationTransparency" type:DYYYSettingItemTypeSwitch],  
+            [DYYYSettingItem itemWithTitle:@"通知玻璃效果" key:@"DYYYEnableNotificationTransparency" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"毛玻璃透明度" key:@"DYYYCommentBlurTransparent" type:DYYYSettingItemTypeTextField placeholder:@"0-1小数"],
             [DYYYSettingItem itemWithTitle:@"通知圆角半径" key:@"DYYYNotificationCornerRadius" type:DYYYSettingItemTypeTextField placeholder:@"默认12"],
             [DYYYSettingItem itemWithTitle:@"时间属地显示" key:@"DYYYisEnableArea" type:DYYYSettingItemTypeSwitch],
@@ -173,7 +169,7 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
         @[
             [DYYYSettingItem itemWithTitle:@"设置顶栏透明" key:@"DYYYtopbartransparent" type:DYYYSettingItemTypeTextField placeholder:@"0-1小数"],
             [DYYYSettingItem itemWithTitle:@"设置全局透明" key:@"DYYYGlobalTransparency" type:DYYYSettingItemTypeTextField placeholder:@"0-1小数"],
-            [DYYYSettingItem itemWithTitle:@"首页头像透明" key:@"DYYYAvatarViewTransparency" type:DYYYSettingItemTypeTextField placeholder:@"0-1小数"],                              
+            [DYYYSettingItem itemWithTitle:@"首页头像透明" key:@"DYYYAvatarViewTransparency" type:DYYYSettingItemTypeTextField placeholder:@"0-1小数"],
             [DYYYSettingItem itemWithTitle:@"右侧栏缩放度" key:@"DYYYElementScale" type:DYYYSettingItemTypeTextField placeholder:@"不填默认"],
             [DYYYSettingItem itemWithTitle:@"昵称文案缩放" key:@"DYYYNicknameScale" type:DYYYSettingItemTypeTextField placeholder:@"不填默认"],
             [DYYYSettingItem itemWithTitle:@"昵称下移距离" key:@"DYYYNicknameVerticalOffset" type:DYYYSettingItemTypeTextField placeholder:@"不填默认"],
@@ -219,7 +215,7 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
             [DYYYSettingItem itemWithTitle:@"隐藏搜索同款" key:@"DYYYHideSearchSame" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"隐藏长框搜索" key:@"DYYYHideSearchEntrance" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"隐藏进入直播" key:@"DYYYHideEnterLive" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏评论视图"  key:@"DYYYHideCommentViews" type:DYYYSettingItemTypeSwitch],
+            [DYYYSettingItem itemWithTitle:@"隐藏评论视图" key:@"DYYYHideCommentViews" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"隐藏通知提示" key:@"DYYYHidePushBanner" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"隐藏头像列表" key:@"DYYYisHiddenAvatarList" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"隐藏头像气泡" key:@"DYYYisHiddenAvatarBubble" type:DYYYSettingItemTypeSwitch],
@@ -324,7 +320,7 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
             [DYYYSettingItem itemWithTitle:@"隐藏评论转发日常" key:@"DYYYHideCommentLongPressDaily" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"隐藏评论视频回复" key:@"DYYYHideCommentLongPressVideoReply" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"隐藏评论识别图片" key:@"DYYYHideCommentLongPressPictureSearch" type:DYYYSettingItemTypeSwitch]
-         ],
+        ],
         @[
             [DYYYSettingItem itemWithTitle:@"启用新版长按面板" key:@"DYYYisEnableModernPanel" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"长按面板玻璃效果" key:@"DYYYisLongPressPanelBlur" type:DYYYSettingItemTypeSwitch],
@@ -352,7 +348,7 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
             [DYYYSettingItem itemWithTitle:@"双击面板点赞视频" key:@"DYYYDoubleTapLike" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"双击面板分享视频" key:@"DYYYDoubleTapshowSharePanel" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"双击面板长按面板" key:@"DYYYDoubleTapshowDislikeOnVideo" type:DYYYSettingItemTypeSwitch]
-         ],
+        ],
         @[
             [DYYYSettingItem itemWithTitle:@"启用双击打开评论" key:@"DYYYEnableDoubleOpenComment" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"启用双击打开菜单" key:@"DYYYEnableDoubleTapMenu" type:DYYYSettingItemTypeSwitch],
@@ -394,7 +390,7 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
 }
 
 - (void)setupSectionTitles {
-    self.sectionTitles = [@[@"基本设置", @"界面设置", @"隐藏设置", @"顶栏移除",@"隐藏面板", @"面板设置",@"功能设置", @"悬浮按钮"] mutableCopy];
+    self.sectionTitles = [@[ @"基本设置", @"界面设置", @"隐藏设置", @"顶栏移除", @"隐藏面板", @"面板设置", @"功能设置", @"悬浮按钮" ] mutableCopy];
 }
 
 - (void)setupFooterLabel {
@@ -402,91 +398,97 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
     self.footerLabel.text = [NSString stringWithFormat:@"Developer By @huamidev\nVersion: %@ (%@)", DYYY_VERSION, @"2503End"];
     self.footerLabel.textAlignment = NSTextAlignmentCenter;
     self.footerLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightRegular];
-    self.footerLabel.textColor = [UIColor colorWithRed:173/255.0 green:216/255.0 blue:230/255.0 alpha:1.0];
+    self.footerLabel.textColor = [UIColor colorWithRed:173 / 255.0 green:216 / 255.0 blue:230 / 255.0 alpha:1.0];
     self.footerLabel.numberOfLines = 2;
     self.footerLabel.lineBreakMode = NSLineBreakByWordWrapping;
     self.tableView.tableFooterView = self.footerLabel;
 }
 
-
 - (void)addTitleGradientAnimation {
     CAGradientLayer *gradient = [CAGradientLayer layer];
-    gradient.colors = @[(__bridge id)[UIColor systemRedColor].CGColor, (__bridge id)[UIColor systemBlueColor].CGColor];
+    gradient.colors = @[ (__bridge id)[UIColor systemRedColor].CGColor, (__bridge id)[UIColor systemBlueColor].CGColor ];
     gradient.startPoint = CGPointMake(0, 0);
     gradient.endPoint = CGPointMake(1, 0);
     gradient.frame = CGRectMake(0, 0, 150, 30);
-    
+
     UIView *titleView = [[UIView alloc] initWithFrame:gradient.frame];
     [titleView.layer addSublayer:gradient];
-    
+
     UILabel *titleLabel = [[UILabel alloc] initWithFrame:titleView.bounds];
     titleLabel.text = self.title;
     titleLabel.textAlignment = NSTextAlignmentCenter;
     titleLabel.font = [UIFont boldSystemFontOfSize:20];
     titleLabel.textColor = [UIColor clearColor];
-    
+
     gradient.mask = titleLabel.layer;
     self.navigationItem.titleView = titleView;
-    
+
     CABasicAnimation *colorChange = [CABasicAnimation animationWithKeyPath:@"colors"];
-    colorChange.toValue = @[(__bridge id)[UIColor systemYellowColor].CGColor, (__bridge id)[UIColor systemGreenColor].CGColor];
+    colorChange.toValue = @[ (__bridge id)[UIColor systemYellowColor].CGColor, (__bridge id)[UIColor systemGreenColor].CGColor ];
     colorChange.duration = 2.0;
     colorChange.autoreverses = YES;
     colorChange.repeatCount = HUGE_VALF;
-    
+
     [gradient addAnimation:colorChange forKey:@"colorChangeAnimation"];
 }
 
 #pragma mark - First Launch Agreement
 
 - (void)checkFirstLaunch {
-    
     BOOL hasAgreed = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"];
-    
+
     if (!hasAgreed) {
         dispatch_async(dispatch_get_main_queue(), ^{
-            [self showAgreementAlert];
+          [self showAgreementAlert];
         });
     }
 }
 
 - (void)showAgreementAlert {
-    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"用户协议"
-                                                                             message:@"本插件为开源项目\n仅供学习交流用途\n如有侵权请联系, GitHub 仓库：Wtrwx/DYYY\n请遵守当地法律法规, 逆向工程仅为学习目的\n盗用源码进行商业用途/发布但未标记开源项目必究\n详情请参阅项目内 MIT 许可证\n\n请输入\"我已阅读并同意继续使用\"以继续使用"
-                                                                      preferredStyle:UIAlertControllerStyleAlert];
-    
-    [alertController addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) {
-        textField.clearButtonMode = UITextFieldViewModeWhileEditing;
-    }];
-    
-    UIAlertAction *confirmAction = [UIAlertAction actionWithTitle:@"确认" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-        UITextField *textField = alertController.textFields.firstObject;
-        NSString *inputText = textField.text;
-        
-        if ([inputText isEqualToString:@"我已阅读并同意继续使用"]) {
-            [[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"DYYYUserAgreementAccepted"];
-            [[NSUserDefaults standardUserDefaults] synchronize];
-        } else {
-            UIAlertController *errorAlert = [UIAlertController alertControllerWithTitle:@"输入错误"
-                                                                               message:@"请正确输入"
-                                                                        preferredStyle:UIAlertControllerStyleAlert];
-            
-            UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-                [self showAgreementAlert];
-            }];
-            
-            [errorAlert addAction:okAction];
-            [self presentViewController:errorAlert animated:YES completion:nil];
-        }
+    UIAlertController *alertController =
+        [UIAlertController alertControllerWithTitle:@"用户协议"
+                                            message:@"本插件为开源项目\n仅供学习交流用途\n如有侵权请联系, GitHub 仓库：Wtrwx/DYYY\n请遵守当地法律法规, "
+                                                    @"逆向工程仅为学习目的\n盗用源码进行商业用途/发布但未标记开源项目必究\n详情请参阅项目内 MIT 许可证\n\n请输入\"我已阅读并同意继续使用\"以继续使用"
+                                     preferredStyle:UIAlertControllerStyleAlert];
+
+    [alertController addTextFieldWithConfigurationHandler:^(UITextField *_Nonnull textField) {
+      textField.clearButtonMode = UITextFieldViewModeWhileEditing;
     }];
 
-    UIAlertAction *exitAction = [UIAlertAction actionWithTitle:@"退出" style:UIAlertActionStyleDestructive handler:^(UIAlertAction * _Nonnull action) {
-        exit(0);
-    }];
-    
+    UIAlertAction *confirmAction = [UIAlertAction actionWithTitle:@"确认"
+                                                            style:UIAlertActionStyleDefault
+                                                          handler:^(UIAlertAction *_Nonnull action) {
+                                                            UITextField *textField = alertController.textFields.firstObject;
+                                                            NSString *inputText = textField.text;
+
+                                                            if ([inputText isEqualToString:@"我已阅读并同意继续使用"]) {
+                                                                [[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"DYYYUserAgreementAccepted"];
+                                                                [[NSUserDefaults standardUserDefaults] synchronize];
+                                                            } else {
+                                                                UIAlertController *errorAlert = [UIAlertController alertControllerWithTitle:@"输入错误"
+                                                                                                                                    message:@"请正确输入"
+                                                                                                                             preferredStyle:UIAlertControllerStyleAlert];
+
+                                                                UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"确定"
+                                                                                                                   style:UIAlertActionStyleDefault
+                                                                                                                 handler:^(UIAlertAction *_Nonnull action) {
+                                                                                                                   [self showAgreementAlert];
+                                                                                                                 }];
+
+                                                                [errorAlert addAction:okAction];
+                                                                [self presentViewController:errorAlert animated:YES completion:nil];
+                                                            }
+                                                          }];
+
+    UIAlertAction *exitAction = [UIAlertAction actionWithTitle:@"退出"
+                                                         style:UIAlertActionStyleDestructive
+                                                       handler:^(UIAlertAction *_Nonnull action) {
+                                                         exit(0);
+                                                       }];
+
     [alertController addAction:confirmAction];
     [alertController addAction:exitAction];
-    
+
     [self presentViewController:alertController animated:YES completion:nil];
 }
 
@@ -521,26 +523,26 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
 
 - (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section {
     UIView *headerView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, tableView.bounds.size.width, 44)];
-    
+
     UILabel *titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(15, 0, headerView.bounds.size.width - 50, 44)];
     titleLabel.text = [self tableView:tableView titleForHeaderInSection:section];
     titleLabel.textColor = [UIColor whiteColor];
     titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightMedium];
     [headerView addSubview:titleLabel];
-    
+
     UIImageView *arrowImageView = [[UIImageView alloc] initWithFrame:CGRectMake(titleLabel.frame.origin.x + titleLabel.frame.size.width - 30, 15, 14, 14)];
     arrowImageView.image = [UIImage systemImageNamed:[self.expandedSections containsObject:@(section)] ? @"chevron.down" : @"chevron.right"];
     arrowImageView.tintColor = [UIColor lightGrayColor];
     arrowImageView.tag = 100;
     arrowImageView.contentMode = UIViewContentModeScaleAspectFit;
     [headerView addSubview:arrowImageView];
-    
+
     UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
     button.frame = headerView.bounds;
     button.tag = section;
     [button addTarget:self action:@selector(headerTapped:) forControlEvents:UIControlEventTouchUpInside];
     [headerView addSubview:button];
-    
+
     return headerView;
 }
 
@@ -559,31 +561,31 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
     } else {
         [self.expandedSections addObject:section];
     }
-    
+
     [self.tableView reloadSections:[NSIndexSet indexSetWithIndex:sender.tag] withRowAnimation:UITableViewRowAnimationFade];
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     DYYYSettingItem *item = self.settingSections[indexPath.section][indexPath.row];
-    
+
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"SettingCell"];
     if (!cell) {
         cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"SettingCell"];
         cell.textLabel.translatesAutoresizingMaskIntoConstraints = NO;
         [cell.textLabel.leadingAnchor constraintEqualToAnchor:cell.contentView.leadingAnchor constant:16].active = YES;
         [cell.textLabel.centerYAnchor constraintEqualToAnchor:cell.contentView.centerYAnchor].active = YES;
-        
+
         UIView *selectedBackgroundView = [[UIView alloc] init];
-        selectedBackgroundView.backgroundColor = [UIColor colorWithRed:84/255.0 green:84/255.0 blue:84/255.0 alpha:1.0];
+        selectedBackgroundView.backgroundColor = [UIColor colorWithRed:84 / 255.0 green:84 / 255.0 blue:84 / 255.0 alpha:1.0];
         cell.selectedBackgroundView = selectedBackgroundView;
     }
-    
+
     cell.textLabel.text = item.title;
     cell.textLabel.textColor = [UIColor whiteColor];
     cell.backgroundColor = [UIColor colorWithWhite:1 alpha:0.1];
-    
+
     cell.backgroundView = nil;
-    
+
     if (indexPath.row == [self.settingSections[indexPath.section] count] - 1) {
         cell.layer.cornerRadius = 10;
         cell.layer.maskedCorners = kCALayerMinXMaxYCorner | kCALayerMaxXMaxYCorner;
@@ -592,7 +594,7 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
         cell.layer.cornerRadius = 0;
         cell.layer.maskedCorners = 0;
     }
-    
+
     if (item.type == DYYYSettingItemTypeSwitch) {
         UISwitch *switchView = [[UISwitch alloc] init];
         [switchView setOn:[[NSUserDefaults standardUserDefaults] boolForKey:item.key]];
@@ -603,14 +605,12 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
         UITextField *textField = [[UITextField alloc] initWithFrame:CGRectMake(0, 0, 100, 30)];
         textField.borderStyle = UITextBorderStyleRoundedRect;
         textField.placeholder = item.placeholder;
-        textField.attributedPlaceholder = [[NSAttributedString alloc]
-            initWithString:item.placeholder
-            attributes:@{NSForegroundColorAttributeName: [UIColor lightGrayColor]}];
+        textField.attributedPlaceholder = [[NSAttributedString alloc] initWithString:item.placeholder attributes:@{NSForegroundColorAttributeName : [UIColor lightGrayColor]}];
         textField.text = [[NSUserDefaults standardUserDefaults] objectForKey:item.key];
         textField.textAlignment = NSTextAlignmentRight;
         textField.backgroundColor = [UIColor colorWithWhite:1 alpha:0.1];
         textField.textColor = [UIColor whiteColor];
-        
+
         [textField addTarget:self action:@selector(textFieldDidChange:) forControlEvents:UIControlEventEditingDidEnd];
         textField.tag = indexPath.section * 1000 + indexPath.row;
         cell.accessoryView = textField;
@@ -629,11 +629,11 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
         speedField.backgroundColor = [UIColor clearColor];
         speedField.textAlignment = NSTextAlignmentRight;
         speedField.enabled = NO;
-        
+
         speedField.tag = indexPath.section * 1000 + indexPath.row;
         cell.accessoryView = speedField;
     }
-    
+
     return cell;
 }
 
@@ -654,39 +654,37 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
 
 - (void)showSpeedPickerForIndexPath:(NSIndexPath *)indexPath {
     DYYYSettingItem *item = self.settingSections[indexPath.section][indexPath.row];
-    
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:[NSString stringWithFormat:@"选择%@", item.title]
-                                                                   message:nil
-                                                            preferredStyle:UIAlertControllerStyleActionSheet];
-    
-    NSArray *speeds = @[@0.75, @1.0, @1.25, @1.5, @2.0, @2.5, @3.0];
+
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:[NSString stringWithFormat:@"选择%@", item.title] message:nil preferredStyle:UIAlertControllerStyleActionSheet];
+
+    NSArray *speeds = @[ @0.75, @1.0, @1.25, @1.5, @2.0, @2.5, @3.0 ];
     for (NSNumber *speed in speeds) {
         UIAlertAction *action = [UIAlertAction actionWithTitle:[NSString stringWithFormat:@"%.2f", speed.floatValue]
-                                                        style:UIAlertActionStyleDefault
-                                                      handler:^(UIAlertAction * _Nonnull action) {
-            // 保存到对应的key
-            [[NSUserDefaults standardUserDefaults] setFloat:speed.floatValue forKey:item.key];
-            [[NSUserDefaults standardUserDefaults] synchronize];
-            
-            // 更新对应的cell显示
-            UITableViewCell *cell = [self.tableView cellForRowAtIndexPath:indexPath];
-            UITextField *speedField = (UITextField *)cell.accessoryView;
-            if (speedField) {
-                speedField.text = [NSString stringWithFormat:@"%.2f", speed.floatValue];
-            }
-        }];
+                                                         style:UIAlertActionStyleDefault
+                                                       handler:^(UIAlertAction *_Nonnull action) {
+                                                         // 保存到对应的key
+                                                         [[NSUserDefaults standardUserDefaults] setFloat:speed.floatValue forKey:item.key];
+                                                         [[NSUserDefaults standardUserDefaults] synchronize];
+
+                                                         // 更新对应的cell显示
+                                                         UITableViewCell *cell = [self.tableView cellForRowAtIndexPath:indexPath];
+                                                         UITextField *speedField = (UITextField *)cell.accessoryView;
+                                                         if (speedField) {
+                                                             speedField.text = [NSString stringWithFormat:@"%.2f", speed.floatValue];
+                                                         }
+                                                       }];
         [alert addAction:action];
     }
-    
+
     UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil];
     [alert addAction:cancelAction];
-    
+
     if (UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPad) {
         UITableViewCell *selectedCell = [self.tableView cellForRowAtIndexPath:indexPath];
         alert.popoverPresentationController.sourceView = selectedCell;
         alert.popoverPresentationController.sourceRect = selectedCell.bounds;
     }
-    
+
     [self presentViewController:alert animated:YES completion:nil];
 }
 
@@ -713,14 +711,15 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
     } else {
         [self.expandedSections addObject:section];
     }
-    
+
     UIView *headerView = [self.tableView headerViewForSection:sender.tag];
     UIImageView *arrowImageView = [headerView viewWithTag:100];
-    
-    [UIView animateWithDuration:0.3 animations:^{
-        arrowImageView.image = [UIImage systemImageNamed:[self.expandedSections containsObject:section] ? @"chevron.down" : @"chevron.right"];
-    }];
-    
+
+    [UIView animateWithDuration:0.3
+                     animations:^{
+                       arrowImageView.image = [UIImage systemImageNamed:[self.expandedSections containsObject:section] ? @"chevron.down" : @"chevron.right"];
+                     }];
+
     [self.tableView reloadSections:[NSIndexSet indexSetWithIndex:sender.tag] withRowAnimation:UITableViewRowAnimationFade];
 }
 

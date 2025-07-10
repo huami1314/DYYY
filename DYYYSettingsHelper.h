@@ -102,10 +102,7 @@
 /**
  * 创建自定义图标设置项
  */
-+ (AWESettingItemModel *)createIconCustomizationItemWithIdentifier:(NSString *)identifier
-                                  title:(NSString *)title
-                               svgIcon:(NSString *)svgIconName
-                            saveFile:(NSString *)saveFilename;
++ (AWESettingItemModel *)createIconCustomizationItemWithIdentifier:(NSString *)identifier title:(NSString *)title svgIcon:(NSString *)svgIconName saveFile:(NSString *)saveFilename;
 
 /**
  * 创建设置分区
@@ -120,8 +117,7 @@
 /**
  * 创建子设置页面控制器
  */
-+ (AWESettingBaseViewController *)createSubSettingsViewController:(NSString *)title
-                                                        sections:(NSArray *)sectionsArray;
++ (AWESettingBaseViewController *)createSubSettingsViewController:(NSString *)title sections:(NSArray *)sectionsArray;
 
 /**
  * 查找视图所在控制器

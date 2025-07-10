@@ -8,15 +8,15 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface DYYYConfirmCloseView : UIView
 
-@property (nonatomic, strong) UIVisualEffectView *blurView;
-@property (nonatomic, strong) UIView *contentView;
-@property (nonatomic, strong) UILabel *titleLabel;
-@property (nonatomic, strong) UILabel *messageLabel;
-@property (nonatomic, strong) UIButton *cancelButton;
-@property (nonatomic, strong) UIButton *confirmButton;
-@property (nonatomic, strong) UILabel *countdownLabel;
-@property (nonatomic, assign) NSInteger countdown;
-@property (nonatomic, strong) NSTimer *countdownTimer;
+@property(nonatomic, strong) UIVisualEffectView *blurView;
+@property(nonatomic, strong) UIView *contentView;
+@property(nonatomic, strong) UILabel *titleLabel;
+@property(nonatomic, strong) UILabel *messageLabel;
+@property(nonatomic, strong) UIButton *cancelButton;
+@property(nonatomic, strong) UIButton *confirmButton;
+@property(nonatomic, strong) UILabel *countdownLabel;
+@property(nonatomic, assign) NSInteger countdown;
+@property(nonatomic, strong) NSTimer *countdownTimer;
 
 /**
  * 初始化确认关闭弹窗
