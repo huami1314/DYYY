@@ -1881,12 +1881,8 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
         return;
     }
 
-    NSDictionary *nameToLevel = @{ @"标清" : @1, @"高清" : @2, @"超清" : @3, @"蓝光" : @4, @"蓝光帧彩" : @7 };
-    NSNumber *targetLevelNum = nameToLevel[preferredQuality];
-    NSInteger targetIndex = -1;
-    NSInteger fallbackIndex = -1;
-    NSInteger fallbackDiff = INT_MAX;
-
+    NSArray *orderedNames = @[ @"标清", @"高清", @"超清", @"蓝光", @"蓝光帧彩" ];
+    NSMutableDictionary<NSString *, NSNumber *> *nameToIndex = [NSMutableDictionary dictionary];
     for (NSInteger i = 0; i < qualities.count; i++) {
         id q = qualities[i];
         NSString *name = nil;
@@ -1895,37 +1891,30 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
         } else {
             name = [q valueForKey:@"name"];
         }
+        if (name) {
+            nameToIndex[name] = @(i);
+        }
+    }
 
-        NSInteger level = 0;
-        id levelObj = [q valueForKey:@"level"];
-        if (levelObj) level = [levelObj integerValue];
+    NSNumber *exactIndex = nameToIndex[preferredQuality];
+    if (exactIndex) {
+        [self setResolutionWithIndex:exactIndex.integerValue isManual:YES beginChange:nil completion:nil];
+        return;
+    }
 
-        if (name && [name isEqualToString:preferredQuality]) {
-            targetIndex = i;
+    NSInteger targetPos = [orderedNames indexOfObject:preferredQuality];
+    if (targetPos == NSNotFound) {
+        return;
+    }
+
+    NSInteger step = preferLower ? -1 : 1;
+    for (NSInteger pos = targetPos + step; pos >= 0 && pos < orderedNames.count; pos += step) {
+        NSString *candidate = orderedNames[pos];
+        NSNumber *idx = nameToIndex[candidate];
+        if (idx) {
+            [self setResolutionWithIndex:idx.integerValue isManual:YES beginChange:nil completion:nil];
             break;
         }
-
-        if (targetLevelNum) {
-            NSInteger targetLevel = [targetLevelNum integerValue];
-            NSInteger diff = INT_MAX;
-            if (preferLower) {
-                if (level < targetLevel) diff = targetLevel - level; else continue;
-            } else {
-                if (level > targetLevel) diff = level - targetLevel; else continue;
-            }
-            if (diff < fallbackDiff) {
-                fallbackDiff = diff;
-                fallbackIndex = i;
-            }
-        }
-    }
-
-    if (targetIndex == -1) {
-        targetIndex = fallbackIndex;
-    }
-
-    if (targetIndex != -1) {
-        [self setResolutionWithIndex:targetIndex isManual:YES beginChange:nil completion:nil];
     }
 }
 
