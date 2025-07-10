@@ -1884,7 +1884,13 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
     }
 
     NSArray *orderedNames = @[ @"标清", @"高清", @"超清", @"蓝光", @"蓝光帧彩" ];
-    NSMutableDictionary<NSString *, NSNumber *> *nameToIndex = [NSMutableDictionary dictionary];
+    NSMutableDictionary<NSString *, NSNumber *> *nameToRank = [NSMutableDictionary dictionary];
+    for (NSInteger i = 0; i < orderedNames.count; i++) {
+        nameToRank[orderedNames[i]] = @(i);
+    }
+
+    // Map available names to index after sorting by quality rank (high->low)
+    NSMutableArray<NSDictionary *> *infoList = [NSMutableArray array];
     NSMutableArray<NSString *> *availableNames = [NSMutableArray array];
     for (NSInteger i = 0; i < qualities.count; i++) {
         id q = qualities[i];
@@ -1894,14 +1900,32 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
         } else {
             name = [q valueForKey:@"name"];
         }
+        NSNumber *rank = nameToRank[name ?: @""]; // may be nil
         if (name) {
-            nameToIndex[name] = @(i);
             [availableNames addObject:name];
+        }
+        if (name && rank) {
+            [infoList addObject:@{ @"name" : name, @"rank" : rank }];
         }
     }
     NSLog(@"[DYYY] available qualities: %@", availableNames);
 
-    NSNumber *exactIndex = nameToIndex[preferredQuality];
+    [infoList sortUsingComparator:^NSComparisonResult(NSDictionary *a, NSDictionary *b) {
+        NSNumber *ra = a[@"rank"] ?: @0;
+        NSNumber *rb = b[@"rank"] ?: @0;
+        return [ra compare:rb];
+    }];
+
+    NSMutableDictionary<NSString *, NSNumber *> *nameToSortedIndex = [NSMutableDictionary dictionary];
+    NSMutableArray<NSString *> *sortedNames = [NSMutableArray array];
+    for (NSInteger i = 0; i < infoList.count; i++) {
+        NSString *name = infoList[i][@"name"];
+        nameToSortedIndex[name] = @(i);
+        [sortedNames addObject:name];
+    }
+    NSLog(@"[DYYY] sorted qualities by rank: %@", sortedNames);
+
+    NSNumber *exactIndex = nameToSortedIndex[preferredQuality];
     if (exactIndex) {
         NSLog(@"[DYYY] exact quality %@ found at index %@", preferredQuality, exactIndex);
         [self setResolutionWithIndex:exactIndex.integerValue isManual:YES beginChange:nil completion:nil];
@@ -1918,7 +1942,7 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
     BOOL applied = NO;
     for (NSInteger pos = targetPos + step; pos >= 0 && pos < orderedNames.count; pos += step) {
         NSString *candidate = orderedNames[pos];
-        NSNumber *idx = nameToIndex[candidate];
+        NSNumber *idx = nameToSortedIndex[candidate];
         if (idx) {
             NSLog(@"[DYYY] fallback quality %@ at index %@", candidate, idx);
             [self setResolutionWithIndex:idx.integerValue isManual:YES beginChange:nil completion:nil];
