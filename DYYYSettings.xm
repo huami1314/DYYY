@@ -359,11 +359,6 @@ extern "C"
             @"detail" : @"自动",
             @"cellType" : @26,
             @"imageName" : @"ic_video_outlined_20"},
-          @{@"identifier" : @"DYYYLivePreferLowerQuality",
-            @"title" : @"默认更低的画质",
-            @"detail" : @"",
-            @"cellType" : @6,
-            @"imageName" : @"ic_video_outlined_20"},
           @{@"identifier" : @"DYYYEnableVideoHighestQuality",
             @"title" : @"视频默认最高画质",
             @"detail" : @"",
@@ -393,11 +388,11 @@ extern "C"
               NSString *savedQuality = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYLiveQuality"] ?: @"自动";
               item.detail = savedQuality;
               item.cellTappedBlock = ^{
-                NSArray *qualities = @[ @"自动", @"标清", @"高清", @"超清", @"蓝光", @"蓝光帧彩" ];
+                NSArray *qualities = @[ @"蓝光帧彩", @"蓝光", @"超清", @"高清", @"标清", @"自动" ];
 
                 [DYYYOptionsSelectionView showWithPreferenceKey:@"DYYYLiveQuality"
                                                    optionsArray:qualities
-                                                     headerText:@"选择默认直播画质"
+                                                     headerText:@"选择默认直播画质\n无对应画质时会切换到比选择画质低一级的画质"
                                                  onPresentingVC:topView()
                                                selectionChanged:^(NSString *selectedValue) {
                                                  item.detail = selectedValue;

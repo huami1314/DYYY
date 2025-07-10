@@ -1859,8 +1859,7 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 
 %end
 
-// 直播默认最高清晰度功能
-
+// 调整直播默认清晰度功能
 static NSArray<NSString *> *dyyy_qualityRank = nil;
 
 %hook HTSLiveStreamQualityFragment
@@ -1874,7 +1873,7 @@ static NSArray<NSString *> *dyyy_qualityRank = nil;
         return;
     }
 
-    BOOL preferLower = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYLivePreferLowerQuality"];
+    BOOL preferLower = YES;
     NSLog(@"[DYYY] preferredQuality=%@ preferLower=%@", preferredQuality, @(preferLower));
 
     NSArray *qualities = self.streamQualityArray;
@@ -1928,10 +1927,10 @@ static NSArray<NSString *> *dyyy_qualityRank = nil;
 
     NSInteger count = availableNames.count;
     NSInteger (^convertIndex)(NSInteger) = ^NSInteger(NSInteger idx) {
-        if (qualityAsc && !qualityDesc) {
-            return count - 1 - idx;
-        }
-        return idx;
+      if (qualityAsc && !qualityDesc) {
+          return count - 1 - idx;
+      }
+      return idx;
     };
 
     NSArray *searchOrder = orderedNames;
@@ -5249,15 +5248,15 @@ static CGFloat customTabBarHeight() {
 %hook AWEPlayInteractionViewController
 - (void)viewDidLayoutSubviews {
     %orig;
-    
+
     if (!DYYYGetBool(@"DYYYisEnableFullScreen")) {
         return;
     }
-    
+
     UIViewController *parentVC = self.parentViewController;
     int maxIterations = 3;
     int count = 0;
-    
+
     while (parentVC && count < maxIterations) {
         if ([parentVC isKindOfClass:%c(AFDPlayRemoteFeedTableViewController)]) {
             return;
@@ -5265,36 +5264,31 @@ static CGFloat customTabBarHeight() {
         parentVC = parentVC.parentViewController;
         count++;
     }
-    
+
     if (!self.view.superview) {
         return;
     }
-    
+
     CGRect frame = self.view.frame;
     CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
     CGFloat superviewHeight = self.view.superview.frame.size.height;
-    
+
     if (frame.size.width != screenWidth && frame.size.height < superviewHeight) {
         return;
     }
-    
+
     NSString *currentReferString = self.referString;
-    
-    BOOL useFullHeight = 
-        [currentReferString isEqualToString:@"general_search"] ||
-        [currentReferString isEqualToString:@"chat"] ||
-        [currentReferString isEqualToString:@"search_result"] ||
-        [currentReferString isEqualToString:@"close_friends_moment"] ||
-        [currentReferString isEqualToString:@"offline_mode"] ||
-        [currentReferString isEqualToString:@"challenge"] ||
-        currentReferString == nil;
-    
+
+    BOOL useFullHeight = [currentReferString isEqualToString:@"general_search"] || [currentReferString isEqualToString:@"chat"] || [currentReferString isEqualToString:@"search_result"] ||
+                         [currentReferString isEqualToString:@"close_friends_moment"] || [currentReferString isEqualToString:@"offline_mode"] || [currentReferString isEqualToString:@"challenge"] ||
+                         currentReferString == nil;
+
     if (useFullHeight) {
         frame.size.height = superviewHeight;
     } else {
         frame.size.height = superviewHeight - tabHeight;
     }
-    
+
     if (fabs(frame.size.height - self.view.frame.size.height) > 0.5) {
         self.view.frame = frame;
     }
