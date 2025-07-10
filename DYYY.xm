@@ -763,16 +763,6 @@
     [self applyBlurEffectIfNeeded];
 }
 
-- (void)viewDidAppear:(BOOL)animated {
-    %orig;
-    [self applyBlurEffectIfNeeded];
-}
-
-- (void)viewWillAppear:(BOOL)animated {
-    %orig;
-    [self applyBlurEffectIfNeeded];
-}
-
 %new
 - (void)applyBlurEffectIfNeeded {
     if (DYYYGetBool(@"DYYYisEnableCommentBlur") && [self isKindOfClass:NSClassFromString(@"AWECommentPanelContainerSwiftImpl.CommentContainerInnerViewController")]) {
@@ -785,7 +775,6 @@
         // 应用毛玻璃效果
         [DYYYUtils applyBlurEffectToView:self.view transparency:userTransparency blurViewTag:999];
 
-        // 递归清除所有子视图的背景色，防止遮挡模糊效果
         [DYYYUtils clearBackgroundRecursivelyInView:self.view];
     }
 }
@@ -1167,6 +1156,7 @@ static CGFloat rightLabelRightMargin = -1;
     }
 }
 %end
+
 %hook AWEPlayInteractionTimestampElement
 
 - (id)timestampLabel {
@@ -1661,14 +1651,6 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 // 应用内推送毛玻璃效果
 %hook AWEInnerNotificationWindow
 
-- (id)initWithFrame:(CGRect)frame {
-    id orig = %orig;
-    if (DYYYGetBool(@"DYYYEnableNotificationTransparency")) {
-        [self setupBlurEffectForNotificationView];
-    }
-    return orig;
-}
-
 - (void)layoutSubviews {
     %orig;
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableNotificationTransparency"]) {
@@ -1679,13 +1661,6 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 - (void)didMoveToWindow {
     %orig;
     if (DYYYGetBool(@"DYYYEnableNotificationTransparency")) {
-        [self setupBlurEffectForNotificationView];
-    }
-}
-
-- (void)didAddSubview:(UIView *)subview {
-    %orig;
-    if (DYYYGetBool(@"DYYYEnableNotificationTransparency") && [NSStringFromClass([subview class]) containsString:@"AWEInnerNotificationContainerView"]) {
         [self setupBlurEffectForNotificationView];
     }
 }
