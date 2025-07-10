@@ -1897,12 +1897,7 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
         }
 
         NSInteger level = 0;
-        id levelObj = nil;
-        if ([q respondsToSelector:@selector(level)]) {
-            levelObj = @([q level]);
-        } else {
-            levelObj = [q valueForKey:@"level"];
-        }
+        id levelObj = [q valueForKey:@"level"];
         if (levelObj) level = [levelObj integerValue];
 
         if (name && [name isEqualToString:preferredQuality]) {
