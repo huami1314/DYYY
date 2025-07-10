@@ -157,15 +157,15 @@ void updateSpeedButtonVisibility() {
         self.backgroundColor = [UIColor colorWithWhite:0.0 alpha:0.1];
         self.layer.cornerRadius = frame.size.width / 2;
         self.layer.masksToBounds = YES;
-        self.layer.borderWidth = 1.5;
-        self.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.3].CGColor;
+        self.layer.borderWidth = 1.0;
+        self.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.2].CGColor;
 
         [self setTitleColor:[UIColor colorWithWhite:1.0 alpha:0.3] forState:UIControlStateNormal];
         self.titleLabel.font = [UIFont boldSystemFontOfSize:15];
 
         self.layer.shadowColor = [UIColor blackColor].CGColor;
         self.layer.shadowOffset = CGSizeMake(0, 2);
-        self.layer.shadowOpacity = 0.5;
+        self.layer.shadowOpacity = 0.2;
 
         self.userInteractionEnabled = YES;
         self.isResponding = YES;
