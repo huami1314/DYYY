@@ -5186,38 +5186,53 @@ static CGFloat customTabBarHeight() {
 %hook AWEPlayInteractionViewController
 - (void)viewDidLayoutSubviews {
     %orig;
-
+    
+    if (!DYYYGetBool(@"DYYYisEnableFullScreen")) {
+        return;
+    }
+    
     UIViewController *parentVC = self.parentViewController;
-    while (parentVC) {
+    int maxIterations = 3;
+    int count = 0;
+    
+    while (parentVC && count < maxIterations) {
         if ([parentVC isKindOfClass:%c(AFDPlayRemoteFeedTableViewController)]) {
             return;
         }
         parentVC = parentVC.parentViewController;
+        count++;
     }
-
-    if (DYYYGetBool(@"DYYYisEnableFullScreen")) {
-        NSString *currentReferString = self.referString;
-        CGRect frame = self.view.frame;
-
-        // 根据referString来决定是否减去高度差值
-        if ([currentReferString isEqualToString:@"general_search"]) {
-            frame.size.height = self.view.superview.frame.size.height;
-        } else if ([currentReferString isEqualToString:@"chat"] || currentReferString == nil) {
-            frame.size.height = self.view.superview.frame.size.height;
-        } else if ([currentReferString isEqualToString:@"search_result"] || currentReferString == nil) {
-            frame.size.height = self.view.superview.frame.size.height;
-        } else if ([currentReferString isEqualToString:@"close_friends_moment"] || currentReferString == nil) {
-            frame.size.height = self.view.superview.frame.size.height;
-        } else if ([currentReferString isEqualToString:@"offline_mode"] || currentReferString == nil) {
-            frame.size.height = self.view.superview.frame.size.height;
-        } else if ([currentReferString isEqualToString:@"challenge"] || currentReferString == nil) {
-            frame.size.height = self.view.superview.frame.size.height;
-        } else if ([currentReferString isEqualToString:@"others_homepage"] || currentReferString == nil) {
-            frame.size.height = self.view.superview.frame.size.height - tabHeight;
-        } else {
-            frame.size.height = self.view.superview.frame.size.height - tabHeight;
-        }
-
+    
+    if (!self.view.superview) {
+        return;
+    }
+    
+    CGRect frame = self.view.frame;
+    CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
+    CGFloat superviewHeight = self.view.superview.frame.size.height;
+    
+    if (frame.size.width != screenWidth && frame.size.height < superviewHeight) {
+        return;
+    }
+    
+    NSString *currentReferString = self.referString;
+    
+    BOOL useFullHeight = 
+        [currentReferString isEqualToString:@"general_search"] ||
+        [currentReferString isEqualToString:@"chat"] ||
+        [currentReferString isEqualToString:@"search_result"] ||
+        [currentReferString isEqualToString:@"close_friends_moment"] ||
+        [currentReferString isEqualToString:@"offline_mode"] ||
+        [currentReferString isEqualToString:@"challenge"] ||
+        currentReferString == nil;
+    
+    if (useFullHeight) {
+        frame.size.height = superviewHeight;
+    } else {
+        frame.size.height = superviewHeight - tabHeight;
+    }
+    
+    if (fabs(frame.size.height - self.view.frame.size.height) > 0.5) {
         self.view.frame = frame;
     }
 }
@@ -5233,13 +5248,23 @@ static CGFloat customTabBarHeight() {
         if (contentView && contentView.superview) {
             CGRect frame = contentView.frame;
             CGFloat parentHeight = contentView.superview.frame.size.height;
-
-            if (frame.size.height == parentHeight - tabHeight) {
-                frame.size.height = parentHeight;
-                contentView.frame = frame;
-            } else if (frame.size.height == parentHeight - (tabHeight * 2)) {
-                frame.size.height = parentHeight - tabHeight;
-                contentView.frame = frame;
+            CGFloat h = customTabBarHeight();
+            if (h > 0) {
+                if (frame.size.height == parentHeight - h) {
+                    frame.size.height = parentHeight;
+                    contentView.frame = frame;
+                } else if (frame.size.height == parentHeight - (h * 2)) {
+                    frame.size.height = parentHeight - h;
+                    contentView.frame = frame;
+                }
+            } else {
+                if (frame.size.height == parentHeight - tabHeight) {
+                    frame.size.height = parentHeight;
+                    contentView.frame = frame;
+                } else if (frame.size.height == parentHeight - (tabHeight * 2)) {
+                    frame.size.height = parentHeight - tabHeight;
+                    contentView.frame = frame;
+                }
             }
         }
     }
@@ -5250,23 +5275,21 @@ static CGFloat customTabBarHeight() {
 %hook AWEFeedTableView
 - (void)layoutSubviews {
     %orig;
-    CGFloat customHeight = customTabBarHeight();
-    BOOL enableFS = DYYYGetBool(@"DYYYisEnableFullScreen");
-
-    if (enableFS || customHeight > 0) {
+    CGFloat h = customTabBarHeight();
+    if (DYYYGetBool(@"DYYYisEnableFullScreen")) {
         if (self.superview) {
-            CGFloat diff = self.superview.frame.size.height - self.frame.size.height;
-            if (diff > 0 && diff != tabHeight) {
-                tabHeight = diff;
+            CGFloat currentDifference = self.superview.frame.size.height - self.frame.size.height;
+            if (currentDifference > 0 && tabHeight == 0) {
+                tabHeight = currentDifference;
             }
         }
 
         CGRect frame = self.frame;
-        if (enableFS) {
-            frame.size.height = self.superview.frame.size.height;
-        } else if (customHeight > 0) {
-            frame.size.height = self.superview.frame.size.height - customHeight;
-        }
+        frame.size.height = self.superview.frame.size.height;
+        self.frame = frame;
+    } else if (!DYYYGetBool(@"DYYYisEnableFullScreen") && h > 0) {
+        CGRect frame = self.frame;
+        frame.size.height = self.superview.frame.size.height - h;
         self.frame = frame;
     }
 }
