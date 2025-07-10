@@ -1861,8 +1861,7 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 
 // 直播默认最高清晰度功能
 
-static NSArray<NSString *> *dyyy_cachedQualityOrder = nil;
-static NSDictionary<NSString *, NSNumber *> *dyyy_cachedQualityIndex = nil;
+static NSArray<NSString *> *dyyy_qualityRank = nil;
 
 %hook HTSLiveStreamQualityFragment
 
@@ -1886,7 +1885,10 @@ static NSDictionary<NSString *, NSNumber *> *dyyy_cachedQualityIndex = nil;
         return;
     }
 
-    NSArray *orderedNames = @[ @"蓝光帧彩", @"蓝光", @"超清", @"高清", @"标清" ];
+    if (!dyyy_qualityRank) {
+        dyyy_qualityRank = @[ @"蓝光帧彩", @"蓝光", @"超清", @"高清", @"标清" ];
+    }
+    NSArray *orderedNames = dyyy_qualityRank;
 
     // Map available names to their indices in the provided order
     NSMutableDictionary<NSString *, NSNumber *> *nameToIndex = [NSMutableDictionary dictionary];
@@ -1911,50 +1913,38 @@ static NSDictionary<NSString *, NSNumber *> *dyyy_cachedQualityIndex = nil;
     }
     NSLog(@"[DYYY] available qualities: %@", availableNames);
 
-    BOOL isDescendingOrder = YES;
+    BOOL qualityDesc = YES; // ranks ascending -> high to low
+    BOOL qualityAsc = YES;  // ranks descending -> low to high
     for (NSInteger i = 1; i < rankArray.count; i++) {
-        if (rankArray[i - 1].integerValue >= rankArray[i].integerValue) {
-            isDescendingOrder = NO;
-            break;
+        NSInteger prev = rankArray[i - 1].integerValue;
+        NSInteger curr = rankArray[i].integerValue;
+        if (curr < prev) {
+            qualityDesc = NO;
         }
-    }
-    if (!isDescendingOrder) {
-        NSLog(@"[DYYY] quality list not descending, reuse last order");
-    } else {
-        dyyy_cachedQualityOrder = [availableNames copy];
-        dyyy_cachedQualityIndex = [nameToIndex copy];
-    }
-
-    NSArray *searchOrder = dyyy_cachedQualityOrder ?: orderedNames;
-
-    NSNumber *indexToUse = nil;
-    if (!isDescendingOrder) {
-        indexToUse = dyyy_cachedQualityIndex[preferredQuality];
-        if (indexToUse && indexToUse.integerValue < qualities.count) {
-            id q = qualities[indexToUse.integerValue];
-            NSString *nameAtIdx = nil;
-            if ([q respondsToSelector:@selector(name)]) {
-                nameAtIdx = [q name];
-            } else {
-                nameAtIdx = [q valueForKey:@"name"];
-            }
-            if (![nameAtIdx isEqualToString:preferredQuality]) {
-                indexToUse = nil;
-            }
+        if (curr > prev) {
+            qualityAsc = NO;
         }
     }
 
-    if (!indexToUse) {
-        indexToUse = nameToIndex[preferredQuality];
-    }
+    NSInteger count = availableNames.count;
+    NSInteger (^convertIndex)(NSInteger) = ^NSInteger(NSInteger idx) {
+        if (qualityAsc && !qualityDesc) {
+            return count - 1 - idx;
+        }
+        return idx;
+    };
 
+    NSArray *searchOrder = orderedNames;
+
+    NSNumber *indexToUse = nameToIndex[preferredQuality];
     if (indexToUse) {
-        NSLog(@"[DYYY] exact quality %@ found at index %@", preferredQuality, indexToUse);
-        [self setResolutionWithIndex:indexToUse.integerValue isManual:YES beginChange:nil completion:nil];
+        NSInteger finalIdx = convertIndex(indexToUse.integerValue);
+        NSLog(@"[DYYY] exact quality %@ found at index %ld", preferredQuality, (long)finalIdx);
+        [self setResolutionWithIndex:finalIdx isManual:YES beginChange:nil completion:nil];
         return;
     }
 
-    NSInteger targetPos = [searchOrder indexOfObject:preferredQuality];
+    NSInteger targetPos = [orderedNames indexOfObject:preferredQuality];
     if (targetPos == NSNotFound) {
         NSLog(@"[DYYY] preferred quality %@ not in list", preferredQuality);
         return;
@@ -1966,8 +1956,9 @@ static NSDictionary<NSString *, NSNumber *> *dyyy_cachedQualityIndex = nil;
         NSString *candidate = searchOrder[pos];
         NSNumber *idx = nameToIndex[candidate];
         if (idx) {
-            NSLog(@"[DYYY] fallback quality %@ at index %@", candidate, idx);
-            [self setResolutionWithIndex:idx.integerValue isManual:YES beginChange:nil completion:nil];
+            NSInteger finalIdx = convertIndex(idx.integerValue);
+            NSLog(@"[DYYY] fallback quality %@ at index %ld", candidate, (long)finalIdx);
+            [self setResolutionWithIndex:finalIdx isManual:YES beginChange:nil completion:nil];
             applied = YES;
             break;
         }
