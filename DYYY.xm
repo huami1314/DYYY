@@ -1887,6 +1887,7 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
     // Map available names to their indices in the provided order
     NSMutableDictionary<NSString *, NSNumber *> *nameToIndex = [NSMutableDictionary dictionary];
     NSMutableArray<NSString *> *availableNames = [NSMutableArray array];
+    NSMutableArray<NSNumber *> *rankArray = [NSMutableArray array];
     for (NSInteger i = 0; i < qualities.count; i++) {
         id q = qualities[i];
         NSString *name = nil;
@@ -1898,9 +1899,25 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
         if (name) {
             [availableNames addObject:name];
             nameToIndex[name] = @(i);
+            NSInteger rank = [orderedNames indexOfObject:name];
+            if (rank != NSNotFound) {
+                [rankArray addObject:@(rank)];
+            }
         }
     }
     NSLog(@"[DYYY] available qualities: %@", availableNames);
+
+    BOOL isDescendingOrder = YES;
+    for (NSInteger i = 1; i < rankArray.count; i++) {
+        if (rankArray[i - 1].integerValue >= rankArray[i].integerValue) {
+            isDescendingOrder = NO;
+            break;
+        }
+    }
+    if (!isDescendingOrder) {
+        NSLog(@"[DYYY] quality list not descending, skip this call");
+        return;
+    }
 
     NSNumber *exactIndex = nameToIndex[preferredQuality];
     if (exactIndex) {
