@@ -1862,8 +1862,6 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 // 直播默认最高清晰度功能
 %hook HTSLiveStreamQualityFragment
 
-static NSArray *dyyy_initialQualities = nil;
-
 - (void)setupStreamQuality:(id)arg1 {
     %orig;
 
@@ -1876,18 +1874,12 @@ static NSArray *dyyy_initialQualities = nil;
     BOOL preferLower = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYLivePreferLowerQuality"];
     NSLog(@"[DYYY] preferredQuality=%@ preferLower=%@", preferredQuality, @(preferLower));
 
-    NSArray *qualities = nil;
-    if (!dyyy_initialQualities) {
-        qualities = self.streamQualityArray;
-        if (!qualities || qualities.count == 0) {
-            qualities = [self getQualities];
-        }
-        if (!qualities || qualities.count == 0) {
-            return;
-        }
-        dyyy_initialQualities = [qualities copy];
-    } else {
-        qualities = dyyy_initialQualities;
+    NSArray *qualities = self.streamQualityArray;
+    if (!qualities || qualities.count == 0) {
+        qualities = [self getQualities];
+    }
+    if (!qualities || qualities.count == 0) {
+        return;
     }
 
     NSArray *orderedNames = @[ @"蓝光帧彩", @"蓝光", @"超清", @"高清", @"标清" ];
