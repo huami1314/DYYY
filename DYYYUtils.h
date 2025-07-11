@@ -1,6 +1,6 @@
-#import <UIKit/UIKit.h>
 #import <Photos/Photos.h>
 #import <QuartzCore/QuartzCore.h>
+#import <UIKit/UIKit.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -43,7 +43,7 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (BOOL)isDarkMode;
 
-    #pragma mark - Public File Management (公共文件管理)
+#pragma mark - Public File Management (公共文件管理)
 
 /**格式化大小
  * 将大小转换为易读的格式
@@ -139,30 +139,30 @@ extern "C" {
  * @param url 需要清理的URL字符串
  * @return 清理后的URL字符串
  */
-NSString * _Nullable cleanShareURL(NSString * _Nullable url);
+NSString *_Nullable cleanShareURL(NSString *_Nullable url);
 
 /**
  * 获取当前显示的顶层视图控制器
  * @return 顶层视图控制器
  */
-UIViewController * _Nullable topView(void);
+UIViewController *_Nullable topView(void);
 
 /**
  * 判断视图是否包含指定类型的子视图
  */
-BOOL viewContainsSubviewOfClass(UIView * _Nullable view, Class _Nullable viewClass);
+BOOL viewContainsSubviewOfClass(UIView *_Nullable view, Class _Nullable viewClass);
 
 /** 判断是否为右侧互动区域 */
-BOOL isRightInteractionStack(UIView * _Nullable stackView);
+BOOL isRightInteractionStack(UIView *_Nullable stackView);
 
 /** 判断是否为左侧互动区域 */
-BOOL isLeftInteractionStack(UIView * _Nullable stackView);
+BOOL isLeftInteractionStack(UIView *_Nullable stackView);
 
 /** 在视图控制器层级中查找指定类的控制器 */
-UIViewController * _Nullable findViewControllerOfClass(UIViewController * _Nullable rootVC, Class _Nullable targetClass);
+UIViewController *_Nullable findViewControllerOfClass(UIViewController *_Nullable rootVC, Class _Nullable targetClass);
 
 /** 根据设置应用顶栏透明度 */
-void applyTopBarTransparency(UIView * _Nullable topBar);
+void applyTopBarTransparency(UIView *_Nullable topBar);
 
 /**
  * 递归将任意对象转换为 JSON 可序列化对象

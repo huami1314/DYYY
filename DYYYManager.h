@@ -3,7 +3,7 @@
 
 // 主题管理类（外部类声明）
 @interface AWEUIThemeManager : NSObject
-@property (nonatomic, assign) BOOL isLightTheme;
+@property(nonatomic, assign) BOOL isLightTheme;
 @end
 
 /**
@@ -13,8 +13,8 @@
 @interface DYYYManager : NSObject
 
 #pragma mark - 属性和基础方法
-//存储文件类型
-@property (nonatomic, strong) NSMutableDictionary *fileLinks;
+// 存储文件类型
+@property(nonatomic, strong) NSMutableDictionary *fileLinks;
 
 /**
  * 获取单例实例
@@ -30,17 +30,14 @@
  * @param mediaType 媒体类型
  * @param completion 完成回调
  */
-+ (void)saveMedia:(NSURL *)mediaURL 
-        mediaType:(MediaType)mediaType 
-       completion:(void (^)(void))completion;
++ (void)saveMedia:(NSURL *)mediaURL mediaType:(MediaType)mediaType completion:(void (^)(void))completion;
 
 /**
  * 保存实况照片
  * @param imageSourcePath 图片源路径
  * @param videoSourcePath 视频源路径
  */
-- (void)saveLivePhoto:(NSString *)imageSourcePath 
-             videoUrl:(NSString *)videoSourcePath;
+- (void)saveLivePhoto:(NSString *)imageSourcePath videoUrl:(NSString *)videoSourcePath;
 
 #pragma mark - 媒体下载方法
 /**
@@ -49,10 +46,7 @@
  * @param mediaType 媒体类型
  * @param completion 完成回调
  */
-+ (void)downloadMedia:(NSURL *)url
-            mediaType:(MediaType)mediaType
-                audio:(NSURL *)audioURL
-           completion:(void (^)(BOOL success))completion;
++ (void)downloadMedia:(NSURL *)url mediaType:(MediaType)mediaType audio:(NSURL *)audioURL completion:(void (^)(BOOL success))completion;
 
 /**
  * 带进度的媒体下载
@@ -73,9 +67,7 @@
  * @param videoURL 视频URL
  * @param completion 完成回调
  */
-+ (void)downloadLivePhoto:(NSURL *)imageURL 
-                 videoURL:(NSURL *)videoURL 
-               completion:(void (^)(void))completion;
++ (void)downloadLivePhoto:(NSURL *)imageURL videoURL:(NSURL *)videoURL completion:(void (^)(void))completion;
 
 /**
  * 批量下载实况照片
@@ -120,16 +112,14 @@
  * @param shareLink 视频分享链接
  * @param apiKey API密钥
  */
-+ (void)parseAndDownloadVideoWithShareLink:(NSString *)shareLink 
-                                    apiKey:(NSString *)apiKey;
++ (void)parseAndDownloadVideoWithShareLink:(NSString *)shareLink apiKey:(NSString *)apiKey;
 
 /**
  * 批量下载视频和图片资源
  * @param videos 视频资源数组
  * @param images 图片资源数组
  */
-+ (void)batchDownloadResources:(NSArray *)videos 
-                        images:(NSArray *)images;
++ (void)batchDownloadResources:(NSArray *)videos images:(NSArray *)images;
 
 /**
  * 从多种媒体源创建视频
@@ -150,16 +140,14 @@
  * @param heicURL HEIC文件URL
  * @param completion 完成回调，返回GIF文件URL和是否成功
  */
-+ (void)convertHeicToGif:(NSURL *)heicURL 
-              completion:(void (^)(NSURL *gifURL, BOOL success))completion;
++ (void)convertHeicToGif:(NSURL *)heicURL completion:(void (^)(NSURL *gifURL, BOOL success))completion;
 
 /**
  * 将WebP格式转换为GIF格式
  * @param webpURL WebP文件URL
  * @param completion 完成回调，返回GIF文件URL和是否成功
  */
-+ (void)convertWebpToGifSafely:(NSURL *)webpURL 
-                    completion:(void (^)(NSURL *gifURL, BOOL success))completion;
++ (void)convertWebpToGifSafely:(NSURL *)webpURL completion:(void (^)(NSURL *gifURL, BOOL success))completion;
 
 // 动画贴纸和GIF相关方法
 + (void)saveAnimatedSticker:(YYAnimatedImageView *)targetStickerView;
@@ -167,7 +155,7 @@
 + (void)saveHeifSticker:(YYAnimatedImageView *)stickerView;
 + (NSArray *)getImagesFromYYAnimatedImageView:(YYAnimatedImageView *)imageView;
 + (CGFloat)getDurationFromYYAnimatedImageView:(YYAnimatedImageView *)imageView;
-+ (BOOL)createGIFWithImages:(NSArray *)images duration:(CGFloat)duration path:(NSString *)path progress:(void(^)(float progress))progressBlock;
-+ (void)saveGIFToPhotoLibrary:(NSString *)path completion:(void(^)(BOOL success, NSError *error))completion;
++ (BOOL)createGIFWithImages:(NSArray *)images duration:(CGFloat)duration path:(NSString *)path progress:(void (^)(float progress))progressBlock;
++ (void)saveGIFToPhotoLibrary:(NSString *)path completion:(void (^)(BOOL success, NSError *error))completion;
 
 @end

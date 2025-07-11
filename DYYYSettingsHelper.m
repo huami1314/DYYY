@@ -1,8 +1,8 @@
 #import "DYYYSettingsHelper.h"
-#import "DYYYUtils.h"
 #import <UIKit/UIKit.h>
 #import <objc/runtime.h>
 #import "DYYYImagePickerDelegate.h"
+#import "DYYYUtils.h"
 
 #import "DYYYAboutDialogView.h"
 #import "DYYYCustomInputView.h"
@@ -60,7 +60,10 @@
               @"DYYYisShowScheduleDisplay" : @[ @"DYYYScheduleStyle", @"DYYYProgressLabelColor", @"DYYYTimelineVerticalPosition" ],
               @"DYYYEnableNotificationTransparency" : @[ @"DYYYNotificationCornerRadius" ],
               @"DYYYEnableFloatSpeedButton" : @[ @"DYYYAutoRestoreSpeed", @"DYYYSpeedButtonShowX", @"DYYYSpeedButtonSize", @"DYYYSpeedSettings" ],
-              @"DYYYEnableFloatClearButton" : @[ @"DYYYClearButtonIcon", @"DYYYEnableFloatClearButtonSize", @"DYYYEnabshijianjindu", @"DYYYHideTimeProgress", @"DYYYHideDanmaku", @"DYYYHideSlider", @"DYYYHideTabBar", @"DYYYHideSpeed", @"DYYYHideChapter" ],
+              @"DYYYEnableFloatClearButton" : @[
+                  @"DYYYClearButtonIcon", @"DYYYEnableFloatClearButtonSize", @"DYYYEnabshijianjindu", @"DYYYHideTimeProgress", @"DYYYHideDanmaku", @"DYYYHideSlider", @"DYYYHideTabBar",
+                  @"DYYYHideSpeed", @"DYYYHideChapter"
+              ],
               @"DYYYisEnableModernPanel" : @[ @"DYYYisLongPressPanelBlur", @"DYYYisLongPressPanelDark" ],
               @"DYYYEnableDoubleTapMenu" : @[ @"DYYYDoubleTapMenuSettings" ],
           },
@@ -84,10 +87,7 @@
 
           // ===== 互斥激活配置 =====
           // 当源设置项关闭时，目标设置项才能激活
-          @"mutualExclusions" : @{
-              @"DYYYDanmuRainbowRotating" : @[ @"DYYYdanmuColor" ],
-              @"DYYYEnabsuijiyanse" : @[ @"DYYYLabelColor" ]
-          },
+          @"mutualExclusions" : @{@"DYYYDanmuRainbowRotating" : @[ @"DYYYdanmuColor" ], @"DYYYEnabsuijiyanse" : @[ @"DYYYLabelColor" ]},
 
           // ===== 值依赖配置 =====
           // 基于字符串值的依赖关系
@@ -344,7 +344,6 @@ static NSArray *allSettingsViewControllers(void) {
     }
 }
 
-
 + (AWESettingItemModel *)createSettingItem:(NSDictionary *)dict {
     return [self createSettingItem:dict cellTapHandlers:nil];
 }
@@ -371,21 +370,22 @@ static NSArray *allSettingsViewControllers(void) {
           if (!item.isEnable)
               return;
 
-          [self showTextInputAlert:item.title 
-                       defaultText:item.detail 
+          [self showTextInputAlert:item.title
+                       defaultText:item.detail
                        placeholder:placeholder
-                        onConfirm:^(NSString *text) {
-              [self setUserDefaults:text forKey:item.identifier];
-              item.detail = text;
+                         onConfirm:^(NSString *text) {
+                           [self setUserDefaults:text forKey:item.identifier];
+                           item.detail = text;
 
-              if ([item.identifier isEqualToString:@"DYYYInterfaceDownload"]) {
-                  [self updateDependentItemsForSetting:@"DYYYInterfaceDownload" value:text];
-              }
+                           if ([item.identifier isEqualToString:@"DYYYInterfaceDownload"]) {
+                               [self updateDependentItemsForSetting:@"DYYYInterfaceDownload" value:text];
+                           }
 
-              [self handleConflictsAndDependenciesForSetting:item.identifier isEnabled:(text.length > 0)];
+                           [self handleConflictsAndDependenciesForSetting:item.identifier isEnabled:(text.length > 0)];
 
-              [item refreshCell];
-          } onCancel:nil];
+                           [item refreshCell];
+                         }
+                          onCancel:nil];
         };
         item.cellTappedBlock = cellTapHandlers[item.identifier];
     } else if (item.cellType == 6 || item.cellType == 37) {
@@ -411,7 +411,6 @@ static NSArray *allSettingsViewControllers(void) {
 extern void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed);
 extern void *kViewModelKey;
 
-
 static void showIconOptionsDialog(NSString *title, UIImage *previewImage, NSString *saveFilename, void (^onClear)(void), void (^onSelect)(void)) {
     DYYYIconOptionsDialogView *optionsDialog = [[DYYYIconOptionsDialogView alloc] initWithTitle:title previewImage:previewImage];
     optionsDialog.onClear = onClear;
@@ -419,10 +418,7 @@ static void showIconOptionsDialog(NSString *title, UIImage *previewImage, NSStri
     [optionsDialog show];
 }
 
-+ (AWESettingItemModel *)createIconCustomizationItemWithIdentifier:(NSString *)identifier
-                                  title:(NSString *)title
-                               svgIcon:(NSString *)svgIconName
-                            saveFile:(NSString *)saveFilename {
++ (AWESettingItemModel *)createIconCustomizationItemWithIdentifier:(NSString *)identifier title:(NSString *)title svgIcon:(NSString *)svgIconName saveFile:(NSString *)saveFilename {
     AWESettingItemModel *item = [[NSClassFromString(@"AWESettingItemModel") alloc] init];
     item.identifier = identifier;
     item.title = title;
@@ -442,66 +438,69 @@ static void showIconOptionsDialog(NSString *title, UIImage *previewImage, NSStri
 
     __weak AWESettingItemModel *weakItem = item;
     item.cellTappedBlock = ^{
-        if (![[NSFileManager defaultManager] fileExistsAtPath:dyyyFolderPath]) {
-            [[NSFileManager defaultManager] createDirectoryAtPath:dyyyFolderPath withIntermediateDirectories:YES attributes:nil error:nil];
-        }
+      if (![[NSFileManager defaultManager] fileExistsAtPath:dyyyFolderPath]) {
+          [[NSFileManager defaultManager] createDirectoryAtPath:dyyyFolderPath withIntermediateDirectories:YES attributes:nil error:nil];
+      }
 
-        UIViewController *topVC = topView();
+      UIViewController *topVC = topView();
 
-        UIImage *previewImage = nil;
-        if (fileExists) {
-            previewImage = [UIImage imageWithContentsOfFile:imagePath];
-        }
+      UIImage *previewImage = nil;
+      if (fileExists) {
+          previewImage = [UIImage imageWithContentsOfFile:imagePath];
+      }
 
-        showIconOptionsDialog(title, previewImage, saveFilename, ^{
-          if ([[NSFileManager defaultManager] fileExistsAtPath:imagePath]) {
-              NSError *error = nil;
-              [[NSFileManager defaultManager] removeItemAtPath:imagePath error:&error];
-              if (!error) {
-                  weakItem.detail = @"默认";
-                  [weakItem refreshCell];
-              }
-          }
-        }, ^{
-          UIImagePickerController *picker = [[UIImagePickerController alloc] init];
-          picker.sourceType = UIImagePickerControllerSourceTypePhotoLibrary;
-          picker.allowsEditing = NO;
-          picker.mediaTypes = @[ @"public.image" ];
-
-          DYYYImagePickerDelegate *pickerDelegate = [[DYYYImagePickerDelegate alloc] init];
-          pickerDelegate.completionBlock = ^(NSDictionary *info) {
-            NSURL *originalImageURL = info[UIImagePickerControllerImageURL];
-            if (!originalImageURL) {
-                originalImageURL = info[UIImagePickerControllerReferenceURL];
-            }
-            if (originalImageURL) {
-                NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
-                NSString *dyyyFolderPath = [documentsPath stringByAppendingPathComponent:@"DYYY"];
-                NSString *imagePath = [dyyyFolderPath stringByAppendingPathComponent:saveFilename];
-
-                NSData *imageData = [NSData dataWithContentsOfURL:originalImageURL];
-                const char *bytes = (const char *)imageData.bytes;
-                BOOL isGIF = (imageData.length >= 6 && (memcmp(bytes, "GIF87a", 6) == 0 || memcmp(bytes, "GIF89a", 6) == 0));
-                if (isGIF) {
-                    [imageData writeToFile:imagePath atomically:YES];
-                } else {
-                    UIImage *selectedImage = [UIImage imageWithData:imageData];
-                    imageData = UIImagePNGRepresentation(selectedImage);
-                    [imageData writeToFile:imagePath atomically:YES];
+      showIconOptionsDialog(
+          title, previewImage, saveFilename,
+          ^{
+            if ([[NSFileManager defaultManager] fileExistsAtPath:imagePath]) {
+                NSError *error = nil;
+                [[NSFileManager defaultManager] removeItemAtPath:imagePath error:&error];
+                if (!error) {
+                    weakItem.detail = @"默认";
+                    [weakItem refreshCell];
                 }
+            }
+          },
+          ^{
+            UIImagePickerController *picker = [[UIImagePickerController alloc] init];
+            picker.sourceType = UIImagePickerControllerSourceTypePhotoLibrary;
+            picker.allowsEditing = NO;
+            picker.mediaTypes = @[ @"public.image" ];
 
-                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            DYYYImagePickerDelegate *pickerDelegate = [[DYYYImagePickerDelegate alloc] init];
+            pickerDelegate.completionBlock = ^(NSDictionary *info) {
+              NSURL *originalImageURL = info[UIImagePickerControllerImageURL];
+              if (!originalImageURL) {
+                  originalImageURL = info[UIImagePickerControllerReferenceURL];
+              }
+              if (originalImageURL) {
+                  NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
+                  NSString *dyyyFolderPath = [documentsPath stringByAppendingPathComponent:@"DYYY"];
+                  NSString *imagePath = [dyyyFolderPath stringByAppendingPathComponent:saveFilename];
+
+                  NSData *imageData = [NSData dataWithContentsOfURL:originalImageURL];
+                  const char *bytes = (const char *)imageData.bytes;
+                  BOOL isGIF = (imageData.length >= 6 && (memcmp(bytes, "GIF87a", 6) == 0 || memcmp(bytes, "GIF89a", 6) == 0));
+                  if (isGIF) {
+                      [imageData writeToFile:imagePath atomically:YES];
+                  } else {
+                      UIImage *selectedImage = [UIImage imageWithData:imageData];
+                      imageData = UIImagePNGRepresentation(selectedImage);
+                      [imageData writeToFile:imagePath atomically:YES];
+                  }
+
+                  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
                     weakItem.detail = @"已设置";
                     [weakItem refreshCell];
-                });
-            }
-          };
+                  });
+              }
+            };
 
-          static char kDYYYPickerDelegateKey;
-          picker.delegate = pickerDelegate;
-          objc_setAssociatedObject(picker, &kDYYYPickerDelegateKey, pickerDelegate, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-          [topVC presentViewController:picker animated:YES completion:nil];
-        });
+            static char kDYYYPickerDelegateKey;
+            picker.delegate = pickerDelegate;
+            objc_setAssociatedObject(picker, &kDYYYPickerDelegateKey, pickerDelegate, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+            [topVC presentViewController:picker animated:YES completion:nil];
+          });
     };
 
     return item;
@@ -522,23 +521,22 @@ static void showIconOptionsDialog(NSString *title, UIImage *previewImage, NSStri
     return section;
 }
 
-+ (AWESettingBaseViewController *)createSubSettingsViewController:(NSString *)title
-                                                        sections:(NSArray *)sectionsArray {
++ (AWESettingBaseViewController *)createSubSettingsViewController:(NSString *)title sections:(NSArray *)sectionsArray {
     AWESettingBaseViewController *settingsVC = [[NSClassFromString(@"AWESettingBaseViewController") alloc] init];
     dispatch_async(dispatch_get_main_queue(), ^{
-        if ([settingsVC.view isKindOfClass:[UIView class]]) {
-            Class navBarClass = NSClassFromString(@"AWENavigationBar");
-            for (UIView *subview in settingsVC.view.subviews) {
-                if (navBarClass && [subview isKindOfClass:navBarClass]) {
-                    id navigationBar = subview;
-                    if ([navigationBar respondsToSelector:@selector(titleLabel)]) {
-                        UILabel *label = [navigationBar valueForKey:@"titleLabel"];
-                        label.text = title;
-                    }
-                    break;
-                }
-            }
-        }
+      if ([settingsVC.view isKindOfClass:[UIView class]]) {
+          Class navBarClass = NSClassFromString(@"AWENavigationBar");
+          for (UIView *subview in settingsVC.view.subviews) {
+              if (navBarClass && [subview isKindOfClass:navBarClass]) {
+                  id navigationBar = subview;
+                  if ([navigationBar respondsToSelector:@selector(titleLabel)]) {
+                      UILabel *label = [navigationBar valueForKey:@"titleLabel"];
+                      label.text = title;
+                  }
+                  break;
+              }
+          }
+      }
     });
 
     AWESettingsViewModel *viewModel = [[NSClassFromString(@"AWESettingsViewModel") alloc] init];
@@ -578,19 +576,23 @@ static void showIconOptionsDialog(NSString *title, UIImage *previewImage, NSStri
 }
 
 + (void)showUserAgreementAlert {
-    [self showTextInputAlert:@"用户协议" defaultText:@"" placeholder:@"" onConfirm:^(NSString *text) {
-        if ([text isEqualToString:@"我已阅读并同意继续使用"]) {
-            [self setUserDefaults:@"YES" forKey:@"DYYYUserAgreementAccepted"];
-        } else {
-            [DYYYUtils showToast:@"请正确输入内容"];
-            [self showUserAgreementAlert];
+    [self showTextInputAlert:@"用户协议"
+        defaultText:@""
+        placeholder:@""
+        onConfirm:^(NSString *text) {
+          if ([text isEqualToString:@"我已阅读并同意继续使用"]) {
+              [self setUserDefaults:@"YES" forKey:@"DYYYUserAgreementAccepted"];
+          } else {
+              [DYYYUtils showToast:@"请正确输入内容"];
+              [self showUserAgreementAlert];
+          }
         }
-    } onCancel:^{
-        [DYYYUtils showToast:@"请立即卸载本插件"];
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        onCancel:^{
+          [DYYYUtils showToast:@"请立即卸载本插件"];
+          dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             exit(0);
-        });
-    }];
+          });
+        }];
 }
 
 @end

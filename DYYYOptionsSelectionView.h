@@ -12,10 +12,7 @@ NS_ASSUME_NONNULL_BEGIN
  * @param presentingVC 要在其上显示视图的视图控制器
  * @return 当前选中的选项值
  */
-+ (NSString *)showWithPreferenceKey:(NSString *)preferenceKey
-                       optionsArray:(NSArray<NSString *> *)optionsArray
-                         headerText:(NSString *)headerText
-                     onPresentingVC:(UIViewController *)presentingVC;
++ (NSString *)showWithPreferenceKey:(NSString *)preferenceKey optionsArray:(NSArray<NSString *> *)optionsArray headerText:(NSString *)headerText onPresentingVC:(UIViewController *)presentingVC;
 
 /**
  * 显示选项选择视图（带回调）
