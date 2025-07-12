@@ -5668,7 +5668,6 @@ static NSArray<Class> *kTargetViewClasses = @[ NSClassFromString(@"AWEElementSta
         } else {
             subview.userInteractionEnabled = NO;
             [subview removeFromSuperview];
-            return;
         }
     }
 
@@ -5677,7 +5676,6 @@ static NSArray<Class> *kTargetViewClasses = @[ NSClassFromString(@"AWEElementSta
             continue;
         subview.userInteractionEnabled = NO;
         [subview removeFromSuperview];
-        return;
     }
 
     [visibleButtons sortUsingComparator:^NSComparisonResult(UIView *a, UIView *b) {
