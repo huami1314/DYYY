@@ -345,7 +345,7 @@ static void initTargetClassNames(void) {
 }
 
 - (void)restoreAWEPlayInteractionProgressContainerView {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnabshijianjindu"] || [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTimeProgress"]) {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYRemoveTimeProgress"] || [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTimeProgress"]) {
         for (UIWindow *window in [UIApplication sharedApplication].windows) {
             [self recursivelyRestoreAWEPlayInteractionProgressContainerViewInView:window];
         }
@@ -354,7 +354,7 @@ static void initTargetClassNames(void) {
 
 - (void)recursivelyRestoreAWEPlayInteractionProgressContainerViewInView:(UIView *)view {
     if ([view isKindOfClass:NSClassFromString(@"AWEPlayInteractionProgressContainerView")]) {
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnabshijianjindu"]) {
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYRemoveTimeProgress"]) {
             // 如果设置了移除时间进度条，直接显示
             view.hidden = NO;
         } else {
@@ -392,7 +392,7 @@ static void initTargetClassNames(void) {
 }
 
 - (void)hideAWEPlayInteractionProgressContainerView {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnabshijianjindu"] || [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTimeProgress"]) {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYRemoveTimeProgress"] || [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTimeProgress"]) {
         for (UIWindow *window in [UIApplication sharedApplication].windows) {
             [self recursivelyHideAWEPlayInteractionProgressContainerViewInView:window];
         }
@@ -401,7 +401,7 @@ static void initTargetClassNames(void) {
 
 - (void)recursivelyHideAWEPlayInteractionProgressContainerViewInView:(UIView *)view {
     if ([view isKindOfClass:NSClassFromString(@"AWEPlayInteractionProgressContainerView")]) {
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnabshijianjindu"]) {
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYRemoveTimeProgress"]) {
             // 如果设置了移除时间进度条
             view.hidden = YES;
         } else {

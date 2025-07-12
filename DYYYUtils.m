@@ -850,11 +850,11 @@ UIViewController *findViewControllerOfClass(UIViewController *vc, Class targetCl
 void applyTopBarTransparency(UIView *topBar) {
     if (!topBar)
         return;
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYisEnablePure"]) {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnablePure"]) {
         return;
     }
 
-    NSString *transparentValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYtopbartransparent"];
+    NSString *transparentValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTopBarTransparent"];
     if (transparentValue && transparentValue.length > 0) {
         CGFloat alphaValue = [transparentValue floatValue];
         if (alphaValue >= 0.0 && alphaValue <= 1.0) {
