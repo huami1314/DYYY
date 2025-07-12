@@ -731,7 +731,7 @@
     }
 
     if (DYYYGetBool(@"DYYYHideLocation")) {
-        self.hidden = YES;
+        [self removeFromSuperview];
         return;
     }
 }
@@ -3076,16 +3076,13 @@ static AWEIMReusableCommonCell *currentCell;
                   if (parentView) {
                       UIView *grandParentView = parentView.superview;
                       if (grandParentView) {
-                          grandParentView.hidden = YES;
                           [grandParentView removeFromSuperview];
                           return;
                       } else {
-                          parentView.hidden = YES;
                           [parentView removeFromSuperview];
                           return;
                       }
                   } else {
-                      self.hidden = YES;
                       [self removeFromSuperview];
                       return;
                   }
@@ -3359,7 +3356,6 @@ static AWEIMReusableCommonCell *currentCell;
         if (parentView) {
             UIView *grandparentView = parentView.superview;
             if (grandparentView && [grandparentView isKindOfClass:%c(AWEBaseElementView)]) {
-                grandparentView.hidden = YES;
                 [grandparentView removeFromSuperview];
                 return;
             }
