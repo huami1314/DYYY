@@ -1,6 +1,7 @@
 #import "DYYYSettingViewController.h"
 #import "DYYYConstants.h"
-#import "DYYYOptionsSelectionView.h"
+#import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 
 typedef NS_ENUM(NSInteger, DYYYSettingItemType) { DYYYSettingItemTypeSwitch, DYYYSettingItemTypeTextField, DYYYSettingItemTypeSpeedPicker, DYYYSettingItemTypeOptions };
 
@@ -165,8 +166,6 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) { DYYYSettingItemTypeSwitch, DYY
             [DYYYSettingItem itemWithTitle:@"收藏二次确认" key:@"DYYYcollectTips" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"默认直播画质" key:@"DYYYLiveQuality" type:DYYYSettingItemTypeOptions],
             [DYYYSettingItem itemWithTitle:@"提高视频画质" key:@"DYYYEnableVideoHighestQuality" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"视频硬件解码" key:@"DYYYEnableVideoHWDecoder" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"音频硬件解码" key:@"DYYYEnableAudioHWDecoder" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"禁用直播PCDN功能" key:@"DYYYDisableLivePCDN" type:DYYYSettingItemTypeSwitch]
         ],
         @[
@@ -705,18 +704,33 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) { DYYYSettingItemTypeSwitch, DYY
 - (void)showOptionsPickerForIndexPath:(NSIndexPath *)indexPath {
     DYYYSettingItem *item = self.settingSections[indexPath.section][indexPath.row];
     NSArray *options = @[ @"蓝光帧彩", @"蓝光", @"超清", @"高清", @"标清", @"自动" ];
-
-    [DYYYOptionsSelectionView showWithPreferenceKey:item.key
-                                       optionsArray:options
-                                         headerText:[NSString stringWithFormat:@"选择%@", item.title]
-                                     onPresentingVC:self
-                                   selectionChanged:^(NSString *selected) {
-                                     UITableViewCell *cell = [self.tableView cellForRowAtIndexPath:indexPath];
-                                     UILabel *label = (UILabel *)cell.accessoryView;
-                                     if ([label isKindOfClass:[UILabel class]]) {
-                                         label.text = selected;
-                                     }
-                                   }];
+    
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:[NSString stringWithFormat:@"选择%@", item.title] 
+                                                                   message:nil 
+                                                            preferredStyle:UIAlertControllerStyleActionSheet];
+    
+    for (NSString *option in options) {
+        UIAlertAction *action = [UIAlertAction actionWithTitle:option
+                                                         style:UIAlertActionStyleDefault
+                                                       handler:^(UIAlertAction *_Nonnull action) {
+                                                         // 保存选择的选项
+                                                         [[NSUserDefaults standardUserDefaults] setObject:option forKey:item.key];
+                                                         [[NSUserDefaults standardUserDefaults] synchronize];
+                                                         
+                                                         // 更新cell显示
+                                                         UITableViewCell *cell = [self.tableView cellForRowAtIndexPath:indexPath];
+                                                         UILabel *label = (UILabel *)cell.accessoryView;
+                                                         if ([label isKindOfClass:[UILabel class]]) {
+                                                             label.text = option;
+                                                         }
+                                                       }];
+        [alert addAction:action];
+    }
+    
+    UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil];
+    [alert addAction:cancelAction];
+    
+    [self presentViewController:alert animated:YES completion:nil];
 }
 
 #pragma mark - Actions

@@ -18,27 +18,6 @@
 #import "DYYYToast.h"
 #import "DYYYUtils.h"
 
-// 强制硬件解码
-%hook TTVideoEngine
-
-- (void)setHardwareDecode:(BOOL)hardwareDecode {
-    if (DYYYGetBool(@"DYYYEnableVideoHWDecoder")) {
-        %orig(YES);
-    } else {
-        %orig(hardwareDecode);
-    }
-}
-
-- (void)setEnableAudioHardwareDecode:(BOOL)enableAudioHardwareDecode {
-    if (DYYYGetBool(@"DYYYEnableAudioHWDecoder")) {
-        %orig(YES);
-    } else {
-        %orig(enableAudioHardwareDecode);
-    }
-}
-
-%end
-
 // 关闭不可见水印
 %hook AWEHPChannelInvisibleWaterMarkModel
 
