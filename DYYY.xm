@@ -21,26 +21,12 @@
 // 强制硬件解码
 %hook TTVideoEngine
 
-- (BOOL)hardwareDecode {
-    if (DYYYGetBool(@"DYYYEnableVideoHWDecoder")) {
-        return YES;
-    }
-    return %orig;
-}
-
 - (void)setHardwareDecode:(BOOL)hardwareDecode {
     if (DYYYGetBool(@"DYYYEnableVideoHWDecoder")) {
         %orig(YES);
     } else {
         %orig(hardwareDecode);
     }
-}
-
-- (BOOL)enableAudioHardwareDecode {
-    if (DYYYGetBool(@"DYYYEnableAudioHWDecoder")) {
-        return YES;
-    }
-    return %orig;
 }
 
 - (void)setEnableAudioHardwareDecode:(BOOL)enableAudioHardwareDecode {
