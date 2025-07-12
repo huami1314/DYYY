@@ -5110,21 +5110,18 @@ static CGFloat customTabBarHeight() {
 - (void)viewDidLayoutSubviews {
     %orig;
 
-    BOOL enableCommentBlur = DYYYGetBool(@"DYYYEnableCommentBlur");
-    if (!enableCommentBlur)
-        return;
+    if (!DYYYGetBool(@"DYYYEnableCommentBlur")) return;
 
     Class containerViewClass = NSClassFromString(@"AWECommentInputViewSwiftImpl.CommentInputContainerView");
-    UIView *containerView = [DYYYUtils findSubviewOfClass:containerViewClass inView:self.view];
-    if (containerView) {
+    NSArray<UIView *> *containerViews = [DYYYUtils findAllSubviewsOfClass:containerViewClass inView:self.view];
+    for (UIView *containerView in containerViews) {
         for (UIView *subview in containerView.subviews) {
-            if (subview.alpha > 0.1f && subview.backgroundColor && CGColorGetAlpha(subview.backgroundColor.CGColor) > 0.1f) {
+            if (subview.hidden == NO && subview.backgroundColor && CGColorGetAlpha(subview.backgroundColor.CGColor) == 1) {
                 float userTransparency = [[[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentBlurTransparent"] floatValue];
                 if (userTransparency <= 0 || userTransparency > 1) {
                     userTransparency = 0.8;
                 }
                 [DYYYUtils applyBlurEffectToView:subview transparency:userTransparency blurViewTag:999];
-                [DYYYUtils clearBackgroundRecursivelyInView:subview];
             }
         }
     }
@@ -5144,7 +5141,6 @@ static CGFloat customTabBarHeight() {
             UIView *parentView = middleContainer.superview;
             for (UIView *innerSubview in parentView.subviews) {
                 if ([innerSubview isKindOfClass:[UIView class]]) {
-                    // NSLog(@"[innerSubview] %@", innerSubview);
                     if (innerSubview.subviews.count > 0) {
                         innerSubview.subviews[0].hidden = YES;
                     }
@@ -5157,11 +5153,9 @@ static CGFloat customTabBarHeight() {
                 }
             }
         } else {
-            for (UIView *innerSubview in middleContainer.subviews) {
-                if (innerSubview.alpha > 0.1f && innerSubview.backgroundColor && CGColorGetAlpha(innerSubview.backgroundColor.CGColor) > 0.1f) {
-                    [DYYYUtils applyBlurEffectToView:innerSubview transparency:0.2f blurViewTag:999];
-                    [DYYYUtils clearBackgroundRecursivelyInView:innerSubview];
-                    break;
+            for (UIView *subview in middleContainer.subviews) {
+                if (subview.hidden == NO && subview.backgroundColor && CGColorGetAlpha(subview.backgroundColor.CGColor) == 1) {
+                    [DYYYUtils applyBlurEffectToView:subview transparency:0.2f blurViewTag:999];
                 }
             }
         }
@@ -5177,7 +5171,8 @@ static CGFloat customTabBarHeight() {
     if (DYYYGetBool(@"DYYYEnableFullScreen")) {
         if (self.frame.size.height == tabHeight && tabHeight > 0) {
             UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
-            if ([vc isKindOfClass:NSClassFromString(@"AWEMixVideoPanelDetailTableViewController")] || [vc isKindOfClass:NSClassFromString(@"AWECommentInputViewController")] ||
+            if ([vc isKindOfClass:NSClassFromString(@"AWEMixVideoPanelDetailTableViewController")] ||
+                [vc isKindOfClass:NSClassFromString(@"AWECommentInputViewController")] ||
                 [vc isKindOfClass:NSClassFromString(@"AWEAwemeDetailTableViewController")]) {
                 self.backgroundColor = [UIColor clearColor];
             }
