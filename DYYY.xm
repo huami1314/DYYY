@@ -2588,6 +2588,7 @@ static AWEIMReusableCommonCell *currentCell;
     if ([superview isKindOfClass:NSClassFromString(@"AWEBaseElementView")]) {
         if (DYYYGetBool(@"DYYYHideCancelMute")) {
             self.hidden = YES;
+            return;
         }
     }
 }
@@ -3028,7 +3029,7 @@ static AWEIMReusableCommonCell *currentCell;
     }
 
     if (hideBtn) {
-        self.hidden = YES;
+        [self removeFromSuperview];
         return;
     }
 
@@ -3076,11 +3077,17 @@ static AWEIMReusableCommonCell *currentCell;
                       UIView *grandParentView = parentView.superview;
                       if (grandParentView) {
                           grandParentView.hidden = YES;
+                          [grandParentView removeFromSuperview];
+                          return;
                       } else {
                           parentView.hidden = YES;
+                          [parentView removeFromSuperview];
+                          return;
                       }
                   } else {
                       self.hidden = YES;
+                      [self removeFromSuperview];
+                      return;
                   }
               }
           }
@@ -3159,7 +3166,7 @@ static AWEIMReusableCommonCell *currentCell;
 
     if ([accessibilityLabel isEqualToString:@"音乐详情"]) {
         if (DYYYGetBool(@"DYYYHideMusicButton")) {
-            self.hidden = YES;
+            [self removeFromSuperview];
             return;
         }
     }
@@ -3172,7 +3179,7 @@ static AWEIMReusableCommonCell *currentCell;
     %orig;
 
     if (DYYYGetBool(@"DYYYHideMusicButton")) {
-        self.hidden = YES;
+        [self removeFromSuperview];
         return;
     }
 }
@@ -3202,18 +3209,16 @@ static AWEIMReusableCommonCell *currentCell;
 
 %hook AWEPlayInteractionElementMaskView
 - (void)layoutSubviews {
-    %orig;
-
     if (DYYYGetBool(@"DYYYHideGradient")) {
         self.hidden = YES;
         return;
     }
+    %orig;
 }
 %end
 
 %hook AWEGradientView
 - (void)layoutSubviews {
-    %orig;
     if (DYYYGetBool(@"DYYYHideGradient")) {
         UIView *parent = self.superview;
         if ([parent.accessibilityLabel isEqualToString:@"暂停，按钮"] || [parent.accessibilityLabel isEqualToString:@"播放，按钮"] || [parent.accessibilityLabel isEqualToString:@"“切换视角，按钮"]) {
@@ -3221,28 +3226,27 @@ static AWEIMReusableCommonCell *currentCell;
         }
         return;
     }
+    %orig;
 }
 %end
 
 %hook AWEHotSpotBlurView
 - (void)layoutSubviews {
-    %orig;
-
     if (DYYYGetBool(@"DYYYHideGradient")) {
         self.hidden = YES;
         return;
     }
+    %orig;
 }
 %end
 
 %hook AWEHotSearchInnerBottomView
 - (void)layoutSubviews {
-    %orig;
-
     if (DYYYGetBool(@"DYYYHideHotSearch")) {
         self.hidden = YES;
         return;
     }
+    %orig;
 }
 %end
 
@@ -3356,6 +3360,7 @@ static AWEIMReusableCommonCell *currentCell;
             UIView *grandparentView = parentView.superview;
             if (grandparentView && [grandparentView isKindOfClass:%c(AWEBaseElementView)]) {
                 grandparentView.hidden = YES;
+                [grandparentView removeFromSuperview];
                 return;
             }
         }
@@ -3367,12 +3372,11 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWEPlayInteractionSearchAnchorView
 
 - (void)layoutSubviews {
-    %orig;
-
     if (DYYYGetBool(@"DYYYHideInteractionSearch")) {
         [self removeFromSuperview];
         return;
     }
+    %orig;
 }
 
 %end
@@ -3380,8 +3384,6 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWEAwemeMusicInfoView
 
 - (void)layoutSubviews {
-    %orig;
-
     if (DYYYGetBool(@"DYYYHideQuqishuiting")) {
         UIView *parentView = self.superview;
         if (parentView) {
@@ -3389,6 +3391,7 @@ static AWEIMReusableCommonCell *currentCell;
         }
         return;
     }
+    %orig;
 }
 
 %end
@@ -3906,19 +3909,22 @@ static AWEIMReusableCommonCell *currentCell;
 // 隐藏点击进入直播间
 %hook AWELiveFeedStatusLabel
 - (void)layoutSubviews {
-    %orig;
     if (DYYYGetBool(@"DYYYHideEnterLive")) {
         UIView *parentView = self.superview;
         UIView *grandparentView = parentView.superview;
 
         if (grandparentView) {
             grandparentView.hidden = YES;
+            return;
         } else if (parentView) {
             parentView.hidden = YES;
+            return;
         } else {
             self.hidden = YES;
+            return;
         }
     }
+    %orig;
 }
 %end
 
