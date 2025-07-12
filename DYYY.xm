@@ -2571,7 +2571,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWEPlayInteractionCoCreatorNewInfoView
 - (void)layoutSubviews {
     if (DYYYGetBool(@"DYYYHideGongChuang")) {
-        self.hidden = YES;
+        [self removeFromSuperview];
         return;
     }
     %orig;
@@ -2601,6 +2601,7 @@ static AWEIMReusableCommonCell *currentCell;
 
     if (DYYYGetBool(@"DYYYHideDanmuButton")) {
         self.hidden = YES;
+        return;
     }
 }
 
@@ -2610,9 +2611,9 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWEShowPlayletCommentHeaderView
 - (void)layoutSubviews {
     %orig;
-
     if (DYYYGetBool(@"DYYYHideCommentViews")) {
-        [self setHidden:YES];
+        self.hidden = YES;
+        return;
     }
 }
 
@@ -3369,7 +3370,7 @@ static AWEIMReusableCommonCell *currentCell;
     %orig;
 
     if (DYYYGetBool(@"DYYYHideInteractionSearch")) {
-        self.hidden = YES;
+        [self removeFromSuperview];
         return;
     }
 }
@@ -3384,10 +3385,9 @@ static AWEIMReusableCommonCell *currentCell;
     if (DYYYGetBool(@"DYYYHideQuqishuiting")) {
         UIView *parentView = self.superview;
         if (parentView) {
-            parentView.hidden = YES;
-        } else {
-            self.hidden = YES;
+            [parentView removeFromSuperview];
         }
+        return;
     }
 }
 
