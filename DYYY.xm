@@ -3554,7 +3554,7 @@ static AWEIMReusableCommonCell *currentCell;
     %orig;
 
     if (DYYYGetBool(@"DYYYHideHotspot")) {
-        self.hidden = YES;
+        [self removeFromSuperview];
         return;
     }
 }
