@@ -55,23 +55,23 @@
           // ===== 依赖关系配置 =====
           @"dependencies" : @{
               // 普通依赖：当源设置开启时，目标设置项可用
-              @"DYYYEnableDanmuColor" : @[ @"DYYYdanmuColor" ],
-              @"DYYYisEnableArea" : @[ @"DYYYGeonamesUsername", @"DYYYLabelColor", @"DYYYEnabsuijiyanse" ],
-              @"DYYYisShowScheduleDisplay" : @[ @"DYYYScheduleStyle", @"DYYYProgressLabelColor", @"DYYYTimelineVerticalPosition" ],
+              @"DYYYEnableDanmuColor" : @[ @"DYYYDanmuColor" ],
+              @"DYYYEnableArea" : @[ @"DYYYGeonamesUsername", @"DYYYLabelColor", @"DYYYEnableRandomGradient" ],
+              @"DYYYShowScheduleDisplay" : @[ @"DYYYScheduleStyle", @"DYYYProgressLabelColor", @"DYYYTimelineVerticalPosition" ],
               @"DYYYEnableNotificationTransparency" : @[ @"DYYYNotificationCornerRadius" ],
               @"DYYYEnableFloatSpeedButton" : @[ @"DYYYAutoRestoreSpeed", @"DYYYSpeedButtonShowX", @"DYYYSpeedButtonSize", @"DYYYSpeedSettings" ],
               @"DYYYEnableFloatClearButton" : @[
-                  @"DYYYClearButtonIcon", @"DYYYEnableFloatClearButtonSize", @"DYYYEnabshijianjindu", @"DYYYHideTimeProgress", @"DYYYHideDanmaku", @"DYYYHideSlider", @"DYYYHideTabBar",
+                  @"DYYYClearButtonIcon", @"DYYYEnableFloatClearButtonSize", @"DYYYRemoveTimeProgress", @"DYYYHideTimeProgress", @"DYYYHideDanmaku", @"DYYYHideSlider", @"DYYYHideTabBar",
                   @"DYYYHideSpeed", @"DYYYHideChapter"
               ],
-              @"DYYYisEnableModernPanel" : @[ @"DYYYisLongPressPanelBlur", @"DYYYisLongPressPanelDark" ],
+              @"DYYYEnableModernPanel" : @[ @"DYYYLongPressPanelBlur", @"DYYYLongPressPanelDark" ],
               @"DYYYEnableDoubleTapMenu" : @[ @"DYYYDoubleTapMenuSettings" ],
           },
 
           // ===== 条件依赖配置 =====
           // 一些设置项依赖于多个其他设置项的复杂条件
           @"conditionalDependencies" : @{
-              @"DYYYCommentBlurTransparent" : @{@"condition" : @"OR", @"settings" : @[ @"DYYYisEnableCommentBlur", @"DYYYEnableNotificationTransparency" ]},
+              @"DYYYCommentBlurTransparent" : @{@"condition" : @"OR", @"settings" : @[ @"DYYYEnableCommentBlur", @"DYYYEnableNotificationTransparency" ]},
           },
 
           // ===== 冲突配置 =====
@@ -79,15 +79,15 @@
           @"conflicts" : @{
               @"DYYYEnableDoubleOpenComment" : @[ @"DYYYEnableDoubleTapMenu" ],
               @"DYYYEnableDoubleTapMenu" : @[ @"DYYYEnableDoubleOpenComment" ],
-              @"DYYYEnabshijianjindu" : @[ @"DYYYHideTimeProgress" ],
-              @"DYYYHideTimeProgress" : @[ @"DYYYEnabshijianjindu" ],
+              @"DYYYRemoveTimeProgress" : @[ @"DYYYHideTimeProgress" ],
+              @"DYYYHideTimeProgress" : @[ @"DYYYRemoveTimeProgress" ],
               @"DYYYHideLOTAnimationView" : @[ @"DYYYHideFollowPromptView" ],
               @"DYYYHideFollowPromptView" : @[ @"DYYYHideLOTAnimationView" ],
           },
 
           // ===== 互斥激活配置 =====
           // 当源设置项关闭时，目标设置项才能激活
-          @"mutualExclusions" : @{@"DYYYDanmuRainbowRotating" : @[ @"DYYYdanmuColor" ], @"DYYYEnabsuijiyanse" : @[ @"DYYYLabelColor" ]},
+          @"mutualExclusions" : @{@"DYYYDanmuRainbowRotating" : @[ @"DYYYDanmuColor" ], @"DYYYEnableRandomGradient" : @[ @"DYYYLabelColor" ]},
 
           // ===== 值依赖配置 =====
           // 基于字符串值的依赖关系
@@ -97,8 +97,8 @@
           // ===== 同步配置 =====
           // 当源设置项打开时目标设置项也同步打开，当源设置项关闭时目标设置项也同步关闭
           @"synchronizations" : @{
-              @"DYYYisLongPressPanelBlur" : @[ @"DYYYisLongPressPanelDark" ],
-              @"DYYYisLongPressPanelDark" : @[ @"DYYYisLongPressPanelBlur" ],
+              @"DYYYLongPressPanelBlur" : @[ @"DYYYLongPressPanelDark" ],
+              @"DYYYLongPressPanelDark" : @[ @"DYYYLongPressPanelBlur" ],
           },
       };
     });

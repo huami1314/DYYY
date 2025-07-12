@@ -450,7 +450,7 @@ static const int kDYYYButtonsPerRow = 10;
     if (!self.propFilterButton)
         return;
 
-    NSString *saved = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterProp"] ?: @"";
+    NSString *saved = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYFilterProp"] ?: @"";
     NSArray *array = saved.length > 0 ? [saved componentsSeparatedByString:@","] : @[];
     BOOL exists = [array containsObject:self.propName];
 
@@ -463,7 +463,7 @@ static const int kDYYYButtonsPerRow = 10;
 - (void)propFilterTapped {
     if (self.propName.length == 0)
         return;
-    NSString *saved = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterProp"] ?: @"";
+    NSString *saved = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYFilterProp"] ?: @"";
     NSMutableArray *array = saved.length > 0 ? [saved componentsSeparatedByString:@","].mutableCopy : [NSMutableArray array];
     BOOL exists = [array containsObject:self.propName];
 
@@ -476,7 +476,7 @@ static const int kDYYYButtonsPerRow = 10;
     }
 
     NSString *newString = [array componentsJoinedByString:@","];
-    [[NSUserDefaults standardUserDefaults] setObject:newString forKey:@"DYYYfilterProp"];
+    [[NSUserDefaults standardUserDefaults] setObject:newString forKey:@"DYYYFilterProp"];
     [[NSUserDefaults standardUserDefaults] synchronize];
 
     [self updateFilterPropButton];

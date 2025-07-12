@@ -541,7 +541,7 @@
           // 创建当前用户的过滤格式 "nickname-shortid"
           NSString *currentUserFilter = [NSString stringWithFormat:@"%@-%@", nickname, shortId];
           // 获取保存的过滤用户列表
-          NSString *savedUsers = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterUsers"] ?: @"";
+          NSString *savedUsers = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYFilterUsers"] ?: @"";
           NSArray *userArray = [savedUsers length] > 0 ? [savedUsers componentsSeparatedByString:@","] : @[];
           BOOL userExists = NO;
           for (NSString *userInfo in userArray) {
@@ -564,7 +564,7 @@
                 DYYYKeywordListView *keywordListView = [[DYYYKeywordListView alloc] initWithTitle:@"过滤用户列表" keywords:userArray];
                 keywordListView.onConfirm = ^(NSArray *users) {
                   NSString *userString = [users componentsJoinedByString:@","];
-                  [[NSUserDefaults standardUserDefaults] setObject:userString forKey:@"DYYYfilterUsers"];
+                  [[NSUserDefaults standardUserDefaults] setObject:userString forKey:@"DYYYFilterUsers"];
                   [[NSUserDefaults standardUserDefaults] synchronize];
                   [DYYYUtils showToast:@"过滤用户列表已更新"];
                 };
@@ -595,7 +595,7 @@
                 }
                 // 保存更新后的列表
                 NSString *updatedUserString = [updatedUsers componentsJoinedByString:@","];
-                [[NSUserDefaults standardUserDefaults] setObject:updatedUserString forKey:@"DYYYfilterUsers"];
+                [[NSUserDefaults standardUserDefaults] setObject:updatedUserString forKey:@"DYYYFilterUsers"];
                 [[NSUserDefaults standardUserDefaults] synchronize];
               }];
         };
@@ -618,14 +618,14 @@
           DYYYFilterSettingsView *filterView = [[DYYYFilterSettingsView alloc] initWithTitle:@"过滤关键词调整" text:descText propName:propName];
           filterView.onConfirm = ^(NSString *selectedText) {
             if (selectedText.length > 0) {
-                NSString *currentKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterKeywords"] ?: @"";
+                NSString *currentKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYFilterKeywords"] ?: @"";
                 NSString *newKeywords;
                 if (currentKeywords.length > 0) {
                     newKeywords = [NSString stringWithFormat:@"%@,%@", currentKeywords, selectedText];
                 } else {
                     newKeywords = selectedText;
                 }
-                [[NSUserDefaults standardUserDefaults] setObject:newKeywords forKey:@"DYYYfilterKeywords"];
+                [[NSUserDefaults standardUserDefaults] setObject:newKeywords forKey:@"DYYYFilterKeywords"];
                 [[NSUserDefaults standardUserDefaults] synchronize];
                 [DYYYUtils showToast:[NSString stringWithFormat:@"已添加过滤词: %@", selectedText]];
             }
@@ -633,7 +633,7 @@
           // 设置过滤关键词按钮回调
           filterView.onKeywordFilterTap = ^{
             // 获取保存的关键词
-            NSString *savedKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterKeywords"] ?: @"";
+            NSString *savedKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYFilterKeywords"] ?: @"";
             NSArray *keywordArray = [savedKeywords length] > 0 ? [savedKeywords componentsSeparatedByString:@","] : @[];
             // 创建并显示关键词列表视图
             DYYYKeywordListView *keywordListView = [[DYYYKeywordListView alloc] initWithTitle:@"设置过滤关键词" keywords:keywordArray];
@@ -642,7 +642,7 @@
               // 将关键词数组转换为逗号分隔的字符串
               NSString *keywordString = [keywords componentsJoinedByString:@","];
               // 保存到用户默认设置
-              [[NSUserDefaults standardUserDefaults] setObject:keywordString forKey:@"DYYYfilterKeywords"];
+              [[NSUserDefaults standardUserDefaults] setObject:keywordString forKey:@"DYYYFilterKeywords"];
               [[NSUserDefaults standardUserDefaults] synchronize];
               // 显示提示
               [DYYYUtils showToast:@"过滤关键词已更新"];
@@ -1344,7 +1344,7 @@
           // 创建当前用户的过滤格式 "nickname-shortid"
           NSString *currentUserFilter = [NSString stringWithFormat:@"%@-%@", nickname, shortId];
           // 获取保存的过滤用户列表
-          NSString *savedUsers = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterUsers"] ?: @"";
+          NSString *savedUsers = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYFilterUsers"] ?: @"";
           NSArray *userArray = [savedUsers length] > 0 ? [savedUsers componentsSeparatedByString:@","] : @[];
           BOOL userExists = NO;
           for (NSString *userInfo in userArray) {
@@ -1367,7 +1367,7 @@
                 DYYYKeywordListView *keywordListView = [[DYYYKeywordListView alloc] initWithTitle:@"过滤用户列表" keywords:userArray];
                 keywordListView.onConfirm = ^(NSArray *users) {
                   NSString *userString = [users componentsJoinedByString:@","];
-                  [[NSUserDefaults standardUserDefaults] setObject:userString forKey:@"DYYYfilterUsers"];
+                  [[NSUserDefaults standardUserDefaults] setObject:userString forKey:@"DYYYFilterUsers"];
                   [[NSUserDefaults standardUserDefaults] synchronize];
                   [DYYYUtils showToast:@"过滤用户列表已更新"];
                 };
@@ -1398,7 +1398,7 @@
                 }
                 // 保存更新后的列表
                 NSString *updatedUserString = [updatedUsers componentsJoinedByString:@","];
-                [[NSUserDefaults standardUserDefaults] setObject:updatedUserString forKey:@"DYYYfilterUsers"];
+                [[NSUserDefaults standardUserDefaults] setObject:updatedUserString forKey:@"DYYYFilterUsers"];
                 [[NSUserDefaults standardUserDefaults] synchronize];
               }];
         };
@@ -1421,14 +1421,14 @@
           DYYYFilterSettingsView *filterView = [[DYYYFilterSettingsView alloc] initWithTitle:@"过滤关键词调整" text:descText propName:propName];
           filterView.onConfirm = ^(NSString *selectedText) {
             if (selectedText.length > 0) {
-                NSString *currentKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterKeywords"] ?: @"";
+                NSString *currentKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYFilterKeywords"] ?: @"";
                 NSString *newKeywords;
                 if (currentKeywords.length > 0) {
                     newKeywords = [NSString stringWithFormat:@"%@,%@", currentKeywords, selectedText];
                 } else {
                     newKeywords = selectedText;
                 }
-                [[NSUserDefaults standardUserDefaults] setObject:newKeywords forKey:@"DYYYfilterKeywords"];
+                [[NSUserDefaults standardUserDefaults] setObject:newKeywords forKey:@"DYYYFilterKeywords"];
                 [[NSUserDefaults standardUserDefaults] synchronize];
                 [DYYYUtils showToast:[NSString stringWithFormat:@"已添加过滤词: %@", selectedText]];
             }
@@ -1436,7 +1436,7 @@
           // 设置过滤关键词按钮回调
           filterView.onKeywordFilterTap = ^{
             // 获取保存的关键词
-            NSString *savedKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYfilterKeywords"] ?: @"";
+            NSString *savedKeywords = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYFilterKeywords"] ?: @"";
             NSArray *keywordArray = [savedKeywords length] > 0 ? [savedKeywords componentsSeparatedByString:@","] : @[];
             // 创建并显示关键词列表视图
             DYYYKeywordListView *keywordListView = [[DYYYKeywordListView alloc] initWithTitle:@"设置过滤关键词" keywords:keywordArray];
@@ -1445,7 +1445,7 @@
               // 将关键词数组转换为逗号分隔的字符串
               NSString *keywordString = [keywords componentsJoinedByString:@","];
               // 保存到用户默认设置
-              [[NSUserDefaults standardUserDefaults] setObject:keywordString forKey:@"DYYYfilterKeywords"];
+              [[NSUserDefaults standardUserDefaults] setObject:keywordString forKey:@"DYYYFilterKeywords"];
               [[NSUserDefaults standardUserDefaults] synchronize];
               // 显示提示
               [DYYYUtils showToast:@"过滤关键词已更新"];
