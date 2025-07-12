@@ -2,12 +2,7 @@
 #import "DYYYConstants.h"
 #import "DYYYOptionsSelectionView.h"
 
-typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
-    DYYYSettingItemTypeSwitch,
-    DYYYSettingItemTypeTextField,
-    DYYYSettingItemTypeSpeedPicker,
-    DYYYSettingItemTypeOptions
-};
+typedef NS_ENUM(NSInteger, DYYYSettingItemType) { DYYYSettingItemTypeSwitch, DYYYSettingItemTypeTextField, DYYYSettingItemTypeSpeedPicker, DYYYSettingItemTypeOptions };
 
 @interface DYYYSettingItem : NSObject
 
@@ -169,8 +164,9 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
             [DYYYSettingItem itemWithTitle:@"关注二次确认" key:@"DYYYfollowTips" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"收藏二次确认" key:@"DYYYcollectTips" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"默认直播画质" key:@"DYYYLiveQuality" type:DYYYSettingItemTypeOptions],
-            [DYYYSettingItem itemWithTitle:@"默认更低的画质" key:@"DYYYLivePreferLowerQuality" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"视频默认最高画质" key:@"DYYYEnableVideoHighestQuality" type:DYYYSettingItemTypeSwitch],
+            [DYYYSettingItem itemWithTitle:@"提高视频画质" key:@"DYYYEnableVideoHighestQuality" type:DYYYSettingItemTypeSwitch],
+            [DYYYSettingItem itemWithTitle:@"视频硬件解码" key:@"DYYYEnableVideoHWDecoder" type:DYYYSettingItemTypeSwitch],
+            [DYYYSettingItem itemWithTitle:@"音频硬件解码" key:@"DYYYEnableAudioHWDecoder" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"禁用直播PCDN功能" key:@"DYYYDisableLivePCDN" type:DYYYSettingItemTypeSwitch]
         ],
         @[
@@ -708,20 +704,19 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) {
 
 - (void)showOptionsPickerForIndexPath:(NSIndexPath *)indexPath {
     DYYYSettingItem *item = self.settingSections[indexPath.section][indexPath.row];
-    NSArray *options = @[ @"自动", @"标清", @"高清", @"超清", @"蓝光", @"蓝光帧彩" ];
+    NSArray *options = @[ @"蓝光帧彩", @"蓝光", @"超清", @"高清", @"标清", @"自动" ];
 
-    [DYYYOptionsSelectionView
-        showWithPreferenceKey:item.key
-                   optionsArray:options
-                     headerText:[NSString stringWithFormat:@"选择%@", item.title]
-                 onPresentingVC:self
-               selectionChanged:^(NSString *selected) {
-                 UITableViewCell *cell = [self.tableView cellForRowAtIndexPath:indexPath];
-                 UILabel *label = (UILabel *)cell.accessoryView;
-                 if ([label isKindOfClass:[UILabel class]]) {
-                     label.text = selected;
-                 }
-               }];
+    [DYYYOptionsSelectionView showWithPreferenceKey:item.key
+                                       optionsArray:options
+                                         headerText:[NSString stringWithFormat:@"选择%@", item.title]
+                                     onPresentingVC:self
+                                   selectionChanged:^(NSString *selected) {
+                                     UITableViewCell *cell = [self.tableView cellForRowAtIndexPath:indexPath];
+                                     UILabel *label = (UILabel *)cell.accessoryView;
+                                     if ([label isKindOfClass:[UILabel class]]) {
+                                         label.text = selected;
+                                     }
+                                   }];
 }
 
 #pragma mark - Actions
