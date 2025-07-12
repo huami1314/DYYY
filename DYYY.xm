@@ -5164,6 +5164,31 @@ static CGFloat customTabBarHeight() {
 
 %end
 
+// 开启评论区毛玻璃后滚动区域填满底部
+%hook AWEListKitMagicCollectionView
+
+- (void)layoutSubviews {
+    %orig;
+
+    if (!DYYYGetBool(@"DYYYEnableCommentBlur")) {
+        return;
+    }
+
+    UICollectionView *collectionView = (UICollectionView *)self;
+
+    UIView *superview = collectionView.superview;
+    CGRect targetFrame = superview.bounds;
+    if (superview == nil ||
+        CGSizeEqualToSize(targetFrame.size, CGSizeZero) ||
+        CGRectEqualToRect(collectionView.frame, targetFrame)) {
+        return;
+    }
+
+    collectionView.frame = targetFrame;
+}
+
+%end
+
 %hook UIView
 - (void)layoutSubviews {
     %orig;
