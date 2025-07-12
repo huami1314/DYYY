@@ -2918,7 +2918,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWEPlayInteractionRelatedVideoView
 - (void)layoutSubviews {
     if (DYYYGetBool(@"DYYYHideBottomRelated")) {
-        self.hidden = YES;
+        [self removeFromSuperview];
         return;
     }
     %orig;
