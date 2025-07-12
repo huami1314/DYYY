@@ -185,19 +185,61 @@
 %hook AWEFeedChannelManager
 
 - (void)reloadChannelWithChannelModels:(id)arg1 currentChannelIDList:(id)arg2 reloadType:(id)arg3 selectedChannelID:(id)arg4 {
+    if (!arg1 || !arg2) {
+        %orig(arg1, arg2, arg3, arg4);
+        return;
+    }
+
     NSArray *channelModels = arg1;
-    NSMutableArray *newChannelModels = [NSMutableArray array];
     NSArray *currentChannelIDList = arg2;
+
+    if (![channelModels isKindOfClass:[NSArray class]] || ![currentChannelIDList isKindOfClass:[NSArray class]]) {
+        %orig(arg1, arg2, arg3, arg4);
+        return;
+    }
+
+    if (channelModels.count == 0) {
+        %orig(arg1, arg2, arg3, arg4);
+        return;
+    }
+
+    NSMutableArray *newChannelModels = [NSMutableArray arrayWithCapacity:channelModels.count];
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     NSMutableArray *newCurrentChannelIDList = [NSMutableArray arrayWithArray:currentChannelIDList];
-    NSString *hideOtherChannels = [defaults objectForKey:@"DYYYHideOtherChannel"] ?: @"";
-    NSArray *hideChannelKeywords = [hideOtherChannels componentsSeparatedByString:@","];
 
-    for (AWEHPTopTabItemModel *tabItemModel in channelModels) {
-        NSString *channelID = tabItemModel.channelID;
-        NSString *newChannelTitle = tabItemModel.title;
-        NSString *oldChannelTitle = tabItemModel.channelTitle;
+    NSString *hideOtherChannels = [defaults objectForKey:@"DYYYHideOtherChannel"];
+    NSArray *hideChannelKeywords = nil;
+
+    if (hideOtherChannels && [hideOtherChannels isKindOfClass:[NSString class]] && hideOtherChannels.length > 0) {
+        hideChannelKeywords = [hideOtherChannels componentsSeparatedByString:@","];
+        NSMutableArray *filteredKeywords = [NSMutableArray array];
+        for (NSString *keyword in hideChannelKeywords) {
+            if ([keyword isKindOfClass:[NSString class]]) {
+                NSString *trimmedKeyword = [keyword stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+                if (trimmedKeyword.length > 0) {
+                    [filteredKeywords addObject:trimmedKeyword];
+                }
+            }
+        }
+        hideChannelKeywords = [filteredKeywords copy];
+    }
+
+    for (id model in channelModels) {
+        Class AWEHPTopTabItemModelClass = NSClassFromString(@"AWEHPTopTabItemModel");
+        if (!AWEHPTopTabItemModelClass || ![model isKindOfClass:AWEHPTopTabItemModelClass]) {
+            [newChannelModels addObject:model];
+            continue;
+        }
+
+        NSString *channelID = [model valueForKey:@"channelID"];
+        NSString *newChannelTitle = [model valueForKey:@"title"];
+        NSString *oldChannelTitle = [model valueForKey:@"channelTitle"];
         BOOL isHideChannel = NO;
+
+        if (!channelID || ![channelID isKindOfClass:[NSString class]]) {
+            [newChannelModels addObject:model];
+            continue;
+        }
 
         if ([channelID isEqualToString:@"homepage_hot_container"]) {
             isHideChannel = [defaults boolForKey:@"DYYYHideHotContainer"];
@@ -228,17 +270,29 @@
         } else if ([channelID isEqualToString:@"homepage_pad_game"]) {
             isHideChannel = [defaults boolForKey:@"DYYYHideGame"];
         }
-        if (oldChannelTitle.length > 0 || newChannelTitle.length > 0) {
-            for (NSString *keyword in hideChannelKeywords) {
-                if (keyword.length > 0 && ([oldChannelTitle containsString:keyword] || [newChannelTitle containsString:keyword])) {
-                    isHideChannel = YES;
+
+        if (!isHideChannel && hideChannelKeywords && hideChannelKeywords.count > 0) {
+            NSString *safeOldTitle = ([oldChannelTitle isKindOfClass:[NSString class]]) ? oldChannelTitle : @"";
+            NSString *safeNewTitle = ([newChannelTitle isKindOfClass:[NSString class]]) ? newChannelTitle : @"";
+
+            if (safeOldTitle.length > 0 || safeNewTitle.length > 0) {
+                for (NSString *keyword in hideChannelKeywords) {
+                    if ([keyword isKindOfClass:[NSString class]] && keyword.length > 0) {
+                        if ([safeOldTitle containsString:keyword] || [safeNewTitle containsString:keyword]) {
+                            isHideChannel = YES;
+                            break;
+                        }
+                    }
                 }
             }
         }
+
         if (!isHideChannel) {
-            [newChannelModels addObject:tabItemModel];
+            [newChannelModels addObject:model];
         } else {
-            [newCurrentChannelIDList removeObject:channelID];
+            if ([newCurrentChannelIDList containsObject:channelID]) {
+                [newCurrentChannelIDList removeObject:channelID];
+            }
         }
     }
 
@@ -467,8 +521,8 @@
 
 %hook AWENormalModeTabBarGeneralPlusButton
 + (id)button {
-    BOOL isHiddenJia = DYYYGetBool(@"DYYYHidePlusButton");
-    if (isHiddenJia) {
+    BOOL isHidePlusButton = DYYYGetBool(@"DYYYHidePlusButton");
+    if (isHidePlusButton) {
         return nil;
     }
     return %orig;
@@ -900,11 +954,6 @@
 
 %hook AWEFeedProgressSlider
 
-// layoutSubviews 保持不变
-- (void)layoutSubviews {
-    %orig;
-}
-
 - (void)setAlpha:(CGFloat)alpha {
     if (DYYYGetBool(@"DYYYShowScheduleDisplay")) {
         if (DYYYGetBool(@"DYYYHideVideoProgress")) {
@@ -1112,48 +1161,50 @@ static CGFloat rightLabelRightMargin = -1;
 }
 
 %end
+
 %hook AWENormalModeTabBarTextView
 
 - (void)layoutSubviews {
     %orig;
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+      NSString *indexTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYIndexTitle"];
+      NSString *friendsTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYFriendsTitle"];
+      NSString *msgTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYMsgTitle"];
+      NSString *selfTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYSelfTitle"];
 
-    NSString *indexTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYIndexTitle"];
-    NSString *friendsTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYFriendsTitle"];
-    NSString *msgTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYMsgTitle"];
-    NSString *selfTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYSelfTitle"];
+      if (!(indexTitle.length || friendsTitle.length || msgTitle.length || selfTitle.length)) {
+          return;
+      }
 
-    if (!(indexTitle.length || friendsTitle.length || msgTitle.length || selfTitle.length)) {
-        return;
-    }
+      static char kDYTabLabelCacheKey;
+      NSArray *labelCache = objc_getAssociatedObject(self, &kDYTabLabelCacheKey);
+      if (!labelCache) {
+          NSMutableArray *tmp = [NSMutableArray array];
+          for (UIView *subview in [self subviews]) {
+              if ([subview isKindOfClass:[UILabel class]]) {
+                  [tmp addObject:subview];
+              }
+          }
+          labelCache = [tmp copy];
+          objc_setAssociatedObject(self, &kDYTabLabelCacheKey, labelCache, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+      }
 
-    static char kDYTabLabelCacheKey;
-    NSArray *labelCache = objc_getAssociatedObject(self, &kDYTabLabelCacheKey);
-    if (!labelCache) {
-        NSMutableArray *tmp = [NSMutableArray array];
-        for (UIView *subview in [self subviews]) {
-            if ([subview isKindOfClass:[UILabel class]]) {
-                [tmp addObject:subview];
-            }
-        }
-        labelCache = [tmp copy];
-        objc_setAssociatedObject(self, &kDYTabLabelCacheKey, labelCache, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-    }
-
-    for (UILabel *label in labelCache) {
-        if ([label.text isEqualToString:@"首页"] && indexTitle.length > 0) {
-            label.text = indexTitle;
-            [self setNeedsLayout];
-        } else if ([label.text isEqualToString:@"朋友"] && friendsTitle.length > 0) {
-            label.text = friendsTitle;
-            [self setNeedsLayout];
-        } else if ([label.text isEqualToString:@"消息"] && msgTitle.length > 0) {
-            label.text = msgTitle;
-            [self setNeedsLayout];
-        } else if ([label.text isEqualToString:@"我"] && selfTitle.length > 0) {
-            label.text = selfTitle;
-            [self setNeedsLayout];
-        }
-    }
+      for (UILabel *label in labelCache) {
+          if ([label.text isEqualToString:@"首页"] && indexTitle.length > 0) {
+              label.text = indexTitle;
+              [self setNeedsLayout];
+          } else if ([label.text isEqualToString:@"朋友"] && friendsTitle.length > 0) {
+              label.text = friendsTitle;
+              [self setNeedsLayout];
+          } else if ([label.text isEqualToString:@"消息"] && msgTitle.length > 0) {
+              label.text = msgTitle;
+              [self setNeedsLayout];
+          } else if ([label.text isEqualToString:@"我"] && selfTitle.length > 0) {
+              label.text = selfTitle;
+              [self setNeedsLayout];
+          }
+      }
+    });
 }
 %end
 
@@ -2434,7 +2485,8 @@ static AWEIMReusableCommonCell *currentCell;
 
 - (void)layoutSubviews {
     %orig;
-    [self removeFromSuperview];
+    self.hidden = YES;
+    return;
 }
 
 %end
@@ -2454,7 +2506,7 @@ static AWEIMReusableCommonCell *currentCell;
     %orig;
 
     if (DYYYGetBool(@"DYYYHideComment")) {
-        [self removeFromSuperview];
+        self.hidden = YES;
         return;
     }
 }
@@ -2467,7 +2519,7 @@ static AWEIMReusableCommonCell *currentCell;
 
     // 检查是否需要隐藏加号
     if (DYYYGetBool(@"DYYYHideLOTAnimationView")) {
-        [self removeFromSuperview];
+        self.hidden = YES;
         return;
     }
 
@@ -2489,7 +2541,7 @@ static AWEIMReusableCommonCell *currentCell;
 
     // 检查是否需要隐藏头像
     if (DYYYGetBool(@"DYYYHideAvatarButton")) {
-        [self removeFromSuperview];
+        self.hidden = YES;
         return;
     }
 
@@ -2508,9 +2560,6 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWENearbySkyLightCapsuleView
 - (void)layoutSubviews {
     if (DYYYGetBool(@"DYYYHideNearbyCapsuleView")) {
-        if ([self respondsToSelector:@selector(removeFromSuperview)]) {
-            [self removeFromSuperview];
-        }
         self.hidden = YES;
         return;
     }
@@ -2522,9 +2571,6 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWEPlayInteractionCoCreatorNewInfoView
 - (void)layoutSubviews {
     if (DYYYGetBool(@"DYYYHideGongChuang")) {
-        if ([self respondsToSelector:@selector(removeFromSuperview)]) {
-            [self removeFromSuperview];
-        }
         self.hidden = YES;
         return;
     }
@@ -2555,24 +2601,6 @@ static AWEIMReusableCommonCell *currentCell;
 
     if (DYYYGetBool(@"DYYYHideDanmuButton")) {
         self.hidden = YES;
-    }
-}
-
-%end
-
-// 隐藏作者店铺
-%hook AWEECommerceEntryView
-
-- (void)layoutSubviews {
-    %orig;
-
-    if (DYYYGetBool(@"DYYYHideHisShop")) {
-        UIView *parentView = self.superview;
-        if (parentView) {
-            [parentView removeFromSuperview];
-        } else {
-            [self removeFromSuperview];
-        }
     }
 }
 
@@ -2771,9 +2799,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWEPostWorkViewController
 - (BOOL)isDouGuideTipViewShow {
     BOOL r = %orig;
-    NSLog(@"Original value: %@", @(r));
     if (DYYYGetBool(@"DYYYHideChallengeStickers")) {
-        NSLog(@"Force return YES");
         return YES;
     }
     return r;
@@ -2786,7 +2812,7 @@ static AWEIMReusableCommonCell *currentCell;
     %orig;
 
     if (DYYYGetBool(@"DYYYHideAvatarBubble")) {
-        [self removeFromSuperview];
+        self.hidden = YES;
         return;
     }
 }
@@ -2821,6 +2847,7 @@ static AWEIMReusableCommonCell *currentCell;
                 // 如果是合集，只检查合集的开关
                 if (DYYYGetBool(@"DYYYHideTemplateVideo")) {
                     [self removeFromSuperview];
+                    return;
                 } else if (DYYYGetBool(@"DYYYEnableFullScreen")) {
                     self.backgroundColor = [UIColor clearColor];
                 }
@@ -2828,6 +2855,7 @@ static AWEIMReusableCommonCell *currentCell;
                 // 如果不是合集（即作者声明），只检查声明的开关
                 if (DYYYGetBool(@"DYYYHideAntiAddictedNotice")) {
                     [self removeFromSuperview];
+                    return;
                 }
             }
         }
@@ -2860,11 +2888,9 @@ static AWEIMReusableCommonCell *currentCell;
 // 隐藏朋友日常按钮
 %hook AWEFamiliarNavView
 - (void)layoutSubviews {
-
     if (DYYYGetBool(@"DYYYHideFamiliar")) {
         self.hidden = YES;
     }
-
     %orig;
 }
 %end
@@ -2874,7 +2900,6 @@ static AWEIMReusableCommonCell *currentCell;
 
 - (void)layoutSubviews {
     %orig;
-
     if (DYYYGetBool(@"DYYYHideShareContentView")) {
         UIView *parentView = self.superview;
         if (parentView) {
@@ -2891,9 +2916,6 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWEPlayInteractionRelatedVideoView
 - (void)layoutSubviews {
     if (DYYYGetBool(@"DYYYHideBottomRelated")) {
-        if ([self respondsToSelector:@selector(removeFromSuperview)]) {
-            [self removeFromSuperview];
-        }
         self.hidden = YES;
         return;
     }
@@ -2904,9 +2926,6 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWEFeedRelatedSearchTipView
 - (void)layoutSubviews {
     if (DYYYGetBool(@"DYYYHideBottomRelated")) {
-        if ([self respondsToSelector:@selector(removeFromSuperview)]) {
-            [self removeFromSuperview];
-        }
         self.hidden = YES;
         return;
     }
@@ -3008,7 +3027,7 @@ static AWEIMReusableCommonCell *currentCell;
     }
 
     if (hideBtn) {
-        [self removeFromSuperview];
+        self.hidden = YES;
         return;
     }
 
@@ -3075,7 +3094,7 @@ static AWEIMReusableCommonCell *currentCell;
 
     if ([accessibilityLabel isEqualToString:@"拍照搜同款"] || [accessibilityLabel isEqualToString:@"扫一扫"]) {
         if (DYYYGetBool(@"DYYYHideScancode")) {
-            [self removeFromSuperview];
+            self.hidden = YES;
             return;
         }
     }
@@ -3085,7 +3104,7 @@ static AWEIMReusableCommonCell *currentCell;
             UIView *parent = self.superview;
             // 父视图是AWEBaseElementView(排除用户主页返回按钮) 按钮类不是AWENoxusHighlightButton(排除横屏返回按钮)
             if ([parent isKindOfClass:%c(AWEBaseElementView)] && ![self isKindOfClass:%c(AWENoxusHighlightButton)]) {
-                [self removeFromSuperview];
+                self.hidden = YES;
             }
             return;
         }
@@ -3100,7 +3119,8 @@ static AWEIMReusableCommonCell *currentCell;
     %orig;
 
     if (DYYYGetBool(@"DYYYHideReply")) {
-        [self.view removeFromSuperview];
+        self.view.hidden = YES;
+        return;
     }
 }
 
@@ -3111,7 +3131,7 @@ static AWEIMReusableCommonCell *currentCell;
     %orig;
 
     if (DYYYGetBool(@"DYYYHideSearchBubble")) {
-        [self removeFromSuperview];
+        self.hidden = YES;
         return;
     }
 }
@@ -3123,7 +3143,7 @@ static AWEIMReusableCommonCell *currentCell;
     %orig;
 
     if (DYYYGetBool(@"DYYYHideChallengeStickers")) {
-        [self removeFromSuperview];
+        self.hidden = YES;
         return;
     }
 }
@@ -3138,7 +3158,7 @@ static AWEIMReusableCommonCell *currentCell;
 
     if ([accessibilityLabel isEqualToString:@"音乐详情"]) {
         if (DYYYGetBool(@"DYYYHideMusicButton")) {
-            [self removeFromSuperview];
+            self.hidden = YES;
             return;
         }
     }
@@ -3151,7 +3171,7 @@ static AWEIMReusableCommonCell *currentCell;
     %orig;
 
     if (DYYYGetBool(@"DYYYHideMusicButton")) {
-        [self removeFromSuperview];
+        self.hidden = YES;
         return;
     }
 }
@@ -3166,12 +3186,12 @@ static AWEIMReusableCommonCell *currentCell;
 
     if ([accessibilityLabel isEqualToString:@"关注"]) {
         if (DYYYGetBool(@"DYYYHideAvatarButton")) {
-            [self removeFromSuperview];
+            self.hidden = YES;
             return;
         }
         if (DYYYGetBool(@"DYYYHideFollowPromptView")) {
             self.userInteractionEnabled = NO;
-            [self removeFromSuperview];
+            self.hidden = YES;
             return;
         }
     }
@@ -3184,7 +3204,7 @@ static AWEIMReusableCommonCell *currentCell;
     %orig;
 
     if (DYYYGetBool(@"DYYYHideGradient")) {
-        [self removeFromSuperview];
+        self.hidden = YES;
         return;
     }
 }
@@ -3196,7 +3216,7 @@ static AWEIMReusableCommonCell *currentCell;
     if (DYYYGetBool(@"DYYYHideGradient")) {
         UIView *parent = self.superview;
         if ([parent.accessibilityLabel isEqualToString:@"暂停，按钮"] || [parent.accessibilityLabel isEqualToString:@"播放，按钮"] || [parent.accessibilityLabel isEqualToString:@"“切换视角，按钮"]) {
-            [self removeFromSuperview];
+            self.hidden = YES;
         }
         return;
     }
@@ -3208,7 +3228,7 @@ static AWEIMReusableCommonCell *currentCell;
     %orig;
 
     if (DYYYGetBool(@"DYYYHideGradient")) {
-        [self removeFromSuperview];
+        self.hidden = YES;
         return;
     }
 }
@@ -3219,7 +3239,7 @@ static AWEIMReusableCommonCell *currentCell;
     %orig;
 
     if (DYYYGetBool(@"DYYYHideHotSearch")) {
-        [self removeFromSuperview];
+        self.hidden = YES;
         return;
     }
 }
@@ -3230,10 +3250,6 @@ static AWEIMReusableCommonCell *currentCell;
 
 - (void)layoutSubviews {
     %orig;
-
-    if ([self respondsToSelector:@selector(removeFromSuperview)]) {
-        [self removeFromSuperview];
-    }
     self.hidden = YES;
     return;
 }
@@ -3338,7 +3354,8 @@ static AWEIMReusableCommonCell *currentCell;
         if (parentView) {
             UIView *grandparentView = parentView.superview;
             if (grandparentView && [grandparentView isKindOfClass:%c(AWEBaseElementView)]) {
-                [grandparentView removeFromSuperview];
+                grandparentView.hidden = YES;
+                return;
             }
         }
     }
@@ -3352,7 +3369,7 @@ static AWEIMReusableCommonCell *currentCell;
     %orig;
 
     if (DYYYGetBool(@"DYYYHideInteractionSearch")) {
-        [self removeFromSuperview];
+        self.hidden = YES;
         return;
     }
 }
@@ -3424,9 +3441,6 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 
     if (DYYYGetBool(@"DYYYHideTemplatePlaylet")) {
-        if ([self respondsToSelector:@selector(removeFromSuperview)]) {
-            [self removeFromSuperview];
-        }
         self.hidden = YES;
         return;
     }
@@ -3528,9 +3542,6 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWENewHotSpotBottomBarView
 - (void)layoutSubviews {
     if (DYYYGetBool(@"DYYYHideHotspot")) {
-        if ([self respondsToSelector:@selector(removeFromSuperview)]) {
-            [self removeFromSuperview];
-        }
         self.hidden = YES;
         return;
     }
@@ -3544,7 +3555,7 @@ static AWEIMReusableCommonCell *currentCell;
     %orig;
 
     if (DYYYGetBool(@"DYYYHideHotspot")) {
-        [self removeFromSuperview];
+        self.hidden = YES;
         return;
     }
 }
@@ -3555,7 +3566,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWEConcernSkylightCapsuleView
 - (void)setHidden:(BOOL)hidden {
     if (DYYYGetBool(@"DYYYHideConcernCapsuleView")) {
-        [self removeFromSuperview];
+        self.hidden = YES;
         return;
     }
 
@@ -3571,11 +3582,14 @@ static AWEIMReusableCommonCell *currentCell;
         UIView *grandparentView = parentView.superview;
 
         if (grandparentView) {
-            [grandparentView removeFromSuperview];
+            grandparentView.hidden = YES;
+            return;
         } else if (parentView) {
-            [parentView removeFromSuperview];
+            parentView.hidden = YES;
+            return;
         } else {
-            [self removeFromSuperview];
+            self.hidden = YES;
+            return;
         }
     }
 }
@@ -3588,9 +3602,6 @@ static AWEIMReusableCommonCell *currentCell;
     %orig;
 
     if (DYYYGetBool(@"DYYYHideLiveDiscovery")) {
-        if ([self respondsToSelector:@selector(removeFromSuperview)]) {
-            [self removeFromSuperview];
-        }
         self.hidden = YES;
         return;
     }
@@ -3601,7 +3612,8 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
     %orig;
     if (DYYYGetBool(@"DYYYHideLiveDetail")) {
-        [self removeFromSuperview];
+        self.hidden = YES;
+        return;
     }
 }
 %end
@@ -3610,7 +3622,8 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
     %orig;
     if (DYYYGetBool(@"DYYYHideLiveDetail")) {
-        [self removeFromSuperview];
+        self.hidden = YES;
+        return;
     }
 }
 %end
@@ -3619,7 +3632,8 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
     %orig;
     if (DYYYGetBool(@"DYYYHideTouchView")) {
-        [self removeFromSuperview];
+        self.hidden = YES;
+        return;
     }
 }
 %end
@@ -3628,7 +3642,8 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
     %orig;
     if (DYYYGetBool(@"DYYYHideTouchView")) {
-        [self removeFromSuperview];
+        self.hidden = YES;
+        return;
     }
 }
 %end
@@ -3637,7 +3652,8 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
     %orig;
     if (DYYYGetBool(@"DYYYHideTouchView")) {
-        [self removeFromSuperview];
+        self.hidden = YES;
+        return;
     }
 }
 %end
@@ -3646,7 +3662,8 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
     %orig;
     if (DYYYGetBool(@"DYYYHideTouchView")) {
-        [self removeFromSuperview];
+        self.hidden = YES;
+        return;
     }
 }
 %end
@@ -3657,7 +3674,7 @@ static AWEIMReusableCommonCell *currentCell;
     %orig;
     if (DYYYGetBool(@"DYYYHideKTVSongIndicator")) {
         self.hidden = YES;
-        [self removeFromSuperview];
+        return;
     }
 }
 %end
@@ -3736,7 +3753,8 @@ static AWEIMReusableCommonCell *currentCell;
     %orig;
     if (DYYYGetBool(@"DYYYHideRecommendTips")) {
         if (self.accessibilityLabel) {
-            [self removeFromSuperview];
+            self.hidden = YES;
+            return;
         }
     }
 }
@@ -3749,7 +3767,8 @@ static AWEIMReusableCommonCell *currentCell;
     %orig;
     if (DYYYGetBool(@"DYYYHidePostView")) {
         if ([self.accessibilityLabel isEqualToString:@"私密作品"]) {
-            [self removeFromSuperview];
+            self.hidden = YES;
+            return;
         }
     }
 }
@@ -3808,7 +3827,7 @@ static AWEIMReusableCommonCell *currentCell;
     %orig;
 
     if (DYYYGetBool(@"DYYYHideLiveView")) {
-        [self removeFromSuperview];
+        self.hidden = YES;
         return;
     }
 }
@@ -3851,9 +3870,6 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWEPlayInteractionTemplateButtonGroup
 - (void)layoutSubviews {
     if (DYYYGetBool(@"DYYYHideTemplateGroup")) {
-        if ([self respondsToSelector:@selector(removeFromSuperview)]) {
-            [self removeFromSuperview];
-        }
         self.hidden = YES;
         return;
     }
@@ -3919,9 +3935,6 @@ static AWEIMReusableCommonCell *currentCell;
 
 - (void)layoutSubviews {
     if (DYYYGetBool(@"DYYYHideGroupLiveIndicator")) {
-        if ([self respondsToSelector:@selector(removeFromSuperview)]) {
-            [self removeFromSuperview];
-        }
         self.hidden = YES;
         return;
     }
@@ -3933,9 +3946,6 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
 
     if (DYYYGetBool(@"DYYYHideLiveCapsuleView")) {
-        if ([self respondsToSelector:@selector(removeFromSuperview)]) {
-            [self removeFromSuperview];
-        }
         self.hidden = YES;
         return;
     }
@@ -3961,9 +3971,6 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWEIMFansGroupTopDynamicDomainTemplateView
 - (void)layoutSubviews {
     if (DYYYGetBool(@"DYYYHideGroupShop")) {
-        if ([self respondsToSelector:@selector(removeFromSuperview)]) {
-            [self removeFromSuperview];
-        }
         self.hidden = YES;
         return;
     }
@@ -3976,9 +3983,6 @@ static AWEIMReusableCommonCell *currentCell;
 
 - (void)p_setupUI {
     if (DYYYGetBool(@"DYYYHideGroupInputActionBar")) {
-        if ([self respondsToSelector:@selector(removeFromSuperview)]) {
-            [self removeFromSuperview];
-        }
         self.hidden = YES;
         return;
     }
@@ -3990,9 +3994,6 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWETemplateCommonView
 - (void)layoutSubviews {
     if (DYYYGetBool(@"DYYYHideCameraLocation")) {
-        if ([self respondsToSelector:@selector(removeFromSuperview)]) {
-            [self removeFromSuperview];
-        }
         self.hidden = YES;
         return;
     }
@@ -4055,10 +4056,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook ACCStickerContainerView
 - (void)layoutSubviews {
     if (DYYYGetBool(@"DYYYHideSearchSame")) {
-        if ([self respondsToSelector:@selector(removeFromSuperview)]) {
-            [self removeFromSuperview];
-        }
-        self.hidden = YES; // 隐藏更彻底
+        self.hidden = YES;
         return;
     }
     %orig;
@@ -4077,7 +4075,7 @@ static AWEIMReusableCommonCell *currentCell;
     NSString *title = [self valueForKey:@"title"];
 
     if ([title containsString:@"任务Banner"] || [title containsString:@"活动Banner"]) {
-        [self removeFromSuperview];
+        self.hidden = YES;
     }
 }
 %end
@@ -4130,9 +4128,11 @@ static AWEIMReusableCommonCell *currentCell;
 
     NSString *label = self.accessibilityLabel;
     if (hideClear && [label isEqualToString:@"退出清屏"] && self.superview) {
-        [self.superview removeFromSuperview];
+        self.superview.hidden = YES;
+        return;
     } else if (hideMirror && [label isEqualToString:@"投屏"] && self.superview) {
-        [self.superview removeFromSuperview];
+        self.superview.hidden = YES;
+        return;
     } else if (hideFull && [label isEqualToString:@"横屏"] && self.superview) {
         static char kDYLiveButtonCacheKey;
         NSArray *cached = objc_getAssociatedObject(self, &kDYLiveButtonCacheKey);
@@ -4143,6 +4143,7 @@ static AWEIMReusableCommonCell *currentCell;
         for (UIView *subview in cached) {
             subview.hidden = YES;
         }
+        return;
     }
 }
 
@@ -4154,6 +4155,7 @@ static AWEIMReusableCommonCell *currentCell;
     %orig;
     if (DYYYGetBool(@"DYYYHideLiveRoomClose")) {
         self.hidden = YES;
+        return;
     }
 }
 %end
@@ -4164,6 +4166,7 @@ static AWEIMReusableCommonCell *currentCell;
     %orig;
     if (DYYYGetBool(@"DYYYHideCellularAlert")) {
         self.hidden = YES;
+        return;
     }
 }
 %end
@@ -4171,19 +4174,22 @@ static AWEIMReusableCommonCell *currentCell;
 // 隐藏直播间商品信息
 %hook IESECLivePluginLayoutView
 - (void)layoutSubviews {
-    %orig;
     if (DYYYGetBool(@"DYYYHideLiveGoodsMsg")) {
-        [self removeFromSuperview];
+        self.hidden = YES;
+        return;
     }
+    %orig;
 }
 %end
 
 %hook IESLiveBottomRightCardView
 - (void)layoutSubviews {
-    %orig;
+
     if (DYYYGetBool(@"DYYYHideLiveGoodsMsg")) {
-        [self removeFromSuperview];
+        self.hidden = YES;
+        return;
     }
+    %orig;
 }
 %end
 
@@ -4191,26 +4197,29 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
     %orig;
     if (DYYYGetBool(@"DYYYHideLiveGoodsMsg")) {
-        [self removeFromSuperview];
+        self.hidden = YES;
+        return;
     }
 }
 %end
 
 %hook AWEPOILivePurchaseAtmosphereView
 - (void)layoutSubviews {
-    %orig;
     if (DYYYGetBool(@"DYYYHideLiveGoodsMsg") && self.superview) {
-        [self.superview removeFromSuperview];
+        self.superview.hidden = YES;
+        return;
     }
+    %orig;
 }
 %end
 
 %hook IESLiveActivityBannnerView
 - (void)layoutSubviews {
-    %orig;
     if (DYYYGetBool(@"DYYYHideLiveGoodsMsg")) {
-        [self removeFromSuperview];
+        self.hidden = YES;
+        return;
     }
+    %orig;
 }
 %end
 
@@ -4228,30 +4237,33 @@ static AWEIMReusableCommonCell *currentCell;
 // 隐藏直播间文字贴纸
 %hook IESLiveStickerView
 - (void)layoutSubviews {
-    %orig;
     if (DYYYGetBool(@"DYYYHideStickerView")) {
-        [self removeFromSuperview];
+        self.hidden = YES;
+        return;
     }
+    %orig;
 }
 %end
 
 // 预约直播
 %hook IESLivePreAnnouncementPanelViewNew
 - (void)layoutSubviews {
-    %orig;
     if (DYYYGetBool(@"DYYYHideStickerView")) {
-        [self removeFromSuperview];
+        self.hidden = YES;
+        return;
     }
+    %orig;
 }
 %end
 
 // 隐藏会员进场特效
 %hook IESLiveDynamicUserEnterView
 - (void)layoutSubviews {
-    %orig;
     if (DYYYGetBool(@"DYYYHideLivePopup")) {
-        [self removeFromSuperview];
+        self.hidden = YES;
+        return;
     }
+    %orig;
 }
 %end
 
@@ -4268,28 +4280,32 @@ static AWEIMReusableCommonCell *currentCell;
         UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
         BOOL isLiveAudienceVC = [vc isKindOfClass:%c(IESLiveAudienceViewController)];
         if (isLynxView && isLiveAudienceVC) {
-            [self removeFromSuperview];
+            self.hidden = YES;
         }
     }
+    return;
 }
 %end
 
 %hook IESLiveDanmakuVariousView
 - (void)layoutSubviews {
-    %orig;
     if (DYYYGetBool(@"DYYYHideLiveDanmaku")) {
-        [self removeFromSuperview];
+        self.hidden = YES;
+        return;
     }
+    %orig;
 }
 
 %end
 
 %hook IESLiveHotMessageView
 - (void)layoutSubviews {
-    %orig;
+
     if (DYYYGetBool(@"DYYYHideLiveHotMessage")) {
-        [self removeFromSuperview];
+        self.hidden = YES;
+        return;
     }
+    %orig;
 }
 %end
 
@@ -4710,16 +4726,14 @@ static AWEIMReusableCommonCell *currentCell;
                                                       }];
                               }
                           } else {
-                                      if (videoModel.h264URL && videoModel.h264URL.originURLList.count > 0) {
-                                          NSURL *url = [NSURL URLWithString:videoModel.h264URL.originURLList.firstObject];
-                                          [DYYYManager downloadMedia:url
-                                                           mediaType:MediaTypeVideo
-                                                               audio:audioURL
-                                                          completion:^(BOOL success){
-                                                          }];
-                                      }
-                                  
-                              
+                              if (videoModel.h264URL && videoModel.h264URL.originURLList.count > 0) {
+                                  NSURL *url = [NSURL URLWithString:videoModel.h264URL.originURLList.firstObject];
+                                  [DYYYManager downloadMedia:url
+                                                   mediaType:MediaTypeVideo
+                                                       audio:audioURL
+                                                  completion:^(BOOL success){
+                                                  }];
+                              }
                           }
                         }];
             [actions addObject:downloadAction];
@@ -5120,7 +5134,7 @@ static CGFloat customTabBarHeight() {
                 if ([innerSubview isKindOfClass:[UIView class]]) {
                     // NSLog(@"[innerSubview] %@", innerSubview);
                     if (innerSubview.subviews.count > 0) {
-                        [innerSubview.subviews[0] removeFromSuperview];
+                        innerSubview.subviews[0].hidden = YES;
                     }
 
                     UIView *whiteBackgroundView = [[UIView alloc] initWithFrame:innerSubview.bounds];
@@ -5334,104 +5348,101 @@ static CGFloat customTabBarHeight() {
 %hook AWEElementStackView
 static CGFloat currentScale = 1.0;
 - (void)layoutSubviews {
-	%orig;
-	UIViewController *viewController = [DYYYUtils firstAvailableViewControllerFromView:self];
-	if ([viewController isKindOfClass:%c(AWECommentInputViewController)]) {
-		NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
-		if (transparentValue.length > 0) {
-			CGFloat alphaValue = transparentValue.floatValue;
-			if (alphaValue >= 0.0 && alphaValue <= 1.0) {
-				self.alpha = alphaValue;
-			}
-		}
-	}
+    %orig;
+    UIViewController *viewController = [DYYYUtils firstAvailableViewControllerFromView:self];
+    if ([viewController isKindOfClass:%c(AWECommentInputViewController)]) {
+        NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
+        if (transparentValue.length > 0) {
+            CGFloat alphaValue = transparentValue.floatValue;
+            if (alphaValue >= 0.0 && alphaValue <= 1.0) {
+                self.alpha = alphaValue;
+            }
+        }
+    }
 
-	if ([viewController isKindOfClass:%c(AWEPlayInteractionViewController)]) {
-		// 右侧元素的处理逻辑
-		if ([self.accessibilityLabel isEqualToString:@"right"] || [DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEPlayInteractionUserAvatarView") inView:self]) {
-			NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYElementScale"];
-			self.transform = CGAffineTransformIdentity;
-			if (scaleValue.length > 0) {
-				CGFloat scale = [scaleValue floatValue];
-				if (currentScale != scale)
-					currentScale = scale;
-				if (scale > 0 && scale != 1.0) {
-					NSArray *subviews = [self.subviews copy];
-					CGFloat ty = 0;
-					for (UIView *view in subviews) {
-						CGFloat viewHeight = view.frame.size.height;
-						ty += (viewHeight - viewHeight * scale) / 2;
-					}
-					CGFloat frameWidth = self.frame.size.width;
-					CGFloat right_tx = (frameWidth - frameWidth * scale) / 2;
-					self.transform = CGAffineTransformMake(scale, 0, 0, scale, right_tx, ty);
-				} else {
-					self.transform = CGAffineTransformIdentity;
-				}
-			}
-		}
-		// 左侧元素的处理逻辑
-		else if ([self.accessibilityLabel isEqualToString:@"left"] || [DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEFeedAnchorContainerView") inView:self]) {
-			NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
-			if (scaleValue.length > 0) {
-				CGFloat scale = [scaleValue floatValue];
-				self.transform = CGAffineTransformIdentity;
-				if (scale > 0 && scale != 1.0) {
-					NSArray *subviews = [self.subviews copy];
-					CGFloat ty = 0;
-					for (UIView *view in subviews) {
-						CGFloat viewHeight = view.frame.size.height;
-						ty += (viewHeight - viewHeight * scale) / 2;
-					}
-					CGFloat frameWidth = self.frame.size.width;
-					CGFloat left_tx = (frameWidth - frameWidth * scale) / 2 - frameWidth * (1 - scale);
-					CGAffineTransform newTransform = CGAffineTransformMakeScale(scale, scale);
-					newTransform = CGAffineTransformTranslate(newTransform, left_tx / scale, ty / scale);
-					self.transform = newTransform;
-				}
-			}
-		}
-	}
+    if ([viewController isKindOfClass:%c(AWEPlayInteractionViewController)]) {
+        // 右侧元素的处理逻辑
+        if ([self.accessibilityLabel isEqualToString:@"right"] || [DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEPlayInteractionUserAvatarView") inView:self]) {
+            NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYElementScale"];
+            self.transform = CGAffineTransformIdentity;
+            if (scaleValue.length > 0) {
+                CGFloat scale = [scaleValue floatValue];
+                if (currentScale != scale)
+                    currentScale = scale;
+                if (scale > 0 && scale != 1.0) {
+                    NSArray *subviews = [self.subviews copy];
+                    CGFloat ty = 0;
+                    for (UIView *view in subviews) {
+                        CGFloat viewHeight = view.frame.size.height;
+                        ty += (viewHeight - viewHeight * scale) / 2;
+                    }
+                    CGFloat frameWidth = self.frame.size.width;
+                    CGFloat right_tx = (frameWidth - frameWidth * scale) / 2;
+                    self.transform = CGAffineTransformMake(scale, 0, 0, scale, right_tx, ty);
+                } else {
+                    self.transform = CGAffineTransformIdentity;
+                }
+            }
+        }
+        // 左侧元素的处理逻辑
+        else if ([self.accessibilityLabel isEqualToString:@"left"] || [DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEFeedAnchorContainerView") inView:self]) {
+            NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
+            if (scaleValue.length > 0) {
+                CGFloat scale = [scaleValue floatValue];
+                self.transform = CGAffineTransformIdentity;
+                if (scale > 0 && scale != 1.0) {
+                    NSArray *subviews = [self.subviews copy];
+                    CGFloat ty = 0;
+                    for (UIView *view in subviews) {
+                        CGFloat viewHeight = view.frame.size.height;
+                        ty += (viewHeight - viewHeight * scale) / 2;
+                    }
+                    CGFloat frameWidth = self.frame.size.width;
+                    CGFloat left_tx = (frameWidth - frameWidth * scale) / 2 - frameWidth * (1 - scale);
+                    CGAffineTransform newTransform = CGAffineTransformMakeScale(scale, scale);
+                    newTransform = CGAffineTransformTranslate(newTransform, left_tx / scale, ty / scale);
+                    self.transform = newTransform;
+                }
+            }
+        }
+    }
 }
 - (NSArray<__kindof UIView *> *)arrangedSubviews {
 
-	UIViewController *viewController = [DYYYUtils firstAvailableViewControllerFromView:self];
-	if ([viewController isKindOfClass:%c(AWEPlayInteractionViewController)]) {
+    UIViewController *viewController = [DYYYUtils firstAvailableViewControllerFromView:self];
+    if ([viewController isKindOfClass:%c(AWEPlayInteractionViewController)]) {
 
-		if ([self.accessibilityLabel isEqualToString:@"left"] || [DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEFeedAnchorContainerView") inView:self]) {
-			NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
-			if (scaleValue.length > 0) {
-				CGFloat scale = [scaleValue floatValue];
-				self.transform = CGAffineTransformIdentity;
-				if (scale > 0 && scale != 1.0) {
-					NSArray *subviews = [self.subviews copy];
-					CGFloat ty = 0;
-					for (UIView *view in subviews) {
-						CGFloat viewHeight = view.frame.size.height;
-						ty += (viewHeight - viewHeight * scale) / 2;
-					}
-					CGFloat frameWidth = self.frame.size.width;
-					CGFloat left_tx = (frameWidth - frameWidth * scale) / 2 - frameWidth * (1 - scale);
-					CGAffineTransform newTransform = CGAffineTransformMakeScale(scale, scale);
-					newTransform = CGAffineTransformTranslate(newTransform, left_tx / scale, ty / scale);
-					self.transform = newTransform;
-				}
-			}
-		}
-	}
+        if ([self.accessibilityLabel isEqualToString:@"left"] || [DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEFeedAnchorContainerView") inView:self]) {
+            NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
+            if (scaleValue.length > 0) {
+                CGFloat scale = [scaleValue floatValue];
+                self.transform = CGAffineTransformIdentity;
+                if (scale > 0 && scale != 1.0) {
+                    NSArray *subviews = [self.subviews copy];
+                    CGFloat ty = 0;
+                    for (UIView *view in subviews) {
+                        CGFloat viewHeight = view.frame.size.height;
+                        ty += (viewHeight - viewHeight * scale) / 2;
+                    }
+                    CGFloat frameWidth = self.frame.size.width;
+                    CGFloat left_tx = (frameWidth - frameWidth * scale) / 2 - frameWidth * (1 - scale);
+                    CGAffineTransform newTransform = CGAffineTransformMakeScale(scale, scale);
+                    newTransform = CGAffineTransformTranslate(newTransform, left_tx / scale, ty / scale);
+                    self.transform = newTransform;
+                }
+            }
+        }
+    }
 
-	NSArray *originalSubviews = %orig;
-	return originalSubviews;
+    NSArray *originalSubviews = %orig;
+    return originalSubviews;
 }
 %end
 
 %hook AWELiveNewPreStreamViewController
 static char kDyLastAppliedScaleKey;
 static char kDyLastAppliedShiftKey;
-static NSArray<Class> *kTargetViewClasses = @[
-    NSClassFromString(@"AWEElementStackView"),
-    NSClassFromString(@"IESLiveStackView")
-];
+static NSArray<Class> *kTargetViewClasses = @[ NSClassFromString(@"AWEElementStackView"), NSClassFromString(@"IESLiveStackView") ];
 - (void)viewDidLayoutSubviews {
     %orig;
 
@@ -5442,7 +5453,8 @@ static NSArray<Class> *kTargetViewClasses = @[
         }
     }
 
-    if (targetViews.count == 0) return;
+    if (targetViews.count == 0)
+        return;
 
     NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
     if (transparentValue.length > 0) {
@@ -5456,7 +5468,7 @@ static NSArray<Class> *kTargetViewClasses = @[
     BOOL lastAppliedShift = [objc_getAssociatedObject(self, &kDyLastAppliedShiftKey) boolValue];
 
     NSString *vcScaleValue = DYYYGetString(@"DYYYNicknameScale");
-    CGFloat targetScale = (vcScaleValue.length > 0) ? MAX(0.01, [vcScaleValue floatValue]) : 1.0; 
+    CGFloat targetScale = (vcScaleValue.length > 0) ? MAX(0.01, [vcScaleValue floatValue]) : 1.0;
     CGFloat lastAppliedScale = [objc_getAssociatedObject(self, &kDyLastAppliedScaleKey) floatValue] ?: 1.0;
 
     if (fabs(targetScale - lastAppliedScale) < 0.01 && shouldShiftUp == lastAppliedShift) {
@@ -5597,7 +5609,8 @@ static NSArray<Class> *kTargetViewClasses = @[
 - (void)layoutSubviews {
     %orig;
     if (DYYYGetBool(@"DYYYHideEntry")) {
-        [self removeFromSuperview];
+        self.hidden = YES;
+        return;
     }
 }
 
@@ -5655,6 +5668,7 @@ static NSArray<Class> *kTargetViewClasses = @[
         } else {
             subview.userInteractionEnabled = NO;
             [subview removeFromSuperview];
+            return;
         }
     }
 
@@ -5663,6 +5677,7 @@ static NSArray<Class> *kTargetViewClasses = @[
             continue;
         subview.userInteractionEnabled = NO;
         [subview removeFromSuperview];
+        return;
     }
 
     [visibleButtons sortUsingComparator:^NSComparisonResult(UIView *a, UIView *b) {
@@ -5906,11 +5921,11 @@ static NSArray<Class> *kTargetViewClasses = @[
 %hook AWEDemaciaChapterProgressSlider
 
 - (void)layoutSubviews {
-    %orig;
-
     if (DYYYGetBool(@"DYYYHideChapterProgress")) {
-        [self removeFromSuperview];
+        self.hidden = YES;
+        return;
     }
+    %orig;
 }
 
 %end
@@ -5934,7 +5949,8 @@ static NSArray<Class> *kTargetViewClasses = @[
     NSString *text = [rawContent isKindOfClass:NSString.class] ? (NSString *)rawContent : [rawContent description];
 
     if ([text containsString:@"上次看到"]) {
-        [self removeFromSuperview];
+        self.hidden = YES;
+        return;
     }
 }
 %end
@@ -5966,6 +5982,7 @@ static NSArray<Class> *kTargetViewClasses = @[
     for (UIView *v in cachedViews) {
         v.hidden = YES;
     }
+    return;
 }
 %end
 
@@ -5985,6 +6002,7 @@ static NSArray<Class> *kTargetViewClasses = @[
             }
         }
     }
+    return;
 }
 %end
 
@@ -6226,6 +6244,7 @@ static NSString *const kStreamlineSidebarKey = @"DYYYHideSidebarElements";
     %orig;
     if (DYYYGetBool(@"DYYYHidePendantGroup")) {
         [self removeFromSuperview];
+        return;
     }
 }
 %end
