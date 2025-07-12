@@ -3886,6 +3886,16 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
+%hook AFDPureModePageTapController
+
+- (void)onVideoPlayerViewDoubleClicked:(id)arg1 {
+    BOOL isSwitchOn = DYYYGetBool(@"DYYYDisableDoubleTapLike");
+    if (!isSwitchOn) {
+        %orig;
+    }
+}
+%end
+
 // 隐藏右上搜索，但可点击
 %hook AWEHPDiscoverFeedEntranceView
 

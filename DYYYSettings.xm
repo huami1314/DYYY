@@ -2560,8 +2560,9 @@ extern "C"
             @"imageName" : @"ic_arrowcircle_outlined_20"},
           @{@"identifier" : @"DYYYDisableDoubleTapLike",
             @"title" : @"禁用双击视频点赞",
+            @"subTitle" : @"同时会禁用官方纯净模式的双击点赞",
             @"detail" : @"",
-            @"cellType" : @6,
+            @"cellType" : @37,
             @"imageName" : @"ic_thumbsup_outlined_20"},
           @{
               @"identifier" : @"DYYYEnableDoubleOpenComment",
