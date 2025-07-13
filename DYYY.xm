@@ -5621,7 +5621,7 @@ static NSArray<Class> *kTargetViewClasses = @[ NSClassFromString(@"AWEElementSta
 - (void)layoutSubviews {
     %orig;
     if (DYYYGetBool(@"DYYYHideEntry")) {
-        self.hidden = YES;
+        [self removeFromSuperview];
         return;
     }
 }

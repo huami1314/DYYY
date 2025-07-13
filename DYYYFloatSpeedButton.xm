@@ -542,7 +542,6 @@ void updateSpeedButtonVisibility() {
 
 - (void)viewDidLayoutSubviews {
     %orig;
-
     if (!isFloatSpeedButtonEnabled)
         return;
     BOOL hasRightStack = NO;
