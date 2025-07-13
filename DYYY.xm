@@ -2519,7 +2519,7 @@ static AWEIMReusableCommonCell *currentCell;
 
     // 检查是否需要隐藏加号
     if (DYYYGetBool(@"DYYYHideLOTAnimationView")) {
-        self.hidden = YES;
+        [self removeFromSuperview];
         return;
     }
 
@@ -2539,9 +2539,8 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
     %orig;
 
-    // 检查是否需要隐藏头像
     if (DYYYGetBool(@"DYYYHideAvatarButton")) {
-        self.hidden = YES;
+        [self removeFromSuperview];
         return;
     }
 
