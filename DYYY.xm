@@ -3520,18 +3520,6 @@ static AWEIMReusableCommonCell *currentCell;
 
 %end
 
-// 隐藏关注直播
-%hook AWEConcernSkylightCapsuleView
-- (void)setHidden:(BOOL)hidden {
-    if (DYYYGetBool(@"DYYYHideConcernCapsuleView")) {
-        self.hidden = YES;
-        return;
-    }
-
-    %orig(hidden);
-}
-%end
-
 %hook AWEHomePageBubbleLiveHeadLabelContentView
 - (void)layoutSubviews {
     %orig;
@@ -3758,10 +3746,9 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
-// 隐藏关注直播顶端
+// 隐藏关注直播顶端的直播视图
 %hook AWENewLiveSkylightViewController
 
-// 隐藏顶部直播视图 - 添加条件判断
 - (void)showSkylight:(BOOL)arg0 animated:(BOOL)arg1 actionMethod:(unsigned long long)arg2 {
     if (DYYYGetBool(@"DYYYHideLiveView")) {
         return;
@@ -3777,6 +3764,18 @@ static AWEIMReusableCommonCell *currentCell;
     }
 }
 
+%end
+
+// 隐藏关注直播
+%hook AWEConcernSkylightCapsuleView
+- (void)setHidden:(BOOL)hidden {
+    if (DYYYGetBool(@"DYYYHideConcernCapsuleView")) {
+        %orig(YES);
+        return;
+    }
+
+    %orig(hidden);
+}
 %end
 
 %hook AWELiveAutoEnterStyleAView
