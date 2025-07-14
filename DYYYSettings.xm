@@ -1048,7 +1048,7 @@ extern "C"
             @"imageName" : @"ic_eyeslash_outlined_16"},
           @{@"identifier" : @"DYYYHideConcernCapsuleView",
             @"title" : @"隐藏关注直播",
-            @"subTitle" : @"隐藏关注页顶端的 n 个直播",
+            @"subTitle" : @"隐藏关注页顶端的 N 个直播",
             @"detail" : @"",
             @"cellType" : @37,
             @"imageName" : @"ic_eyeslash_outlined_16"},

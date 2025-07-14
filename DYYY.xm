@@ -3155,7 +3155,7 @@ static AWEIMReusableCommonCell *currentCell;
         }
         if (DYYYGetBool(@"DYYYHideFollowPromptView")) {
             self.userInteractionEnabled = NO;
-            self.hidden = YES;
+            [self removeFromSuperview];
             return;
         }
     }
