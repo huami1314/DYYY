@@ -21,32 +21,6 @@ BOOL isPureViewVisible = NO;
 BOOL clearButtonForceHidden = NO;
 BOOL isAppActive = YES;
 
-@interface HideUIButton : UIButton
-
-@property(nonatomic, assign) BOOL isElementsHidden;
-@property(nonatomic, assign) BOOL isLocked;
-@property(nonatomic, strong) NSMutableArray *hiddenViewsList;
-@property(nonatomic, strong) UIImage *showIcon;
-@property(nonatomic, strong) UIImage *hideIcon;
-@property(nonatomic, assign) CGFloat originalAlpha;
-@property(nonatomic, strong) NSTimer *checkTimer;
-@property(nonatomic, strong) NSTimer *fadeTimer;
-- (void)resetFadeTimer;
-- (void)hideUIElements;
-- (void)findAndHideViews:(NSArray *)classNames;
-- (void)safeResetState;
-- (void)startPeriodicCheck;
-- (UIViewController *)findViewController:(UIView *)view;
-- (void)loadIcons;
-- (void)handlePan:(UIPanGestureRecognizer *)gesture;
-- (void)handleTap;
-- (void)handleLongPress:(UILongPressGestureRecognizer *)gesture;
-- (void)handleTouchDown;
-- (void)handleTouchUpInside;
-- (void)handleTouchUpOutside;
-- (void)saveLockState;
-- (void)loadLockState;
-@end
 
 HideUIButton *hideButton;
 BOOL isAppInTransition = NO;

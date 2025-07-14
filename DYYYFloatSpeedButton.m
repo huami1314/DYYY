@@ -387,9 +387,10 @@ void updateSpeedButtonVisibility() {
             topVC = topVC.presentedViewController;
         }
 
+        Class PlayVCClass = NSClassFromString(@"AWEPlayInteractionViewController");
         for (UIViewController *vc in findViewControllersInHierarchy(topVC)) {
-            if ([vc isKindOfClass:%c(AWEPlayInteractionViewController)]) {
-                self.interactionController = (AWEPlayInteractionViewController *)vc;
+            if (PlayVCClass && [vc isKindOfClass:PlayVCClass]) {
+                self.interactionController = vc;
                 break;
             }
         }
