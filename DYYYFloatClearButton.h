@@ -1,5 +1,9 @@
 #import <UIKit/UIKit.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 @class HideUIButton;
 
 extern HideUIButton *hideButton;
@@ -15,6 +19,10 @@ void updateClearButtonVisibility(void);
 void showClearButton(void);
 void hideClearButton(void);
 void initTargetClassNames(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 @interface HideUIButton : UIButton
 @property(nonatomic, assign) BOOL isElementsHidden;

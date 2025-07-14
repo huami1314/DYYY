@@ -17,6 +17,10 @@
 - (void)resetFadeTimer;
 @end
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern FloatingSpeedButton *speedButton;
 extern BOOL dyyyCommentViewVisible;
 extern BOOL dyyyInteractionViewVisible;
@@ -37,3 +41,7 @@ extern NSInteger getCurrentSpeedIndex(void);
 extern void setCurrentSpeedIndex(NSInteger index);
 extern void updateSpeedButtonUI(void);
 extern void updateSpeedButtonVisibility(void);
+
+#ifdef __cplusplus
+}
+#endif
