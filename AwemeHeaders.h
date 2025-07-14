@@ -557,11 +557,6 @@ static CGFloat gStartVal = 0.0;
 @property(nonatomic, assign, getter=isHidden) BOOL hidden;
 @end
 
-@interface AWEFeedStickerContainerView : UIView
-@property(nonatomic, strong, readonly) UIView *superview;
-@property(nonatomic, assign, getter=isHidden) BOOL hidden;
-@end
-
 @interface AWEECommerceEntryView : UIView
 @property(nonatomic, strong, readonly) UIView *superview;
 @property(nonatomic, assign, getter=isHidden) BOOL hidden;

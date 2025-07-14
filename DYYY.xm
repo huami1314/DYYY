@@ -2740,18 +2740,28 @@ static AWEIMReusableCommonCell *currentCell;
 
 %end
 
-// 隐藏挑战贴纸
-%hook AWEFeedStickerContainerView
+%hook ACCGestureResponsibleStickerView
 
-- (BOOL)isHidden {
-    BOOL origHidden = %orig;
-    BOOL hideRecommend = DYYYGetBool(@"DYYYHideChallengeStickers");
-    return origHidden || hideRecommend;
-}
+- (void)layoutSubviews {
+    %orig;
 
-- (void)setHidden:(BOOL)hidden {
-    BOOL forceHide = DYYYGetBool(@"DYYYHideChallengeStickers");
-    %orig(forceHide ? YES : hidden);
+    if (DYYYGetBool(@"DYYYHideEditTags")) {
+        for (UIView *subview in self.subviews) {
+            if ([subview isKindOfClass:NSClassFromString(@"ACCEditTagStickerView")]) {
+                self.hidden = YES;
+                return;
+            }
+        }
+    }
+
+    if (DYYYGetBool(@"DYYYHideChallengeStickers")) {
+        for (UIView *subview in self.subviews) {
+            if ([subview isKindOfClass:NSClassFromString(@"ACCMordernQuickFlashStickerView")]) {
+                self.hidden = YES;
+                return;
+            }
+        }
+    }
 }
 
 %end
@@ -3100,17 +3110,6 @@ static AWEIMReusableCommonCell *currentCell;
     }
 }
 
-%end
-
-%hook ACCGestureResponsibleStickerView
-- (void)layoutSubviews {
-    %orig;
-
-    if (DYYYGetBool(@"DYYYHideChallengeStickers")) {
-        self.hidden = YES;
-        return;
-    }
-}
 %end
 
 %hook AWEMusicCoverButton
