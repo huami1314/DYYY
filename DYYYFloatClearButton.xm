@@ -663,6 +663,7 @@ static void initTargetClassNames(void) {
     }
 }
 %end
+
 %hook AppDelegate
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     BOOL result = %orig;

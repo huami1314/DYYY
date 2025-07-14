@@ -456,17 +456,16 @@ void updateSpeedButtonVisibility() {
 
 - (void)prepareForDisplay {
     %orig;
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-      BOOL autoRestoreSpeed = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYAutoRestoreSpeed"];
-      if (autoRestoreSpeed) {
-          setCurrentSpeedIndex(0);
-      }
-      float speed = getCurrentSpeed();
-      if (speed != 1.0) {
-          [self adjustPlaybackSpeed:speed];
-      }
-      updateSpeedButtonUI();
-    });
+
+    BOOL autoRestoreSpeed = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYAutoRestoreSpeed"];
+    if (autoRestoreSpeed) {
+        setCurrentSpeedIndex(0);
+    }
+    float speed = getCurrentSpeed();
+    if (speed != 1.0) {
+        [self adjustPlaybackSpeed:speed];
+    }
+    updateSpeedButtonUI();
 }
 
 %new
@@ -502,17 +501,15 @@ void updateSpeedButtonVisibility() {
 - (void)prepareForDisplay {
     %orig;
 
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-      BOOL autoRestoreSpeed = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYAutoRestoreSpeed"];
-      if (autoRestoreSpeed) {
-          setCurrentSpeedIndex(0);
-      }
-      float speed = getCurrentSpeed();
-      if (speed != 1.0) {
-          [self adjustPlaybackSpeed:speed];
-      }
-      updateSpeedButtonUI();
-    });
+    BOOL autoRestoreSpeed = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYAutoRestoreSpeed"];
+    if (autoRestoreSpeed) {
+        setCurrentSpeedIndex(0);
+    }
+    float speed = getCurrentSpeed();
+    if (speed != 1.0) {
+        [self adjustPlaybackSpeed:speed];
+    }
+    updateSpeedButtonUI();
 }
 
 %new
