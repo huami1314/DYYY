@@ -14,6 +14,7 @@ UIWindow *getKeyWindow(void);
 void updateClearButtonVisibility(void);
 void showClearButton(void);
 void hideClearButton(void);
+void initTargetClassNames(void);
 
 @interface HideUIButton : UIButton
 @property(nonatomic, assign) BOOL isElementsHidden;

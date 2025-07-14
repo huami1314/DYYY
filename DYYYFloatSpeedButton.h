@@ -25,6 +25,8 @@ extern BOOL speedButtonForceHidden;
 extern BOOL showSpeedX;
 extern CGFloat speedButtonSize;
 
+extern NSArray *getSpeedOptions(void);
+
 extern FloatingSpeedButton *getSpeedButton(void);
 extern void showSpeedButton(void);
 extern void hideSpeedButton(void);

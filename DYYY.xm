@@ -20,6 +20,14 @@
 #import "DYYYFloatSpeedButton.h"
 #import "DYYYFloatClearButton.h"
 
+@interface AWEAwemePlayVideoViewController (SpeedControl)
+- (void)adjustPlaybackSpeed:(float)speed;
+@end
+
+@interface AWEDPlayerFeedPlayerViewController (SpeedControl)
+- (void)adjustPlaybackSpeed:(float)speed;
+@end
+
 // 关闭不可见水印
 %hook AWEHPChannelInvisibleWaterMarkModel
 

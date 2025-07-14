@@ -17,11 +17,9 @@ void showClearButton(void);
 void hideClearButton(void);
 
 BOOL isInPlayInteractionVC = NO;
-BOOL dyyyCommentViewVisible = NO;
 BOOL isPureViewVisible = NO;
 BOOL clearButtonForceHidden = NO;
 BOOL isAppActive = YES;
-BOOL dyyyInteractionViewVisible = NO;
 
 @interface HideUIButton : UIButton
 
@@ -130,7 +128,7 @@ static void reapplyHidingToAllElements(HideUIButton *button) {
         return;
     [button hideUIElements];
 }
-static void initTargetClassNames(void) {
+void initTargetClassNames(void) {
     NSMutableArray<NSString *> *list = [@[
         @"AWEHPTopBarCTAContainer", @"AWEHPDiscoverFeedEntranceView", @"AWELeftSideBarEntranceView", @"DUXBadge", @"AWEBaseElementView", @"AWEElementStackView", @"AWEPlayInteractionDescriptionLabel",
         @"AWEUserNameLabel", @"ACCEditTagStickerView", @"AWEFeedTemplateAnchorView", @"AWESearchFeedTagView", @"AWEPlayInteractionSearchAnchorView", @"AFDRecommendToFriendTagView",
