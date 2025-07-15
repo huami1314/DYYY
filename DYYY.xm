@@ -5803,16 +5803,14 @@ static CGFloat customTabBarHeight() {
             hideButton.center = CGPointMake(screenWidth - buttonSize / 2 - 5, screenHeight / 2);
         }
 
-        hideButton.hidden = YES;
+        hideButton.hidden = NO;
         [getKeyWindow() addSubview:hideButton];
 
         [[NSNotificationCenter defaultCenter] addObserverForName:UIWindowDidBecomeKeyNotification
                                                           object:nil
                                                            queue:[NSOperationQueue mainQueue]
                                                       usingBlock:^(NSNotification *_Nonnull notification) {
-                                                        if (dyyyInteractionViewVisible && !dyyyCommentViewVisible && !clearButtonForceHidden && !isPureViewVisible) {
-                                                            updateClearButtonVisibility();
-                                                        }
+                                                        updateClearButtonVisibility();
                                                       }];
 
         [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationDidBecomeActiveNotification
