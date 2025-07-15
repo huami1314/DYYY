@@ -2519,7 +2519,7 @@ static AWEIMReusableCommonCell *currentCell;
     %orig;
 
     if (DYYYGetBool(@"DYYYHideComment")) {
-        self.hidden = YES;
+        [self removeFromSuperview];
         return;
     }
 }
@@ -3146,7 +3146,7 @@ static AWEIMReusableCommonCell *currentCell;
     %orig;
 
     if (DYYYGetBool(@"DYYYHideReply")) {
-        self.view.hidden = YES;
+        [self.view removeFromSuperview];
         return;
     }
 }
