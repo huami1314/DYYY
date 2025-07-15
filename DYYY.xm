@@ -2519,7 +2519,7 @@ static AWEIMReusableCommonCell *currentCell;
     %orig;
 
     if (DYYYGetBool(@"DYYYHideComment")) {
-        self.hidden = YES;
+        [self removeFromSuperview];
         return;
     }
 }
