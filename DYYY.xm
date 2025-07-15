@@ -17,6 +17,16 @@
 #import "DYYYSettingViewController.h"
 #import "DYYYToast.h"
 #import "DYYYUtils.h"
+#import "DYYYFloatSpeedButton.h"
+#import "DYYYFloatClearButton.h"
+
+@interface AWEAwemePlayVideoViewController (SpeedControl)
+- (void)adjustPlaybackSpeed:(float)speed;
+@end
+
+@interface AWEDPlayerFeedPlayerViewController (SpeedControl)
+- (void)adjustPlaybackSpeed:(float)speed;
+@end
 
 // 关闭不可见水印
 %hook AWEHPChannelInvisibleWaterMarkModel
@@ -767,6 +777,21 @@
 - (void)closeSettings:(UIButton *)button {
     [button.superview.window.rootViewController dismissViewControllerAnimated:YES completion:nil];
 }
+
+- (void)makeKeyAndVisible {
+    %orig;
+
+    if (!isFloatSpeedButtonEnabled)
+        return;
+
+    if (speedButton && ![speedButton isDescendantOfView:self]) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+          [self addSubview:speedButton];
+          [speedButton loadSavedPosition];
+          [speedButton resetFadeTimer];
+        });
+    }
+}
 %end
 
 %end
@@ -796,6 +821,34 @@
 
 // 重写全局透明方法
 %hook AWEPlayInteractionViewController
+- (void)loadView {
+    %orig;
+    if (hideButton) {
+        hideButton.hidden = NO;
+        hideButton.alpha = 0.5;
+    }
+}
+
+- (void)viewWillAppear:(BOOL)animated {
+    %orig;
+    isInPlayInteractionVC = YES;
+    dyyyInteractionViewVisible = YES;
+    if (hideButton) {
+        hideButton.hidden = NO;
+        hideButton.alpha = 0.5;
+    }
+}
+
+- (void)viewDidAppear:(BOOL)animated {
+    %orig;
+    dyyyInteractionViewVisible = YES;
+}
+
+- (void)viewWillDisappear:(BOOL)animated {
+    %orig;
+    isInPlayInteractionVC = NO;
+    dyyyInteractionViewVisible = NO;
+}
 
 - (UIView *)view {
     UIView *originalView = %orig;
@@ -5064,6 +5117,20 @@ static CGFloat customTabBarHeight() {
 
 %hook AWECommentContainerViewController
 
+- (void)viewDidAppear:(BOOL)animated {
+    %orig;
+    dyyyCommentViewVisible = YES;
+    updateSpeedButtonVisibility();
+    updateClearButtonVisibility();
+}
+
+- (void)viewDidDisappear:(BOOL)animated {
+    %orig;
+    dyyyCommentViewVisible = NO;
+    updateSpeedButtonVisibility();
+    updateClearButtonVisibility();
+}
+
 - (void)viewDidLayoutSubviews {
     %orig;
 
@@ -5128,6 +5195,65 @@ static CGFloat customTabBarHeight() {
 %end
 
 %hook UIView
+- (id)initWithFrame:(CGRect)frame {
+    UIView *view = %orig;
+    if (hideButton && hideButton.isElementsHidden) {
+        for (NSString *className in targetClassNames) {
+            if ([view isKindOfClass:NSClassFromString(className)]) {
+                if ([view isKindOfClass:NSClassFromString(@"AWELeftSideBarEntranceView")]) {
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                      UIViewController *controller = [hideButton findViewController:view];
+                      if ([controller isKindOfClass:NSClassFromString(@"AWEFeedContainerViewController")]) {
+                          view.alpha = 0.0;
+                      }
+                    });
+                    break;
+                }
+                view.alpha = 0.0;
+                break;
+            }
+        }
+    }
+    return view;
+}
+
+- (void)didAddSubview:(UIView *)subview {
+    %orig;
+    if (hideButton && hideButton.isElementsHidden) {
+        for (NSString *className in targetClassNames) {
+            if ([subview isKindOfClass:NSClassFromString(className)]) {
+                if ([subview isKindOfClass:NSClassFromString(@"AWELeftSideBarEntranceView")]) {
+                    UIViewController *controller = [hideButton findViewController:subview];
+                    if ([controller isKindOfClass:NSClassFromString(@"AWEFeedContainerViewController")]) {
+                        subview.alpha = 0.0;
+                    }
+                    break;
+                }
+                subview.alpha = 0.0;
+                break;
+            }
+        }
+    }
+}
+
+- (void)willMoveToSuperview:(UIView *)newSuperview {
+    %orig;
+    if (hideButton && hideButton.isElementsHidden) {
+        for (NSString *className in targetClassNames) {
+            if ([self isKindOfClass:NSClassFromString(className)]) {
+                if ([self isKindOfClass:NSClassFromString(@"AWELeftSideBarEntranceView")]) {
+                    UIViewController *controller = [hideButton findViewController:self];
+                    if ([controller isKindOfClass:NSClassFromString(@"AWEFeedContainerViewController")]) {
+                        self.alpha = 0.0;
+                    }
+                    break;
+                }
+                self.alpha = 0.0;
+                break;
+            }
+        }
+    }
+}
 - (void)layoutSubviews {
     %orig;
 
@@ -5210,6 +5336,50 @@ static CGFloat customTabBarHeight() {
 %hook AWEPlayInteractionViewController
 - (void)viewDidLayoutSubviews {
     %orig;
+    if (isFloatSpeedButtonEnabled) {
+        BOOL hasRightStack = NO;
+        Class stackClass = NSClassFromString(@"AWEElementStackView");
+        for (UIView *sub in self.view.subviews) {
+            if ([sub isKindOfClass:stackClass] && ([sub.accessibilityLabel isEqualToString:@"right"] ||
+                                                  [DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEPlayInteractionUserAvatarView")
+                                                                          inView:self.view])) {
+                hasRightStack = YES;
+                break;
+            }
+        }
+        if (hasRightStack) {
+            if (speedButton == nil) {
+                speedButtonSize = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYSpeedButtonSize"] ?: 32.0;
+                CGRect screenBounds = [UIScreen mainScreen].bounds;
+                CGRect initialFrame = CGRectMake((screenBounds.size.width - speedButtonSize) / 2,
+                                                 (screenBounds.size.height - speedButtonSize) / 2,
+                                                 speedButtonSize, speedButtonSize);
+                speedButton = [[FloatingSpeedButton alloc] initWithFrame:initialFrame];
+                speedButton.interactionController = self;
+                showSpeedX = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYSpeedButtonShowX"];
+                updateSpeedButtonUI();
+            } else {
+                [speedButton resetButtonState];
+                if (speedButton.interactionController == nil || speedButton.interactionController != self) {
+                    speedButton.interactionController = self;
+                }
+                if (speedButton.frame.size.width != speedButtonSize) {
+                    CGPoint center = speedButton.center;
+                    CGRect newFrame = CGRectMake(0, 0, speedButtonSize, speedButtonSize);
+                    speedButton.frame = newFrame;
+                    speedButton.center = center;
+                    speedButton.layer.cornerRadius = speedButtonSize / 2;
+                }
+            }
+            dyyyInteractionViewVisible = YES;
+            UIWindow *keyWindow = [UIApplication sharedApplication].keyWindow;
+            if (keyWindow && ![speedButton isDescendantOfView:keyWindow]) {
+                [keyWindow addSubview:speedButton];
+                [speedButton loadSavedPosition];
+                [speedButton resetFadeTimer];
+            }
+        }
+    }
 
     if (!DYYYGetBool(@"DYYYEnableFullScreen")) {
         return;
@@ -5256,6 +5426,170 @@ static CGFloat customTabBarHeight() {
     }
 }
 
+- (void)viewDidDisappear:(BOOL)animated {
+    %orig;
+    BOOL hasRightStack = NO;
+    Class stackClass = NSClassFromString(@"AWEElementStackView");
+    for (UIView *sub in self.view.subviews) {
+        if ([sub isKindOfClass:stackClass] && ([sub.accessibilityLabel isEqualToString:@"right"] ||
+                                              [DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEPlayInteractionUserAvatarView")
+                                                                      inView:self.view])) {
+            hasRightStack = YES;
+            break;
+        }
+    }
+    if (hasRightStack) {
+        dyyyInteractionViewVisible = NO;
+        dyyyCommentViewVisible = self.isCommentVCShowing;
+        updateSpeedButtonVisibility();
+        updateClearButtonVisibility();
+    }
+}
+
+%new
+- (UIViewController *)firstAvailableUIViewController {
+    UIResponder *responder = [self.view nextResponder];
+    while (responder != nil) {
+        if ([responder isKindOfClass:[UIViewController class]]) {
+            return (UIViewController *)responder;
+        }
+        responder = [responder nextResponder];
+    }
+    return nil;
+}
+
+%new
+- (void)speedButtonTapped:(UIButton *)sender {
+    [(FloatingSpeedButton *)sender resetFadeTimer];
+    NSArray *speeds = getSpeedOptions();
+    if (speeds.count == 0)
+        return;
+
+    NSInteger currentIndex = getCurrentSpeedIndex();
+    NSInteger newIndex = (currentIndex + 1) % speeds.count;
+
+    setCurrentSpeedIndex(newIndex);
+
+    float newSpeed = [speeds[newIndex] floatValue];
+
+    NSString *formattedSpeed;
+    if (fmodf(newSpeed, 1.0) == 0) {
+        formattedSpeed = [NSString stringWithFormat:@"%.0f", newSpeed];
+    } else if (fmodf(newSpeed * 10, 1.0) == 0) {
+        formattedSpeed = [NSString stringWithFormat:@"%.1f", newSpeed];
+    } else {
+        formattedSpeed = [NSString stringWithFormat:@"%.2f", newSpeed];
+    }
+
+    if (showSpeedX) {
+        formattedSpeed = [formattedSpeed stringByAppendingString:@"x"];
+    }
+
+    [sender setTitle:formattedSpeed forState:UIControlStateNormal];
+
+    [UIView animateWithDuration:0.1
+        delay:0
+        options:UIViewAnimationOptionCurveEaseOut
+        animations:^{
+          sender.transform = CGAffineTransformMakeScale(1.1, 1.1);
+        }
+        completion:^(BOOL finished) {
+          [UIView animateWithDuration:0.1
+                                delay:0
+                              options:UIViewAnimationOptionCurveEaseIn
+                           animations:^{
+                             sender.transform = CGAffineTransformIdentity;
+                           }
+                           completion:nil];
+        }];
+
+    BOOL speedApplied = NO;
+
+    UIViewController *rootVC = [UIApplication sharedApplication].keyWindow.rootViewController;
+    while (rootVC.presentedViewController) {
+        rootVC = rootVC.presentedViewController;
+    }
+
+    NSArray *viewControllers = findViewControllersInHierarchy(rootVC);
+
+    for (UIViewController *vc in viewControllers) {
+        if ([vc isKindOfClass:%c(AWEAwemePlayVideoViewController)]) {
+            [(AWEAwemePlayVideoViewController *)vc setVideoControllerPlaybackRate:newSpeed];
+            speedApplied = YES;
+        }
+        if ([vc isKindOfClass:%c(AWEDPlayerFeedPlayerViewController)]) {
+            [(AWEDPlayerFeedPlayerViewController *)vc setVideoControllerPlaybackRate:newSpeed];
+            speedApplied = YES;
+        }
+    }
+
+    if (!speedApplied) {
+        [DYYYUtils showToast:@"无法找到视频控制器"];
+    }
+}
+
+%new
+- (void)buttonTouchDown:(UIButton *)sender {
+    [UIView animateWithDuration:0.1
+                     animations:^{
+                       sender.alpha = 0.7;
+                       sender.transform = CGAffineTransformMakeScale(0.95, 0.95);
+                     }];
+}
+
+%new
+- (void)buttonTouchUp:(UIButton *)sender {
+    [UIView animateWithDuration:0.1
+                     animations:^{
+                       sender.alpha = 1.0;
+                       sender.transform = CGAffineTransformIdentity;
+                     }];
+}
+
+%end
+
+%hook AWEAwemePlayVideoViewController
+
+- (void)setIsAutoPlay:(BOOL)arg0 {
+    %orig(arg0);
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+      if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {
+          float defaultSpeed = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYDefaultSpeed"];
+          if (defaultSpeed > 0 && defaultSpeed != 1) {
+              dispatch_async(dispatch_get_main_queue(), ^{
+                [self setVideoControllerPlaybackRate:defaultSpeed];
+              });
+          }
+      }
+      float speed = getCurrentSpeed();
+      if (speed != 1.0) {
+          dispatch_async(dispatch_get_main_queue(), ^{
+            [self adjustPlaybackSpeed:speed];
+          });
+      }
+    });
+}
+
+- (void)prepareForDisplay {
+    %orig;
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+      BOOL autoRestoreSpeed = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYAutoRestoreSpeed"];
+      if (autoRestoreSpeed) {
+          setCurrentSpeedIndex(0);
+      }
+      float speed = getCurrentSpeed();
+      if (speed != 1.0) {
+          [self adjustPlaybackSpeed:speed];
+      }
+      updateSpeedButtonUI();
+    });
+}
+
+%new
+- (void)adjustPlaybackSpeed:(float)speed {
+    [self setVideoControllerPlaybackRate:speed];
+}
+
 %end
 
 %hook AWEDPlayerFeedPlayerViewController
@@ -5289,6 +5623,46 @@ static CGFloat customTabBarHeight() {
     }
 }
 
+- (void)setIsAutoPlay:(BOOL)arg0 {
+    %orig(arg0);
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+      if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {
+          float defaultSpeed = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYDefaultSpeed"];
+          if (defaultSpeed > 0 && defaultSpeed != 1) {
+              dispatch_async(dispatch_get_main_queue(), ^{
+                [self setVideoControllerPlaybackRate:defaultSpeed];
+              });
+          }
+      }
+      float speed = getCurrentSpeed();
+      if (speed != 1.0) {
+          dispatch_async(dispatch_get_main_queue(), ^{
+            [self adjustPlaybackSpeed:speed];
+          });
+      }
+    });
+}
+
+- (void)prepareForDisplay {
+    %orig;
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+      BOOL autoRestoreSpeed = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYAutoRestoreSpeed"];
+      if (autoRestoreSpeed) {
+          setCurrentSpeedIndex(0);
+      }
+      float speed = getCurrentSpeed();
+      if (speed != 1.0) {
+          [self adjustPlaybackSpeed:speed];
+      }
+      updateSpeedButtonUI();
+    });
+}
+
+%new
+- (void)adjustPlaybackSpeed:(float)speed {
+    [self setVideoControllerPlaybackRate:speed];
+}
+
 %end
 
 %hook AWEFeedTableView
@@ -5314,8 +5688,168 @@ static CGFloat customTabBarHeight() {
 }
 %end
 
+%hook AWEFeedTableViewCell
+- (void)prepareForReuse {
+    if (hideButton && hideButton.isElementsHidden) {
+        [hideButton hideUIElements];
+    }
+    %orig;
+}
+
+- (void)layoutSubviews {
+    %orig;
+    if (hideButton && hideButton.isElementsHidden) {
+        [hideButton hideUIElements];
+    }
+}
+%end
+
+%hook AWEFeedViewCell
+- (void)layoutSubviews {
+    if (hideButton && hideButton.isElementsHidden) {
+        [hideButton hideUIElements];
+    }
+    %orig;
+}
+
+- (void)setModel:(id)model {
+    if (hideButton && hideButton.isElementsHidden) {
+        [hideButton hideUIElements];
+    }
+    %orig;
+}
+%end
+
+%hook UIViewController
+- (void)viewWillAppear:(BOOL)animated {
+    %orig;
+    isAppInTransition = YES;
+    if (hideButton && hideButton.isElementsHidden) {
+        [hideButton hideUIElements];
+    }
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+      isAppInTransition = NO;
+    });
+}
+
+- (void)viewWillDisappear:(BOOL)animated {
+    %orig;
+    isAppInTransition = YES;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+      isAppInTransition = NO;
+    });
+}
+%end
+
+%hook AFDPureModePageContainerViewController
+- (void)viewDidAppear:(BOOL)animated {
+    %orig;
+    isPureViewVisible = YES;
+    updateClearButtonVisibility();
+}
+
+- (void)viewDidDisappear:(BOOL)animated {
+    %orig;
+    isPureViewVisible = NO;
+    updateClearButtonVisibility();
+}
+%end
+
+%hook AWEFeedContainerViewController
+- (void)aweme:(id)arg1 currentIndexWillChange:(NSInteger)arg2 {
+    if (hideButton && hideButton.isElementsHidden) {
+        [hideButton hideUIElements];
+    }
+    %orig;
+}
+
+- (void)aweme:(id)arg1 currentIndexDidChange:(NSInteger)arg2 {
+    if (hideButton && hideButton.isElementsHidden) {
+        [hideButton hideUIElements];
+    }
+    %orig;
+}
+
+- (void)viewWillLayoutSubviews {
+    %orig;
+    if (hideButton && hideButton.isElementsHidden) {
+        [hideButton hideUIElements];
+    }
+}
+%end
+
+%hook AppDelegate
+- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+    BOOL result = %orig;
+    initTargetClassNames();
+
+    BOOL isEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableFloatClearButton"];
+    if (isEnabled) {
+        if (hideButton) {
+            [hideButton removeFromSuperview];
+            hideButton = nil;
+        }
+
+        CGFloat buttonSize = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYEnableFloatClearButtonSize"] ?: 40.0;
+        hideButton = [[HideUIButton alloc] initWithFrame:CGRectMake(0, 0, buttonSize, buttonSize)];
+        hideButton.alpha = 0.5;
+
+        NSString *savedPositionString = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYHideUIButtonPosition"];
+        if (savedPositionString) {
+            hideButton.center = CGPointFromString(savedPositionString);
+        } else {
+            CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
+            CGFloat screenHeight = [UIScreen mainScreen].bounds.size.height;
+            hideButton.center = CGPointMake(screenWidth - buttonSize / 2 - 5, screenHeight / 2);
+        }
+
+        hideButton.hidden = YES;
+        [getKeyWindow() addSubview:hideButton];
+
+        [[NSNotificationCenter defaultCenter] addObserverForName:UIWindowDidBecomeKeyNotification
+                                                          object:nil
+                                                           queue:[NSOperationQueue mainQueue]
+                                                      usingBlock:^(NSNotification *_Nonnull notification) {
+                                                        if (dyyyInteractionViewVisible && !dyyyCommentViewVisible && !clearButtonForceHidden && !isPureViewVisible) {
+                                                            updateClearButtonVisibility();
+                                                        }
+                                                      }];
+
+        [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationDidBecomeActiveNotification
+                                                          object:nil
+                                                           queue:[NSOperationQueue mainQueue]
+                                                      usingBlock:^(NSNotification *_Nonnull notification) {
+                                                        isAppActive = YES;
+                                                        updateClearButtonVisibility();
+                                                      }];
+
+        [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationWillResignActiveNotification
+                                                          object:nil
+                                                           queue:[NSOperationQueue mainQueue]
+                                                      usingBlock:^(NSNotification *_Nonnull notification) {
+                                                        isAppActive = NO;
+                                                        updateClearButtonVisibility();
+                                                      }];
+    }
+
+    return result;
+}
+%end
+
 %hook AWEElementStackView
 static CGFloat currentScale = 1.0;
+- (void)setAlpha:(CGFloat)alpha {
+    %orig;
+    if (speedButton && isFloatSpeedButtonEnabled) {
+        if (alpha == 0) {
+            dyyyCommentViewVisible = YES;
+        } else if (alpha == 1) {
+            dyyyCommentViewVisible = NO;
+        }
+        updateSpeedButtonVisibility();
+        updateClearButtonVisibility();
+    }
+}
 - (void)layoutSubviews {
     %orig;
     UIViewController *viewController = [DYYYUtils firstAvailableViewControllerFromView:self];
@@ -6332,4 +6866,10 @@ static void findTargetViewInView(UIView *view) {
                                                         }
                                                       }];
     }
+}
+
+%ctor {
+    signal(SIGSEGV, SIG_IGN);
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    isFloatSpeedButtonEnabled = [defaults boolForKey:@"DYYYEnableFloatSpeedButton"];
 }

@@ -17,7 +17,31 @@
 - (void)resetFadeTimer;
 @end
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+extern FloatingSpeedButton *speedButton;
+extern BOOL dyyyCommentViewVisible;
+extern BOOL dyyyInteractionViewVisible;
+extern BOOL isFloatSpeedButtonEnabled;
+extern BOOL speedButtonForceHidden;
+extern BOOL showSpeedX;
+extern CGFloat speedButtonSize;
+
+extern NSArray *getSpeedOptions(void);
+
 extern FloatingSpeedButton *getSpeedButton(void);
 extern void showSpeedButton(void);
 extern void hideSpeedButton(void);
 extern void toggleSpeedButtonVisibility(void);
+extern NSArray *findViewControllersInHierarchy(UIViewController *rootViewController);
+extern float getCurrentSpeed(void);
+extern NSInteger getCurrentSpeedIndex(void);
+extern void setCurrentSpeedIndex(NSInteger index);
+extern void updateSpeedButtonUI(void);
+extern void updateSpeedButtonVisibility(void);
+
+#ifdef __cplusplus
+}
+#endif
