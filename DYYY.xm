@@ -3146,7 +3146,7 @@ static AWEIMReusableCommonCell *currentCell;
     %orig;
 
     if (DYYYGetBool(@"DYYYHideReply")) {
-        self.view.hidden = YES;
+        [self.view removeFromSuperview];
         return;
     }
 }
