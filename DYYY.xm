@@ -5369,7 +5369,10 @@ static CGFloat customTabBarHeight() {
         CGRect frame = self.frame;
         frame.size.height = self.superview.frame.size.height;
         self.frame = frame;
-    } else if (!DYYYGetBool(@"DYYYEnableFullScreen") && h > 0) {
+    } else if (h > 0) {
+        UIWindow *window = [UIApplication sharedApplication].keyWindow;
+        if (window && window.safeAreaInsets.bottom == 0) return;
+
         CGRect frame = self.frame;
         frame.size.height = self.superview.frame.size.height - h;
         self.frame = frame;
