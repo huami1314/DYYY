@@ -54,25 +54,24 @@ void updateClearButtonVisibility() {
         return;
 
     dispatch_async(dispatch_get_main_queue(), ^{
-      if (!dyyyInteractionViewVisible) {
-          hideButton.hidden = YES;
-          return;
-      }
-
-      BOOL shouldHide = dyyyCommentViewVisible || clearButtonForceHidden || isPureViewVisible;
-      if (hideButton.hidden != shouldHide) {
-          hideButton.hidden = shouldHide;
-      }
+      hideButton.hidden = NO;
     });
 }
 
-void showClearButton(void) { clearButtonForceHidden = NO; }
+void showClearButton(void) {
+    clearButtonForceHidden = NO;
+    if (hideButton) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+          hideButton.hidden = NO;
+        });
+    }
+}
 
 void hideClearButton(void) {
     clearButtonForceHidden = YES;
     if (hideButton) {
         dispatch_async(dispatch_get_main_queue(), ^{
-          hideButton.hidden = YES;
+          hideButton.hidden = NO;
         });
     }
 }
@@ -152,8 +151,8 @@ void initTargetClassNames(void) {
         [self startPeriodicCheck];
         [self resetFadeTimer];
 
-        // 初始状态下隐藏按钮，直到进入正确的控制器
-        self.hidden = YES;
+        // 按钮始终可见
+        self.hidden = NO;
     }
     return self;
 }
