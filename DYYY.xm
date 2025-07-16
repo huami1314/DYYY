@@ -1088,73 +1088,72 @@ static CGFloat rightLabelRightMargin = -1;
 
 - (void)updateProgressSliderWithTime:(CGFloat)arg1 totalDuration:(CGFloat)arg2 {
     %orig;
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-      if (DYYYGetBool(@"DYYYShowScheduleDisplay")) {
-          AWEFeedProgressSlider *progressSlider = self.progressSlider;
-          UIView *parentView = progressSlider.superview;
-          if (!parentView)
-              return;
 
-          UILabel *leftLabel = [parentView viewWithTag:10001];
-          UILabel *rightLabel = [parentView viewWithTag:10002];
+    if (DYYYGetBool(@"DYYYShowScheduleDisplay")) {
+        AWEFeedProgressSlider *progressSlider = self.progressSlider;
+        UIView *parentView = progressSlider.superview;
+        if (!parentView)
+            return;
 
-          NSString *labelColorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYProgressLabelColor"];
+        UILabel *leftLabel = [parentView viewWithTag:10001];
+        UILabel *rightLabel = [parentView viewWithTag:10002];
 
-          NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
-          BOOL showRemainingTime = [scheduleStyle isEqualToString:@"进度条右侧剩余"];
-          BOOL showCompleteTime = [scheduleStyle isEqualToString:@"进度条右侧完整"];
-          BOOL showLeftRemainingTime = [scheduleStyle isEqualToString:@"进度条左侧剩余"];
-          BOOL showLeftCompleteTime = [scheduleStyle isEqualToString:@"进度条左侧完整"];
+        NSString *labelColorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYProgressLabelColor"];
 
-          // 更新左标签
-          if (arg1 >= 0 && leftLabel) {
-              NSString *newLeftText = @"";
-              if (showLeftRemainingTime) {
-                  CGFloat remainingTime = arg2 - arg1;
-                  if (remainingTime < 0)
-                      remainingTime = 0;
-                  newLeftText = [self formatTimeFromSeconds:remainingTime];
-              } else if (showLeftCompleteTime) {
-                  newLeftText = [NSString stringWithFormat:@"%@/%@", [self formatTimeFromSeconds:arg1], [self formatTimeFromSeconds:arg2]];
-              } else {
-                  newLeftText = [self formatTimeFromSeconds:arg1];
-              }
+        NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
+        BOOL showRemainingTime = [scheduleStyle isEqualToString:@"进度条右侧剩余"];
+        BOOL showCompleteTime = [scheduleStyle isEqualToString:@"进度条右侧完整"];
+        BOOL showLeftRemainingTime = [scheduleStyle isEqualToString:@"进度条左侧剩余"];
+        BOOL showLeftCompleteTime = [scheduleStyle isEqualToString:@"进度条左侧完整"];
 
-              if (![leftLabel.text isEqualToString:newLeftText]) {
-                  leftLabel.text = newLeftText;
-                  [leftLabel sizeToFit];
-                  CGRect leftFrame = leftLabel.frame;
-                  leftFrame.size.height = 15.0;
-                  leftLabel.frame = leftFrame;
-              }
-              [DYYYUtils applyColorSettingsToLabel:leftLabel colorHexString:labelColorHex];
-          }
+        // 更新左标签
+        if (arg1 >= 0 && leftLabel) {
+            NSString *newLeftText = @"";
+            if (showLeftRemainingTime) {
+                CGFloat remainingTime = arg2 - arg1;
+                if (remainingTime < 0)
+                    remainingTime = 0;
+                newLeftText = [self formatTimeFromSeconds:remainingTime];
+            } else if (showLeftCompleteTime) {
+                newLeftText = [NSString stringWithFormat:@"%@/%@", [self formatTimeFromSeconds:arg1], [self formatTimeFromSeconds:arg2]];
+            } else {
+                newLeftText = [self formatTimeFromSeconds:arg1];
+            }
 
-          // 更新右标签
-          if (arg2 > 0 && rightLabel) {
-              NSString *newRightText = @"";
-              if (showRemainingTime) {
-                  CGFloat remainingTime = arg2 - arg1;
-                  if (remainingTime < 0)
-                      remainingTime = 0;
-                  newRightText = [self formatTimeFromSeconds:remainingTime];
-              } else if (showCompleteTime) {
-                  newRightText = [NSString stringWithFormat:@"%@/%@", [self formatTimeFromSeconds:arg1], [self formatTimeFromSeconds:arg2]];
-              } else {
-                  newRightText = [self formatTimeFromSeconds:arg2];
-              }
+            if (![leftLabel.text isEqualToString:newLeftText]) {
+                leftLabel.text = newLeftText;
+                [leftLabel sizeToFit];
+                CGRect leftFrame = leftLabel.frame;
+                leftFrame.size.height = 15.0;
+                leftLabel.frame = leftFrame;
+            }
+            [DYYYUtils applyColorSettingsToLabel:leftLabel colorHexString:labelColorHex];
+        }
 
-              if (![rightLabel.text isEqualToString:newRightText]) {
-                  rightLabel.text = newRightText;
-                  [rightLabel sizeToFit];
-                  CGRect rightFrame = rightLabel.frame;
-                  rightFrame.size.height = 15.0;
-                  rightLabel.frame = rightFrame;
-              }
-              [DYYYUtils applyColorSettingsToLabel:rightLabel colorHexString:labelColorHex];
-          }
-      }
-    });
+        // 更新右标签
+        if (arg2 > 0 && rightLabel) {
+            NSString *newRightText = @"";
+            if (showRemainingTime) {
+                CGFloat remainingTime = arg2 - arg1;
+                if (remainingTime < 0)
+                    remainingTime = 0;
+                newRightText = [self formatTimeFromSeconds:remainingTime];
+            } else if (showCompleteTime) {
+                newRightText = [NSString stringWithFormat:@"%@/%@", [self formatTimeFromSeconds:arg1], [self formatTimeFromSeconds:arg2]];
+            } else {
+                newRightText = [self formatTimeFromSeconds:arg2];
+            }
+
+            if (![rightLabel.text isEqualToString:newRightText]) {
+                rightLabel.text = newRightText;
+                [rightLabel sizeToFit];
+                CGRect rightFrame = rightLabel.frame;
+                rightFrame.size.height = 15.0;
+                rightLabel.frame = rightFrame;
+            }
+            [DYYYUtils applyColorSettingsToLabel:rightLabel colorHexString:labelColorHex];
+        }
+    }
 }
 
 - (void)setHidden:(BOOL)hidden {
