@@ -577,37 +577,38 @@
 
 - (void)layoutSubviews {
     %orig;
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+      NSString *topTitleConfig = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYModifyTopTabText"];
+      if (topTitleConfig.length == 0)
+          return;
 
-    NSString *topTitleConfig = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYModifyTopTabText"];
-    if (topTitleConfig.length == 0)
-        return;
+      NSArray *titlePairs = [topTitleConfig componentsSeparatedByString:@"#"];
 
-    NSArray *titlePairs = [topTitleConfig componentsSeparatedByString:@"#"];
+      NSString *accessibilityLabel = nil;
+      if ([self.superview respondsToSelector:@selector(accessibilityLabel)]) {
+          accessibilityLabel = self.superview.accessibilityLabel;
+      }
+      if (accessibilityLabel.length == 0)
+          return;
 
-    NSString *accessibilityLabel = nil;
-    if ([self.superview respondsToSelector:@selector(accessibilityLabel)]) {
-        accessibilityLabel = self.superview.accessibilityLabel;
-    }
-    if (accessibilityLabel.length == 0)
-        return;
+      for (NSString *pair in titlePairs) {
+          NSArray *components = [pair componentsSeparatedByString:@"="];
+          if (components.count != 2)
+              continue;
 
-    for (NSString *pair in titlePairs) {
-        NSArray *components = [pair componentsSeparatedByString:@"="];
-        if (components.count != 2)
-            continue;
+          NSString *originalTitle = components[0];
+          NSString *newTitle = components[1];
 
-        NSString *originalTitle = components[0];
-        NSString *newTitle = components[1];
-
-        if ([accessibilityLabel isEqualToString:originalTitle]) {
-            if ([self respondsToSelector:@selector(setContentText:)]) {
-                [self setContentText:newTitle];
-            } else {
-                [self setValue:newTitle forKey:@"contentText"];
-            }
-            break;
-        }
-    }
+          if ([accessibilityLabel isEqualToString:originalTitle]) {
+              if ([self respondsToSelector:@selector(setContentText:)]) {
+                  [self setContentText:newTitle];
+              } else {
+                  [self setValue:newTitle forKey:@"contentText"];
+              }
+              break;
+          }
+      }
+    });
 }
 
 %end
@@ -679,19 +680,20 @@
 
 - (void)layoutSubviews {
     %orig;
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+      UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
 
-    UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
+      if ([vc isKindOfClass:%c(AWEPlayInteractionViewController)]) {
+          if (self.markLabel) {
+              self.markLabel.textColor = [UIColor whiteColor];
+          }
+      }
 
-    if ([vc isKindOfClass:%c(AWEPlayInteractionViewController)]) {
-        if (self.markLabel) {
-            self.markLabel.textColor = [UIColor whiteColor];
-        }
-    }
-
-    if (DYYYGetBool(@"DYYYHideLocation")) {
-        [self removeFromSuperview];
-        return;
-    }
+      if (DYYYGetBool(@"DYYYHideLocation")) {
+          [self removeFromSuperview];
+          return;
+      }
+    });
 }
 
 %end
@@ -768,17 +770,18 @@
 
 - (void)makeKeyAndVisible {
     %orig;
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+      if (!isFloatSpeedButtonEnabled)
+          return;
 
-    if (!isFloatSpeedButtonEnabled)
-        return;
-
-    if (speedButton && ![speedButton isDescendantOfView:self]) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-          [self addSubview:speedButton];
-          [speedButton loadSavedPosition];
-          [speedButton resetFadeTimer];
-        });
-    }
+      if (speedButton && ![speedButton isDescendantOfView:self]) {
+          dispatch_async(dispatch_get_main_queue(), ^{
+            [self addSubview:speedButton];
+            [speedButton loadSavedPosition];
+            [speedButton resetFadeTimer];
+          });
+      }
+    });
 }
 %end
 
@@ -928,27 +931,28 @@
 %hook AWEPlayInteractionProgressContainerView
 - (void)layoutSubviews {
     %orig;
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+      if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableFullScreen"]) {
+          return;
+      }
 
-    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableFullScreen"]) {
-        return;
-    }
+      static char kDYProgressBgKey;
+      NSArray *bgViews = objc_getAssociatedObject(self, &kDYProgressBgKey);
+      if (!bgViews) {
+          NSMutableArray *tmp = [NSMutableArray array];
+          for (UIView *subview in self.subviews) {
+              if ([subview class] == [UIView class]) {
+                  [tmp addObject:subview];
+              }
+          }
+          bgViews = [tmp copy];
+          objc_setAssociatedObject(self, &kDYProgressBgKey, bgViews, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+      }
 
-    static char kDYProgressBgKey;
-    NSArray *bgViews = objc_getAssociatedObject(self, &kDYProgressBgKey);
-    if (!bgViews) {
-        NSMutableArray *tmp = [NSMutableArray array];
-        for (UIView *subview in self.subviews) {
-            if ([subview class] == [UIView class]) {
-                [tmp addObject:subview];
-            }
-        }
-        bgViews = [tmp copy];
-        objc_setAssociatedObject(self, &kDYProgressBgKey, bgViews, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-    }
-
-    for (UIView *v in bgViews) {
-        v.backgroundColor = [UIColor clearColor];
-    }
+      for (UIView *v in bgViews) {
+          v.backgroundColor = [UIColor clearColor];
+      }
+    });
 }
 
 %end
@@ -1084,72 +1088,73 @@ static CGFloat rightLabelRightMargin = -1;
 
 - (void)updateProgressSliderWithTime:(CGFloat)arg1 totalDuration:(CGFloat)arg2 {
     %orig;
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+      if (DYYYGetBool(@"DYYYShowScheduleDisplay")) {
+          AWEFeedProgressSlider *progressSlider = self.progressSlider;
+          UIView *parentView = progressSlider.superview;
+          if (!parentView)
+              return;
 
-    if (DYYYGetBool(@"DYYYShowScheduleDisplay")) {
-        AWEFeedProgressSlider *progressSlider = self.progressSlider;
-        UIView *parentView = progressSlider.superview;
-        if (!parentView)
-            return;
+          UILabel *leftLabel = [parentView viewWithTag:10001];
+          UILabel *rightLabel = [parentView viewWithTag:10002];
 
-        UILabel *leftLabel = [parentView viewWithTag:10001];
-        UILabel *rightLabel = [parentView viewWithTag:10002];
+          NSString *labelColorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYProgressLabelColor"];
 
-        NSString *labelColorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYProgressLabelColor"];
+          NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
+          BOOL showRemainingTime = [scheduleStyle isEqualToString:@"进度条右侧剩余"];
+          BOOL showCompleteTime = [scheduleStyle isEqualToString:@"进度条右侧完整"];
+          BOOL showLeftRemainingTime = [scheduleStyle isEqualToString:@"进度条左侧剩余"];
+          BOOL showLeftCompleteTime = [scheduleStyle isEqualToString:@"进度条左侧完整"];
 
-        NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
-        BOOL showRemainingTime = [scheduleStyle isEqualToString:@"进度条右侧剩余"];
-        BOOL showCompleteTime = [scheduleStyle isEqualToString:@"进度条右侧完整"];
-        BOOL showLeftRemainingTime = [scheduleStyle isEqualToString:@"进度条左侧剩余"];
-        BOOL showLeftCompleteTime = [scheduleStyle isEqualToString:@"进度条左侧完整"];
+          // 更新左标签
+          if (arg1 >= 0 && leftLabel) {
+              NSString *newLeftText = @"";
+              if (showLeftRemainingTime) {
+                  CGFloat remainingTime = arg2 - arg1;
+                  if (remainingTime < 0)
+                      remainingTime = 0;
+                  newLeftText = [self formatTimeFromSeconds:remainingTime];
+              } else if (showLeftCompleteTime) {
+                  newLeftText = [NSString stringWithFormat:@"%@/%@", [self formatTimeFromSeconds:arg1], [self formatTimeFromSeconds:arg2]];
+              } else {
+                  newLeftText = [self formatTimeFromSeconds:arg1];
+              }
 
-        // 更新左标签
-        if (arg1 >= 0 && leftLabel) {
-            NSString *newLeftText = @"";
-            if (showLeftRemainingTime) {
-                CGFloat remainingTime = arg2 - arg1;
-                if (remainingTime < 0)
-                    remainingTime = 0;
-                newLeftText = [self formatTimeFromSeconds:remainingTime];
-            } else if (showLeftCompleteTime) {
-                newLeftText = [NSString stringWithFormat:@"%@/%@", [self formatTimeFromSeconds:arg1], [self formatTimeFromSeconds:arg2]];
-            } else {
-                newLeftText = [self formatTimeFromSeconds:arg1];
-            }
+              if (![leftLabel.text isEqualToString:newLeftText]) {
+                  leftLabel.text = newLeftText;
+                  [leftLabel sizeToFit];
+                  CGRect leftFrame = leftLabel.frame;
+                  leftFrame.size.height = 15.0;
+                  leftLabel.frame = leftFrame;
+              }
+              [DYYYUtils applyColorSettingsToLabel:leftLabel colorHexString:labelColorHex];
+          }
 
-            if (![leftLabel.text isEqualToString:newLeftText]) {
-                leftLabel.text = newLeftText;
-                [leftLabel sizeToFit];
-                CGRect leftFrame = leftLabel.frame;
-                leftFrame.size.height = 15.0;
-                leftLabel.frame = leftFrame;
-            }
-            [DYYYUtils applyColorSettingsToLabel:leftLabel colorHexString:labelColorHex];
-        }
+          // 更新右标签
+          if (arg2 > 0 && rightLabel) {
+              NSString *newRightText = @"";
+              if (showRemainingTime) {
+                  CGFloat remainingTime = arg2 - arg1;
+                  if (remainingTime < 0)
+                      remainingTime = 0;
+                  newRightText = [self formatTimeFromSeconds:remainingTime];
+              } else if (showCompleteTime) {
+                  newRightText = [NSString stringWithFormat:@"%@/%@", [self formatTimeFromSeconds:arg1], [self formatTimeFromSeconds:arg2]];
+              } else {
+                  newRightText = [self formatTimeFromSeconds:arg2];
+              }
 
-        // 更新右标签
-        if (arg2 > 0 && rightLabel) {
-            NSString *newRightText = @"";
-            if (showRemainingTime) {
-                CGFloat remainingTime = arg2 - arg1;
-                if (remainingTime < 0)
-                    remainingTime = 0;
-                newRightText = [self formatTimeFromSeconds:remainingTime];
-            } else if (showCompleteTime) {
-                newRightText = [NSString stringWithFormat:@"%@/%@", [self formatTimeFromSeconds:arg1], [self formatTimeFromSeconds:arg2]];
-            } else {
-                newRightText = [self formatTimeFromSeconds:arg2];
-            }
-
-            if (![rightLabel.text isEqualToString:newRightText]) {
-                rightLabel.text = newRightText;
-                [rightLabel sizeToFit];
-                CGRect rightFrame = rightLabel.frame;
-                rightFrame.size.height = 15.0;
-                rightLabel.frame = rightFrame;
-            }
-            [DYYYUtils applyColorSettingsToLabel:rightLabel colorHexString:labelColorHex];
-        }
-    }
+              if (![rightLabel.text isEqualToString:newRightText]) {
+                  rightLabel.text = newRightText;
+                  [rightLabel sizeToFit];
+                  CGRect rightFrame = rightLabel.frame;
+                  rightFrame.size.height = 15.0;
+                  rightLabel.frame = rightFrame;
+              }
+              [DYYYUtils applyColorSettingsToLabel:rightLabel colorHexString:labelColorHex];
+          }
+      }
+    });
 }
 
 - (void)setHidden:(BOOL)hidden {
@@ -1573,6 +1578,8 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 %hook AWEFeedVideoButton
 
 - (void)setImage:(id)arg1 {
+    %orig;
+
     NSString *nameString = nil;
 
     if ([self respondsToSelector:@selector(imageNameString)]) {
@@ -1642,8 +1649,6 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
             }
         }
     }
-
-    %orig;
 }
 
 %end
