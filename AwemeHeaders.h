@@ -1295,3 +1295,11 @@ static CGFloat gStartVal = 0.0;
 @interface HTSEventForwardingView : UIView
 @property(copy, nonatomic) NSString *levelName;
 @end
+
+@interface AWEAwemePlayVideoViewController (SpeedControl)
+- (void)adjustPlaybackSpeed:(float)speed;
+@end
+
+@interface AWEDPlayerFeedPlayerViewController (SpeedControl)
+- (void)adjustPlaybackSpeed:(float)speed;
+@end
