@@ -5671,7 +5671,10 @@ static CGFloat currentScale = 1.0;
 %hook AWELiveNewPreStreamViewController
 static char kDyLastAppliedScaleKey;
 static char kDyLastAppliedShiftKey;
-static NSArray<Class> *kTargetViewClasses = @[ NSClassFromString(@"AWEElementStackView"), NSClassFromString(@"IESLiveStackView") ];
+static char kDyLastAppliedTabHeightKey; 
+static NSArray<Class> *kTargetViewClasses = @[
+    NSClassFromString(@"AWEElementStackView"),
+    NSClassFromString(@"IESLiveStackView")];
 - (void)viewDidLayoutSubviews {
     %orig;
 
@@ -5682,8 +5685,7 @@ static NSArray<Class> *kTargetViewClasses = @[ NSClassFromString(@"AWEElementSta
         }
     }
 
-    if (targetViews.count == 0)
-        return;
+    if (targetViews.count == 0) return;
 
     NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
     if (transparentValue.length > 0) {
@@ -5696,11 +5698,16 @@ static NSArray<Class> *kTargetViewClasses = @[ NSClassFromString(@"AWEElementSta
     BOOL shouldShiftUp = DYYYGetBool(@"DYYYEnableFullScreen");
     BOOL lastAppliedShift = [objc_getAssociatedObject(self, &kDyLastAppliedShiftKey) boolValue];
 
-    NSString *vcScaleValue = DYYYGetString(@"DYYYNicknameScale");
-    CGFloat targetScale = (vcScaleValue.length > 0) ? MAX(0.01, [vcScaleValue floatValue]) : 1.0;
+    CGFloat vcScaleValue = DYYYGetFloat(@"DYYYNicknameScale");
+	CGFloat targetScale = (vcScaleValue != 0.0) ? MAX(0.01, vcScaleValue) : 1.0;
     CGFloat lastAppliedScale = [objc_getAssociatedObject(self, &kDyLastAppliedScaleKey) floatValue] ?: 1.0;
 
-    if (fabs(targetScale - lastAppliedScale) < 0.01 && shouldShiftUp == lastAppliedShift) {
+    CGFloat targetHeight = tabHeight;
+    CGFloat lastAppliedTabHeight = [objc_getAssociatedObject(self, &kDyLastAppliedTabHeightKey) floatValue];
+
+    if (fabs(targetScale - lastAppliedScale) < 0.01 &&
+        fabs(targetHeight - lastAppliedTabHeight) < 0.1 &&
+        shouldShiftUp == lastAppliedShift) {
         return;
     }
 
@@ -5722,7 +5729,7 @@ static NSArray<Class> *kTargetViewClasses = @[ NSClassFromString(@"AWEElementSta
 
         if (shouldShiftUp) {
             const CGFloat divisor = CGAffineTransformIsIdentity(finalTransform) ? 1.0 : targetScale;
-            finalTransform = CGAffineTransformTranslate(finalTransform, 0, -tabHeight / divisor);
+            finalTransform = CGAffineTransformTranslate(finalTransform, 0, -targetHeight / divisor);
         }
 
         targetView.transform = finalTransform;
@@ -5730,6 +5737,7 @@ static NSArray<Class> *kTargetViewClasses = @[ NSClassFromString(@"AWEElementSta
 
     objc_setAssociatedObject(self, &kDyLastAppliedScaleKey, @(targetScale), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     objc_setAssociatedObject(self, &kDyLastAppliedShiftKey, @(shouldShiftUp), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    objc_setAssociatedObject(self, &kDyLastAppliedTabHeightKey, @(targetHeight), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 %end
 
