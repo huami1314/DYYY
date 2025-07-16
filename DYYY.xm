@@ -4374,7 +4374,7 @@ static AWEIMReusableCommonCell *currentCell;
     BOOL skipHotSpot = DYYYGetBool(@"DYYYSkipHotSpot");
     BOOL filterHDR = DYYYGetBool(@"DYYYFilterFeedHDR");
 
-    BOOL shouldFilterAds = noAds && (self.hotSpotLynxCardModel || self.isAds);
+    BOOL shouldFilterAds = noAds && (self.isAds);
     BOOL shouldFilterHotSpot = skipHotSpot && self.hotSpotLynxCardModel;
     BOOL shouldFilterRecLive = skipLive && (self.cellRoom != nil);
     BOOL shouldFilterHDR = NO;
@@ -4506,19 +4506,13 @@ static AWEIMReusableCommonCell *currentCell;
 }
 
 - (bool)preventDownload {
-    if (DYYYGetBool(@"DYYYNoAds")) {
-        return NO;
-    } else {
-        return %orig;
-    }
+    return NO;
 }
 
 - (void)setAdLinkType:(long long)arg1 {
     if (DYYYGetBool(@"DYYYNoAds")) {
         arg1 = 0;
-    } else {
     }
-
     %orig;
 }
 
@@ -5125,7 +5119,8 @@ static CGFloat originalTabHeight = 0;
         tabHeight = self.frame.size.height;
     }
 
-    if (tabHeight <= 0) return;
+    if (tabHeight <= 0)
+        return;
 
     if ([self respondsToSelector:@selector(setDesiredHeight:)]) {
         ((void (*)(id, SEL, double))objc_msgSend)(self, @selector(setDesiredHeight:), tabHeight);
@@ -5158,10 +5153,14 @@ static CGFloat originalTabHeight = 0;
         if ([subview isKindOfClass:generalButtonClass] || [subview isKindOfClass:plusButtonClass]) {
             NSString *label = subview.accessibilityLabel;
             BOOL shouldHide = NO;
-            if ([label isEqualToString:@"商城"]) shouldHide = hideShop;
-            else if ([label containsString:@"消息"]) shouldHide = hideMsg;
-            else if ([label containsString:@"朋友"]) shouldHide = hideFri;
-            else if ([label containsString:@"我"]) shouldHide = hideMe;
+            if ([label isEqualToString:@"商城"])
+                shouldHide = hideShop;
+            else if ([label containsString:@"消息"])
+                shouldHide = hideMsg;
+            else if ([label containsString:@"朋友"])
+                shouldHide = hideFri;
+            else if ([label containsString:@"我"])
+                shouldHide = hideMe;
 
             if (shouldHide) {
                 [buttonsToRemove addObject:subview];
@@ -5257,18 +5256,20 @@ static CGFloat originalTabHeight = 0;
                 if ([subview isKindOfClass:generalButtonClass]) {
                     AWENormalModeTabBarGeneralButton *button = (AWENormalModeTabBarGeneralButton *)subview;
                     if (button.status == 2) {
-                        if ([button.accessibilityLabel isEqualToString:@"首页"]) isHomeSelected = YES;
-                        else if ([button.accessibilityLabel containsString:@"朋友"]) isFriendsSelected = YES;
+                        if ([button.accessibilityLabel isEqualToString:@"首页"])
+                            isHomeSelected = YES;
+                        else if ([button.accessibilityLabel containsString:@"朋友"])
+                            isFriendsSelected = YES;
                     }
                 }
             }
-            
+
             BOOL hideFriendsButton = DYYYGetBool(@"DYYYHideFriendsButton");
             BOOL shouldShowBackground = isHomeSelected || (isFriendsSelected && !hideFriendsButton);
             backgroundView.hidden = shouldShowBackground;
         }
     }
-    
+
     if (enableFullScreen) {
         for (UIView *subview in self.subviews) {
             if (subview.frame.size.height > 0 && subview.frame.size.height <= 0.5 && subview.frame.size.width > 300) {
@@ -5315,7 +5316,8 @@ static CGFloat originalTabHeight = 0;
 - (void)viewDidLayoutSubviews {
     %orig;
 
-    if (!DYYYGetBool(@"DYYYEnableCommentBlur")) return;
+    if (!DYYYGetBool(@"DYYYEnableCommentBlur"))
+        return;
 
     Class containerViewClass = NSClassFromString(@"AWECommentInputViewSwiftImpl.CommentInputContainerView");
     NSArray<UIView *> *containerViews = [DYYYUtils findAllSubviewsOfClass:containerViewClass inView:self.view];
@@ -5383,9 +5385,7 @@ static CGFloat originalTabHeight = 0;
 
     UIView *superview = collectionView.superview;
     CGRect targetFrame = superview.bounds;
-    if (superview == nil ||
-        CGSizeEqualToSize(targetFrame.size, CGSizeZero) ||
-        CGRectEqualToRect(collectionView.frame, targetFrame)) {
+    if (superview == nil || CGSizeEqualToSize(targetFrame.size, CGSizeZero) || CGRectEqualToRect(collectionView.frame, targetFrame)) {
         return;
     }
 
@@ -5460,8 +5460,7 @@ static CGFloat originalTabHeight = 0;
     if (DYYYGetBool(@"DYYYEnableFullScreen")) {
         if (self.frame.size.height == tabHeight && tabHeight > 0) {
             UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
-            if ([vc isKindOfClass:NSClassFromString(@"AWEMixVideoPanelDetailTableViewController")] ||
-                [vc isKindOfClass:NSClassFromString(@"AWECommentInputViewController")] ||
+            if ([vc isKindOfClass:NSClassFromString(@"AWEMixVideoPanelDetailTableViewController")] || [vc isKindOfClass:NSClassFromString(@"AWECommentInputViewController")] ||
                 [vc isKindOfClass:NSClassFromString(@"AWEAwemeDetailTableViewController")]) {
                 self.backgroundColor = [UIColor clearColor];
             }
@@ -5871,7 +5870,8 @@ static CGFloat originalTabHeight = 0;
         self.frame = frame;
     } else if (tabHeight > 0) {
         UIWindow *window = [UIApplication sharedApplication].keyWindow;
-        if (window && window.safeAreaInsets.bottom == 0) return;
+        if (window && window.safeAreaInsets.bottom == 0)
+            return;
 
         CGRect frame = self.frame;
         frame.size.height = self.superview.frame.size.height - tabHeight;
@@ -6135,10 +6135,8 @@ static CGFloat currentScale = 1.0;
 %hook AWELiveNewPreStreamViewController
 static char kDyLastAppliedScaleKey;
 static char kDyLastAppliedShiftKey;
-static char kDyLastAppliedTabHeightKey; 
-static NSArray<Class> *kTargetViewClasses = @[
-    NSClassFromString(@"AWEElementStackView"),
-    NSClassFromString(@"IESLiveStackView")];
+static char kDyLastAppliedTabHeightKey;
+static NSArray<Class> *kTargetViewClasses = @[ NSClassFromString(@"AWEElementStackView"), NSClassFromString(@"IESLiveStackView") ];
 - (void)viewDidLayoutSubviews {
     %orig;
 
@@ -6149,7 +6147,8 @@ static NSArray<Class> *kTargetViewClasses = @[
         }
     }
 
-    if (targetViews.count == 0) return;
+    if (targetViews.count == 0)
+        return;
 
     NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
     if (transparentValue.length > 0) {
@@ -6163,15 +6162,13 @@ static NSArray<Class> *kTargetViewClasses = @[
     BOOL lastAppliedShift = [objc_getAssociatedObject(self, &kDyLastAppliedShiftKey) boolValue];
 
     CGFloat vcScaleValue = DYYYGetFloat(@"DYYYNicknameScale");
-	CGFloat targetScale = (vcScaleValue != 0.0) ? MAX(0.01, vcScaleValue) : 1.0;
+    CGFloat targetScale = (vcScaleValue != 0.0) ? MAX(0.01, vcScaleValue) : 1.0;
     CGFloat lastAppliedScale = [objc_getAssociatedObject(self, &kDyLastAppliedScaleKey) floatValue] ?: 1.0;
 
     CGFloat targetHeight = tabHeight;
     CGFloat lastAppliedTabHeight = [objc_getAssociatedObject(self, &kDyLastAppliedTabHeightKey) floatValue];
 
-    if (fabs(targetScale - lastAppliedScale) < 0.01 &&
-        fabs(targetHeight - lastAppliedTabHeight) < 0.1 &&
-        shouldShiftUp == lastAppliedShift) {
+    if (fabs(targetScale - lastAppliedScale) < 0.01 && fabs(targetHeight - lastAppliedTabHeight) < 0.1 && shouldShiftUp == lastAppliedShift) {
         return;
     }
 

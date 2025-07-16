@@ -222,11 +222,14 @@ extern "C"
               @"cellType" : @20,
               @"imageName" : @"ic_tv_outlined_20"
           },
-          @{@"identifier" : @"DYYYShowScheduleDisplay",
-            @"title" : @"显示进度时长",
-            @"detail" : @"",
-            @"cellType" : @6,
-            @"imageName" : @"ic_playertime_outlined_20"},
+          @{
+              @"identifier" : @"DYYYShowScheduleDisplay",
+              @"title" : @"显示进度时长",
+              @"subTitle" : @"强制显示所有视频的进度条和时长",
+              @"detail" : @"",
+              @"cellType" : @37,
+              @"imageName" : @"ic_playertime_outlined_20"
+          },
           @{@"identifier" : @"DYYYScheduleStyle",
             @"title" : @"进度时长样式",
             @"detail" : @"",
@@ -244,8 +247,9 @@ extern "C"
             @"imageName" : @"ic_playertime_outlined_20"},
           @{@"identifier" : @"DYYYHideVideoProgress",
             @"title" : @"隐藏视频进度",
+            @"subTitle" : @"隐藏视频进度条",
             @"detail" : @"",
-            @"cellType" : @6,
+            @"cellType" : @37,
             @"imageName" : @"ic_playertime_outlined_20"},
           @{
               @"identifier" : @"DYYYEnableAutoPlay",
