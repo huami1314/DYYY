@@ -3993,11 +3993,10 @@ static AWEIMReusableCommonCell *currentCell;
 // 隐藏相机定位
 %hook AWETemplateCommonView
 - (void)layoutSubviews {
-    if (DYYYGetBool(@"DYYYHideCameraLocation")) {
-        self.hidden = YES;
-        return;
-    }
     %orig;
+    if (DYYYGetBool(@"DYYYHideCameraLocation")) {
+        [self removeFromSuperview];
+    }
 }
 %end
 
@@ -4055,11 +4054,10 @@ static AWEIMReusableCommonCell *currentCell;
 // 隐藏搜同款
 %hook ACCStickerContainerView
 - (void)layoutSubviews {
-    if (DYYYGetBool(@"DYYYHideSearchSame")) {
-        self.hidden = YES;
-        return;
-    }
     %orig;
+    if (DYYYGetBool(@"DYYYHideSearchSame")) {
+        [self removeFromSuperview];
+    }
 }
 %end
 
@@ -6300,7 +6298,6 @@ static NSArray<Class> *kTargetViewClasses = @[ NSClassFromString(@"AWEElementSta
     %orig;
     if (DYYYGetBool(@"DYYYHideEntry")) {
         [self removeFromSuperview];
-        return;
     }
 }
 
@@ -6411,7 +6408,6 @@ static NSArray<Class> *kTargetViewClasses = @[ NSClassFromString(@"AWEElementSta
     %orig;
     if (DYYYGetBool(@"DYYYHideChapterProgress")) {
         [self removeFromSuperview];
-        return;
     }
 }
 
@@ -6687,7 +6683,6 @@ static NSString *const kStreamlineSidebarKey = @"DYYYHideSidebarElements";
     %orig;
     if (DYYYGetBool(@"DYYYHidePendantGroup")) {
         [self removeFromSuperview];
-        return;
     }
 }
 %end
