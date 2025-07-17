@@ -5277,6 +5277,20 @@ static CGFloat originalTabHeight = 0;
 
 %end
 
+%hook AWEConcernCellLastView
+- (void)layoutSubviews {
+    %orig;
+    
+    if (DYYYGetBool(@"DYYYEnableFullScreen") && tabHeight > 0) {
+        for (UIView *subview in self.subviews) {
+            CGRect frame = subview.frame;
+            frame.origin.y -= tabHeight;
+            subview.frame = frame;
+        }
+    }
+}
+%end
+
 %hook AWECommentContainerViewController
 
 - (void)viewDidAppear:(BOOL)animated {
