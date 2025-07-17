@@ -5453,49 +5453,11 @@ static CGFloat originalTabHeight = 0;
     }
     return view;
 }
-
-- (void)didAddSubview:(UIView *)subview {
-    %orig;
-    if (hideButton && hideButton.isElementsHidden) {
-        for (NSString *className in targetClassNames) {
-            if ([subview isKindOfClass:NSClassFromString(className)]) {
-                if ([subview isKindOfClass:NSClassFromString(@"AWELeftSideBarEntranceView")]) {
-                    UIViewController *controller = [hideButton findViewController:subview];
-                    if ([controller isKindOfClass:NSClassFromString(@"AWEFeedContainerViewController")]) {
-                        subview.alpha = 0.0;
-                    }
-                    break;
-                }
-                subview.alpha = 0.0;
-                break;
-            }
-        }
-    }
-}
-
-- (void)willMoveToSuperview:(UIView *)newSuperview {
-    %orig;
-    if (hideButton && hideButton.isElementsHidden) {
-        for (NSString *className in targetClassNames) {
-            if ([self isKindOfClass:NSClassFromString(className)]) {
-                if ([self isKindOfClass:NSClassFromString(@"AWELeftSideBarEntranceView")]) {
-                    UIViewController *controller = [hideButton findViewController:self];
-                    if ([controller isKindOfClass:NSClassFromString(@"AWEFeedContainerViewController")]) {
-                        self.alpha = 0.0;
-                    }
-                    break;
-                }
-                self.alpha = 0.0;
-                break;
-            }
-        }
-    }
-}
 - (void)layoutSubviews {
     %orig;
 
     if (DYYYGetBool(@"DYYYEnableFullScreen")) {
-        if (self.frame.size.height == tabHeight && tabHeight > 0) {
+        if (self.frame.size.height == originalTabHeight && originalTabHeight > 0) {
             UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
             if ([vc isKindOfClass:NSClassFromString(@"AWEMixVideoPanelDetailTableViewController")] || [vc isKindOfClass:NSClassFromString(@"AWECommentInputViewController")] ||
                 [vc isKindOfClass:NSClassFromString(@"AWEAwemeDetailTableViewController")]) {
@@ -5557,7 +5519,7 @@ static CGFloat originalTabHeight = 0;
         CGRect superF = self.superview.frame;
         if (CGRectGetHeight(superF) > 0 && CGRectGetHeight(frame) > 0 && CGRectGetHeight(frame) < CGRectGetHeight(superF)) {
             CGFloat diff = CGRectGetHeight(superF) - CGRectGetHeight(frame);
-            if (fabs(diff - tabHeight) < 1.0) {
+            if (fabs(diff - originalTabHeight) < 1.0) {
                 frame.size.height = CGRectGetHeight(superF);
             }
         }
