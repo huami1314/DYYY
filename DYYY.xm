@@ -679,21 +679,20 @@
 %hook AWEMarkView
 
 - (void)layoutSubviews {
-    %orig;
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-      UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
+	%orig;
 
-      if ([vc isKindOfClass:%c(AWEPlayInteractionViewController)]) {
-          if (self.markLabel) {
-              self.markLabel.textColor = [UIColor whiteColor];
-          }
-      }
+	UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
 
-      if (DYYYGetBool(@"DYYYHideLocation")) {
-          [self removeFromSuperview];
-          return;
-      }
-    });
+	if ([vc isKindOfClass:%c(AWEPlayInteractionViewController)]) {
+		if (self.markLabel) {
+			self.markLabel.textColor = [UIColor whiteColor];
+		}
+	}
+
+	if (DYYYGetBool(@"DYYYHideLocation")) {
+		self.hidden = YES;
+		return;
+	}
 }
 
 %end
