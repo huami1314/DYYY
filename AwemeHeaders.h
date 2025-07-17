@@ -1222,7 +1222,6 @@ static CGFloat gStartVal = 0.0;
 
 @interface AWESettingsTableViewController : AWESettingBaseViewController
 - (id)viewModel;
-- (void)removeAboutSection;
 @end
 
 @interface AWEProfileMixCollectionView : UICollectionView
