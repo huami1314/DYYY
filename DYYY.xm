@@ -1171,45 +1171,44 @@ static CGFloat rightLabelRightMargin = -1;
 
 - (void)layoutSubviews {
     %orig;
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-      NSString *indexTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYIndexTitle"];
-      NSString *friendsTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYFriendsTitle"];
-      NSString *msgTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYMsgTitle"];
-      NSString *selfTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYSelfTitle"];
 
-      if (!(indexTitle.length || friendsTitle.length || msgTitle.length || selfTitle.length)) {
-          return;
-      }
+    NSString *indexTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYIndexTitle"];
+    NSString *friendsTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYFriendsTitle"];
+    NSString *msgTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYMsgTitle"];
+    NSString *selfTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYSelfTitle"];
 
-      static char kDYTabLabelCacheKey;
-      NSArray *labelCache = objc_getAssociatedObject(self, &kDYTabLabelCacheKey);
-      if (!labelCache) {
-          NSMutableArray *tmp = [NSMutableArray array];
-          for (UIView *subview in [self subviews]) {
-              if ([subview isKindOfClass:[UILabel class]]) {
-                  [tmp addObject:subview];
-              }
-          }
-          labelCache = [tmp copy];
-          objc_setAssociatedObject(self, &kDYTabLabelCacheKey, labelCache, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-      }
+    if (!(indexTitle.length || friendsTitle.length || msgTitle.length || selfTitle.length)) {
+        return;
+    }
 
-      for (UILabel *label in labelCache) {
-          if ([label.text isEqualToString:@"首页"] && indexTitle.length > 0) {
-              label.text = indexTitle;
-              [self setNeedsLayout];
-          } else if ([label.text isEqualToString:@"朋友"] && friendsTitle.length > 0) {
-              label.text = friendsTitle;
-              [self setNeedsLayout];
-          } else if ([label.text isEqualToString:@"消息"] && msgTitle.length > 0) {
-              label.text = msgTitle;
-              [self setNeedsLayout];
-          } else if ([label.text isEqualToString:@"我"] && selfTitle.length > 0) {
-              label.text = selfTitle;
-              [self setNeedsLayout];
-          }
-      }
-    });
+    static char kDYTabLabelCacheKey;
+    NSArray *labelCache = objc_getAssociatedObject(self, &kDYTabLabelCacheKey);
+    if (!labelCache) {
+        NSMutableArray *tmp = [NSMutableArray array];
+        for (UIView *subview in [self subviews]) {
+            if ([subview isKindOfClass:[UILabel class]]) {
+                [tmp addObject:subview];
+            }
+        }
+        labelCache = [tmp copy];
+        objc_setAssociatedObject(self, &kDYTabLabelCacheKey, labelCache, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    }
+
+    for (UILabel *label in labelCache) {
+        if ([label.text isEqualToString:@"首页"] && indexTitle.length > 0) {
+            label.text = indexTitle;
+            [self setNeedsLayout];
+        } else if ([label.text isEqualToString:@"朋友"] && friendsTitle.length > 0) {
+            label.text = friendsTitle;
+            [self setNeedsLayout];
+        } else if ([label.text isEqualToString:@"消息"] && msgTitle.length > 0) {
+            label.text = msgTitle;
+            [self setNeedsLayout];
+        } else if ([label.text isEqualToString:@"我"] && selfTitle.length > 0) {
+            label.text = selfTitle;
+            [self setNeedsLayout];
+        }
+    }
 }
 %end
 
