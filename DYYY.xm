@@ -2494,8 +2494,7 @@ static AWEIMReusableCommonCell *currentCell;
 
 - (void)layoutSubviews {
     %orig;
-    self.hidden = YES;
-    return;
+    [self removeFromSuperview];
 }
 
 %end
@@ -2568,7 +2567,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWENearbySkyLightCapsuleView
 - (void)layoutSubviews {
     if (DYYYGetBool(@"DYYYHideNearbyCapsuleView")) {
-        self.hidden = YES;
+        [self removeFromSuperview];
         return;
     }
     %orig;
@@ -2935,21 +2934,19 @@ static AWEIMReusableCommonCell *currentCell;
 // 移除下面推荐框黑条
 %hook AWEPlayInteractionRelatedVideoView
 - (void)layoutSubviews {
+    %orig;
     if (DYYYGetBool(@"DYYYHideBottomRelated")) {
         [self removeFromSuperview];
-        return;
     }
-    %orig;
 }
 %end
 
 %hook AWEFeedRelatedSearchTipView
 - (void)layoutSubviews {
-    if (DYYYGetBool(@"DYYYHideBottomRelated")) {
-        self.hidden = YES;
-        return;
-    }
     %orig;
+    if (DYYYGetBool(@"DYYYHideBottomRelated")) {
+        [self removeFromSuperview];
+    }
 }
 %end
 
@@ -3117,8 +3114,7 @@ static AWEIMReusableCommonCell *currentCell;
 
     if ([accessibilityLabel isEqualToString:@"拍照搜同款"] || [accessibilityLabel isEqualToString:@"扫一扫"]) {
         if (DYYYGetBool(@"DYYYHideScancode")) {
-            self.hidden = YES;
-            return;
+            [self removeFromSuperview];
         }
     }
 
@@ -3127,7 +3123,7 @@ static AWEIMReusableCommonCell *currentCell;
             UIView *parent = self.superview;
             // 父视图是AWEBaseElementView(排除用户主页返回按钮) 按钮类不是AWENoxusHighlightButton(排除横屏返回按钮)
             if ([parent isKindOfClass:%c(AWEBaseElementView)] && ![self isKindOfClass:%c(AWENoxusHighlightButton)]) {
-                self.hidden = YES;
+                [self removeFromSuperview];
             }
             return;
         }
@@ -3204,7 +3200,6 @@ static AWEIMReusableCommonCell *currentCell;
         if (DYYYGetBool(@"DYYYHideFollowPromptView")) {
             self.userInteractionEnabled = NO;
             [self removeFromSuperview];
-            return;
         }
     }
 }
@@ -3445,12 +3440,10 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWETemplatePlayletView
 
 - (void)layoutSubviews {
-
-    if (DYYYGetBool(@"DYYYHideTemplatePlaylet")) {
-        self.hidden = YES;
-        return;
-    }
     %orig;
+    if (DYYYGetBool(@"DYYYHideTemplatePlaylet")) {
+        [self removeFromSuperview];
+    }
 }
 %end
 
@@ -3545,21 +3538,11 @@ static AWEIMReusableCommonCell *currentCell;
 %end
 
 // 隐藏下面底部热点框
-%hook AWENewHotSpotBottomBarView
-- (void)layoutSubviews {
-    if (DYYYGetBool(@"DYYYHideHotspot")) {
-        self.hidden = YES;
-        return;
-    }
-    %orig;
-}
-%end
 
 %hook AWETemplateHotspotView
 
 - (void)layoutSubviews {
     %orig;
-
     if (DYYYGetBool(@"DYYYHideHotspot")) {
         [self removeFromSuperview];
         return;
@@ -3747,8 +3730,7 @@ static AWEIMReusableCommonCell *currentCell;
     %orig;
     if (DYYYGetBool(@"DYYYHideRecommendTips")) {
         if (self.accessibilityLabel) {
-            self.hidden = YES;
-            return;
+            [self removeFromSuperview];
         }
     }
 }
@@ -5280,7 +5262,7 @@ static CGFloat originalTabHeight = 0;
 %hook AWEConcernCellLastView
 - (void)layoutSubviews {
     %orig;
-    
+
     if (DYYYGetBool(@"DYYYEnableFullScreen") && tabHeight > 0) {
         for (UIView *subview in self.subviews) {
             CGRect frame = subview.frame;
