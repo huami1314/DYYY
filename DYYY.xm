@@ -5519,7 +5519,7 @@ static CGFloat originalTabHeight = 0;
         CGRect superF = self.superview.frame;
         if (CGRectGetHeight(superF) > 0 && CGRectGetHeight(frame) > 0 && CGRectGetHeight(frame) < CGRectGetHeight(superF)) {
             CGFloat diff = CGRectGetHeight(superF) - CGRectGetHeight(frame);
-            if (fabs(diff - originalTabHeight) < 1.0) {
+            if (fabs(diff - tabHeight) < 1.0) {
                 frame.size.height = CGRectGetHeight(superF);
             }
         }
@@ -5790,27 +5790,18 @@ static CGFloat originalTabHeight = 0;
 
 - (void)viewDidLayoutSubviews {
     %orig;
-    if (DYYYGetBool(@"DYYYEnableFullScreen")) {
+    if (DYYYGetBool(@"DYYYisEnableFullScreen")) {
         UIView *contentView = self.contentView;
         if (contentView && contentView.superview) {
             CGRect frame = contentView.frame;
             CGFloat parentHeight = contentView.superview.frame.size.height;
-            if (tabHeight > 0) {
-                if (frame.size.height == parentHeight - tabHeight) {
-                    frame.size.height = parentHeight;
-                    contentView.frame = frame;
-                } else if (frame.size.height == parentHeight - (tabHeight * 2)) {
-                    frame.size.height = parentHeight - tabHeight;
-                    contentView.frame = frame;
-                }
-            } else {
-                if (frame.size.height == parentHeight - tabHeight) {
-                    frame.size.height = parentHeight;
-                    contentView.frame = frame;
-                } else if (frame.size.height == parentHeight - (tabHeight * 2)) {
-                    frame.size.height = parentHeight - tabHeight;
-                    contentView.frame = frame;
-                }
+
+            if (frame.size.height == parentHeight - tabHeight) {
+                frame.size.height = parentHeight;
+                contentView.frame = frame;
+            } else if (frame.size.height == parentHeight - (tabHeight * 2)) {
+                frame.size.height = parentHeight - tabHeight;
+                contentView.frame = frame;
             }
         }
     }
