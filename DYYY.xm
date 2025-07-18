@@ -5186,37 +5186,6 @@ static CGFloat originalTabHeight = 0;
 
 %end
 
-// 隐藏双栏入口
-%hook AWENormalModeTabBarFeedView
-- (void)layoutSubviews {
-    %orig;
-    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideDoubleColumnEntry"]) {
-        return;
-    }
-
-    static char kDYDoubleColumnCacheKey;
-    static char kDYDoubleColumnCountKey;
-    NSArray *cachedViews = objc_getAssociatedObject(self, &kDYDoubleColumnCacheKey);
-    NSNumber *cachedCount = objc_getAssociatedObject(self, &kDYDoubleColumnCountKey);
-    if (!cachedViews || cachedCount.unsignedIntegerValue != self.subviews.count) {
-        NSMutableArray *views = [NSMutableArray array];
-        for (UIView *subview in self.subviews) {
-            if (![subview isKindOfClass:[UILabel class]]) {
-                [views addObject:subview];
-            }
-        }
-        cachedViews = [views copy];
-        objc_setAssociatedObject(self, &kDYDoubleColumnCacheKey, cachedViews, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-        objc_setAssociatedObject(self, &kDYDoubleColumnCountKey, @(self.subviews.count), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-    }
-
-    for (UIView *v in cachedViews) {
-        v.hidden = YES;
-    }
-    return;
-}
-%end
-
 // 禁用点击首页刷新
 %hook AWENormalModeTabBarGeneralButton
 
@@ -5267,8 +5236,8 @@ static CGFloat originalTabHeight = 0;
             return;
         }
 
-        static char kDYTabLabelCacheKey;
-        NSArray *labelCache = objc_getAssociatedObject(self, &kDYTabLabelCacheKey);
+        static char kDYTabTextLabelCacheKey;
+        NSArray *labelCache = objc_getAssociatedObject(self, &kDYTabTextLabelCacheKey);
         if (!labelCache) {
             NSMutableArray *tmp = [NSMutableArray array];
             if (!tmp) {
@@ -5288,7 +5257,7 @@ static CGFloat originalTabHeight = 0;
 
             labelCache = [tmp copy];
             if (labelCache) {
-                objc_setAssociatedObject(self, &kDYTabLabelCacheKey, labelCache, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+                objc_setAssociatedObject(self, &kDYTabTextLabelCacheKey, labelCache, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
             }
         }
 
@@ -5323,6 +5292,105 @@ static CGFloat originalTabHeight = 0;
                 });
             } else if ([labelText isEqualToString:@"我"] && selfTitle.length > 0) {
                 label.text = selfTitle;
+                dispatch_async(dispatch_get_main_queue(), ^{
+                  [self setNeedsLayout];
+                });
+            }
+        }
+
+    } @catch (NSException *exception) {
+        return;
+    }
+}
+%end
+
+%hook AWENormalModeTabBarFeedView
+
+- (void)layoutSubviews {
+    @try {
+        %orig;
+        if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideDoubleColumnEntry"]) {
+            return;
+        }
+
+        static char kDYDoubleColumnCacheKey;
+        static char kDYDoubleColumnCountKey;
+        NSArray *cachedViews = objc_getAssociatedObject(self, &kDYDoubleColumnCacheKey);
+        NSNumber *cachedCount = objc_getAssociatedObject(self, &kDYDoubleColumnCountKey);
+        if (!cachedViews || cachedCount.unsignedIntegerValue != self.subviews.count) {
+            NSMutableArray *views = [NSMutableArray array];
+            for (UIView *subview in self.subviews) {
+                if (![subview isKindOfClass:[UILabel class]]) {
+                    [views addObject:subview];
+                }
+            }
+            cachedViews = [views copy];
+            objc_setAssociatedObject(self, &kDYDoubleColumnCacheKey, cachedViews, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+            objc_setAssociatedObject(self, &kDYDoubleColumnCountKey, @(self.subviews.count), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        }
+
+        for (UIView *v in cachedViews) {
+            v.hidden = YES;
+        }
+        
+        if (![NSThread isMainThread]) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+              [self layoutSubviews];
+            });
+            return;
+        }
+
+        if (!self || !self.superview) {
+            return;
+        }
+
+        NSString *indexTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYIndexTitle"];
+
+        if (!(indexTitle.length)) {
+            return;
+        }
+
+        static char kDYTabFeedLabelCacheKey;
+        NSArray *labelCache = objc_getAssociatedObject(self, &kDYTabFeedLabelCacheKey);
+        if (!labelCache) {
+            NSMutableArray *tmp = [NSMutableArray array];
+            if (!tmp) {
+                return;
+            }
+
+            NSArray *subviews = [self subviews];
+            if (!subviews) {
+                return;
+            }
+
+            for (UIView *subview in subviews) {
+                if (subview && [subview isKindOfClass:[UILabel class]]) {
+                    [tmp addObject:subview];
+                }
+            }
+
+            labelCache = [tmp copy];
+            if (labelCache) {
+                objc_setAssociatedObject(self, &kDYTabFeedLabelCacheKey, labelCache, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+            }
+        }
+
+        if (!labelCache) {
+            return;
+        }
+
+        for (UILabel *label in labelCache) {
+            if (!label || ![label isKindOfClass:[UILabel class]]) {
+                continue;
+            }
+
+            NSString *labelText = label.text;
+            if (!labelText) {
+                continue;
+            }
+
+            if ([labelText isEqualToString:@"首页"] && indexTitle.length > 0) {
+                label.text = indexTitle;
                 dispatch_async(dispatch_get_main_queue(), ^{
                   [self setNeedsLayout];
                 });
