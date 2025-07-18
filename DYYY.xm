@@ -4141,6 +4141,17 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
+// 隐藏直播间礼物挑战
+%hook IESLiveGroupLiveComponentView
+- (void)layoutSubviews {
+    if (DYYYGetBool(@"DYYYHideGroupComponent")) {
+        [self removeFromSuperview];
+        return;
+    }
+    %orig;
+}
+%end
+
 // 预约直播
 %hook IESLivePreAnnouncementPanelViewNew
 - (void)layoutSubviews {
