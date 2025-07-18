@@ -5016,11 +5016,6 @@ static CGFloat originalTabHeight = 0;
     BOOL hideMsg = DYYYGetBool(@"DYYYHideMessageButton");
     BOOL hideFri = DYYYGetBool(@"DYYYHideFriendsButton");
     BOOL hideMe = DYYYGetBool(@"DYYYHideMyButton");
-    BOOL hideBottomBg = DYYYGetBool(@"DYYYHideBottomBg");
-
-    if (hideBottomBg) {
-        [DYYYUtils clearBackgroundRecursivelyInView:self];
-    }
 
     NSMutableArray *visibleButtons = [NSMutableArray array];
     NSMutableArray *buttonsToRemove = [NSMutableArray array];
@@ -5106,6 +5101,7 @@ static CGFloat originalTabHeight = 0;
     }
 
     // 背景和分隔线处理
+    BOOL hideBottomBg = DYYYGetBool(@"DYYYHideBottomBg");
     BOOL enableFullScreen = DYYYGetBool(@"DYYYEnableFullScreen");
 
     UIView *backgroundView = nil;
@@ -5126,7 +5122,9 @@ static CGFloat originalTabHeight = 0;
     }
 
     if (backgroundView) {
-        if (enableFullScreen) {
+        if (hideBottomBg) {
+            backgroundView.hidden = YES;
+        } else if (enableFullScreen) {
             BOOL isHomeSelected = NO;
             BOOL isFriendsSelected = NO;
             Class generalButtonClass = %c(AWENormalModeTabBarGeneralButton);
