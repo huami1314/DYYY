@@ -4205,6 +4205,16 @@ static AWEIMReusableCommonCell *currentCell;
 
 %end
 
+%hook IESLiveDanmakuSupremeView
+- (void)layoutSubviews {
+    if (DYYYGetBool(@"DYYYHideLiveDanmaku")) {
+        self.hidden = YES;
+        return;
+    }
+    %orig;
+}
+%end
+
 %hook IESLiveHotMessageView
 - (void)layoutSubviews {
 

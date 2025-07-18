@@ -1064,6 +1064,8 @@ static CGFloat gStartVal = 0.0;
 @end
 @interface IESLiveDanmakuVariousView : UIView
 @end
+@interface IESLiveDanmakuSupremeView : UIView
+@end
 @interface IESLiveLotteryAnimationViewNew : UIView
 @end
 @interface IESLiveMatrixEntranceView : UIView
