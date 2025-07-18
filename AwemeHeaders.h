@@ -673,8 +673,7 @@ static CGFloat gStartVal = 0.0;
 - (void)p_initUI;
 @end
 
-@interface AWELiveSkylightCatchView : UIView
-- (void)setupUI;
+@interface AWELiveFeedLabelTagView : UIView
 @end
 
 @interface AWEIMFansGroupTopDynamicDomainTemplateView : UIView

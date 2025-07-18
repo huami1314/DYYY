@@ -1230,8 +1230,8 @@ extern "C"
             @"imageName" : @"ic_eyeslash_outlined_16"},
           @{
               @"identifier" : @"DYYYHideLiveCapsuleView",
-              @"title" : @"隐藏直播红点",
-              @"subTitle" : @"隐藏顶栏的直播中提示",
+              @"title" : @"隐藏直播提示",
+              @"subTitle" : @"隐藏关注顶栏的直播中提示",
               @"detail" : @"",
               @"cellType" : @37,
               @"imageName" : @"ic_eyeslash_outlined_16"

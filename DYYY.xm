@@ -3843,12 +3843,18 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
-%hook AWELiveSkylightCatchView
+%hook AWELiveFeedLabelTagView
 - (void)layoutSubviews {
 
     if (DYYYGetBool(@"DYYYHideLiveCapsuleView")) {
-        self.hidden = YES;
-        return;
+        UIView *parentView = self.superview;
+        if (parentView) {
+            parentView.hidden = YES;
+            return;
+        } else {
+            self.hidden = YES;
+            return;
+        }
     }
     %orig;
 }
