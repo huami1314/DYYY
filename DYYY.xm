@@ -481,16 +481,6 @@
 
 %end
 
-%hook AWENormalModeTabBarGeneralPlusButton
-+ (id)button {
-    BOOL isHidePlusButton = DYYYGetBool(@"DYYYHidePlusButton");
-    if (isHidePlusButton) {
-        return nil;
-    }
-    return %orig;
-}
-%end
-
 %hook AWEFeedContainerContentView
 - (void)setAlpha:(CGFloat)alpha {
     // 纯净模式功能
@@ -679,20 +669,20 @@
 %hook AWEMarkView
 
 - (void)layoutSubviews {
-	%orig;
+    %orig;
 
-	UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
+    UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
 
-	if ([vc isKindOfClass:%c(AWEPlayInteractionViewController)]) {
-		if (self.markLabel) {
-			self.markLabel.textColor = [UIColor whiteColor];
-		}
-	}
+    if ([vc isKindOfClass:%c(AWEPlayInteractionViewController)]) {
+        if (self.markLabel) {
+            self.markLabel.textColor = [UIColor whiteColor];
+        }
+    }
 
-	if (DYYYGetBool(@"DYYYHideLocation")) {
-		self.hidden = YES;
-		return;
-	}
+    if (DYYYGetBool(@"DYYYHideLocation")) {
+        self.hidden = YES;
+        return;
+    }
 }
 
 %end
@@ -1165,99 +1155,6 @@ static CGFloat rightLabelRightMargin = -1;
 }
 
 %end
-%hook AWENormalModeTabBarTextView
-
-- (void)layoutSubviews {
-    @try {
-        %orig;
-
-        if (![NSThread isMainThread]) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-              [self layoutSubviews];
-            });
-            return;
-        }
-
-        if (!self || !self.superview) {
-            return;
-        }
-
-        NSString *indexTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYIndexTitle"];
-        NSString *friendsTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYFriendsTitle"];
-        NSString *msgTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYMsgTitle"];
-        NSString *selfTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYSelfTitle"];
-
-        if (!(indexTitle.length || friendsTitle.length || msgTitle.length || selfTitle.length)) {
-            return;
-        }
-
-        static char kDYTabLabelCacheKey;
-        NSArray *labelCache = objc_getAssociatedObject(self, &kDYTabLabelCacheKey);
-        if (!labelCache) {
-            NSMutableArray *tmp = [NSMutableArray array];
-            if (!tmp) {
-                return;
-            }
-
-            NSArray *subviews = [self subviews];
-            if (!subviews) {
-                return;
-            }
-
-            for (UIView *subview in subviews) {
-                if (subview && [subview isKindOfClass:[UILabel class]]) {
-                    [tmp addObject:subview];
-                }
-            }
-
-            labelCache = [tmp copy];
-            if (labelCache) {
-                objc_setAssociatedObject(self, &kDYTabLabelCacheKey, labelCache, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-            }
-        }
-
-        if (!labelCache) {
-            return;
-        }
-
-        for (UILabel *label in labelCache) {
-            if (!label || ![label isKindOfClass:[UILabel class]]) {
-                continue;
-            }
-
-            NSString *labelText = label.text;
-            if (!labelText) {
-                continue;
-            }
-
-            if ([labelText isEqualToString:@"首页"] && indexTitle.length > 0) {
-                label.text = indexTitle;
-                dispatch_async(dispatch_get_main_queue(), ^{
-                  [self setNeedsLayout];
-                });
-            } else if ([labelText isEqualToString:@"朋友"] && friendsTitle.length > 0) {
-                label.text = friendsTitle;
-                dispatch_async(dispatch_get_main_queue(), ^{
-                  [self setNeedsLayout];
-                });
-            } else if ([labelText isEqualToString:@"消息"] && msgTitle.length > 0) {
-                label.text = msgTitle;
-                dispatch_async(dispatch_get_main_queue(), ^{
-                  [self setNeedsLayout];
-                });
-            } else if ([labelText isEqualToString:@"我"] && selfTitle.length > 0) {
-                label.text = selfTitle;
-                dispatch_async(dispatch_get_main_queue(), ^{
-                  [self setNeedsLayout];
-                });
-            }
-        }
-
-    } @catch (NSException *exception) {
-        return;
-    }
-}
-%end
 
 %hook AWEPlayInteractionTimestampElement
 
@@ -1714,20 +1611,6 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 
     return bestURL;
 }
-%end
-
-// 禁用点击首页刷新
-%hook AWENormalModeTabBarGeneralButton
-
-- (BOOL)enableRefresh {
-    if ([self.accessibilityLabel isEqualToString:@"首页"]) {
-        if (DYYYGetBool(@"DYYYDisableHomeRefresh")) {
-            return NO;
-        }
-    }
-    return %orig;
-}
-
 %end
 
 // 屏蔽版本更新
@@ -2581,9 +2464,7 @@ static AWEIMReusableCommonCell *currentCell;
     NSString *transparencyValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYAvatarViewTransparency"];
     if (transparencyValue && transparencyValue.length > 0) {
         CGFloat alphaValue = [transparencyValue floatValue];
-        if (alphaValue >= 0.0 && alphaValue <= 1.0) {
-            self.alpha = alphaValue;
-        }
+        self.alpha = alphaValue;
     }
 }
 %end
@@ -2995,34 +2876,6 @@ static AWEIMReusableCommonCell *currentCell;
         [self removeFromSuperview];
     }
 }
-%end
-
-%hook AWENormalModeTabBarBadgeContainerView
-
-- (void)layoutSubviews {
-    %orig;
-    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideBottomDot"]) {
-        return;
-    }
-
-    static char kDYBadgeCacheKey;
-    NSArray *badges = objc_getAssociatedObject(self, &kDYBadgeCacheKey);
-    if (!badges) {
-        NSMutableArray *tmp = [NSMutableArray array];
-        for (UIView *subview in [self subviews]) {
-            if ([subview isKindOfClass:NSClassFromString(@"DUXBadge")]) {
-                [tmp addObject:subview];
-            }
-        }
-        badges = [tmp copy];
-        objc_setAssociatedObject(self, &kDYBadgeCacheKey, badges, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-    }
-
-    for (UIView *badge in badges) {
-        badge.hidden = YES;
-    }
-}
-
 %end
 
 %hook AWELeftSideBarEntranceView
@@ -5163,6 +5016,11 @@ static CGFloat originalTabHeight = 0;
     BOOL hideMsg = DYYYGetBool(@"DYYYHideMessageButton");
     BOOL hideFri = DYYYGetBool(@"DYYYHideFriendsButton");
     BOOL hideMe = DYYYGetBool(@"DYYYHideMyButton");
+    BOOL hideBottomBg = DYYYGetBool(@"DYYYHideBottomBg");
+
+    if (hideBottomBg) {
+        [DYYYUtils clearBackgroundRecursivelyInView:self];
+    }
 
     NSMutableArray *visibleButtons = [NSMutableArray array];
     NSMutableArray *buttonsToRemove = [NSMutableArray array];
@@ -5248,7 +5106,6 @@ static CGFloat originalTabHeight = 0;
     }
 
     // 背景和分隔线处理
-    BOOL hideBottomBg = DYYYGetBool(@"DYYYHideBottomBg");
     BOOL enableFullScreen = DYYYGetBool(@"DYYYEnableFullScreen");
 
     UIView *backgroundView = nil;
@@ -5269,9 +5126,7 @@ static CGFloat originalTabHeight = 0;
     }
 
     if (backgroundView) {
-        if (hideBottomBg) {
-            backgroundView.hidden = YES;
-        } else if (enableFullScreen) {
+        if (enableFullScreen) {
             BOOL isHomeSelected = NO;
             BOOL isFriendsSelected = NO;
             Class generalButtonClass = %c(AWENormalModeTabBarGeneralButton);
@@ -5303,6 +5158,183 @@ static CGFloat originalTabHeight = 0;
     }
 }
 
+%end
+
+%hook AWENormalModeTabBarBadgeContainerView
+
+- (void)layoutSubviews {
+    %orig;
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideBottomDot"]) {
+        return;
+    }
+
+    static char kDYBadgeCacheKey;
+    NSArray *badges = objc_getAssociatedObject(self, &kDYBadgeCacheKey);
+    if (!badges) {
+        NSMutableArray *tmp = [NSMutableArray array];
+        for (UIView *subview in [self subviews]) {
+            if ([subview isKindOfClass:NSClassFromString(@"DUXBadge")]) {
+                [tmp addObject:subview];
+            }
+        }
+        badges = [tmp copy];
+        objc_setAssociatedObject(self, &kDYBadgeCacheKey, badges, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    }
+
+    for (UIView *badge in badges) {
+        badge.hidden = YES;
+    }
+}
+
+%end
+
+// 隐藏双栏入口
+%hook AWENormalModeTabBarFeedView
+- (void)layoutSubviews {
+    %orig;
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideDoubleColumnEntry"]) {
+        return;
+    }
+
+    static char kDYDoubleColumnCacheKey;
+    static char kDYDoubleColumnCountKey;
+    NSArray *cachedViews = objc_getAssociatedObject(self, &kDYDoubleColumnCacheKey);
+    NSNumber *cachedCount = objc_getAssociatedObject(self, &kDYDoubleColumnCountKey);
+    if (!cachedViews || cachedCount.unsignedIntegerValue != self.subviews.count) {
+        NSMutableArray *views = [NSMutableArray array];
+        for (UIView *subview in self.subviews) {
+            if (![subview isKindOfClass:[UILabel class]]) {
+                [views addObject:subview];
+            }
+        }
+        cachedViews = [views copy];
+        objc_setAssociatedObject(self, &kDYDoubleColumnCacheKey, cachedViews, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        objc_setAssociatedObject(self, &kDYDoubleColumnCountKey, @(self.subviews.count), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    }
+
+    for (UIView *v in cachedViews) {
+        v.hidden = YES;
+    }
+    return;
+}
+%end
+
+// 禁用点击首页刷新
+%hook AWENormalModeTabBarGeneralButton
+
+- (BOOL)enableRefresh {
+    if ([self.accessibilityLabel isEqualToString:@"首页"]) {
+        if (DYYYGetBool(@"DYYYDisableHomeRefresh")) {
+            return NO;
+        }
+    }
+    return %orig;
+}
+
+%end
+
+%hook AWENormalModeTabBarGeneralPlusButton
++ (id)button {
+    BOOL isHidePlusButton = DYYYGetBool(@"DYYYHidePlusButton");
+    if (isHidePlusButton) {
+        return nil;
+    }
+    return %orig;
+}
+%end
+
+%hook AWENormalModeTabBarTextView
+
+- (void)layoutSubviews {
+    @try {
+        %orig;
+
+        if (![NSThread isMainThread]) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+              [self layoutSubviews];
+            });
+            return;
+        }
+
+        if (!self || !self.superview) {
+            return;
+        }
+
+        NSString *indexTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYIndexTitle"];
+        NSString *friendsTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYFriendsTitle"];
+        NSString *msgTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYMsgTitle"];
+        NSString *selfTitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYSelfTitle"];
+
+        if (!(indexTitle.length || friendsTitle.length || msgTitle.length || selfTitle.length)) {
+            return;
+        }
+
+        static char kDYTabLabelCacheKey;
+        NSArray *labelCache = objc_getAssociatedObject(self, &kDYTabLabelCacheKey);
+        if (!labelCache) {
+            NSMutableArray *tmp = [NSMutableArray array];
+            if (!tmp) {
+                return;
+            }
+
+            NSArray *subviews = [self subviews];
+            if (!subviews) {
+                return;
+            }
+
+            for (UIView *subview in subviews) {
+                if (subview && [subview isKindOfClass:[UILabel class]]) {
+                    [tmp addObject:subview];
+                }
+            }
+
+            labelCache = [tmp copy];
+            if (labelCache) {
+                objc_setAssociatedObject(self, &kDYTabLabelCacheKey, labelCache, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+            }
+        }
+
+        if (!labelCache) {
+            return;
+        }
+
+        for (UILabel *label in labelCache) {
+            if (!label || ![label isKindOfClass:[UILabel class]]) {
+                continue;
+            }
+
+            NSString *labelText = label.text;
+            if (!labelText) {
+                continue;
+            }
+
+            if ([labelText isEqualToString:@"首页"] && indexTitle.length > 0) {
+                label.text = indexTitle;
+                dispatch_async(dispatch_get_main_queue(), ^{
+                  [self setNeedsLayout];
+                });
+            } else if ([labelText isEqualToString:@"朋友"] && friendsTitle.length > 0) {
+                label.text = friendsTitle;
+                dispatch_async(dispatch_get_main_queue(), ^{
+                  [self setNeedsLayout];
+                });
+            } else if ([labelText isEqualToString:@"消息"] && msgTitle.length > 0) {
+                label.text = msgTitle;
+                dispatch_async(dispatch_get_main_queue(), ^{
+                  [self setNeedsLayout];
+                });
+            } else if ([labelText isEqualToString:@"我"] && selfTitle.length > 0) {
+                label.text = selfTitle;
+                dispatch_async(dispatch_get_main_queue(), ^{
+                  [self setNeedsLayout];
+                });
+            }
+        }
+
+    } @catch (NSException *exception) {
+        return;
+    }
+}
 %end
 
 %hook AWEConcernCellLastView
@@ -6436,37 +6468,6 @@ static NSArray<Class> *kTargetViewClasses = @[ NSClassFromString(@"AWEElementSta
 }
 %end
 
-// 隐藏双栏入口
-%hook AWENormalModeTabBarFeedView
-- (void)layoutSubviews {
-    %orig;
-    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideDoubleColumnEntry"]) {
-        return;
-    }
-
-    static char kDYDoubleColumnCacheKey;
-    static char kDYDoubleColumnCountKey;
-    NSArray *cachedViews = objc_getAssociatedObject(self, &kDYDoubleColumnCacheKey);
-    NSNumber *cachedCount = objc_getAssociatedObject(self, &kDYDoubleColumnCountKey);
-    if (!cachedViews || cachedCount.unsignedIntegerValue != self.subviews.count) {
-        NSMutableArray *views = [NSMutableArray array];
-        for (UIView *subview in self.subviews) {
-            if (![subview isKindOfClass:[UILabel class]]) {
-                [views addObject:subview];
-            }
-        }
-        cachedViews = [views copy];
-        objc_setAssociatedObject(self, &kDYDoubleColumnCacheKey, cachedViews, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-        objc_setAssociatedObject(self, &kDYDoubleColumnCountKey, @(self.subviews.count), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-    }
-
-    for (UIView *v in cachedViews) {
-        v.hidden = YES;
-    }
-    return;
-}
-%end
-
 %hook UIImageView
 - (void)layoutSubviews {
     %orig;
@@ -6647,30 +6648,6 @@ static NSString *const kStreamlineSidebarKey = @"DYYYHideSidebarElements";
 
         self.effectView.hidden = YES;
     }
-}
-%end
-
-%hook AWENormalModeTabBarGeneralPlusButton
-- (void)setImage:(UIImage *)image forState:(UIControlState)state {
-
-    if ([self.accessibilityLabel isEqualToString:@"拍摄"]) {
-
-        NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
-        NSString *dyyyFolderPath = [documentsPath stringByAppendingPathComponent:@"DYYY"];
-
-        NSString *customImagePath = [dyyyFolderPath stringByAppendingPathComponent:@"tab_plus.png"];
-
-        if ([[NSFileManager defaultManager] fileExistsAtPath:customImagePath]) {
-            UIImage *customImage = [UIImage imageWithContentsOfFile:customImagePath];
-            if (customImage) {
-
-                %orig(customImage, state);
-                return;
-            }
-        }
-    }
-
-    %orig;
 }
 %end
 
