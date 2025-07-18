@@ -2572,7 +2572,7 @@ static AWEIMReusableCommonCell *currentCell;
     %orig;
 
     // 检查是否需要隐藏加号
-    if (DYYYGetBool(@"DYYYHideLOTAnimationView")) {
+    if (DYYYGetBool(@"DYYYHideLOTAnimationView") || DYYYGetBool(@"DYYYHideFollowPromptView")) {
         [self removeFromSuperview];
         return;
     }
@@ -2593,8 +2593,9 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
     %orig;
 
+    // 检查是否需要隐藏头像
     if (DYYYGetBool(@"DYYYHideAvatarButton")) {
-        [self removeFromSuperview];
+        self.hidden = YES;
         return;
     }
 
@@ -3246,6 +3247,7 @@ static AWEIMReusableCommonCell *currentCell;
         if (DYYYGetBool(@"DYYYHideFollowPromptView")) {
             self.userInteractionEnabled = NO;
             self.hidden = YES;
+            return;
         }
     }
 }
