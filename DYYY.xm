@@ -4112,7 +4112,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook IESLiveActivityBannnerView
 - (void)layoutSubviews {
     if (DYYYGetBool(@"DYYYHideLiveGoodsMsg")) {
-        self.hidden = YES;
+        [self removeFromSuperview];
         return;
     }
     %orig;
