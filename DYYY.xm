@@ -2453,18 +2453,19 @@ static AWEIMReusableCommonCell *currentCell;
 %hook LOTAnimationView
 - (void)layoutSubviews {
     %orig;
-
-    // 检查是否需要隐藏加号
-    if (DYYYGetBool(@"DYYYHideLOTAnimationView") || DYYYGetBool(@"DYYYHideFollowPromptView")) {
-        [self removeFromSuperview];
-        return;
-    }
-
-    // 应用透明度设置
-    NSString *transparencyValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYAvatarViewTransparency"];
-    if (transparencyValue && transparencyValue.length > 0) {
-        CGFloat alphaValue = [transparencyValue floatValue];
-        self.alpha = alphaValue;
+    // 确保只有头像的LOTAnimationView才则执行该逻辑, 防止误杀
+    if ([self.superview isKindOfClass:%c(AWEPlayInteractionFollowPromptView)]) {
+        // 检查是否需要隐藏加号
+        if (DYYYGetBool(@"DYYYHideLOTAnimationView") || DYYYGetBool(@"DYYYHideFollowPromptView")) {
+            [self removeFromSuperview];
+            return;
+        }
+        // 应用透明度设置
+        NSString *transparencyValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYAvatarViewTransparency"];
+        if (transparencyValue && transparencyValue.length > 0) {
+            CGFloat alphaValue = [transparencyValue floatValue];
+            self.alpha = alphaValue;
+        }
     }
 }
 %end
@@ -3093,11 +3094,7 @@ static AWEIMReusableCommonCell *currentCell;
     NSString *accessibilityLabel = self.accessibilityLabel;
 
     if ([accessibilityLabel isEqualToString:@"关注"]) {
-        if (DYYYGetBool(@"DYYYHideAvatarButton")) {
-            self.hidden = YES;
-            return;
-        }
-        if (DYYYGetBool(@"DYYYHideFollowPromptView")) {
+        if (DYYYGetBool(@"DYYYHideAvatarButton") || DYYYGetBool(@"DYYYHideFollowPromptView")) {
             self.userInteractionEnabled = NO;
             self.hidden = YES;
             return;
@@ -4033,7 +4030,7 @@ static AWEIMReusableCommonCell *currentCell;
 
     NSString *label = self.accessibilityLabel;
     if (hideClear && [label isEqualToString:@"退出清屏"] && self.superview) {
-        self.superview.hidden = YES;
+        [self.superview removeFromSuperview];
         return;
     } else if (hideMirror && [label isEqualToString:@"投屏"] && self.superview) {
         self.superview.hidden = YES;
@@ -4121,7 +4118,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook IESLiveActivityBannnerView
 - (void)layoutSubviews {
     if (DYYYGetBool(@"DYYYHideLiveGoodsMsg")) {
-        self.hidden = YES;
+        [self removeFromSuperview];
         return;
     }
     %orig;
@@ -4143,7 +4140,18 @@ static AWEIMReusableCommonCell *currentCell;
 %hook IESLiveStickerView
 - (void)layoutSubviews {
     if (DYYYGetBool(@"DYYYHideStickerView")) {
-        self.hidden = YES;
+        [self removeFromSuperview];
+        return;
+    }
+    %orig;
+}
+%end
+
+// 隐藏直播间礼物挑战
+%hook IESLiveGroupLiveComponentView
+- (void)layoutSubviews {
+    if (DYYYGetBool(@"DYYYHideGroupComponent")) {
+        [self removeFromSuperview];
         return;
     }
     %orig;
@@ -4201,6 +4209,16 @@ static AWEIMReusableCommonCell *currentCell;
     %orig;
 }
 
+%end
+
+%hook IESLiveDanmakuSupremeView
+- (void)layoutSubviews {
+    if (DYYYGetBool(@"DYYYHideLiveDanmaku")) {
+        self.hidden = YES;
+        return;
+    }
+    %orig;
+}
 %end
 
 %hook IESLiveHotMessageView

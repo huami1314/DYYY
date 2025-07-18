@@ -1052,6 +1052,8 @@ static CGFloat gStartVal = 0.0;
 @end
 @interface IESLiveStickerView : UIView
 @end
+@interface IESLiveGroupLiveComponentView : UIView
+@end
 @interface IESLivePreAnnouncementPanelViewNew : UIView
 @end
 @interface IESLiveDynamicUserEnterView : UIView
@@ -1063,6 +1065,8 @@ static CGFloat gStartVal = 0.0;
 @interface PlatformCanvasView : UIView
 @end
 @interface IESLiveDanmakuVariousView : UIView
+@end
+@interface IESLiveDanmakuSupremeView : UIView
 @end
 @interface IESLiveLotteryAnimationViewNew : UIView
 @end

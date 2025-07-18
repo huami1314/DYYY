@@ -1420,6 +1420,14 @@ extern "C"
               @"cellType" : @37,
               @"imageName" : @"ic_eyeslash_outlined_16"
           },
+          @{
+              @"identifier" : @"DYYYHideGroupComponent",
+              @"title" : @"隐藏礼物挑战",
+              @"subTitle" : @"隐藏主播设置的发送礼物做挑战列表",
+              @"detail" : @"",
+              @"cellType" : @37,
+              @"imageName" : @"ic_eyeslash_outlined_16"
+          },
           @{@"identifier" : @"DYYYHideCellularAlert",
             @"title" : @"隐藏流量提醒",
             @"detail" : @"",
