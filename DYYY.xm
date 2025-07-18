@@ -5104,6 +5104,16 @@ static CGFloat originalTabHeight = 0;
     BOOL hideBottomBg = DYYYGetBool(@"DYYYHideBottomBg");
     BOOL enableFullScreen = DYYYGetBool(@"DYYYEnableFullScreen");
 
+    if (hideBottomBg || enableFullScreen) {
+        if (self.skinContainerView) {
+            self.skinContainerView.hidden = YES;
+        }
+    } else {
+        if (self.skinContainerView) {
+            self.skinContainerView.hidden = NO;
+        }
+    }
+
     UIView *backgroundView = nil;
     for (UIView *subview in self.subviews) {
         if ([subview class] == [UIView class]) {

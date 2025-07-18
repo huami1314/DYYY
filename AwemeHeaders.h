@@ -332,11 +332,14 @@ static CGFloat gStartVal = 0.0;
 @end
 
 @interface AWEAdAvatarView : UIView
+@end
 
+@interface AWETabBarSkinContainerView : UIView
 @end
 
 @interface AWENormalModeTabBar : UIView
 @property(nonatomic, assign, readonly) UITabBarController *yy_viewController;
+@property(retain, nonatomic) AWETabBarSkinContainerView *skinContainerView;
 @end
 
 @interface AWEPlayInteractionListenFeedView : UIView
