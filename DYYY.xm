@@ -2446,18 +2446,19 @@ static AWEIMReusableCommonCell *currentCell;
 %hook LOTAnimationView
 - (void)layoutSubviews {
     %orig;
-
-    // 检查是否需要隐藏加号
-    if (DYYYGetBool(@"DYYYHideLOTAnimationView") || DYYYGetBool(@"DYYYHideFollowPromptView")) {
-        [self removeFromSuperview];
-        return;
-    }
-
-    // 应用透明度设置
-    NSString *transparencyValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYAvatarViewTransparency"];
-    if (transparencyValue && transparencyValue.length > 0) {
-        CGFloat alphaValue = [transparencyValue floatValue];
-        self.alpha = alphaValue;
+    // 确保只有头像的LOTAnimationView才则执行该逻辑, 防止误杀
+    if ([self.superview isKindOfClass:%c(AWEPlayInteractionFollowPromptView)]) {
+        // 检查是否需要隐藏加号
+        if (DYYYGetBool(@"DYYYHideLOTAnimationView") || DYYYGetBool(@"DYYYHideFollowPromptView")) {
+            [self removeFromSuperview];
+            return;
+        }
+        // 应用透明度设置
+        NSString *transparencyValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYAvatarViewTransparency"];
+        if (transparencyValue && transparencyValue.length > 0) {
+            CGFloat alphaValue = [transparencyValue floatValue];
+            self.alpha = alphaValue;
+        }
     }
 }
 %end
@@ -3086,11 +3087,7 @@ static AWEIMReusableCommonCell *currentCell;
     NSString *accessibilityLabel = self.accessibilityLabel;
 
     if ([accessibilityLabel isEqualToString:@"关注"]) {
-        if (DYYYGetBool(@"DYYYHideAvatarButton")) {
-            self.hidden = YES;
-            return;
-        }
-        if (DYYYGetBool(@"DYYYHideFollowPromptView")) {
+        if (DYYYGetBool(@"DYYYHideAvatarButton") || DYYYGetBool(@"DYYYHideFollowPromptView")) {
             self.userInteractionEnabled = NO;
             self.hidden = YES;
             return;
@@ -3836,12 +3833,18 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
-%hook AWELiveSkylightCatchView
+%hook AWELiveFeedLabelTagView
 - (void)layoutSubviews {
 
     if (DYYYGetBool(@"DYYYHideLiveCapsuleView")) {
-        self.hidden = YES;
-        return;
+        UIView *parentView = self.superview;
+        if (parentView) {
+            parentView.hidden = YES;
+            return;
+        } else {
+            self.hidden = YES;
+            return;
+        }
     }
     %orig;
 }
@@ -4020,7 +4023,7 @@ static AWEIMReusableCommonCell *currentCell;
 
     NSString *label = self.accessibilityLabel;
     if (hideClear && [label isEqualToString:@"退出清屏"] && self.superview) {
-        self.superview.hidden = YES;
+        [self.superview removeFromSuperview];
         return;
     } else if (hideMirror && [label isEqualToString:@"投屏"] && self.superview) {
         self.superview.hidden = YES;
@@ -4108,7 +4111,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook IESLiveActivityBannnerView
 - (void)layoutSubviews {
     if (DYYYGetBool(@"DYYYHideLiveGoodsMsg")) {
-        self.hidden = YES;
+        [self removeFromSuperview];
         return;
     }
     %orig;
@@ -4130,7 +4133,18 @@ static AWEIMReusableCommonCell *currentCell;
 %hook IESLiveStickerView
 - (void)layoutSubviews {
     if (DYYYGetBool(@"DYYYHideStickerView")) {
-        self.hidden = YES;
+        [self removeFromSuperview];
+        return;
+    }
+    %orig;
+}
+%end
+
+// 隐藏直播间礼物挑战
+%hook IESLiveGroupLiveComponentView
+- (void)layoutSubviews {
+    if (DYYYGetBool(@"DYYYHideGroupComponent")) {
+        [self removeFromSuperview];
         return;
     }
     %orig;
@@ -4188,6 +4202,16 @@ static AWEIMReusableCommonCell *currentCell;
     %orig;
 }
 
+%end
+
+%hook IESLiveDanmakuSupremeView
+- (void)layoutSubviews {
+    if (DYYYGetBool(@"DYYYHideLiveDanmaku")) {
+        self.hidden = YES;
+        return;
+    }
+    %orig;
+}
 %end
 
 %hook IESLiveHotMessageView
@@ -6221,74 +6245,114 @@ static CGFloat currentScale = 1.0;
 }
 %end
 
-%hook AWELiveNewPreStreamViewController
-static char kDyLastAppliedScaleKey;
-static char kDyLastAppliedShiftKey;
-static char kDyLastAppliedTabHeightKey;
-static NSArray<Class> *kTargetViewClasses = @[ NSClassFromString(@"AWEElementStackView"), NSClassFromString(@"IESLiveStackView") ];
-- (void)viewDidLayoutSubviews {
+%hook AWELivePreStreamView
+
+static char kDyCachedAllStackViewsKey;
+static char kDyCachedGuideStackViewKey;
+static char kDyCachedYYLabelStackViewKey;
+
+static NSArray<Class> *kTargetViewClasses = @[
+    NSClassFromString(@"AWEElementStackView"),
+    NSClassFromString(@"IESLiveStackView")];
+
+- (void)layoutSubviews {
     %orig;
 
-    NSMutableArray<UIView *> *targetViews = [NSMutableArray array];
-    for (Class targetClass in kTargetViewClasses) {
-        if (targetClass) {
-            [targetViews addObjectsFromArray:[DYYYUtils findAllSubviewsOfClass:targetClass inView:self.view]];
-        }
-    }
+    const BOOL shouldShiftUp = DYYYGetBool(@"DYYYEnableFullScreen");
+    const CGFloat targetHeight = tabHeight;
+    const CGFloat labelScaleValue = DYYYGetFloat(@"DYYYNicknameScale");
+    const CGFloat targetLabelScale = (labelScaleValue != 0.0) ? MAX(0.01, labelScaleValue) : 1.0;
+    const CGFloat elementScaleValue = DYYYGetFloat(@"DYYYElementScale");
+    const CGFloat targetElementScale = (elementScaleValue != 0.0) ? MAX(0.01, elementScaleValue) : 1.0;
+    const CGFloat transparentValue = DYYYGetFloat(@"DYYYGlobalTransparency");
+    const CGFloat targetAlpha = (transparentValue >= 0.0 && transparentValue <= 1.0) ? transparentValue : 1.0;
 
-    if (targetViews.count == 0)
-        return;
-
-    NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
-    if (transparentValue.length > 0) {
-        CGFloat alphaValue = transparentValue.floatValue;
-        if (alphaValue >= 0.0 && alphaValue <= 1.0) {
-            [targetViews setValue:@(alphaValue) forKey:@"alpha"];
-        }
-    }
-
-    BOOL shouldShiftUp = DYYYGetBool(@"DYYYEnableFullScreen");
-    BOOL lastAppliedShift = [objc_getAssociatedObject(self, &kDyLastAppliedShiftKey) boolValue];
-
-    CGFloat vcScaleValue = DYYYGetFloat(@"DYYYNicknameScale");
-    CGFloat targetScale = (vcScaleValue != 0.0) ? MAX(0.01, vcScaleValue) : 1.0;
-    CGFloat lastAppliedScale = [objc_getAssociatedObject(self, &kDyLastAppliedScaleKey) floatValue] ?: 1.0;
-
-    CGFloat targetHeight = tabHeight;
-    CGFloat lastAppliedTabHeight = [objc_getAssociatedObject(self, &kDyLastAppliedTabHeightKey) floatValue];
-
-    if (fabs(targetScale - lastAppliedScale) < 0.01 && fabs(targetHeight - lastAppliedTabHeight) < 0.1 && shouldShiftUp == lastAppliedShift) {
-        return;
-    }
-
-    const CGFloat scaleDelta = targetScale - 1.0;
-    const BOOL shouldScale = fabs(scaleDelta) >= 0.01;
-
-    for (UIView *targetView in targetViews) {
-        CGAffineTransform finalTransform = CGAffineTransformIdentity;
-
-        if (shouldScale) {
-            CGFloat tx = CGRectGetWidth(targetView.bounds) * scaleDelta * 0.5;
-            CGFloat ty = 0;
-            for (UIView *subview in targetView.subviews) {
-                ty += -CGRectGetHeight(subview.bounds) * scaleDelta * 0.5;
+    UIView *preStreamView = (UIView *)self;
+    NSPointerArray *allStackViews = objc_getAssociatedObject(self, &kDyCachedAllStackViewsKey);
+    if (!allStackViews || allStackViews.count == 0) {
+        allStackViews = [NSPointerArray weakObjectsPointerArray];
+        for (Class targetClass in kTargetViewClasses) {
+            if (targetClass) {
+                for (UIView *view in [DYYYUtils findAllSubviewsOfClass:targetClass inView:preStreamView]) {
+                    [allStackViews addPointer:(__bridge void *)view];
+                }
             }
-            CGAffineTransform scaleTransform = CGAffineTransformMakeScale(targetScale, targetScale);
-            finalTransform = CGAffineTransformTranslate(scaleTransform, tx / targetScale, ty / targetScale);
+        }
+        objc_setAssociatedObject(self, &kDyCachedAllStackViewsKey, allStackViews, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    }
+    if (allStackViews.count == 0) return;
+
+    UIView *guideStackView = objc_getAssociatedObject(self, &kDyCachedGuideStackViewKey);
+    if (!guideStackView.window) {
+        Class guideViewClass = NSClassFromString(@"AWELivePrestreamGuideView");
+        UIView *guideView = guideViewClass ? [DYYYUtils findSubviewOfClass:guideViewClass inView:preStreamView] : nil;
+        if (guideView) {
+            for (Class stackClass in kTargetViewClasses) {
+                guideStackView = (UIView *)[DYYYUtils findAncestorResponderOfClass:stackClass fromView:guideView];
+                if (guideStackView) {
+                    objc_setAssociatedObject(self, &kDyCachedGuideStackViewKey, guideStackView, OBJC_ASSOCIATION_ASSIGN);
+                    break;
+                }
+            }
+        }
+    }
+
+    UIView *yyLabelStackView = objc_getAssociatedObject(self, &kDyCachedYYLabelStackViewKey);
+    if (!yyLabelStackView.window) {
+        Class yyLabelViewClass = NSClassFromString(@"YYLabel");
+        UIView *yyLabelView = yyLabelViewClass ? [DYYYUtils findSubviewOfClass:yyLabelViewClass inView:preStreamView] : nil;
+        if (yyLabelView) {
+            for (Class stackClass in kTargetViewClasses) {
+                yyLabelStackView = (UIView *)[DYYYUtils findAncestorResponderOfClass:stackClass fromView:yyLabelView];
+                if (yyLabelStackView) {
+                    objc_setAssociatedObject(self, &kDyCachedYYLabelStackViewKey, yyLabelStackView, OBJC_ASSOCIATION_ASSIGN);
+                    break;
+                }
+            }
+        }
+    }
+
+    for (UIView *stackView in allStackViews) {
+        if (!stackView.window) continue;
+
+        if (fabs(stackView.alpha - targetAlpha) > 0.01) {
+            stackView.alpha = targetAlpha;
+        }
+
+        const CGFloat midX = CGRectGetMidX(stackView.bounds);
+        const CGFloat midY = CGRectGetMidY(stackView.bounds);
+        CGFloat currentScale, tx;
+
+        if (stackView == guideStackView) {
+            currentScale = targetLabelScale;
+            tx = 0; // 中对齐
+        } else if (stackView == yyLabelStackView) {
+            currentScale = targetLabelScale;
+            tx = midX * (currentScale - 1); // 左对齐
+        } else {
+            currentScale = targetElementScale;
+            tx = midX * (1 - currentScale); // 右对齐
+        }
+
+        CGAffineTransform targetTransform = CGAffineTransformIdentity;
+        if (fabs(currentScale - 1.0) >= 0.01) {
+            CGFloat ty = midY * (1 - currentScale); // 下对齐
+            targetTransform = CGAffineTransformConcat(
+                CGAffineTransformMakeScale(currentScale, currentScale), CGAffineTransformMakeTranslation(tx, ty)
+            );
         }
 
         if (shouldShiftUp) {
-            const CGFloat divisor = CGAffineTransformIsIdentity(finalTransform) ? 1.0 : targetScale;
-            finalTransform = CGAffineTransformTranslate(finalTransform, 0, -targetHeight / divisor);
+            const CGFloat divisor = (currentScale > 0.01) ? currentScale : 1.0;
+            targetTransform = CGAffineTransformTranslate(targetTransform, 0, -targetHeight / divisor);
         }
 
-        targetView.transform = finalTransform;
+        if (!CGAffineTransformEqualToTransform(stackView.transform, targetTransform)) {
+            stackView.transform = targetTransform;
+        }
     }
-
-    objc_setAssociatedObject(self, &kDyLastAppliedScaleKey, @(targetScale), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-    objc_setAssociatedObject(self, &kDyLastAppliedShiftKey, @(shouldShiftUp), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-    objc_setAssociatedObject(self, &kDyLastAppliedTabHeightKey, @(targetHeight), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
+
 %end
 
 %hook AWEStoryContainerCollectionView

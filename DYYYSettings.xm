@@ -1230,8 +1230,8 @@ extern "C"
             @"imageName" : @"ic_eyeslash_outlined_16"},
           @{
               @"identifier" : @"DYYYHideLiveCapsuleView",
-              @"title" : @"隐藏直播红点",
-              @"subTitle" : @"隐藏顶栏的直播中提示",
+              @"title" : @"隐藏直播提示",
+              @"subTitle" : @"隐藏关注顶栏的直播中提示",
               @"detail" : @"",
               @"cellType" : @37,
               @"imageName" : @"ic_eyeslash_outlined_16"
@@ -1416,6 +1416,14 @@ extern "C"
               @"identifier" : @"DYYYHideStickerView",
               @"title" : @"隐藏文字贴纸",
               @"subTitle" : @"隐藏主播设置的预约直播和文字贴纸",
+              @"detail" : @"",
+              @"cellType" : @37,
+              @"imageName" : @"ic_eyeslash_outlined_16"
+          },
+          @{
+              @"identifier" : @"DYYYHideGroupComponent",
+              @"title" : @"隐藏礼物挑战",
+              @"subTitle" : @"隐藏主播设置的发送礼物做挑战列表",
               @"detail" : @"",
               @"cellType" : @37,
               @"imageName" : @"ic_eyeslash_outlined_16"
