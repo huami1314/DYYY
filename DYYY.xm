@@ -6250,6 +6250,7 @@ static CGFloat currentScale = 1.0;
 static char kDyCachedAllStackViewsKey;
 static char kDyCachedGuideStackViewKey;
 static char kDyCachedYYLabelStackViewKey;
+static char kDyFirstLayoutCompleteKey;
 
 static NSArray<Class> *kTargetViewClasses = @[
     NSClassFromString(@"AWEElementStackView"),
@@ -6268,6 +6269,10 @@ static NSArray<Class> *kTargetViewClasses = @[
     const CGFloat targetAlpha = (transparentValue >= 0.0 && transparentValue <= 1.0) ? transparentValue : 1.0;
 
     UIView *preStreamView = (UIView *)self;
+    
+    NSNumber *firstLayoutComplete = objc_getAssociatedObject(self, &kDyFirstLayoutCompleteKey);
+    BOOL isFirstLayout = !firstLayoutComplete.boolValue;
+    
     NSPointerArray *allStackViews = objc_getAssociatedObject(self, &kDyCachedAllStackViewsKey);
     if (!allStackViews || allStackViews.count == 0) {
         allStackViews = [NSPointerArray weakObjectsPointerArray];
@@ -6282,8 +6287,9 @@ static NSArray<Class> *kTargetViewClasses = @[
     }
     if (allStackViews.count == 0) return;
 
-    UIView *guideStackView = objc_getAssociatedObject(self, &kDyCachedGuideStackViewKey);
-    if (!guideStackView.window) {
+    // 第一次布局时重新查找guideStackView，之后使用缓存
+    UIView *guideStackView = nil;
+    if (isFirstLayout) {
         Class guideViewClass = NSClassFromString(@"AWELivePrestreamGuideView");
         UIView *guideView = guideViewClass ? [DYYYUtils findSubviewOfClass:guideViewClass inView:preStreamView] : nil;
         if (guideView) {
@@ -6295,10 +6301,25 @@ static NSArray<Class> *kTargetViewClasses = @[
                 }
             }
         }
+    } else {
+        guideStackView = objc_getAssociatedObject(self, &kDyCachedGuideStackViewKey);
+        if (guideStackView && !guideStackView.window) {
+            Class guideViewClass = NSClassFromString(@"AWELivePrestreamGuideView");
+            UIView *guideView = guideViewClass ? [DYYYUtils findSubviewOfClass:guideViewClass inView:preStreamView] : nil;
+            if (guideView) {
+                for (Class stackClass in kTargetViewClasses) {
+                    guideStackView = (UIView *)[DYYYUtils findAncestorResponderOfClass:stackClass fromView:guideView];
+                    if (guideStackView) {
+                        objc_setAssociatedObject(self, &kDyCachedGuideStackViewKey, guideStackView, OBJC_ASSOCIATION_ASSIGN);
+                        break;
+                    }
+                }
+            }
+        }
     }
 
-    UIView *yyLabelStackView = objc_getAssociatedObject(self, &kDyCachedYYLabelStackViewKey);
-    if (!yyLabelStackView.window) {
+    UIView *yyLabelStackView = nil;
+    if (isFirstLayout) {
         Class yyLabelViewClass = NSClassFromString(@"YYLabel");
         UIView *yyLabelView = yyLabelViewClass ? [DYYYUtils findSubviewOfClass:yyLabelViewClass inView:preStreamView] : nil;
         if (yyLabelView) {
@@ -6307,6 +6328,21 @@ static NSArray<Class> *kTargetViewClasses = @[
                 if (yyLabelStackView) {
                     objc_setAssociatedObject(self, &kDyCachedYYLabelStackViewKey, yyLabelStackView, OBJC_ASSOCIATION_ASSIGN);
                     break;
+                }
+            }
+        }
+    } else {
+        yyLabelStackView = objc_getAssociatedObject(self, &kDyCachedYYLabelStackViewKey);
+        if (!yyLabelStackView || !yyLabelStackView.window) {
+            Class yyLabelViewClass = NSClassFromString(@"YYLabel");
+            UIView *yyLabelView = yyLabelViewClass ? [DYYYUtils findSubviewOfClass:yyLabelViewClass inView:preStreamView] : nil;
+            if (yyLabelView) {
+                for (Class stackClass in kTargetViewClasses) {
+                    yyLabelStackView = (UIView *)[DYYYUtils findAncestorResponderOfClass:stackClass fromView:yyLabelView];
+                    if (yyLabelStackView) {
+                        objc_setAssociatedObject(self, &kDyCachedYYLabelStackViewKey, yyLabelStackView, OBJC_ASSOCIATION_ASSIGN);
+                        break;
+                    }
                 }
             }
         }
@@ -6330,8 +6366,19 @@ static NSArray<Class> *kTargetViewClasses = @[
             currentScale = targetLabelScale;
             tx = midX * (currentScale - 1); // 左对齐
         } else {
-            currentScale = targetElementScale;
-            tx = midX * (1 - currentScale); // 右对齐
+            if (isFirstLayout) {
+                BOOL isLeftSideView = stackView.frame.origin.x < preStreamView.bounds.size.width * 0.5;
+                if (isLeftSideView) {
+                    currentScale = targetLabelScale;
+                    tx = midX * (currentScale - 1); // 左对齐
+                } else {
+                    currentScale = targetElementScale;
+                    tx = midX * (1 - currentScale); // 右对齐
+                }
+            } else {
+                currentScale = targetElementScale;
+                tx = midX * (1 - currentScale); // 右对齐
+            }
         }
 
         CGAffineTransform targetTransform = CGAffineTransformIdentity;
@@ -6350,6 +6397,10 @@ static NSArray<Class> *kTargetViewClasses = @[
         if (!CGAffineTransformEqualToTransform(stackView.transform, targetTransform)) {
             stackView.transform = targetTransform;
         }
+    }
+    
+    if (isFirstLayout) {
+        objc_setAssociatedObject(self, &kDyFirstLayoutCompleteKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     }
 }
 
