@@ -54,24 +54,34 @@ void *kViewModelKey = &kViewModelKey;
 }
 
 - (void)drawTextInRect:(CGRect)rect {
+    NSString *originalText = self.text;
+    self.text = @" ";
+    %orig;
+    self.text = originalText;
+    
     CGContextRef context = UIGraphicsGetCurrentContext();
     CGContextClearRect(context, rect);
-
-    NSDictionary *attributes = @{NSFontAttributeName : [UIFont systemFontOfSize:12.0], NSForegroundColorAttributeName : self.textColor};
-    [@"DYYY" drawInRect:rect withAttributes:attributes];
+    
+    UIFont *font = self.font ?: [UIFont systemFontOfSize:16.0];
+    if (self.font) {
+        font = [self.font fontWithSize:16.0];
+    }
+    
+    NSDictionary *attributes = @{
+        NSFontAttributeName : font,
+        NSForegroundColorAttributeName : self.textColor ?: [UIColor blackColor]
+    };
+    
+    NSString *displayText = @"DYYY";
+    CGSize textSize = [displayText sizeWithAttributes:attributes];
+    CGFloat centerY = (rect.size.height - textSize.height) / 2.0;
+    CGRect centeredRect = CGRectMake(0, centerY, rect.size.width, textSize.height);
+    
+    [displayText drawInRect:centeredRect withAttributes:attributes];
 }
 %end
 
 %hook AWELeftSideBarWeatherView
-- (void)didMoveToSuperview {
-    %orig;
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-      CGRect frame = self.frame;
-      frame.origin.y += 10;
-      self.frame = frame;
-    });
-}
-
 - (void)layoutSubviews {
     %orig;
     self.userInteractionEnabled = YES;
@@ -88,6 +98,9 @@ void *kViewModelKey = &kViewModelKey;
         [subview.subviews enumerateObjectsUsingBlock:^(UIView *childView, NSUInteger idx, BOOL *stop) {
           if (![childView isKindOfClass:%c(AWELeftSideBarWeatherLabel)]) {
               [childView removeFromSuperview];
+          } else {
+              CGRect parentFrame = childView.superview.bounds;
+              childView.frame = parentFrame;
           }
         }];
     }
