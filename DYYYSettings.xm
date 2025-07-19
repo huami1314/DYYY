@@ -1232,7 +1232,7 @@ extern "C"
           @{
               @"identifier" : @"DYYYHideLiveCapsuleView",
               @"title" : @"隐藏直播提示",
-              @"subTitle" : @"隐藏关注顶栏的直播中提示",
+              @"subTitle" : @"隐藏所有的直播中提示",
               @"detail" : @"",
               @"cellType" : @37,
               @"imageName" : @"ic_eyeslash_outlined_16"
