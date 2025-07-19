@@ -192,8 +192,7 @@
     NSArray *currentChannelIDList = arg2;
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     NSMutableArray *newCurrentChannelIDList = [NSMutableArray arrayWithArray:currentChannelIDList];
-    NSString *hideOtherChannels = [defaults objectForKey:@"DYYYHideOtherChannel"] ?: @"";
-    NSArray *hideChannelKeywords = [hideOtherChannels componentsSeparatedByString:@","];
+    
     if (!arg1 || !arg2) {
         %orig(arg1, arg2, arg3, arg4);
         return;
@@ -211,8 +210,6 @@
 
     for (AWEHPTopTabItemModel *tabItemModel in channelModels) {
         NSString *channelID = tabItemModel.channelID;
-        NSString *newChannelTitle = tabItemModel.title;
-        NSString *oldChannelTitle = tabItemModel.channelTitle;
         BOOL isHideChannel = NO;
 
         if ([channelID isEqualToString:@"homepage_hot_container"]) {
@@ -243,14 +240,10 @@
             isHideChannel = [defaults boolForKey:@"DYYYHideKidsV2"];
         } else if ([channelID isEqualToString:@"homepage_pad_game"]) {
             isHideChannel = [defaults boolForKey:@"DYYYHideGame"];
+        } else if ([channelID isEqualToString:@"homepage_mediumvideo"]) {
+            isHideChannel = [defaults boolForKey:@"DYYYHideMediumVideo"];
         }
-        if (oldChannelTitle.length > 0 || newChannelTitle.length > 0) {
-            for (NSString *keyword in hideChannelKeywords) {
-                if (keyword.length > 0 && ([oldChannelTitle containsString:keyword] || [newChannelTitle containsString:keyword])) {
-                    isHideChannel = YES;
-                }
-            }
-        }
+        
         if (!isHideChannel) {
             [newChannelModels addObject:tabItemModel];
         } else {
