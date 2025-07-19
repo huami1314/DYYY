@@ -192,7 +192,7 @@
     NSArray *currentChannelIDList = arg2;
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     NSMutableArray *newCurrentChannelIDList = [NSMutableArray arrayWithArray:currentChannelIDList];
-    
+
     if (!arg1 || !arg2) {
         %orig(arg1, arg2, arg3, arg4);
         return;
@@ -243,7 +243,7 @@
         } else if ([channelID isEqualToString:@"homepage_mediumvideo"]) {
             isHideChannel = [defaults boolForKey:@"DYYYHideMediumVideo"];
         }
-        
+
         if (!isHideChannel) {
             [newChannelModels addObject:tabItemModel];
         } else {
@@ -3748,7 +3748,10 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWEPlayInteractionTemplateButtonGroup
 - (void)layoutSubviews {
     if (DYYYGetBool(@"DYYYHideTemplateGroup")) {
-        self.hidden = YES;
+        UIView *parentView = self.superview;
+        if (parentView) {
+            [parentView removeFromSuperview];
+        }
         return;
     }
     %orig;
@@ -5359,7 +5362,7 @@ static CGFloat originalTabHeight = 0;
         for (UIView *v in cachedViews) {
             v.hidden = YES;
         }
-        
+
         if (![NSThread isMainThread]) {
             dispatch_async(dispatch_get_main_queue(), ^{
               [self layoutSubviews];
@@ -6252,9 +6255,7 @@ static char kDyCachedGuideStackViewKey;
 static char kDyCachedYYLabelStackViewKey;
 static char kDyFirstLayoutCompleteKey;
 
-static NSArray<Class> *kTargetViewClasses = @[
-    NSClassFromString(@"AWEElementStackView"),
-    NSClassFromString(@"IESLiveStackView")];
+static NSArray<Class> *kTargetViewClasses = @[ NSClassFromString(@"AWEElementStackView"), NSClassFromString(@"IESLiveStackView") ];
 
 - (void)layoutSubviews {
     %orig;
@@ -6269,10 +6270,10 @@ static NSArray<Class> *kTargetViewClasses = @[
     const CGFloat targetAlpha = (transparentValue >= 0.0 && transparentValue <= 1.0) ? transparentValue : 1.0;
 
     UIView *preStreamView = (UIView *)self;
-    
+
     NSNumber *firstLayoutComplete = objc_getAssociatedObject(self, &kDyFirstLayoutCompleteKey);
     BOOL isFirstLayout = !firstLayoutComplete.boolValue;
-    
+
     NSPointerArray *allStackViews = objc_getAssociatedObject(self, &kDyCachedAllStackViewsKey);
     if (!allStackViews || allStackViews.count == 0) {
         allStackViews = [NSPointerArray weakObjectsPointerArray];
@@ -6285,7 +6286,8 @@ static NSArray<Class> *kTargetViewClasses = @[
         }
         objc_setAssociatedObject(self, &kDyCachedAllStackViewsKey, allStackViews, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     }
-    if (allStackViews.count == 0) return;
+    if (allStackViews.count == 0)
+        return;
 
     // 第一次布局时重新查找guideStackView，之后使用缓存
     UIView *guideStackView = nil;
@@ -6349,7 +6351,8 @@ static NSArray<Class> *kTargetViewClasses = @[
     }
 
     for (UIView *stackView in allStackViews) {
-        if (!stackView.window) continue;
+        if (!stackView.window)
+            continue;
 
         if (fabs(stackView.alpha - targetAlpha) > 0.01) {
             stackView.alpha = targetAlpha;
@@ -6384,9 +6387,7 @@ static NSArray<Class> *kTargetViewClasses = @[
         CGAffineTransform targetTransform = CGAffineTransformIdentity;
         if (fabs(currentScale - 1.0) >= 0.01) {
             CGFloat ty = midY * (1 - currentScale); // 下对齐
-            targetTransform = CGAffineTransformConcat(
-                CGAffineTransformMakeScale(currentScale, currentScale), CGAffineTransformMakeTranslation(tx, ty)
-            );
+            targetTransform = CGAffineTransformConcat(CGAffineTransformMakeScale(currentScale, currentScale), CGAffineTransformMakeTranslation(tx, ty));
         }
 
         if (shouldShiftUp) {
@@ -6398,7 +6399,7 @@ static NSArray<Class> *kTargetViewClasses = @[
             stackView.transform = targetTransform;
         }
     }
-    
+
     if (isFirstLayout) {
         objc_setAssociatedObject(self, &kDyFirstLayoutCompleteKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     }
