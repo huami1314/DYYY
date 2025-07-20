@@ -1046,7 +1046,8 @@ static CGFloat gStartVal = 0.0;
 // 直播间商品信息
 @interface IESECLivePluginLayoutView : UIView
 @end
-
+@interface IESECLiveGoodsCardView : UIView
+@end
 // 直播间点赞动画
 @interface HTSLiveDiggView : UIView
 @end
