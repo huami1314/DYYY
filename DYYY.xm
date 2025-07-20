@@ -3133,7 +3133,7 @@ static AWEIMReusableCommonCell *currentCell;
 %hook AWEHotSearchInnerBottomView
 - (void)layoutSubviews {
     if (DYYYGetBool(@"DYYYHideHotSearch")) {
-        self.hidden = YES;
+        [self removeFromSuperview];
         return;
     }
     %orig;
@@ -4052,7 +4052,7 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
     %orig;
     if (DYYYGetBool(@"DYYYHideLiveRoomClose")) {
-        self.hidden = YES;
+        [self removeFromSuperview];
         return;
     }
 }
@@ -4069,8 +4069,18 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
-// 隐藏直播间商品信息
+// 隐藏直播间商品和推广
 %hook IESECLivePluginLayoutView
+- (void)layoutSubviews {
+    if (DYYYGetBool(@"DYYYHideLiveGoodsMsg")) {
+        self.hidden = YES;
+        return;
+    }
+    %orig;
+}
+%end
+
+%hook IESECLiveGoodsCardView
 - (void)layoutSubviews {
     if (DYYYGetBool(@"DYYYHideLiveGoodsMsg")) {
         self.hidden = YES;
@@ -4082,7 +4092,6 @@ static AWEIMReusableCommonCell *currentCell;
 
 %hook IESLiveBottomRightCardView
 - (void)layoutSubviews {
-
     if (DYYYGetBool(@"DYYYHideLiveGoodsMsg")) {
         self.hidden = YES;
         return;
