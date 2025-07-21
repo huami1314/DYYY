@@ -44,6 +44,13 @@ NS_ASSUME_NONNULL_BEGIN
 + (__kindof UIView *)findSubviewOfClass:(Class)targetClass inView:(UIView *)view;
 
 /*
+ * @brief 计算视图组在其视图层级中最近的公共父视图。
+ * @param views 包含多个 UIView 对象的数组。
+ * @return 所有输入视图的最近公共父视图。如果数组为空或视图们没有公共父视图，则返回 nil。
+ */
++ (__kindof UIView *)nearestCommonSuperviewOfViews:(NSArray<UIView *> *)views;
+
+/*
  *  @brief 检查视图层级中是否包含指定类的子视图。
  *  @param targetClass 要查找的类。
  *  @param view 起始视图。

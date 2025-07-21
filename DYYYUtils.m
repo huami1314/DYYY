@@ -111,6 +111,18 @@
     return resultView;
 }
 
++ (__kindof UIView *)nearestCommonSuperviewOfViews:(NSArray<UIView *> *)views {
+    if (views.count == 0) return nil;
+    if (views.count == 1) return views.firstObject.superview;
+    
+    UIView *commonSuperview = views.firstObject;
+    for (UIView *view in views) {
+        commonSuperview = [self _nearestCommonSuperviewOfView:commonSuperview andView:view];
+    }
+    
+    return commonSuperview;
+}
+
 + (BOOL)containsSubviewOfClass:(Class)targetClass inView:(UIView *)view {
     return [self findSubviewOfClass:targetClass inView:view] != nil;
 }
@@ -634,12 +646,37 @@ static os_unfair_lock _staticColorCreationLock = OS_UNFAIR_LOCK_INIT;
 
 #pragma mark - Private Helper Methods (私有辅助方法)
 
+/*
+ * @brief 私有辅助方法：计算两个指定视图的最近公共父视图。
+ * @param first 第一个视图。
+ * @param second 第二个视图。
+ * @return 两个视图的最近公共父视图，如果不存在则返回 nil。
+ */
++ (__kindof UIView *)_nearestCommonSuperviewOfView:(UIView *)first andView:(UIView *)second {
+    NSMutableSet *ancestors = [NSMutableSet set];
+    UIView *view = first;
+    while (view) {
+        [ancestors addObject:view];
+        view = view.superview;
+    }
+    
+    view = second;
+    while (view) {
+        if ([ancestors containsObject:view]) {
+            return view;
+        }
+        view = view.superview;
+    }
+    
+    return nil;
+}
+
 /**
- *  @brief 核心遍历引擎，使用 block 回调处理匹配的视图。
- *  @param view 要遍历的根视图。
- *  @param targetClass 要匹配的类。
- *  @param block 找到匹配视图时执行的回调。返回 YES 可立即中止遍历。
- *  @return 如果遍历被中止，则返回 YES。
+ * @brief 私有辅助方法：核心遍历引擎，使用 block 回调处理匹配的视图。
+ * @param view 要遍历的根视图。
+ * @param targetClass 要匹配的类。
+ * @param block 找到匹配视图时执行的回调。返回 YES 可立即中止遍历。
+ * @return 如果遍历被中止，则返回 YES。
  */
 + (BOOL)_traverseViewHierarchy:(UIView *)view forClass:(Class)targetClass usingBlock:(BOOL (^)(UIView *foundView))block {
     if (!view || !targetClass || !block) {
