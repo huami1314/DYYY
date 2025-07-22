@@ -6503,7 +6503,7 @@ static NSArray<Class> *kTargetViewClasses = @[ NSClassFromString(@"AWEElementSta
 %hook AWELandscapeFeedEntryView
 - (void)setCenter:(CGPoint)center {
     if (DYYYGetBool(@"DYYYEnableFullScreen")) {
-        center.y += 50;
+        center.y += tabHeight * 0.5;
     }
 
     %orig(center);
@@ -6513,6 +6513,15 @@ static NSArray<Class> *kTargetViewClasses = @[ NSClassFromString(@"AWEElementSta
     %orig;
     if (DYYYGetBool(@"DYYYHideEntry")) {
         [self removeFromSuperview];
+        return;
+    }
+
+    NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
+    CGFloat scale = scaleValue.length > 0 ? [scaleValue floatValue] : 1.0;
+    if (scale > 0 && scale != 1.0) {
+        self.transform = CGAffineTransformMakeScale(scale, scale);
+    } else {
+        self.transform = CGAffineTransformIdentity;
     }
 }
 
