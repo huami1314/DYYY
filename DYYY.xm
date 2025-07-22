@@ -824,19 +824,17 @@
 }
 
 - (UIView *)view {
-    UIView *originalView = %orig;
-
     NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
-    if (transparentValue.length > 0) {
-        CGFloat alphaValue = transparentValue.floatValue;
-        if (alphaValue >= 0.0 && alphaValue <= 1.0) {
-            for (UIView *subview in originalView.subviews) {
-                if (subview.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG) {
-                    if (subview.alpha > 0) {
-                        subview.alpha = alphaValue;
-                    }
-                }
-            }
+    NSScanner *scanner = [NSScanner scannerWithString:transparentValue];
+    float alphaValue;
+    if (![scanner scanFloat:&alphaValue] || !scanner.isAtEnd || alphaValue < 0 || alphaValue > 1) {
+        return %orig;
+    }
+
+    UIView *originalView = %orig;
+    for (UIView *subview in originalView.subviews) {
+        if (subview.alpha > 0 && fabs(subview.alpha - alphaValue) > 0.01 && subview.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG) {
+            subview.alpha = alphaValue;
         }
     }
 
@@ -850,13 +848,12 @@
 - (void)layoutSubviews {
     %orig;
 
-    NSString *transparentValue = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
-    if (!transparentValue.length)
+    NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
+    NSScanner *scanner = [NSScanner scannerWithString:transparentValue];
+    float alphaValue;
+    if (![scanner scanFloat:&alphaValue] || !scanner.isAtEnd || alphaValue < 0 || alphaValue > 1) {
         return;
-
-    CGFloat alphaValue = transparentValue.floatValue;
-    if (alphaValue < 0.0 || alphaValue > 1.0)
-        return;
+    }
 
     if ([NSStringFromClass([self.superview class]) isEqualToString:NSStringFromClass([self class])])
         return;
@@ -3365,14 +3362,6 @@ static AWEIMReusableCommonCell *currentCell;
             imgView.hidden = YES;
         }
     }
-
-    // NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
-    // if (transparentValue.length > 0) {
-    //     CGFloat alphaValue = transparentValue.floatValue;
-    //     if (alphaValue >= 0.0 && alphaValue <= 1.0) {
-    //         self.alpha = alphaValue;
-    //     }
-    // }
 
     %orig;
 }
@@ -6168,13 +6157,10 @@ static Class YYLabelClass = nil;
     }
 
     if (cachedTargetViews.count > 0) {
-        id transparentValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYGlobalTransparency"];
-        if (![transparentValue isKindOfClass:[NSNumber class]]) {
-            return;
-        }
-
-        const CGFloat alphaValue = [transparentValue floatValue];
-        if (alphaValue < 0.0 || alphaValue > 1.0) {
+        NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
+        NSScanner *scanner = [NSScanner scannerWithString:transparentValue];
+        float alphaValue;
+        if (![scanner scanFloat:&alphaValue] || !scanner.isAtEnd || alphaValue < 0 || alphaValue > 1) {
             return;
         }
 
@@ -6216,11 +6202,14 @@ YYLabelClass = NSClassFromString(@"YYLabel");
 
     if ([viewController isKindOfClass:%c(AWECommentInputViewController)]) {
         NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
-        if (transparentValue.length > 0) {
-            CGFloat alphaValue = transparentValue.floatValue;
-            if (alphaValue >= 0.0 && alphaValue <= 1.0) {
-                self.alpha = alphaValue;
-            }
+        NSScanner *scanner = [NSScanner scannerWithString:transparentValue];
+        float alphaValue;
+        if (![scanner scanFloat:&alphaValue] || !scanner.isAtEnd || alphaValue < 0 || alphaValue > 1) {
+            return;
+        }
+
+        if (self.alpha > 0 && fabs(self.alpha - alphaValue) > 0.01 && self.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG) {
+            self.alpha = alphaValue;
         }
     }
 
