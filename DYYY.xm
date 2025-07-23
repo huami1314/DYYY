@@ -6146,7 +6146,7 @@ static NSArray<Class> *kTargetViewClasses = @[ NSClassFromString(@"AWEElementSta
 static char kCachedTargetViewsKey;
 static Class GuideViewClass = nil;
 static Class MuteViewClass = nil;
-static Class YYLabelClass = nil;
+static Class TagViewClass = nil;
 
 - (void)viewDidLayoutSubviews {
     %orig;
@@ -6188,7 +6188,7 @@ static Class YYLabelClass = nil;
 + (void)initialize {
 GuideViewClass = NSClassFromString(@"AWELivePrestreamGuideView");
 MuteViewClass = NSClassFromString(@"AFDCancelMuteAwemeView");
-YYLabelClass = NSClassFromString(@"YYLabel");
+TagViewClass = NSClassFromString(@"AWELiveFeedLabelTagView");
 }
 
 - (void)setAlpha:(CGFloat)alpha {
@@ -6242,7 +6242,7 @@ YYLabelClass = NSClassFromString(@"YYLabel");
         } else if ([DYYYUtils containsSubviewOfClass:MuteViewClass inView:self]) {
             currentScale = targetElementScale;
             tx = (boundsWidth - boundsWidth * currentScale) / 2; // 右对齐
-        } else if ([DYYYUtils containsSubviewOfClass:YYLabelClass inView:self]) {
+        } else if ([DYYYUtils containsSubviewOfClass:TagViewClass inView:self]) {
             currentScale = targetLabelScale;
             tx = (boundsWidth - boundsWidth * currentScale) / -2; // 左对齐
         }
@@ -6348,7 +6348,7 @@ YYLabelClass = NSClassFromString(@"YYLabel");
 + (void)initialize {
 GuideViewClass = NSClassFromString(@"AWELivePrestreamGuideView");
 MuteViewClass = NSClassFromString(@"AFDCancelMuteAwemeView");
-YYLabelClass = NSClassFromString(@"YYLabel");
+TagViewClass = NSClassFromString(@"AWELiveFeedLabelTagView");
 }
 
 - (void)setAlpha:(CGFloat)alpha {
@@ -6389,7 +6389,7 @@ YYLabelClass = NSClassFromString(@"YYLabel");
         } else if ([DYYYUtils containsSubviewOfClass:MuteViewClass inView:self]) {
             currentScale = targetElementScale;
             tx = (boundsWidth - boundsWidth * currentScale) / 2; // 右对齐
-        } else if ([DYYYUtils containsSubviewOfClass:YYLabelClass inView:self]) {
+        } else if ([DYYYUtils containsSubviewOfClass:TagViewClass inView:self]) {
             currentScale = targetLabelScale;
             tx = (boundsWidth - boundsWidth * currentScale) / -2; // 左对齐
         }
