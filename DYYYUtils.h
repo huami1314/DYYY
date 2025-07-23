@@ -21,14 +21,43 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (UIViewController *)topView;
 
-+ (UIViewController *)firstAvailableViewControllerFromView:(UIView *)view;
 /* 在视图控制器层级中查找指定类的控制器 */
++ (UIViewController *)firstAvailableViewControllerFromView:(UIView *)view;
 + (UIViewController *)findViewControllerOfClass:(Class)targetClass inViewController:(UIViewController *)vc;
+
 + (UIResponder *)findAncestorResponderOfClass:(Class)targetClass fromView:(UIView *)view;
-+ (NSArray<UIView *> *)findAllSubviewsOfClass:(Class)targetClass inView:(UIView *)view;
-+ (UIView *)findSubviewOfClass:(Class)targetClass inView:(UIView *)view;
-/* 判断视图是否包含指定类型的子视图 */
+
+/*
+ * @brief 在指定视图层级中查找所有属于特定类的子视图。
+ * @param targetClass 要查找的视图类。
+ * @param view        要开始搜索的根视图。
+ * @return 包含所有匹配视图的数组，如果未找到则返回空数组。
+ */
++ (NSArray<__kindof UIView *> *)findAllSubviewsOfClass:(Class)targetClass inView:(UIView *)view;
+
+/*
+ * @brief 在指定视图层级中查找第一个属于特定类的子视图。
+ * @param targetClass 要查找的视图类。
+ * @param view        要开始搜索的根视图。
+ * @return 第一个匹配的视图实例，如果未找到则返回 nil。
+ */
++ (__kindof UIView *)findSubviewOfClass:(Class)targetClass inView:(UIView *)view;
+
+/*
+ * @brief 计算视图组在其视图层级中最近的公共父视图。
+ * @param views 包含多个 UIView 对象的数组。
+ * @return 所有输入视图的最近公共父视图。如果数组为空或视图们没有公共父视图，则返回 nil。
+ */
++ (__kindof UIView *)nearestCommonSuperviewOfViews:(NSArray<UIView *> *)views;
+
+/*
+ *  @brief 检查视图层级中是否包含指定类的子视图。
+ *  @param targetClass 要查找的类。
+ *  @param view 起始视图。
+ *  @return 如果找到则返回 YES，否则返回 NO。
+ */
 + (BOOL)containsSubviewOfClass:(Class)targetClass inView:(UIView *)view;
+
 + (void)applyBlurEffectToView:(UIView *)view transparency:(float)userTransparency blurViewTag:(NSInteger)tag;
 + (void)clearBackgroundRecursivelyInView:(UIView *)view;
 
@@ -146,11 +175,6 @@ NSString *_Nullable cleanShareURL(NSString *_Nullable url);
  * @return 顶层视图控制器
  */
 UIViewController *_Nullable topView(void);
-
-/**
- * 判断视图是否包含指定类型的子视图
- */
-BOOL viewContainsSubviewOfClass(UIView *_Nullable view, Class _Nullable viewClass);
 
 /** 判断是否为右侧互动区域 */
 BOOL isRightInteractionStack(UIView *_Nullable stackView);

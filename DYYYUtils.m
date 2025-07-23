@@ -53,16 +53,19 @@
 }
 
 + (UIViewController *)findViewControllerOfClass:(Class)targetClass inViewController:(UIViewController *)vc {
-    if (!vc)
+    if (!targetClass || !vc)
         return nil;
+
     if ([vc isKindOfClass:targetClass]) {
         return vc;
     }
+
     for (UIViewController *childVC in vc.childViewControllers) {
         UIViewController *found = [self findViewControllerOfClass:targetClass inViewController:childVC];
         if (found)
             return found;
     }
+
     return [self findViewControllerOfClass:targetClass inViewController:vc.presentedViewController];
 }
 
@@ -79,46 +82,49 @@
     return nil;
 }
 
-+ (NSArray<UIView *> *)findAllSubviewsOfClass:(Class)targetClass inView:(UIView *)view {
-    if (!view)
++ (NSArray<__kindof UIView *> *)findAllSubviewsOfClass:(Class)targetClass inView:(UIView *)view {
+    if (!targetClass || !view) {
         return @[];
-    NSMutableArray *foundViews = [NSMutableArray array];
-    if ([view isKindOfClass:targetClass]) {
-        [foundViews addObject:view];
     }
-    for (UIView *subview in view.subviews) {
-        [foundViews addObjectsFromArray:[self findAllSubviewsOfClass:targetClass inView:subview]];
-    }
-    return [foundViews copy];
+
+    NSMutableArray *resultViews = [NSMutableArray array];
+
+    [self _traverseViewHierarchy:view forClass:targetClass usingBlock:^BOOL(UIView *foundView) {
+        [resultViews addObject:foundView];
+        return NO;
+    }];
+
+    return [resultViews copy];
 }
 
-+ (UIView *)findSubviewOfClass:(Class)targetClass inView:(UIView *)view {
-    if (!view)
++ (__kindof UIView *)findSubviewOfClass:(Class)targetClass inView:(UIView *)view {
+    if (!targetClass || !view) {
         return nil;
-    if ([view isKindOfClass:targetClass]) {
-        return view;
     }
-    for (UIView *subview in view.subviews) {
-        UIView *result = [self findSubviewOfClass:targetClass inView:subview];
-        if (result) {
-            return result;
-        }
+
+    __block UIView *resultView = nil;
+    [self _traverseViewHierarchy:view forClass:targetClass usingBlock:^BOOL(UIView *foundView) {
+        resultView = foundView;
+        return YES;
+    }];
+
+    return resultView;
+}
+
++ (__kindof UIView *)nearestCommonSuperviewOfViews:(NSArray<UIView *> *)views {
+    if (views.count == 0) return nil;
+    if (views.count == 1) return views.firstObject.superview;
+    
+    UIView *commonSuperview = views.firstObject;
+    for (UIView *view in views) {
+        commonSuperview = [self _nearestCommonSuperviewOfView:commonSuperview andView:view];
     }
-    return nil;
+    
+    return commonSuperview;
 }
 
 + (BOOL)containsSubviewOfClass:(Class)targetClass inView:(UIView *)view {
-    if (!view)
-        return NO;
-    if ([view isKindOfClass:targetClass]) {
-        return YES;
-    }
-    for (UIView *subview in view.subviews) {
-        if ([self containsSubviewOfClass:targetClass inView:subview]) {
-            return YES;
-        }
-    }
-    return NO;
+    return [self findSubviewOfClass:targetClass inView:view] != nil;
 }
 
 + (void)applyBlurEffectToView:(UIView *)view transparency:(float)userTransparency blurViewTag:(NSInteger)tag {
@@ -640,6 +646,58 @@ static os_unfair_lock _staticColorCreationLock = OS_UNFAIR_LOCK_INIT;
 
 #pragma mark - Private Helper Methods (私有辅助方法)
 
+/*
+ * @brief 私有辅助方法：计算两个指定视图的最近公共父视图。
+ * @param first 第一个视图。
+ * @param second 第二个视图。
+ * @return 两个视图的最近公共父视图，如果不存在则返回 nil。
+ */
++ (__kindof UIView *)_nearestCommonSuperviewOfView:(UIView *)first andView:(UIView *)second {
+    NSMutableSet *ancestors = [NSMutableSet set];
+    UIView *view = first;
+    while (view) {
+        [ancestors addObject:view];
+        view = view.superview;
+    }
+    
+    view = second;
+    while (view) {
+        if ([ancestors containsObject:view]) {
+            return view;
+        }
+        view = view.superview;
+    }
+    
+    return nil;
+}
+
+/**
+ * @brief 私有辅助方法：核心遍历引擎，使用 block 回调处理匹配的视图。
+ * @param view 要遍历的根视图。
+ * @param targetClass 要匹配的类。
+ * @param block 找到匹配视图时执行的回调。返回 YES 可立即中止遍历。
+ * @return 如果遍历被中止，则返回 YES。
+ */
++ (BOOL)_traverseViewHierarchy:(UIView *)view forClass:(Class)targetClass usingBlock:(BOOL (^)(UIView *foundView))block {
+    if (!view || !targetClass || !block) {
+        return NO;
+    }
+
+    if ([view isKindOfClass:targetClass]) {
+        if (block(view)) {
+            return YES;
+        }
+    }
+
+    for (UIView *subview in view.subviews) {
+        if ([self _traverseViewHierarchy:subview forClass:targetClass usingBlock:block]) {
+            return YES;
+        }
+    }
+
+    return NO;
+}
+
 /**
  * @brief 私有辅助方法：解析单个十六进制颜色字符串。
  * @param hexString 十六进制颜色字符串，例如 "#FF0000", "FF0000", "#F00", "F00", "#AARRGGBB"
@@ -784,18 +842,6 @@ UIViewController *topView(void) {
     return [DYYYUtils topView];
 }
 
-BOOL viewContainsSubviewOfClass(UIView *view, Class viewClass) {
-    if (!view)
-        return NO;
-    if ([view isKindOfClass:viewClass])
-        return YES;
-    for (UIView *subview in view.subviews) {
-        if (viewContainsSubviewOfClass(subview, viewClass))
-            return YES;
-    }
-    return NO;
-}
-
 BOOL isRightInteractionStack(UIView *stackView) {
     if (!stackView)
         return NO;
@@ -807,9 +853,9 @@ BOOL isRightInteractionStack(UIView *stackView) {
             return NO;
     }
     for (UIView *sub in stackView.subviews) {
-        if (viewContainsSubviewOfClass(sub, NSClassFromString(@"AWEPlayInteractionUserAvatarView")))
+        if ([DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEPlayInteractionUserAvatarView") inView:sub])
             return YES;
-        if (viewContainsSubviewOfClass(sub, NSClassFromString(@"AWEFeedAnchorContainerView")))
+        if ([DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEFeedAnchorContainerView") inView:sub])
             return NO;
     }
     return NO;
@@ -826,25 +872,17 @@ BOOL isLeftInteractionStack(UIView *stackView) {
             return NO;
     }
     for (UIView *sub in stackView.subviews) {
-        if (viewContainsSubviewOfClass(sub, NSClassFromString(@"AWEFeedAnchorContainerView")))
+        if ([DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEFeedAnchorContainerView") inView:sub])
             return YES;
-        if (viewContainsSubviewOfClass(sub, NSClassFromString(@"AWEPlayInteractionUserAvatarView")))
+        if ([DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEPlayInteractionUserAvatarView") inView:sub])
             return NO;
     }
     return NO;
 }
 
 UIViewController *findViewControllerOfClass(UIViewController *vc, Class targetClass) {
-    if (!vc)
-        return nil;
-    if ([vc isKindOfClass:targetClass])
-        return vc;
-    for (UIViewController *childVC in vc.childViewControllers) {
-        UIViewController *found = findViewControllerOfClass(childVC, targetClass);
-        if (found)
-            return found;
-    }
-    return findViewControllerOfClass(vc.presentedViewController, targetClass);
+    if (!vc || !targetClass) return nil;
+    return [DYYYUtils findViewControllerOfClass:targetClass inViewController:vc];
 }
 
 void applyTopBarTransparency(UIView *topBar) {

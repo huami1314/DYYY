@@ -1,7 +1,7 @@
 #import <Photos/Photos.h>
 #import <UIKit/UIKit.h>
 
-// 获取指定类型设置，键名不存在或类型错误时返回nil
+// 获取指定类型设置
 #define DYYYGetBool(key) [[NSUserDefaults standardUserDefaults] boolForKey:key]
 #define DYYYGetFloat(key) [[NSUserDefaults standardUserDefaults] floatForKey:key]
 #define DYYYGetInteger(key) [[NSUserDefaults standardUserDefaults] integerForKey:key]
