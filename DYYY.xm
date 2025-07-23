@@ -5704,6 +5704,11 @@ static CGFloat originalTabHeight = 0;
         }
     }
 
+    UIWindow *window = [UIApplication sharedApplication].keyWindow;
+    if (window && window.safeAreaInsets.bottom == 0) {
+        return;
+    }
+
     if (!DYYYGetBool(@"DYYYEnableFullScreen")) {
         return;
     }
