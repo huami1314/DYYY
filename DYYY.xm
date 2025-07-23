@@ -5545,7 +5545,7 @@ static CGFloat originalTabHeight = 0;
                 }
             }
             dyyyInteractionViewVisible = YES;
-            UIWindow *keyWindow = [UIApplication sharedApplication].keyWindow;
+            UIWindow *keyWindow = [DYYYUtils getActiveWindow];
             if (keyWindow && ![speedButton isDescendantOfView:keyWindow]) {
                 [keyWindow addSubview:speedButton];
                 [speedButton loadSavedPosition];
@@ -5554,8 +5554,8 @@ static CGFloat originalTabHeight = 0;
         }
     }
 
-    UIWindow *window = [UIApplication sharedApplication].keyWindow;
-    if (window && window.safeAreaInsets.bottom == 0) {
+    UIWindow *keyWindow = [DYYYUtils getActiveWindow];
+    if (keyWindow && keyWindow.safeAreaInsets.bottom == 0) {
         return;
     }
 
@@ -5838,9 +5838,10 @@ static CGFloat originalTabHeight = 0;
         frame.size.height = self.superview.frame.size.height;
         self.frame = frame;
     } else if (tabHeight > 0) {
-        UIWindow *window = [UIApplication sharedApplication].keyWindow;
-        if (window && window.safeAreaInsets.bottom == 0)
+        UIWindow *keyWindow = [DYYYUtils getActiveWindow];
+        if (keyWindow && keyWindow.safeAreaInsets.bottom == 0) {
             return;
+        }
 
         CGRect frame = self.frame;
         frame.size.height = self.superview.frame.size.height - tabHeight;
@@ -6144,7 +6145,7 @@ static Class TagViewClass = nil;
         CGFloat boundsWidth = self.bounds.size.width;
         CGFloat currentScale = 1.0;
         CGFloat targetHeight, tx, ty = 0;
-        UIWindow *keyWindow = [UIApplication sharedApplication].keyWindow;
+        UIWindow *keyWindow = [DYYYUtils getActiveWindow];
         if (keyWindow && keyWindow.safeAreaInsets.bottom == 0) {
             targetHeight = tabHeight - originalTabHeight;
         } else {
@@ -6295,7 +6296,7 @@ static Class TagViewClass = nil;
         CGFloat boundsWidth = self.bounds.size.width;
         CGFloat currentScale = 1.0;
         CGFloat targetHeight, tx, ty = 0;
-        UIWindow *keyWindow = [UIApplication sharedApplication].keyWindow;
+        UIWindow *keyWindow = [DYYYUtils getActiveWindow];
         if (keyWindow && keyWindow.safeAreaInsets.bottom == 0) {
             targetHeight = tabHeight - originalTabHeight;
         } else {
