@@ -6700,141 +6700,86 @@ YYLabelClass = NSClassFromString(@"YYLabel");
 }
 %end
 
-static NSMutableDictionary *keepCellsInfo;
-static NSMutableDictionary *sectionKeepInfo;
-
-static NSString *const kAWELeftSideBarTopRightLayoutView = @"AWELeftSideBarTopRightLayoutView";
-static NSString *const kAWELeftSideBarFunctionContainerView = @"AWELeftSideBarFunctionContainerView";
-static NSString *const kAWELeftSideBarWeatherView = @"AWELeftSideBarWeatherView";
-
 static NSString *const kStreamlineSidebarKey = @"DYYYHideSidebarElements";
 
-%hook AWELeftSideBarViewController
+%hook AWELeftSideBarModel
 
-- (void)viewDidLoad {
-    %orig;
-
-    if (!DYYYGetBool(kStreamlineSidebarKey)) {
-        return;
-    }
-
-    if (!keepCellsInfo) {
-        keepCellsInfo = [NSMutableDictionary dictionary];
-    }
-    if (!sectionKeepInfo) {
-        sectionKeepInfo = [NSMutableDictionary dictionary];
-    }
-}
-
-- (void)viewDidDisappear:(BOOL)animated {
-    %orig;
+- (NSArray *)moduleModels {
+    NSArray *originalModels = %orig;
 
     if (!DYYYGetBool(kStreamlineSidebarKey)) {
-        return;
+        return originalModels;
     }
 
-    [keepCellsInfo removeAllObjects];
-    [sectionKeepInfo removeAllObjects];
-}
+    // 只保留这两个 moduleID
+    NSSet *allowedModuleIDs = [NSSet setWithArray:@[@"top_area", @"more_function_module", @"notification_module_module"]];
 
-- (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {
-    UICollectionViewCell *cell = %orig;
+    NSMutableArray *filteredModels = [NSMutableArray array];
 
-    if (!DYYYGetBool(kStreamlineSidebarKey)) {
-        return cell;
-    }
-
-    if (!cell)
-        return cell;
-
-    @try {
-        BOOL shouldKeep = [DYYYUtils containsSubviewOfClass:NSClassFromString(kAWELeftSideBarTopRightLayoutView) inView:cell.contentView] ||
-                          [DYYYUtils containsSubviewOfClass:NSClassFromString(kAWELeftSideBarFunctionContainerView) inView:cell.contentView] ||
-                          [DYYYUtils containsSubviewOfClass:NSClassFromString(kAWELeftSideBarWeatherView) inView:cell.contentView];
-
-        NSString *key = [NSString stringWithFormat:@"%ld-%ld", (long)indexPath.section, (long)indexPath.row];
-        keepCellsInfo[key] = @(shouldKeep);
-        if (shouldKeep) {
-            sectionKeepInfo[@(indexPath.section)] = @YES;
-        } else if (!sectionKeepInfo[@(indexPath.section)]) {
-            sectionKeepInfo[@(indexPath.section)] = @NO;
+    for (id moduleModel in originalModels) {
+        if ([moduleModel respondsToSelector:@selector(moduleID)]) {
+            NSString *moduleID = [moduleModel moduleID];
+            if ([allowedModuleIDs containsObject:moduleID]) {
+                // 进一步过滤模块内的items
+                id filteredModule = [self filterModuleItems:moduleModel];
+                if (filteredModule) {
+                    [filteredModels addObject:filteredModule];
+                }
+            }
         }
-
-        if (!shouldKeep) {
-            cell.hidden = YES;
-            cell.alpha = 0;
-            CGRect frame = cell.frame;
-            frame.size.width = 0;
-            frame.size.height = 0;
-            cell.frame = frame;
-        } else if ([DYYYUtils containsSubviewOfClass:NSClassFromString(kAWELeftSideBarFunctionContainerView) inView:cell.contentView]) {
-            [self adjustContainerViewLayout:cell];
-        }
-    } @catch (NSException *exception) {
-        NSLog(@"Error in cellForItemAtIndexPath: %@", exception);
     }
 
-    return cell;
+    return [filteredModels copy];
 }
 
-- (CGSize)collectionView:(UICollectionView *)collectionView layout:(id)layout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
-    CGSize originalSize = %orig;
-
+- (NSArray *)bottomModuleModels {
+    NSArray *originalBottomModels = %orig;
+    
     if (!DYYYGetBool(kStreamlineSidebarKey)) {
-        return originalSize;
+        return originalBottomModels;
     }
-
-    NSString *key = [NSString stringWithFormat:@"%ld-%ld", (long)indexPath.section, (long)indexPath.row];
-    NSNumber *shouldKeep = keepCellsInfo[key];
-
-    if (shouldKeep != nil && ![shouldKeep boolValue]) {
-        return CGSizeZero;
-    }
-
-    return originalSize;
-}
-
-- (UIEdgeInsets)collectionView:(UICollectionView *)collectionView layout:(id)layout insetForSectionAtIndex:(NSInteger)section {
-    UIEdgeInsets originalInsets = %orig;
-
-    if (!DYYYGetBool(kStreamlineSidebarKey)) {
-        return originalInsets;
-    }
-
-    BOOL hasKeepCells = [sectionKeepInfo[@(section)] boolValue];
-
-    if (!hasKeepCells) {
-        return UIEdgeInsetsZero;
-    }
-
-    return originalInsets;
+    
+    return @[];
 }
 
 %new
-- (void)adjustContainerViewLayout:(UICollectionViewCell *)containerCell {
-    if (!DYYYGetBool(kStreamlineSidebarKey)) {
-        return;
+- (id)filterModuleItems:(id)moduleModel {
+    if (![moduleModel respondsToSelector:@selector(items)] || 
+        ![moduleModel respondsToSelector:@selector(moduleID)]) {
+        return moduleModel;
     }
-
-    UICollectionView *collectionView = [self collectionView];
-    if (!collectionView || !containerCell)
-        return;
-
-    UIView *containerView = [DYYYUtils findSubviewOfClass:NSClassFromString(kAWELeftSideBarFunctionContainerView) inView:containerCell.contentView];
-    if (!containerView)
-        return;
-
-    CGFloat windowHeight = collectionView.window.bounds.size.height;
-    CGFloat currentY = [containerCell convertPoint:containerCell.bounds.origin toView:nil].y;
-    CGFloat newHeight = windowHeight - currentY - 20;
-
-    CGRect containerFrame = containerView.frame;
-    containerFrame.size.height = newHeight;
-    containerView.frame = containerFrame;
-
-    CGRect cellFrame = containerCell.frame;
-    cellFrame.size.height = newHeight;
-    containerCell.frame = cellFrame;
+    
+    NSString *moduleID = [moduleModel moduleID];
+    NSArray *originalItems = [moduleModel items];
+    
+    if ([moduleID isEqualToString:@"top_area"]) {
+        // 只保留天气、设置、扫一扫
+        NSMutableArray *filteredItems = [NSMutableArray array];
+        
+        for (id item in originalItems) {
+            if ([item respondsToSelector:@selector(businessType)]) {
+                NSString *businessType = [item businessType];
+                
+                // 保留需要的组件
+                if ([businessType isEqualToString:@"weather_time_tip_component"] ||
+                    [businessType isEqualToString:@"setting_page_component"] ||
+                    [businessType isEqualToString:@"top_area_vertical_cell"]) {
+                    [filteredItems addObject:item];
+                }
+            }
+        }
+        
+        // 创建新的模块对象，保持原有属性但更新items
+        if ([moduleModel respondsToSelector:@selector(copy)]) {
+            id newModule = [moduleModel copy];
+            if ([newModule respondsToSelector:@selector(setItems:)]) {
+                [newModule setItems:[filteredItems copy]];
+            }
+            return newModule;
+        }
+    }
+    
+    return moduleModel;
 }
 
 %end

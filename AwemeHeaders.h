@@ -1312,3 +1312,29 @@ static CGFloat gStartVal = 0.0;
 @interface AWEDPlayerFeedPlayerViewController (SpeedControl)
 - (void)adjustPlaybackSpeed:(float)speed;
 @end
+
+@interface AWELeftSideBarModel : NSObject
+@property(nonatomic, copy) NSArray *moduleModels;
+@property(nonatomic, retain) NSArray *bottomModuleModels;
+- (NSArray *)moduleModels;
+- (NSArray *)bottomModuleModels;
+- (id)filterModuleItems:(id)moduleModel;
+@end
+
+@interface AWELeftSideBarModuleModel : NSObject
+@property(nonatomic, copy) NSArray *items;
+@property(nonatomic, copy) NSString *moduleID;
+@property(nonatomic, copy) NSString *moduleType;
+- (NSArray *)items;
+- (NSString *)moduleID;
+- (NSString *)moduleType;
+- (void)setItems:(NSArray *)items;
+- (id)copy;
+@end
+
+@interface AWELeftSideBarItemModel : NSObject
+@property(nonatomic, copy) NSString *businessType;
+@property(nonatomic, copy) NSString *businessId;
+- (NSString *)businessType;
+- (NSString *)businessId;
+@end
