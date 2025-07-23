@@ -58,25 +58,22 @@ void *kViewModelKey = &kViewModelKey;
     self.text = @" ";
     %orig;
     self.text = originalText;
-    
+
     CGContextRef context = UIGraphicsGetCurrentContext();
     CGContextClearRect(context, rect);
-    
+
     UIFont *font = self.font ?: [UIFont systemFontOfSize:16.0];
     if (self.font) {
         font = [self.font fontWithSize:16.0];
     }
-    
-    NSDictionary *attributes = @{
-        NSFontAttributeName : font,
-        NSForegroundColorAttributeName : self.textColor ?: [UIColor blackColor]
-    };
-    
+
+    NSDictionary *attributes = @{NSFontAttributeName : font, NSForegroundColorAttributeName : self.textColor ?: [UIColor blackColor]};
+
     NSString *displayText = @"DYYY";
     CGSize textSize = [displayText sizeWithAttributes:attributes];
     CGFloat centerY = (rect.size.height - textSize.height) / 2.0;
     CGRect centeredRect = CGRectMake(0, centerY, rect.size.width, textSize.height);
-    
+
     [displayText drawInRect:centeredRect withAttributes:attributes];
 }
 %end
@@ -454,11 +451,14 @@ extern "C"
             @"detail" : @"",
             @"cellType" : @26,
             @"imageName" : @"ic_tag_outlined_20"},
-          @{@"identifier" : @"DYYYFilterTimeLimit",
-            @"title" : @"推荐视频时限",
-            @"detail" : @"",
-            @"cellType" : @26,
-            @"imageName" : @"ic_playertime_outlined_20"},
+          @{
+              @"identifier" : @"DYYYFilterTimeLimit",
+              @"subTitle" : @"开启后只会推荐最近 N 天内发布的视频\n谨慎开启，最低建议为 10 天",
+              @"title" : @"推荐视频时限",
+              @"detail" : @"",
+              @"cellType" : @20,
+              @"imageName" : @"ic_playertime_outlined_20"
+          },
           @{@"identifier" : @"DYYYFilterFeedHDR",
             @"title" : @"推荐过滤HDR",
             @"subTitle" : @"开启后推荐流会屏蔽 HDR 视频",
@@ -1226,12 +1226,14 @@ extern "C"
             @"detail" : @"",
             @"cellType" : @6,
             @"imageName" : @"ic_eyeslash_outlined_16"},
-          @{@"identifier" : @"DYYYHideTemplateGroup",
-            @"title" : @"隐藏底部话题",
-            @"subTitle" : @"隐藏文案底部出现的话题",
-            @"detail" : @"",
-            @"cellType" : @37,
-            @"imageName" : @"ic_eyeslash_outlined_16"},
+          @{
+              @"identifier" : @"DYYYHideTemplateGroup",
+              @"title" : @"隐藏底部话题",
+              @"subTitle" : @"隐藏文案底部出现的话题",
+              @"detail" : @"",
+              @"cellType" : @37,
+              @"imageName" : @"ic_eyeslash_outlined_16"
+          },
           @{@"identifier" : @"DYYYHideCameraLocation",
             @"title" : @"隐藏相机定位",
             @"detail" : @"",
