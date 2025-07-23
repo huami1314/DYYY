@@ -6135,7 +6135,6 @@ static Class TagViewClass = nil;
 
     if ([viewController isKindOfClass:%c(AWELiveNewPreStreamViewController)]) {
         const BOOL shouldShiftUp = DYYYGetBool(@"DYYYEnableFullScreen");
-        const CGFloat targetHeight = tabHeight;
         const CGFloat labelScaleValue = DYYYGetFloat(@"DYYYNicknameScale");
         const CGFloat targetLabelScale = (labelScaleValue != 0.0) ? MAX(0.01, labelScaleValue) : 1.0;
         const CGFloat elementScaleValue = DYYYGetFloat(@"DYYYElementScale");
@@ -6144,8 +6143,13 @@ static Class TagViewClass = nil;
         CGAffineTransform targetTransform = CGAffineTransformIdentity;
         CGFloat boundsWidth = self.bounds.size.width;
         CGFloat currentScale = 1.0;
-        CGFloat tx = 0;
-        CGFloat ty = 0;
+        CGFloat targetHeight, tx, ty = 0;
+        UIWindow *keyWindow = [UIApplication sharedApplication].keyWindow;
+        if (keyWindow && keyWindow.safeAreaInsets.bottom == 0) {
+            targetHeight = tabHeight - originalTabHeight;
+        } else {
+            targetHeight = tabHeight;
+        }
 
         if ([DYYYUtils containsSubviewOfClass:GuideViewClass inView:self]) {
             currentScale = targetLabelScale;
@@ -6282,7 +6286,6 @@ static Class TagViewClass = nil;
 
     if ([viewController isKindOfClass:%c(AWELiveNewPreStreamViewController)]) {
         const BOOL shouldShiftUp = DYYYGetBool(@"DYYYEnableFullScreen");
-        const CGFloat targetHeight = tabHeight;
         const CGFloat labelScaleValue = DYYYGetFloat(@"DYYYNicknameScale");
         const CGFloat targetLabelScale = (labelScaleValue != 0.0) ? MAX(0.01, labelScaleValue) : 1.0;
         const CGFloat elementScaleValue = DYYYGetFloat(@"DYYYElementScale");
@@ -6291,8 +6294,13 @@ static Class TagViewClass = nil;
         CGAffineTransform targetTransform = CGAffineTransformIdentity;
         CGFloat boundsWidth = self.bounds.size.width;
         CGFloat currentScale = 1.0;
-        CGFloat tx = 0;
-        CGFloat ty = 0;
+        CGFloat targetHeight, tx, ty = 0;
+        UIWindow *keyWindow = [UIApplication sharedApplication].keyWindow;
+        if (keyWindow && keyWindow.safeAreaInsets.bottom == 0) {
+            targetHeight = tabHeight - originalTabHeight;
+        } else {
+            targetHeight = tabHeight;
+        }
 
         if ([DYYYUtils containsSubviewOfClass:GuideViewClass inView:self]) {
             currentScale = targetLabelScale;
