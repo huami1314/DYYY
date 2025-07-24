@@ -5741,7 +5741,7 @@ static CGFloat originalTabHeight = 0;
 
     BOOL useFullHeight = [currentReferString isEqualToString:@"general_search"] || [currentReferString isEqualToString:@"chat"] || [currentReferString isEqualToString:@"search_result"] ||
                          [currentReferString isEqualToString:@"close_friends_moment"] || [currentReferString isEqualToString:@"offline_mode"] || [currentReferString isEqualToString:@"challenge"] ||
-                         currentReferString == nil;
+                         [currentReferString isEqualToString:@"general_search_scan"] || currentReferString == nil;
 
     if (useFullHeight) {
         frame.size.height = superviewHeight;
@@ -6191,9 +6191,9 @@ static Class TagViewClass = nil;
 %hook AWEElementStackView
 
 + (void)initialize {
-GuideViewClass = NSClassFromString(@"AWELivePrestreamGuideView");
-MuteViewClass = NSClassFromString(@"AFDCancelMuteAwemeView");
-TagViewClass = NSClassFromString(@"AWELiveFeedLabelTagView");
+    GuideViewClass = NSClassFromString(@"AWELivePrestreamGuideView");
+    MuteViewClass = NSClassFromString(@"AFDCancelMuteAwemeView");
+    TagViewClass = NSClassFromString(@"AWELiveFeedLabelTagView");
 }
 
 - (void)setAlpha:(CGFloat)alpha {
@@ -6234,7 +6234,7 @@ TagViewClass = NSClassFromString(@"AWELiveFeedLabelTagView");
         const CGFloat targetLabelScale = (labelScaleValue != 0.0) ? MAX(0.01, labelScaleValue) : 1.0;
         const CGFloat elementScaleValue = DYYYGetFloat(@"DYYYElementScale");
         const CGFloat targetElementScale = (elementScaleValue != 0.0) ? MAX(0.01, elementScaleValue) : 1.0;
-        
+
         CGAffineTransform targetTransform = CGAffineTransformIdentity;
         CGFloat boundsWidth = self.bounds.size.width;
         CGFloat currentScale = 1.0;
@@ -6351,9 +6351,9 @@ TagViewClass = NSClassFromString(@"AWELiveFeedLabelTagView");
 %hook IESLiveStackView
 
 + (void)initialize {
-GuideViewClass = NSClassFromString(@"AWELivePrestreamGuideView");
-MuteViewClass = NSClassFromString(@"AFDCancelMuteAwemeView");
-TagViewClass = NSClassFromString(@"AWELiveFeedLabelTagView");
+    GuideViewClass = NSClassFromString(@"AWELivePrestreamGuideView");
+    MuteViewClass = NSClassFromString(@"AFDCancelMuteAwemeView");
+    TagViewClass = NSClassFromString(@"AWELiveFeedLabelTagView");
 }
 
 - (void)setAlpha:(CGFloat)alpha {
@@ -6381,7 +6381,7 @@ TagViewClass = NSClassFromString(@"AWELiveFeedLabelTagView");
         const CGFloat targetLabelScale = (labelScaleValue != 0.0) ? MAX(0.01, labelScaleValue) : 1.0;
         const CGFloat elementScaleValue = DYYYGetFloat(@"DYYYElementScale");
         const CGFloat targetElementScale = (elementScaleValue != 0.0) ? MAX(0.01, elementScaleValue) : 1.0;
-        
+
         CGAffineTransform targetTransform = CGAffineTransformIdentity;
         CGFloat boundsWidth = self.bounds.size.width;
         CGFloat currentScale = 1.0;
@@ -6717,7 +6717,7 @@ static NSString *const kStreamlineSidebarKey = @"DYYYHideSidebarElements";
     }
 
     // 只保留这两个 moduleID
-    NSSet *allowedModuleIDs = [NSSet setWithArray:@[@"top_area", @"more_function_module", @"notification_module_module"]];
+    NSSet *allowedModuleIDs = [NSSet setWithArray:@[ @"top_area", @"more_function_module", @"notification_module_module" ]];
 
     NSMutableArray *filteredModels = [NSMutableArray array];
 
@@ -6739,41 +6739,39 @@ static NSString *const kStreamlineSidebarKey = @"DYYYHideSidebarElements";
 
 - (NSArray *)bottomModuleModels {
     NSArray *originalBottomModels = %orig;
-    
+
     if (!DYYYGetBool(kStreamlineSidebarKey)) {
         return originalBottomModels;
     }
-    
+
     return @[];
 }
 
 %new
 - (id)filterModuleItems:(id)moduleModel {
-    if (![moduleModel respondsToSelector:@selector(items)] || 
-        ![moduleModel respondsToSelector:@selector(moduleID)]) {
+    if (![moduleModel respondsToSelector:@selector(items)] || ![moduleModel respondsToSelector:@selector(moduleID)]) {
         return moduleModel;
     }
-    
+
     NSString *moduleID = [moduleModel moduleID];
     NSArray *originalItems = [moduleModel items];
-    
+
     if ([moduleID isEqualToString:@"top_area"]) {
         // 只保留天气、设置、扫一扫
         NSMutableArray *filteredItems = [NSMutableArray array];
-        
+
         for (id item in originalItems) {
             if ([item respondsToSelector:@selector(businessType)]) {
                 NSString *businessType = [item businessType];
-                
+
                 // 保留需要的组件
-                if ([businessType isEqualToString:@"weather_time_tip_component"] ||
-                    [businessType isEqualToString:@"setting_page_component"] ||
+                if ([businessType isEqualToString:@"weather_time_tip_component"] || [businessType isEqualToString:@"setting_page_component"] ||
                     [businessType isEqualToString:@"top_area_vertical_cell"]) {
                     [filteredItems addObject:item];
                 }
             }
         }
-        
+
         // 创建新的模块对象，保持原有属性但更新items
         if ([moduleModel respondsToSelector:@selector(copy)]) {
             id newModule = [moduleModel copy];
@@ -6783,7 +6781,7 @@ static NSString *const kStreamlineSidebarKey = @"DYYYHideSidebarElements";
             return newModule;
         }
     }
-    
+
     return moduleModel;
 }
 
