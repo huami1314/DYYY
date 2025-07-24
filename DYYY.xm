@@ -4280,12 +4280,14 @@ static AWEIMReusableCommonCell *currentCell;
 - (BOOL)contentFilter {
     BOOL noAds = DYYYGetBool(@"DYYYNoAds");
     BOOL skipLive = DYYYGetBool(@"DYYYSkipLive");
+    BOOL skipAllLive = DYYYGetBool(@"DYYYSkipAllLive");
     BOOL skipHotSpot = DYYYGetBool(@"DYYYSkipHotSpot");
     BOOL filterHDR = DYYYGetBool(@"DYYYFilterFeedHDR");
 
     BOOL shouldFilterAds = noAds && (self.isAds);
     BOOL shouldFilterHotSpot = skipHotSpot && self.hotSpotLynxCardModel;
     BOOL shouldFilterRecLive = skipLive && (self.cellRoom != nil);
+    BOOL shouldFilterAllLive = skipAllLive && [self.videoFeedTag isEqualToString:@"直播中"];
     BOOL shouldFilterHDR = NO;
     BOOL shouldFilterLowLikes = NO;
     BOOL shouldFilterKeywords = NO;
@@ -4404,7 +4406,7 @@ static AWEIMReusableCommonCell *currentCell;
             }
         }
     }
-    return shouldFilterAds || shouldFilterRecLive || shouldFilterHotSpot || shouldFilterHDR || shouldFilterLowLikes || shouldFilterKeywords || shouldFilterProp || shouldFilterTime || shouldFilterUser;
+    return shouldFilterAds || shouldFilterRecLive || shouldFilterAllLive || shouldFilterHotSpot || shouldFilterHDR || shouldFilterLowLikes || shouldFilterKeywords || shouldFilterProp || shouldFilterTime || shouldFilterUser;
 }
 
 - (AWEECommerceLabel *)ecommerceBelowLabel {

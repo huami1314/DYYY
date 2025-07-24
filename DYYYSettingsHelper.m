@@ -83,6 +83,8 @@
               @"DYYYHideTimeProgress" : @[ @"DYYYRemoveTimeProgress" ],
               @"DYYYHideLOTAnimationView" : @[ @"DYYYHideFollowPromptView" ],
               @"DYYYHideFollowPromptView" : @[ @"DYYYHideLOTAnimationView" ],
+              @"DYYYSkipLive" : @[ @"DYYYSkipAllLive" ],
+              @"DYYYSkipAllLive" : @[ @"DYYYSkipLive" ],
           },
 
           // ===== 互斥激活配置 =====
