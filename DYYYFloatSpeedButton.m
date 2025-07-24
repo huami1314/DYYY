@@ -144,10 +144,6 @@ void updateSpeedButtonVisibility() {
     }
 }
 
-@interface UIView (SpeedHelper)
-- (UIViewController *)firstAvailableUIViewController;
-@end
-
 @implementation FloatingSpeedButton
 
 - (instancetype)initWithFrame:(CGRect)frame {

@@ -286,7 +286,6 @@ static CGFloat gStartVal = 0.0;
 - (void)showSharePanel;
 - (void)showDislikeOnVideo;
 - (void)onVideoPlayerViewDoubleClicked:(id)arg1;
-- (UIViewController *)firstAvailableUIViewController;
 - (void)speedButtonTapped:(id)sender;
 - (void)buttonTouchDown:(id)sender;
 - (void)buttonTouchUp:(id)sender;
@@ -482,7 +481,6 @@ static CGFloat gStartVal = 0.0;
 @property(nonatomic, assign) CGRect frame;
 @property(nonatomic, strong) NSArray *subviews;
 @property(nonatomic, assign) CGAffineTransform transform;
-- (BOOL)view:(UIView *)view containsSubviewOfClass:(Class)viewClass;
 @end
 
 @interface IESLiveStackView : UIView
