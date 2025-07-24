@@ -4420,15 +4420,21 @@ static AWEIMReusableCommonCell *currentCell;
     NSString *labelStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYLabelStyle"];
     BOOL hideLabel = [labelStyle isEqualToString:@"文案标签隐藏"];
     if (hideLabel) {
-        desc = self.globalVisionTitle ?: desc;
+        // 过滤掉所有以 # 开头的标签
+        NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:@"#\\S+" options:0 error:nil];
+        NSString *filtered = [regex stringByReplacingMatchesInString:desc options:0 range:NSMakeRange(0, desc.length) withTemplate:@""];
+        // 去除首尾空白字符
+        filtered = [filtered stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+        // 为空则赋nil，避免显示空行
+        desc = filtered.length > 0 ? filtered : nil;
     }
     %orig(desc);
 }
 
 - (void)setTextExtras:(NSArray *)extras {
     NSString *labelStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYLabelStyle"];
-    BOOL hideLabel = [labelStyle isEqualToString:@"文案标签禁止跳转搜索"];
-    if (hideLabel && [extras isKindOfClass:[NSArray class]]) {
+    BOOL disableLabelSearch = [labelStyle isEqualToString:@"文案标签禁止跳转搜索"] || [labelStyle isEqualToString:@"文案标签隐藏"];
+    if (disableLabelSearch && [extras isKindOfClass:[NSArray class]]) {
         NSMutableArray *filtered = [NSMutableArray array];
         for (AWEAwemeTextExtraModel *model in extras) {
             if (model.userID.length > 0) {
