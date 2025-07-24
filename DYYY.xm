@@ -3843,6 +3843,16 @@ static AWEIMReusableCommonCell *currentCell;
 
 %end
 
+%hook AWEPlayInteractionLiveExtendGuideView
+- (void)layoutSubviews {
+    if (DYYYGetBool(@"DYYYHideLiveCapsuleView")) {
+        [self removeFromSuperview];
+        return;
+    }
+    %orig;
+}
+%end
+
 // 隐藏首页直播胶囊
 %hook AWEHPTopTabItemBadgeContentView
 
@@ -4008,6 +4018,7 @@ static AWEIMReusableCommonCell *currentCell;
     BOOL hideClear = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveRoomClear"];
     BOOL hideMirror = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveRoomMirroring"];
     BOOL hideFull = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveRoomFullscreen"];
+    BOOL hideClose = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideLiveRoomClose"];
 
     if (!(hideClear || hideMirror || hideFull)) {
         return;
@@ -4030,6 +4041,9 @@ static AWEIMReusableCommonCell *currentCell;
         for (UIView *subview in cached) {
             subview.hidden = YES;
         }
+        return;
+    } else if (hideClose && [self.superview isKindOfClass:%c(HTSLive4LayerContainerView)]) {
+        self.hidden = YES;
         return;
     }
 }

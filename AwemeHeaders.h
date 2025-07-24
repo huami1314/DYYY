@@ -676,6 +676,9 @@ static CGFloat gStartVal = 0.0;
 @interface AWELiveFeedLabelTagView : UIView
 @end
 
+@interface AWEPlayInteractionLiveExtendGuideView : UIView
+@end
+
 @interface AWEIMFansGroupTopDynamicDomainTemplateView : UIView
 - (void)layoutSubviews;
 @end
