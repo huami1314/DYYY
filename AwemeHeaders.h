@@ -81,7 +81,7 @@ static CGFloat gStartVal = 0.0;
 @property(nonatomic, copy) NSString *type;
 @property(nonatomic, assign) NSRange textRange;
 @property(nonatomic, copy) NSString *awemeId;
-@property(nonatomic, copy) NSString *userId;
+@property(nonatomic, copy) NSString *userID;
 @property(nonatomic, copy) NSString *userUniqueId;
 @property(nonatomic, copy) NSString *secUid;
 @end
@@ -118,12 +118,14 @@ static CGFloat gStartVal = 0.0;
 @property(nonatomic, strong) NSString *ipAttribution;
 @property(nonatomic, strong) id currentAweme;
 @property(nonatomic, copy) NSString *descriptionString;
+@property(nonatomic, copy) NSString *globalVisionTitle;
 @property(nonatomic, assign) BOOL isAds;
 @property(nonatomic, assign) BOOL isLive;
 @property(nonatomic, assign) BOOL isLivePhoto;
 @property(nonatomic, strong) NSString *shareURL;
 @property(nonatomic, strong) id hotSpotLynxCardModel;
 @property(nonatomic, strong) AWELiveFollowFeedCellModel *cellRoom;
+@property(nonatomic, strong) NSString *videoFeedTag;
 @property(nonatomic, strong) id shareRecExtra;  // 推荐视频专有属性
 @property(nonatomic, strong) NSArray<AWEAwemeTextExtraModel *> *textExtras;
 @property(nonatomic, copy) NSString *itemTitle;
@@ -137,6 +139,10 @@ static CGFloat gStartVal = 0.0;
 - (BOOL)isLive;
 - (BOOL)contentFilter;
 - (AWESearchAwemeExtraModel *)searchExtraModel;
+@end
+
+@interface AWEFeedCommentConfigModel : NSObject
+- (void)setCommentInputConfigText:(NSString *)text;
 @end
 
 @interface AWELongPressPanelBaseViewModel : NSObject
@@ -674,6 +680,9 @@ static CGFloat gStartVal = 0.0;
 @end
 
 @interface AWELiveFeedLabelTagView : UIView
+@end
+
+@interface AWEPlayInteractionLiveExtendGuideView : UIView
 @end
 
 @interface AWEIMFansGroupTopDynamicDomainTemplateView : UIView
