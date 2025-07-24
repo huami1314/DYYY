@@ -4448,6 +4448,16 @@ static AWEIMReusableCommonCell *currentCell;
 
 %end
 
+%hook AWEFeedCommentConfigModel
+- (void)setCommentInputConfigText:(NSString *)text {
+    NSString *customText = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYCommentContent"];
+    if (customText && customText.length > 0) {
+        text = customText;
+    }
+    %orig(text);
+}
+%end
+
 %hook MTKView
 
 - (void)layoutSubviews {

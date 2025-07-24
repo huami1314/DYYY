@@ -140,6 +140,10 @@ static CGFloat gStartVal = 0.0;
 - (AWESearchAwemeExtraModel *)searchExtraModel;
 @end
 
+@interface AWEFeedCommentConfigModel : NSObject
+- (void)setCommentInputConfigText:(NSString *)text;
+@end
+
 @interface AWELongPressPanelBaseViewModel : NSObject
 @property(nonatomic, copy) NSString *describeString;
 @property(nonatomic, assign) NSInteger enterMethod;
