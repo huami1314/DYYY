@@ -292,6 +292,11 @@ extern "C"
               @"cellType" : @20,
               @"imageName" : @"ic_location_outlined_20"
           },
+          @{@"identifier" : @"DYYYLabelStyle",
+            @"title" : @"文案标签样式",
+            @"detail" : @"",
+            @"cellType" : @26,
+            @"imageName" : @"ic_tag_outlined_20"},
           @{@"identifier" : @"DYYYLabelColor",
             @"title" : @"属地标签颜色",
             @"detail" : @"十六进制",
@@ -355,6 +360,23 @@ extern "C"
                 [DYYYOptionsSelectionView showWithPreferenceKey:@"DYYYScheduleStyle"
                                                    optionsArray:styleOptions
                                                      headerText:@"选择进度时长样式"
+                                                 onPresentingVC:topView()
+                                               selectionChanged:^(NSString *selectedValue) {
+                                                 item.detail = selectedValue;
+                                                 [item refreshCell];
+                                               }];
+              };
+          }
+
+          else if ([item.identifier isEqualToString:@"DYYYLabelStyle"]) {
+              NSString *savedStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYLabelStyle"];
+              item.detail = savedStyle ?: @"默认";
+              item.cellTappedBlock = ^{
+                NSArray *styleOptions = @[ @"文案标签显示", @"文案标签隐藏", @"文案标签禁止跳转搜索" ];
+
+                [DYYYOptionsSelectionView showWithPreferenceKey:@"DYYYLabelStyle"
+                                                   optionsArray:styleOptions
+                                                     headerText:@"选择文案标签样式"
                                                  onPresentingVC:topView()
                                                selectionChanged:^(NSString *selectedValue) {
                                                  item.detail = selectedValue;

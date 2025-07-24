@@ -81,7 +81,7 @@ static CGFloat gStartVal = 0.0;
 @property(nonatomic, copy) NSString *type;
 @property(nonatomic, assign) NSRange textRange;
 @property(nonatomic, copy) NSString *awemeId;
-@property(nonatomic, copy) NSString *userId;
+@property(nonatomic, copy) NSString *userID;
 @property(nonatomic, copy) NSString *userUniqueId;
 @property(nonatomic, copy) NSString *secUid;
 @end
@@ -118,6 +118,7 @@ static CGFloat gStartVal = 0.0;
 @property(nonatomic, strong) NSString *ipAttribution;
 @property(nonatomic, strong) id currentAweme;
 @property(nonatomic, copy) NSString *descriptionString;
+@property(nonatomic, copy) NSString *globalVisionTitle;
 @property(nonatomic, assign) BOOL isAds;
 @property(nonatomic, assign) BOOL isLive;
 @property(nonatomic, assign) BOOL isLivePhoto;

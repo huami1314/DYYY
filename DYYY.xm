@@ -4416,6 +4416,30 @@ static AWEIMReusableCommonCell *currentCell;
     return %orig;
 }
 
+- (void)setDescriptionString:(NSString *)desc {
+    NSString *labelStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYLabelStyle"];
+    BOOL hideLabel = [labelStyle isEqualToString:@"文案标签隐藏"];
+    if (hideLabel) {
+        desc = self.globalVisionTitle ?: desc;
+    }
+    %orig(desc);
+}
+
+- (void)setTextExtras:(NSArray *)extras {
+    NSString *labelStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYLabelStyle"];
+    BOOL hideLabel = [labelStyle isEqualToString:@"文案标签禁止跳转搜索"];
+    if (hideLabel && [extras isKindOfClass:[NSArray class]]) {
+        NSMutableArray *filtered = [NSMutableArray array];
+        for (AWEAwemeTextExtraModel *model in extras) {
+            if (model.userID.length > 0) {
+                [filtered addObject:model];
+            }
+        }
+        extras = [filtered copy];
+    }
+    %orig(extras);
+}
+
 - (bool)preventDownload {
     return NO;
 }
