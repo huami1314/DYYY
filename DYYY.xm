@@ -6076,6 +6076,22 @@ static Class TagViewClass = nil;
         updateSpeedButtonVisibility();
         updateClearButtonVisibility();
     }
+
+    // 全局透明
+    CGFloat finalAlpha = alpha;
+    if (alpha > 0 && self.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG) {
+        NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
+        NSScanner *scanner = [NSScanner scannerWithString:transparentValue];
+        float alphaValue;
+
+        if ([scanner scanFloat:&alphaValue] && scanner.isAtEnd && alphaValue >= 0 && alphaValue <= 1) {
+            finalAlpha = alphaValue;
+        }
+    }
+
+    if (fabs(self.alpha - finalAlpha) > 0.01) {
+        %orig(finalAlpha);
+    }
 }
 
 + (void)initialize {
