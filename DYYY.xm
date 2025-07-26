@@ -5458,6 +5458,43 @@ static CGFloat originalTabHeight = 0;
 
 %end
 
+static NSArray<Class> *kStackViewClasses = @[ NSClassFromString(@"AWEElementStackView"), NSClassFromString(@"IESLiveStackView") ];
+static char kCachedStackViewsKey;
+
+void applyGlobalTransparency(id targetObject) {
+    if (!targetObject) {
+        return;
+    }
+
+    NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
+    NSScanner *scanner = [NSScanner scannerWithString:transparentValue];
+    float alphaValue;
+    if (![scanner scanFloat:&alphaValue] || !scanner.isAtEnd || alphaValue < 0 || alphaValue > 1) {
+        return;
+    }
+
+    NSHashTable *cachedStackViews = objc_getAssociatedObject(targetObject, &kCachedStackViewsKey);
+    if (!cachedStackViews) {
+        cachedStackViews = [NSHashTable weakObjectsHashTable];
+        objc_setAssociatedObject(targetObject, &kCachedStackViewsKey, cachedStackViews, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+        for (Class stackViewClass in kStackViewClasses) {
+            NSArray *foundViews = [DYYYUtils findAllSubviewsOfClass:stackViewClass inContainer:targetObject];
+            for (UIView *view in foundViews) {
+                [cachedStackViews addObject:view];
+            }
+        }
+    }
+
+    if (cachedStackViews.count > 0) {
+        for (UIView *stackViews in cachedStackViews) {
+            if (stackViews.alpha > 0 && fabs(stackViews.alpha - alphaValue) > 0.01 && stackViews.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG) {
+                stackViews.alpha = alphaValue;
+            }
+        }
+    }
+}
+
 %hook AFDPureModePageTapController
 
 - (void)onVideoPlayerViewDoubleClicked:(id)arg1 {
@@ -5489,19 +5526,7 @@ static CGFloat originalTabHeight = 0;
 - (void)viewDidLayoutSubviews {
     %orig;
 
-    NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
-    NSScanner *scanner = [NSScanner scannerWithString:transparentValue];
-    float alphaValue;
-    if (![scanner scanFloat:&alphaValue] || !scanner.isAtEnd || alphaValue < 0 || alphaValue > 1) {
-        return;
-    }
-
-    for (UIView *subview in self.view.subviews) {
-
-        if (subview.alpha > 0 && fabs(subview.alpha - alphaValue) > 0.01 && subview.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG) {
-            subview.alpha = alphaValue;
-        }
-    }
+    applyGlobalTransparency(self);
 
     if (isFloatSpeedButtonEnabled) {
         BOOL hasRightStack = NO;
@@ -5975,46 +6000,17 @@ static CGFloat originalTabHeight = 0;
 
 %hook AWELiveNewPreStreamViewController
 
-static NSArray<Class> *kTargetViewClasses = @[ NSClassFromString(@"AWEElementStackView"), NSClassFromString(@"IESLiveStackView") ];
-static char kCachedTargetViewsKey;
-static Class GuideViewClass = nil;
-static Class MuteViewClass = nil;
-static Class TagViewClass = nil;
-
 - (void)viewDidLayoutSubviews {
     %orig;
 
-    NSHashTable *cachedTargetViews = objc_getAssociatedObject(self, &kCachedTargetViewsKey);
-    if (!cachedTargetViews) {
-        cachedTargetViews = [NSHashTable weakObjectsHashTable];
-        objc_setAssociatedObject(self, &kCachedTargetViewsKey, cachedTargetViews, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-
-        UIViewController *PreStreamVC = (UIViewController *)self;
-        for (Class targetClass in kTargetViewClasses) {
-            NSArray *foundViews = [DYYYUtils findAllSubviewsOfClass:targetClass inContainer:PreStreamVC.view];
-            for (UIView *view in foundViews) {
-                [cachedTargetViews addObject:view];
-            }
-        }
-    }
-
-    if (cachedTargetViews.count > 0) {
-        NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
-        NSScanner *scanner = [NSScanner scannerWithString:transparentValue];
-        float alphaValue;
-        if (![scanner scanFloat:&alphaValue] || !scanner.isAtEnd || alphaValue < 0 || alphaValue > 1) {
-            return;
-        }
-
-        for (UIView *targetView in cachedTargetViews) {
-            if (targetView.alpha > 0 && fabs(targetView.alpha - alphaValue) > 0.01 && targetView.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG) {
-                targetView.alpha = alphaValue;
-            }
-        }
-    }
+    applyGlobalTransparency(self);
 }
 
 %end
+
+static Class GuideViewClass = nil;
+static Class MuteViewClass = nil;
+static Class TagViewClass = nil;
 
 %hook AWEElementStackView
 
