@@ -6008,6 +6008,16 @@ void applyGlobalTransparency(id targetObject) {
 
 %end
 
+%hook AWECommentInputViewController
+
+- (void)viewDidLayoutSubviews {
+    %orig;
+
+    applyGlobalTransparency(self);
+}
+
+%end
+
 static Class GuideViewClass = nil;
 static Class MuteViewClass = nil;
 static Class TagViewClass = nil;
@@ -6111,19 +6121,6 @@ static Class TagViewClass = nil;
     %orig;
 
     UIViewController *viewController = [DYYYUtils firstAvailableViewControllerFromView:self];
-
-    if ([viewController isKindOfClass:%c(AWECommentInputViewController)]) {
-        NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
-        NSScanner *scanner = [NSScanner scannerWithString:transparentValue];
-        float alphaValue;
-        if (![scanner scanFloat:&alphaValue] || !scanner.isAtEnd || alphaValue < 0 || alphaValue > 1) {
-            return;
-        }
-
-        if (self.alpha > 0 && fabs(self.alpha - alphaValue) > 0.01 && self.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG) {
-            self.alpha = alphaValue;
-        }
-    }
 
     if ([viewController isKindOfClass:%c(AWELiveNewPreStreamViewController)]) {
         const BOOL shouldShiftUp = DYYYGetBool(@"DYYYEnableFullScreen");
