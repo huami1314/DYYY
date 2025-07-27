@@ -269,6 +269,14 @@ extern "C"
               @"cellType" : @37,
               @"imageName" : @"ic_play_outlined_12"
           },
+          @{
+              @"identifier" : @"DYYYEnableBackgroundListen",
+              @"title" : @"启用后台播放",
+              @"subTitle" : @"使受到后台播放限制的视频可以在后台继续播放",
+              @"detail" : @"",
+              @"cellType" : @37,
+              @"imageName" : @"ic_play_outlined_12"
+          },
           @{@"identifier" : @"DYYYDefaultSpeed",
             @"title" : @"设置默认倍速",
             @"detail" : @"",
@@ -2534,6 +2542,14 @@ extern "C"
               @"identifier" : @"DYYYDisableAutoEnterLive",
               @"title" : @"禁用自动进入直播",
               @"subTitle" : @"禁止顶栏直播下自动进入直播间",
+              @"detail" : @"",
+              @"cellType" : @37,
+              @"imageName" : @"ic_video_outlined_20"
+          },
+          @{
+              @"identifier" : @"DYYYDisableAutoHideLive",
+              @"title" : @"禁止直播标签收缩",
+              @"subTitle" : @"禁止直播类型选择标签自动收缩成直播发现标签",
               @"detail" : @"",
               @"cellType" : @37,
               @"imageName" : @"ic_video_outlined_20"

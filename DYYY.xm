@@ -3074,7 +3074,10 @@ static AWEIMReusableCommonCell *currentCell;
 
 %hook AWEFeedLiveTabTopSelectionView
 - (void)setHideTimer:(id)timer {
-    %orig(nil);
+    if (DYYYGetBool(@"DYYYDisableAutoHideLive")) {
+        timer = nil;
+    }
+    %orig(timer);
 }
 %end
 
@@ -4515,6 +4518,15 @@ static AWEIMReusableCommonCell *currentCell;
         text = customText;
     }
     %orig(text);
+}
+%end
+
+%hook AWEAwemeStatusModel
+- (void)setListenVideoStatus:(NSInteger)status {
+    if (status == 1 && DYYYGetBool(@"DYYYEnableBackgroundListen")) {
+        status = 2;
+    }
+    %orig(status);
 }
 %end
 
