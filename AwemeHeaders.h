@@ -269,6 +269,9 @@ static CGFloat gStartVal = 0.0;
 
 @interface AWEHPSearchBubbleEntranceView : UIView
 @end
+@interface AWEFeedLiveTabTopSelectionView : UIView
+- (void)setHideTimer:(id)timer;
+@end
 
 @interface AWEPlayInteractionViewController : UIViewController
 @property(nonatomic, strong) UIView *view;

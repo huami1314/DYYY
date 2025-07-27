@@ -3065,11 +3065,17 @@ static AWEIMReusableCommonCell *currentCell;
     %orig;
 
     if (DYYYGetBool(@"DYYYHideSearchBubble")) {
-        self.hidden = YES;
+        [self removeFromSuperview];
         return;
     }
 }
 
+%end
+
+%hook AWEFeedLiveTabTopSelectionView
+- (void)setHideTimer:(id)timer {
+    %orig(nil);
+}
 %end
 
 %hook AWEMusicCoverButton
