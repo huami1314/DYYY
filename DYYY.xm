@@ -3663,6 +3663,19 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
+%hook AWEProfilePostEmptyPublishGuideCollectionViewCell
+
+- (void)didMoveToSuperview {
+    %orig;
+    if (DYYYGetBool(@"DYYYHidePostView")) {
+    if ([(UIView *)self superview]) {
+        [(UIView *)self setHidden:YES];
+    }
+}
+}
+
+%end
+
 %hook AWEProfileTaskCardStyleListCollectionViewCell
 - (BOOL)shouldShowPublishGuide {
     if (DYYYGetBool(@"DYYYHidePostView")) {
