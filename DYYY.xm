@@ -3065,11 +3065,20 @@ static AWEIMReusableCommonCell *currentCell;
     %orig;
 
     if (DYYYGetBool(@"DYYYHideSearchBubble")) {
-        self.hidden = YES;
+        [self removeFromSuperview];
         return;
     }
 }
 
+%end
+
+%hook AWEFeedLiveTabTopSelectionView
+- (void)setHideTimer:(id)timer {
+    if (DYYYGetBool(@"DYYYDisableAutoHideLive")) {
+        timer = nil;
+    }
+    %orig(timer);
+}
 %end
 
 %hook AWEMusicCoverButton
@@ -4509,6 +4518,15 @@ static AWEIMReusableCommonCell *currentCell;
         text = customText;
     }
     %orig(text);
+}
+%end
+
+%hook AWEAwemeStatusModel
+- (void)setListenVideoStatus:(NSInteger)status {
+    if (status == 1 && DYYYGetBool(@"DYYYEnableBackgroundListen")) {
+        status = 2;
+    }
+    %orig(status);
 }
 %end
 

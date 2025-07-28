@@ -144,6 +144,9 @@ static CGFloat gStartVal = 0.0;
 @interface AWEFeedCommentConfigModel : NSObject
 - (void)setCommentInputConfigText:(NSString *)text;
 @end
+@interface AWEAwemeStatusModel : NSObject
+- (void)setListenVideoStatus:(NSInteger)status;
+@end
 
 @interface AWELongPressPanelBaseViewModel : NSObject
 @property(nonatomic, copy) NSString *describeString;
@@ -268,6 +271,9 @@ static CGFloat gStartVal = 0.0;
 @end
 
 @interface AWEHPSearchBubbleEntranceView : UIView
+@end
+@interface AWEFeedLiveTabTopSelectionView : UIView
+- (void)setHideTimer:(id)timer;
 @end
 
 @interface AWEPlayInteractionViewController : UIViewController
