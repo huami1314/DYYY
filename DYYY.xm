@@ -3569,20 +3569,6 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
-// 隐藏图片滑条
-%hook AWEStoryProgressContainerView
-- (BOOL)isHidden {
-    BOOL originalValue = %orig;
-    BOOL customHide = DYYYGetBool(@"DYYYHideDotsIndicator");
-    return originalValue || customHide;
-}
-
-- (void)setHidden:(BOOL)hidden {
-    BOOL forceHide = DYYYGetBool(@"DYYYHideDotsIndicator");
-    %orig(forceHide ? YES : hidden);
-}
-%end
-
 // 隐藏昵称右侧
 %hook UILabel
 - (void)layoutSubviews {
@@ -6607,6 +6593,28 @@ static Class TagViewClass = nil;
     for (UIView *view in bgViews) {
         view.backgroundColor = [UIColor clearColor];
     }
+}
+%end
+
+// 隐藏图片滑条
+%hook AWEStoryProgressContainerView
+- (void)setCenter:(CGPoint)center {
+    UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
+    if ([vc isKindOfClass:NSClassFromString(@"AWEFeedPlayControlImpl.PureModePageCellViewController")] && DYYYGetBool(@"DYYYEnableFullScreen")) {
+        center.y -= tabHeight;
+    }
+    %orig(center);
+}
+
+- (BOOL)isHidden {
+    BOOL originalValue = %orig;
+    BOOL customHide = DYYYGetBool(@"DYYYHideDotsIndicator");
+    return originalValue || customHide;
+}
+
+- (void)setHidden:(BOOL)hidden {
+    BOOL forceHide = DYYYGetBool(@"DYYYHideDotsIndicator");
+    %orig(forceHide ? YES : hidden);
 }
 %end
 
