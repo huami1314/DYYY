@@ -3141,7 +3141,12 @@ static AWEIMReusableCommonCell *currentCell;
 - (void)layoutSubviews {
     if (DYYYGetBool(@"DYYYHideGradient")) {
         UIView *parent = self.superview;
-        if ([parent.accessibilityLabel isEqualToString:@"暂停，按钮"] || [parent.accessibilityLabel isEqualToString:@"播放，按钮"] || [parent.accessibilityLabel isEqualToString:@"“切换视角，按钮"]) {
+        if (
+            [parent.accessibilityLabel isEqualToString:@"暂停，按钮"] || 
+            [parent.accessibilityLabel isEqualToString:@"播放，按钮"] || 
+            [parent.accessibilityLabel isEqualToString:@"“切换视角，按钮"] ||
+            [parent isKindOfClass:%c(AWEStoryProgressContainerView)]
+        ) {
             self.hidden = YES;
         }
         return;
@@ -3248,6 +3253,21 @@ static AWEIMReusableCommonCell *currentCell;
     } else {
         if (class_getInstanceMethod([self class], @selector(prefersStatusBarHidden)) !=
             class_getInstanceMethod([%c(AWEFullPageFeedNewContainerViewController) class], @selector(prefersStatusBarHidden))) {
+            return %orig;
+        }
+        return NO;
+    }
+}
+%end
+
+// 纯净模式状态栏
+%hook AFDPureModePageContainerViewController
+- (BOOL)prefersStatusBarHidden {
+    if (DYYYGetBool(@"DYYYHideStatusbar")) {
+        return YES;
+    } else {
+        if (class_getInstanceMethod([self class], @selector(prefersStatusBarHidden)) !=
+            class_getInstanceMethod([%c(AFDPureModePageContainerViewController) class], @selector(prefersStatusBarHidden))) {
             return %orig;
         }
         return NO;
