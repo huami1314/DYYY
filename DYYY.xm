@@ -5160,6 +5160,7 @@ static CGFloat originalTabHeight = 0;
     Class generalButtonClass = %c(AWENormalModeTabBarGeneralButton);
     Class plusButtonClass = %c(AWENormalModeTabBarGeneralPlusButton);
     Class tabBarButtonClass = %c(UITabBarButton);
+    Class barBackgroundClass = NSClassFromString(@"_UIBarBackground");
 
     for (UIView *subview in self.subviews) {
         if ([subview isKindOfClass:generalButtonClass] || [subview isKindOfClass:plusButtonClass]) {
@@ -5183,6 +5184,8 @@ static CGFloat originalTabHeight = 0;
             [buttonsToRemove addObject:subview];
         } else if (isPad && ipadContainerView == nil && [subview class] == [UIView class] && fabs(subview.frame.size.width - self.bounds.size.width) > 0.1) {
             ipadContainerView = subview;
+        } else if (DYYYGetBool(@"DYYYHideBottomBg") && ![subview isKindOfClass:barBackgroundClass]) {
+            [buttonsToRemove addObject:subview];
         }
     }
 
