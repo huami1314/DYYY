@@ -5160,7 +5160,6 @@ static CGFloat originalTabHeight = 0;
     Class generalButtonClass = %c(AWENormalModeTabBarGeneralButton);
     Class plusButtonClass = %c(AWENormalModeTabBarGeneralPlusButton);
     Class tabBarButtonClass = %c(UITabBarButton);
-    Class barBackgroundClass = NSClassFromString(@"_UIBarBackground");
 
     for (UIView *subview in self.subviews) {
         if ([subview isKindOfClass:generalButtonClass] || [subview isKindOfClass:plusButtonClass]) {
@@ -5184,8 +5183,6 @@ static CGFloat originalTabHeight = 0;
             [buttonsToRemove addObject:subview];
         } else if (isPad && ipadContainerView == nil && [subview class] == [UIView class] && fabs(subview.frame.size.width - self.bounds.size.width) > 0.1) {
             ipadContainerView = subview;
-        } else if (DYYYGetBool(@"DYYYEnableFullScreen") && ![subview isKindOfClass:barBackgroundClass]) {
-            [buttonsToRemove addObject:subview];
         }
     }
 
@@ -5293,6 +5290,38 @@ static CGFloat originalTabHeight = 0;
             BOOL shouldShowBackground = isHomeSelected || (isFriendsSelected && !hideFriendsButton);
             backgroundView.hidden = shouldShowBackground;
         }
+    }
+
+    if (enableFullScreen) {
+        BOOL isHomeSelected = NO;
+        BOOL isFriendsSelected = NO;
+        BOOL hideFriendsButton = DYYYGetBool(@"DYYYHideFriendsButton");
+        Class generalButtonClass = %c(AWENormalModeTabBarGeneralButton);
+
+        for (UIView *subview in self.subviews) {
+            if ([subview isKindOfClass:generalButtonClass]) {
+                AWENormalModeTabBarGeneralButton *button = (AWENormalModeTabBarGeneralButton *)subview;
+                if (button.status == 2) {
+                    if ([button.accessibilityLabel isEqualToString:@"首页"]) {
+                        isHomeSelected = YES;
+                    } else if ([button.accessibilityLabel containsString:@"朋友"]) {
+                        isFriendsSelected = YES;
+                    }
+                }
+            }
+        }
+
+        BOOL shouldHideBackground = isHomeSelected || (isFriendsSelected && !hideFriendsButton);
+        
+        void (^__block traverseSubviews)(UIView *, BOOL) = ^(UIView *view, BOOL hide) {
+            for (UIView *subview in view.subviews) {
+                if (fabs(subview.frame.size.height - tabHeight) < 0.1) {
+                    subview.hidden = hide;
+                }
+            }
+        };
+
+        traverseSubviews(self, shouldHideBackground);
     }
 
     if (enableFullScreen) {
@@ -5707,7 +5736,7 @@ static CGFloat originalTabHeight = 0;
         if (self.frame.size.height == originalTabHeight && originalTabHeight > 0) {
             UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
             if ([vc isKindOfClass:NSClassFromString(@"AWEMixVideoPanelDetailTableViewController")] || [vc isKindOfClass:NSClassFromString(@"AWECommentInputViewController")] ||
-                [vc isKindOfClass:NSClassFromString(@"AWEAwemeDetailTableViewController")] || [vc isKindOfClass:NSClassFromString(@"AWENormalModeTabBarController")]) {
+                [vc isKindOfClass:NSClassFromString(@"AWEAwemeDetailTableViewController")]) {
                 self.backgroundColor = [UIColor clearColor];
             }
         }

@@ -1874,8 +1874,9 @@ extern "C"
       NSArray *downloadSettings = @[
           @{@"identifier" : @"DYYYInterfaceDownload",
             @"title" : @"接口解析保存媒体",
-            @"detail" : @"不填关闭",
-            @"cellType" : @26,
+            @"subTitle" : @"填入自定义的解析接口，标准格式请查阅\nGithub 仓库内的 README 文件",
+            @"detail" : @"",
+            @"cellType" : @20,
             @"imageName" : @"ic_cloudarrowdown_outlined_20"},
           @{@"identifier" : @"DYYYShowAllVideoQuality",
             @"title" : @"接口显示清晰选项",
