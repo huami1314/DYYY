@@ -5707,7 +5707,7 @@ static CGFloat originalTabHeight = 0;
         if (self.frame.size.height == originalTabHeight && originalTabHeight > 0) {
             UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
             if ([vc isKindOfClass:NSClassFromString(@"AWEMixVideoPanelDetailTableViewController")] || [vc isKindOfClass:NSClassFromString(@"AWECommentInputViewController")] ||
-                [vc isKindOfClass:NSClassFromString(@"AWEAwemeDetailTableViewController")]) {
+                [vc isKindOfClass:NSClassFromString(@"AWEAwemeDetailTableViewController")] || [vc isKindOfClass:NSClassFromString(@"AWENormalModeTabBarController")]) {
                 self.backgroundColor = [UIColor clearColor];
             }
         }
