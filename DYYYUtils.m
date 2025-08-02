@@ -128,60 +128,58 @@
 }
 
 + (void)applyBlurEffectToView:(UIView *)view transparency:(float)userTransparency blurViewTag:(NSInteger)tag {
-    dispatch_async(dispatch_get_main_queue(), ^{
-      if (!view)
-          return;
+    if (!view)
+        return;
 
-      view.backgroundColor = [UIColor clearColor];
+    view.backgroundColor = [UIColor clearColor];
 
-      UIVisualEffectView *existingBlurView = nil;
-      for (UIView *subview in view.subviews) {
-          if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == tag) {
-              existingBlurView = (UIVisualEffectView *)subview;
-              break;
-          }
-      }
+    UIVisualEffectView *existingBlurView = nil;
+    for (UIView *subview in view.subviews) {
+        if ([subview isKindOfClass:[UIVisualEffectView class]] && subview.tag == tag) {
+            existingBlurView = (UIVisualEffectView *)subview;
+            break;
+        }
+    }
 
-      BOOL isDarkMode = [DYYYUtils isDarkMode];
-      UIBlurEffectStyle blurStyle = isDarkMode ? UIBlurEffectStyleDark : UIBlurEffectStyleLight;
+    BOOL isDarkMode = [DYYYUtils isDarkMode];
+    UIBlurEffectStyle blurStyle = isDarkMode ? UIBlurEffectStyleDark : UIBlurEffectStyleLight;
 
-      UIView *overlayView = nil;
+    UIView *overlayView = nil;
 
-      if (!existingBlurView) {
-          UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurStyle];
-          UIVisualEffectView *blurEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
-          blurEffectView.frame = view.bounds;
-          blurEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-          blurEffectView.alpha = userTransparency;
-          blurEffectView.tag = tag;
+    if (!existingBlurView) {
+        UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurStyle];
+        UIVisualEffectView *blurEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
+        blurEffectView.frame = view.bounds;
+        blurEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        blurEffectView.alpha = userTransparency;
+        blurEffectView.tag = tag;
 
-          overlayView = [[UIView alloc] initWithFrame:view.bounds];
-          overlayView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-          [blurEffectView.contentView addSubview:overlayView];
+        overlayView = [[UIView alloc] initWithFrame:view.bounds];
+        overlayView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        [blurEffectView.contentView addSubview:overlayView];
 
-          [view insertSubview:blurEffectView atIndex:0];
-      } else {
-          UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurStyle];
-          [existingBlurView setEffect:blurEffect];
-          existingBlurView.alpha = userTransparency;
+        [view insertSubview:blurEffectView atIndex:0];
+    } else {
+        UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:blurStyle];
+        [existingBlurView setEffect:blurEffect];
+        existingBlurView.alpha = userTransparency;
 
-          for (UIView *subview in existingBlurView.contentView.subviews) {
-              if ([subview isKindOfClass:[UIView class]]) {
-                  overlayView = subview;
-                  break;
-              }
-          }
-          if (!overlayView) {
-              overlayView = [[UIView alloc] initWithFrame:existingBlurView.bounds];
-              overlayView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-              [existingBlurView.contentView addSubview:overlayView];
-          }
-      }
-      if (overlayView) {
-          CGFloat alpha = isDarkMode ? 0.2 : 0.1;
-          overlayView.backgroundColor = [UIColor colorWithWhite:(isDarkMode ? 0 : 1) alpha:alpha];
-      }
-    });
+        for (UIView *subview in existingBlurView.contentView.subviews) {
+            if ([subview isKindOfClass:[UIView class]]) {
+                overlayView = subview;
+                break;
+            }
+        }
+        if (!overlayView) {
+            overlayView = [[UIView alloc] initWithFrame:existingBlurView.bounds];
+            overlayView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+            [existingBlurView.contentView addSubview:overlayView];
+        }
+    }
+    if (overlayView) {
+        CGFloat alpha = isDarkMode ? 0.2 : 0.1;
+        overlayView.backgroundColor = [UIColor colorWithWhite:(isDarkMode ? 0 : 1) alpha:alpha];
+    }
 }
 
 + (void)clearBackgroundRecursivelyInView:(UIView *)view {
