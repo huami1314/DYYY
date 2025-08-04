@@ -4106,6 +4106,16 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
+%hook IESECLiveCardSizeComponent
+- (void)layoutSubviews {
+    if (DYYYGetBool(@"DYYYHideLiveGoodsMsg")) {
+        self.hidden = YES;
+        return;
+    }
+    %orig;
+}
+%end
+
 %hook IESECLiveGoodsCardView
 - (void)layoutSubviews {
     if (DYYYGetBool(@"DYYYHideLiveGoodsMsg")) {
@@ -6665,8 +6675,14 @@ static Class TagViewClass = nil;
 
 - (void)layoutSubviews {
     %orig;
-    if (DYYYGetBool(@"DYYYHideEntry")) {
+    if (DYYYGetBool(@"DYYYRemoveEntry")) {
         [self removeFromSuperview];
+        return;
+    }
+    if (DYYYGetBool(@"DYYYHideEntry")) {
+        for(UIView *subview in self.subviews) {
+            subview.hidden = YES;
+        }
         return;
     }
 
