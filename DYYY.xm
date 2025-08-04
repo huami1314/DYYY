@@ -6323,6 +6323,12 @@ static Class TagViewClass = nil;
     TagViewClass = NSClassFromString(@"AWELiveFeedLabelTagView");
 }
 
+- (void)viewDidDisappear:(BOOL)animated {
+    %orig;
+    dyyyCommentViewVisible = YES;
+    updateSpeedButtonVisibility();
+}
+
 - (void)setAlpha:(CGFloat)alpha {
     %orig;
     if (speedButton && isFloatSpeedButtonEnabled) {
