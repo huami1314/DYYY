@@ -203,33 +203,32 @@ void initTargetClassNames(void) {
 - (void)saveButtonPosition {
     if (self.superview) {
         NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-        [defaults setFloat:self.center.x / self.superview.bounds.size.width forKey:@"DYYYHideButtonCenterXPercent"];
-        [defaults setFloat:self.center.y / self.superview.bounds.size.height forKey:@"DYYYHideButtonCenterYPercent"];
+        CGFloat centerXPercent = self.center.x / self.superview.bounds.size.width;
+        CGFloat centerYPercent = self.center.y / self.superview.bounds.size.height;
+        
+        [defaults setFloat:centerXPercent forKey:@"DYYYHideButtonCenterXPercent"];
+        [defaults setFloat:centerYPercent forKey:@"DYYYHideButtonCenterYPercent"];
         [defaults synchronize];
     }
 }
 
 - (void)loadSavedPosition {
+    if (!self.superview) {
+        return;
+    }
+    
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     float centerXPercent = [defaults floatForKey:@"DYYYHideButtonCenterXPercent"];
     float centerYPercent = [defaults floatForKey:@"DYYYHideButtonCenterYPercent"];
-
-    if (self.superview && centerXPercent > 0 && centerYPercent > 0) {
-        self.center = CGPointMake(centerXPercent * self.superview.bounds.size.width, centerYPercent * self.superview.bounds.size.height);
-    } else if (self.superview) {
-        NSString *pointString = [defaults stringForKey:@"DYYYHideUIButtonPosition"];
-        if (pointString.length > 0) {
-            CGPoint savedPoint = CGPointFromString(pointString);
-            if (CGRectContainsPoint(self.superview.bounds, savedPoint)) {
-                self.center = savedPoint;
-                [self saveButtonPosition];
-                [defaults removeObjectForKey:@"DYYYHideUIButtonPosition"];
-                [defaults synchronize];
-            }
-        }
+    
+    if (centerXPercent > 0 && centerYPercent > 0) {
+        self.center = CGPointMake(centerXPercent * self.superview.bounds.size.width,
+                                  centerYPercent * self.superview.bounds.size.height);
+    } else {
+        self.center = CGPointMake(self.superview.bounds.size.width / 2.0f,
+                                  self.superview.bounds.size.height / 3.0f);
     }
 }
-
 
 - (void)saveLockState {
     [[NSUserDefaults standardUserDefaults] setBool:self.isLocked forKey:@"DYYYHideUIButtonLockState"];
