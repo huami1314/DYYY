@@ -13,6 +13,9 @@ extern BOOL clearButtonForceHidden;
 extern BOOL isAppActive;
 extern BOOL isAppInTransition;
 extern NSArray *targetClassNames;
+extern BOOL dyyyInteractionViewVisible;
+extern BOOL dyyyCommentViewVisible;
+
 UIWindow *getKeyWindow(void);
 
 void updateClearButtonVisibility(void);

@@ -54,24 +54,28 @@ void updateClearButtonVisibility() {
         return;
 
     dispatch_async(dispatch_get_main_queue(), ^{
-      hideButton.hidden = NO;
+        if (!dyyyInteractionViewVisible) {
+            hideButton.hidden = YES;
+            return;
+        }
+
+        BOOL shouldHide = dyyyCommentViewVisible || clearButtonForceHidden || isPureViewVisible;
+        if (hideButton.hidden != shouldHide) {
+            hideButton.hidden = shouldHide;
+        }
     });
 }
 
 void showClearButton(void) {
     clearButtonForceHidden = NO;
-    if (hideButton) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-          hideButton.hidden = NO;
-        });
-    }
+    updateClearButtonVisibility(); // Call the central visibility logic
 }
 
 void hideClearButton(void) {
     clearButtonForceHidden = YES;
     if (hideButton) {
         dispatch_async(dispatch_get_main_queue(), ^{
-          hideButton.hidden = NO;
+            hideButton.hidden = YES;
         });
     }
 }
@@ -133,64 +137,109 @@ void initTargetClassNames(void) {
         self.isElementsHidden = NO;
         self.hiddenViewsList = [NSMutableArray array];
 
-        // 设置默认状态为半透明
-        self.originalAlpha = 1.0; // 交互时为完全不透明
-        self.alpha = 0.5;         // 初始为半透明
-        // 加载保存的锁定状态
+        self.originalAlpha = 1.0;
+        self.alpha = 0.5;
+        
         [self loadLockState];
         [self loadIcons];
         [self setImage:self.showIcon forState:UIControlStateNormal];
+        
         UIPanGestureRecognizer *panGesture = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePan:)];
         [self addGestureRecognizer:panGesture];
+        
         [self addTarget:self action:@selector(handleTap) forControlEvents:UIControlEventTouchUpInside];
         [self addTarget:self action:@selector(handleTouchDown) forControlEvents:UIControlEventTouchDown];
         [self addTarget:self action:@selector(handleTouchUpInside) forControlEvents:UIControlEventTouchUpInside];
         [self addTarget:self action:@selector(handleTouchUpOutside) forControlEvents:UIControlEventTouchUpOutside];
+        
         UILongPressGestureRecognizer *longPressGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handleLongPress:)];
         [self addGestureRecognizer:longPressGesture];
+        
         [self startPeriodicCheck];
         [self resetFadeTimer];
 
-        // 按钮始终可见
-        self.hidden = NO;
+        // Start as hidden, will be shown by updateClearButtonVisibility if conditions are met
+        self.hidden = YES;
     }
     return self;
 }
+
+- (void)didMoveToSuperview {
+    [super didMoveToSuperview];
+    if (self.superview) {
+        [self loadSavedPosition];
+    }
+}
+
 - (void)startPeriodicCheck {
     [self.checkTimer invalidate];
     self.checkTimer = [NSTimer scheduledTimerWithTimeInterval:0.2
-                                                      repeats:YES
-                                                        block:^(NSTimer *timer) {
-                                                          if (self.isElementsHidden) {
-                                                              [self hideUIElements];
-                                                          }
-                                                        }];
+                                                     repeats:YES
+                                                       block:^(NSTimer *timer) {
+                                                           if (self.isElementsHidden) {
+                                                               [self hideUIElements];
+                                                           }
+                                                       }];
 }
+
 - (void)resetFadeTimer {
     [self.fadeTimer invalidate];
     self.fadeTimer = [NSTimer scheduledTimerWithTimeInterval:3.0
                                                      repeats:NO
                                                        block:^(NSTimer *timer) {
-                                                         [UIView animateWithDuration:0.3
-                                                                          animations:^{
-                                                                            self.alpha = 0.5; // 变为半透明
-                                                                          }];
+                                                           [UIView animateWithDuration:0.3
+                                                                            animations:^{
+                                                                                self.alpha = 0.5;
+                                                                            }];
                                                        }];
-    // 交互时变为完全不透明
     if (self.alpha != self.originalAlpha) {
         [UIView animateWithDuration:0.2
                          animations:^{
-                           self.alpha = self.originalAlpha; // 变为完全不透明
+                           self.alpha = self.originalAlpha;
                          }];
     }
 }
+
+- (void)saveButtonPosition {
+    if (self.superview) {
+        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+        [defaults setFloat:self.center.x / self.superview.bounds.size.width forKey:@"DYYYHideButtonCenterXPercent"];
+        [defaults setFloat:self.center.y / self.superview.bounds.size.height forKey:@"DYYYHideButtonCenterYPercent"];
+        [defaults synchronize];
+    }
+}
+
+- (void)loadSavedPosition {
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    float centerXPercent = [defaults floatForKey:@"DYYYHideButtonCenterXPercent"];
+    float centerYPercent = [defaults floatForKey:@"DYYYHideButtonCenterYPercent"];
+
+    if (self.superview && centerXPercent > 0 && centerYPercent > 0) {
+        self.center = CGPointMake(centerXPercent * self.superview.bounds.size.width, centerYPercent * self.superview.bounds.size.height);
+    } else if (self.superview) {
+        NSString *pointString = [defaults stringForKey:@"DYYYHideUIButtonPosition"];
+        if (pointString.length > 0) {
+            CGPoint savedPoint = CGPointFromString(pointString);
+            if (CGRectContainsPoint(self.superview.bounds, savedPoint)) {
+                self.center = savedPoint;
+                [self saveButtonPosition];
+                [defaults removeObjectForKey:@"DYYYHideUIButtonPosition"];
+                [defaults synchronize];
+            }
+        }
+    }
+}
+
+
 - (void)saveLockState {
     [[NSUserDefaults standardUserDefaults] setBool:self.isLocked forKey:@"DYYYHideUIButtonLockState"];
     [[NSUserDefaults standardUserDefaults] synchronize];
 }
+
 - (void)loadLockState {
     self.isLocked = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideUIButtonLockState"];
 }
+
 - (void)loadIcons {
     NSString *documentsPath = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject;
     NSString *iconPath = [documentsPath stringByAppendingPathComponent:@"DYYY/qingping.gif"];
@@ -209,13 +258,10 @@ void initTargetClassNames(void) {
             [imageArray addObject:image];
             CFRelease(imageRef);
 
-            // 获取当前帧的属性
             CFDictionaryRef properties = CGImageSourceCopyPropertiesAtIndex(source, i, NULL);
             if (properties) {
-                // 进行类型转换
                 CFDictionaryRef gifProperties = (CFDictionaryRef)CFDictionaryGetValue(properties, kCGImagePropertyGIFDictionary);
                 if (gifProperties) {
-                    // 尝试获取未限制的延迟时间，如果没有则获取常规延迟时间
                     NSNumber *frameDuration = (__bridge NSNumber *)CFDictionaryGetValue(gifProperties, kCGImagePropertyGIFUnclampedDelayTime);
                     if (!frameDuration) {
                         frameDuration = (__bridge NSNumber *)CFDictionaryGetValue(gifProperties, kCGImagePropertyGIFDelayTime);
@@ -229,16 +275,12 @@ void initTargetClassNames(void) {
         }
         CFRelease(source);
 
-        // 创建一个UIImageView并设置动画图像
         UIImageView *animatedImageView = [[UIImageView alloc] initWithFrame:self.bounds];
         animatedImageView.animationImages = imageArray;
-
-        // 设置动画持续时间为所有帧延迟时间的总和
         animatedImageView.animationDuration = totalDuration;
-        animatedImageView.animationRepeatCount = 0; // 无限循环
+        animatedImageView.animationRepeatCount = 0;
         [self addSubview:animatedImageView];
 
-        // 调整约束或布局（如果需要）
         animatedImageView.translatesAutoresizingMaskIntoConstraints = NO;
         [NSLayoutConstraint activateConstraints:@[
             [animatedImageView.centerXAnchor constraintEqualToAnchor:self.centerXAnchor], [animatedImageView.centerYAnchor constraintEqualToAnchor:self.centerYAnchor],
@@ -252,15 +294,19 @@ void initTargetClassNames(void) {
         self.titleLabel.font = [UIFont systemFontOfSize:10];
     }
 }
+
 - (void)handleTouchDown {
-    [self resetFadeTimer]; // 这会使按钮变为完全不透明
+    [self resetFadeTimer];
 }
+
 - (void)handleTouchUpInside {
-    [self resetFadeTimer]; // 这会使按钮变为完全不透明
+    [self resetFadeTimer];
 }
+
 - (void)handleTouchUpOutside {
-    [self resetFadeTimer]; // 这会使按钮变为完全不透明
+    [self resetFadeTimer];
 }
+
 - (UIViewController *)findViewController:(UIView *)view {
     __weak UIResponder *responder = view;
     while (responder) {
@@ -273,9 +319,11 @@ void initTargetClassNames(void) {
     }
     return nil;
 }
+
 - (void)handlePan:(UIPanGestureRecognizer *)gesture {
     if (self.isLocked)
         return;
+
     [self resetFadeTimer];
     CGPoint translation = [gesture translationInView:self.superview];
     CGPoint newCenter = CGPointMake(self.center.x + translation.x, self.center.y + translation.y);
@@ -283,9 +331,9 @@ void initTargetClassNames(void) {
     newCenter.y = MAX(self.frame.size.height / 2, MIN(newCenter.y, self.superview.frame.size.height - self.frame.size.height / 2));
     self.center = newCenter;
     [gesture setTranslation:CGPointZero inView:self.superview];
-    if (gesture.state == UIGestureRecognizerStateEnded) {
-        [[NSUserDefaults standardUserDefaults] setObject:NSStringFromCGPoint(self.center) forKey:@"DYYYHideUIButtonPosition"];
-        [[NSUserDefaults standardUserDefaults] synchronize];
+
+    if (gesture.state == UIGestureRecognizerStateEnded || gesture.state == UIGestureRecognizerStateCancelled) {
+        [self saveButtonPosition];
     }
 }
 
@@ -327,10 +375,8 @@ void initTargetClassNames(void) {
 - (void)recursivelyRestoreAWEPlayInteractionProgressContainerViewInView:(UIView *)view {
     if ([view isKindOfClass:NSClassFromString(@"AWEPlayInteractionProgressContainerView")]) {
         if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYRemoveTimeProgress"]) {
-            // 如果设置了移除时间进度条，直接显示
             view.hidden = NO;
         } else {
-            // 恢复透明度
             view.alpha = DYGetGlobalAlpha();
         }
         return;
@@ -342,9 +388,8 @@ void initTargetClassNames(void) {
 }
 - (void)handleLongPress:(UILongPressGestureRecognizer *)gesture {
     if (gesture.state == UIGestureRecognizerStateBegan) {
-        [self resetFadeTimer]; // 这会使按钮变为完全不透明
+        [self resetFadeTimer];
         self.isLocked = !self.isLocked;
-        // 保存锁定状态
         [self saveLockState];
         NSString *toastMessage = self.isLocked ? @"按钮已锁定" : @"按钮已解锁";
         [DYYYUtils showToast:toastMessage];
@@ -358,11 +403,10 @@ void initTargetClassNames(void) {
 - (void)hideUIElements {
     [self.hiddenViewsList removeAllObjects];
     [self findAndHideViews:targetClassNames];
-    // 新增隐藏 AWEPlayInteractionProgressContainerView 视图
     [self hideAWEPlayInteractionProgressContainerView];
     self.isElementsHidden = YES;
-    // 确保按钮本身不会被隐藏
-    self.hidden = NO;
+    // self.hidden should be managed by updateClearButtonVisibility
+    updateClearButtonVisibility();
     if (self.superview) {
         [self.superview bringSubviewToFront:self];
     }
@@ -379,10 +423,8 @@ void initTargetClassNames(void) {
 - (void)recursivelyHideAWEPlayInteractionProgressContainerViewInView:(UIView *)view {
     if ([view isKindOfClass:NSClassFromString(@"AWEPlayInteractionProgressContainerView")]) {
         if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYRemoveTimeProgress"]) {
-            // 如果设置了移除时间进度条
             view.hidden = YES;
         } else {
-            // 否则设置透明度为 0.0,可拖动
             view.tag = DYYY_IGNORE_GLOBAL_ALPHA_TAG;
             view.alpha = 0.0;
         }
@@ -429,7 +471,6 @@ void initTargetClassNames(void) {
         [self.superview bringSubviewToFront:self];
     }
 
-    // 恢复倍速按钮的显示
     BOOL hideSpeed = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideSpeed"];
     if (hideSpeed) {
         showSpeedButton();

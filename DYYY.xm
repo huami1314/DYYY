@@ -797,7 +797,7 @@
 - (void)loadView {
     %orig;
     if (hideButton) {
-        hideButton.hidden = NO;
+        hideButton.hidden = YES;
         hideButton.alpha = 0.5;
     }
 }
@@ -807,7 +807,7 @@
     isInPlayInteractionVC = YES;
     dyyyInteractionViewVisible = YES;
     if (hideButton) {
-        hideButton.hidden = NO;
+        hideButton.hidden = YES;
         hideButton.alpha = 0.5;
     }
 }
@@ -6185,13 +6185,11 @@ static CGFloat originalTabHeight = 0;
 - (void)viewDidAppear:(BOOL)animated {
     %orig;
     isPureViewVisible = YES;
-    updateClearButtonVisibility();
 }
 
 - (void)viewDidDisappear:(BOOL)animated {
     %orig;
     isPureViewVisible = NO;
-    updateClearButtonVisibility();
 }
 %end
 
@@ -6329,7 +6327,6 @@ static Class TagViewClass = nil;
     %orig;
     if (speedButton && isFloatSpeedButtonEnabled) {
         if (alpha == 0) {
-            dyyyCommentViewVisible = YES;
         } else if (alpha == 1) {
             dyyyCommentViewVisible = NO;
         }
