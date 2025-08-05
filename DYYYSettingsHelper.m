@@ -85,6 +85,8 @@
               @"DYYYHideFollowPromptView" : @[ @"DYYYHideLOTAnimationView" ],
               @"DYYYSkipLive" : @[ @"DYYYSkipAllLive" ],
               @"DYYYSkipAllLive" : @[ @"DYYYSkipLive" ],
+              @"DYYYHideEntry" : @[ @"DYYYRemoveEntry" ],
+              @"DYYYRemoveEntry" : @[ @"DYYYHideEntry" ],
           },
 
           // ===== 互斥激活配置 =====
