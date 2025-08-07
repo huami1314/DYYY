@@ -535,10 +535,6 @@
 %end
 
 %hook AWEFeedTopBarContainer
-- (void)didMoveToSuperview {
-    %orig;
-    applyTopBarTransparency(self);
-}
 - (void)setAlpha:(CGFloat)alpha {
     NSString *transparentValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTopBarTransparent"];
     if (transparentValue && transparentValue.length > 0) {
