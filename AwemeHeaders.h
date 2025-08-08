@@ -1358,3 +1358,6 @@ static CGFloat gStartVal = 0.0;
 - (NSString *)businessType;
 - (NSString *)businessId;
 @end
+
+@interface AWEListKitMagicCollectionView : UICollectionView
+@end

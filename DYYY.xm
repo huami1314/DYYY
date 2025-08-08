@@ -5689,6 +5689,36 @@ static CGFloat originalTabHeight = 0;
 
 %end
 
+// 开启评论区毛玻璃后滚动区域填满底部
+%hook AWEListKitMagicCollectionView
+
+- (void)layoutSubviews {
+    %orig;
+
+    if (!DYYYGetBool(@"DYYYEnableCommentBlur")) {
+        return;
+    }
+
+    UICollectionView *collectionView = (UICollectionView *)self;
+
+    UIView *superview = collectionView.superview;
+    CGRect targetFrame = superview.bounds;
+    if (superview == nil || CGSizeEqualToSize(targetFrame.size, CGSizeZero) || CGRectEqualToRect(collectionView.frame, targetFrame)) {
+        return;
+    }
+
+    collectionView.frame = targetFrame;
+
+    CGFloat commentOffset = 166.0;
+
+    UIEdgeInsets inset = collectionView.contentInset;
+    inset.bottom = commentOffset;
+    collectionView.contentInset = inset;
+    collectionView.scrollIndicatorInsets = inset;
+}
+
+%end
+
 %hook UIView
 - (id)initWithFrame:(CGRect)frame {
     UIView *view = %orig;
