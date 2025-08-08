@@ -3241,6 +3241,32 @@ static AWEIMReusableCommonCell *currentCell;
 %end
 
 // 隐藏昵称上方元素
+%hook AWEFeedAnchorContainerView
+
+- (void)layoutSubviews {
+    %orig;
+    BOOL hideFeedAnchor = DYYYGetBool(@"DYYYHideFeedAnchorContainer");
+    BOOL hideLocation = DYYYGetBool(@"DYYYHideLocation");
+    if (hideFeedAnchor && hideLocation) {
+        self.hidden = YES;
+        return;
+    } else if (hideFeedAnchor || hideLocation) {
+        BOOL isLocation = NO;
+        for (UIView *subview in self.subviews) {
+            if ([subview isKindOfClass:%c(AWEFeedTemplateAnchorView)] || [subview isKindOfClass:%c(AWEPOITradeEntryAnchorView)]) {
+                isLocation = YES;
+                break;
+            }
+        }
+        if ((isLocation && hideLocation) || (!isLocation && hideFeedAnchor)) {
+            self.hidden = YES;
+            return;
+        }
+    }
+}
+
+%end
+
 %hook AWEFeedTemplateAnchorView
 
 - (void)layoutSubviews {
@@ -6675,7 +6701,7 @@ static Class TagViewClass = nil;
         return;
     }
     if (DYYYGetBool(@"DYYYHideEntry")) {
-        for(UIView *subview in self.subviews) {
+        for (UIView *subview in self.subviews) {
             subview.hidden = YES;
         }
         return;
