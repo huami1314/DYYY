@@ -6586,8 +6586,8 @@ static Class TagViewClass = nil;
         if (shouldShiftUp) {
             ty -= targetHeight;
         }
-
-        targetTransform = CGAffineTransformMake(currentScale, 0, 0, currentScale, tx, ty);
+        // 这里控制的是整个 View 的缩放比例，应该始终固定不变的，不然会变小
+        targetTransform = CGAffineTransformMake(1.0, 0, 0, currentScale, tx, ty);
 
         if (!CGAffineTransformEqualToTransform(self.transform, targetTransform)) {
             self.transform = targetTransform;
