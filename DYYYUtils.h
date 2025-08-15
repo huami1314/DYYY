@@ -1,12 +1,24 @@
 #import <Photos/Photos.h>
 #import <QuartzCore/QuartzCore.h>
 #import <UIKit/UIKit.h>
+#import "AwemeHeaders.h"
+#import "CityManager.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @class YYAnimatedImageView;
 
 @interface DYYYUtils : NSObject
+
+/**
+ * @brief 处理并更新UILabel以显示IP属地。
+ * 该函数包含国内地址直接解析和国外地址API请求及缓存的完整逻辑。
+ * 对于需要异步更新UI的情况（如API请求），该函数内部会处理dispatch到主线程。
+ * @param label 需要更新的UILabel实例。
+ * @param model 包含IP属地信息（如cityCode）的视频数据模型。
+ * @param colorHexString 由于国外IP查询是异步的，颜色需要在此函数内部的回调中应用，以确保文本和颜色同步更新。
+ */
++ (void)processAndApplyIPLocationToLabel:(UILabel *)label forModel:(AWEAwemeModel *)model withLabelColor:(NSString *)colorHexString;
 
 #pragma mark - Public UI/Window/Controller Utilities (公共 UI/窗口/控制器 工具)
 

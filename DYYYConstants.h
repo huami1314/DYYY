@@ -18,4 +18,6 @@
 // 配置应用方式中的远程模式名称
 #define DYYY_REMOTE_MODE_STRING @"远程模式：启动时自动检查更新"
 
+#define DYYYGeonamesErrorDomain @"com.dyyy.geonames.api.error"
+
 #endif

@@ -3,12 +3,186 @@
 #import <UIKit/UIKit.h>
 #import <os/lock.h>
 #import <stdatomic.h>
+#import <objc/runtime.h>
 #import "AwemeHeaders.h"
 #import "DYYYManager.h"
 #import "DYYYToast.h"
+#import "DYYYConstants.h"
 
 @implementation DYYYUtils
 
+static const void *kCurrentIPRequestCityCodeKey = &kCurrentIPRequestCityCodeKey;
+
++ (void)processAndApplyIPLocationToLabel:(UILabel *)label forModel:(AWEAwemeModel *)model withLabelColor:(NSString *)colorHexString {
+    NSString *originalText = label.text ?: @"";
+    NSString *cityCode = model.cityCode;
+
+    if (cityCode.length == 0) {
+        return;
+    }
+
+    objc_setAssociatedObject(label, kCurrentIPRequestCityCodeKey, cityCode, OBJC_ASSOCIATION_COPY_NONATOMIC);
+
+    NSString *cityName = [CityManager.sharedInstance getCityNameWithCode:cityCode];
+    NSString *provinceName = [CityManager.sharedInstance getProvinceNameWithCode:cityCode];
+
+    if (!cityName || cityName.length == 0) {
+        NSString *cacheKey = cityCode;
+        static NSCache *geoNamesCache = nil;
+        static dispatch_once_t onceToken;
+        dispatch_once(&onceToken, ^{
+          geoNamesCache = [[NSCache alloc] init];
+          geoNamesCache.name = @"com.dyyy.geonames.cache";
+          geoNamesCache.countLimit = 1000;
+        });
+
+        // 1 & 2. 查内存和磁盘缓存
+        NSDictionary *cachedData = [geoNamesCache objectForKey:cacheKey];
+        if (!cachedData) {
+            NSString *cachesDir = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) firstObject];
+            NSString *geoNamesCacheDir = [cachesDir stringByAppendingPathComponent:@"DYYYGeoNamesCache"];
+            NSFileManager *fileManager = [NSFileManager defaultManager];
+            if (![fileManager fileExistsAtPath:geoNamesCacheDir]) {
+                [fileManager createDirectoryAtPath:geoNamesCacheDir withIntermediateDirectories:YES attributes:nil error:nil];
+            }
+            NSString *cacheFilePath = [geoNamesCacheDir stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.plist", cacheKey]];
+            if ([fileManager fileExistsAtPath:cacheFilePath]) {
+                cachedData = [NSDictionary dictionaryWithContentsOfFile:cacheFilePath];
+                if (cachedData) {
+                    [geoNamesCache setObject:cachedData forKey:cacheKey];
+                }
+            }
+        }
+
+        // 3. 处理缓存数据或发起网络请求
+        if (cachedData) {
+            NSString *countryName = cachedData[@"countryName"];
+            NSString *adminName1 = cachedData[@"adminName1"];
+            NSString *localName = cachedData[@"name"];
+            NSString *displayLocation = @"未知";
+
+            if (countryName.length > 0) {
+                if (adminName1.length > 0 && localName.length > 0 && ![countryName isEqualToString:@"中国"] && ![countryName isEqualToString:localName]) {
+                    displayLocation = [NSString stringWithFormat:@"%@ %@ %@", countryName, adminName1, localName];
+                } else if (localName.length > 0 && ![countryName isEqualToString:localName]) {
+                    displayLocation = [NSString stringWithFormat:@"%@ %@", countryName, localName];
+                } else {
+                    displayLocation = countryName;
+                }
+            } else if (localName.length > 0) {
+                displayLocation = localName;
+            }
+
+            dispatch_async(dispatch_get_main_queue(), ^{
+              NSString *currentRequestCode = objc_getAssociatedObject(label, kCurrentIPRequestCityCodeKey);
+              if (![currentRequestCode isEqualToString:cityCode]) {
+                  return;
+              }
+
+              NSString *currentLabelText = label.text ?: @"";
+              if ([currentLabelText containsString:@"IP属地："]) {
+                  NSRange range = [currentLabelText rangeOfString:@"IP属地："];
+                  if (range.location != NSNotFound) {
+                      NSString *baseText = [currentLabelText substringToIndex:range.location];
+                      if (![currentLabelText containsString:displayLocation]) {
+                          label.text = [NSString stringWithFormat:@"%@IP属地：%@", baseText, displayLocation];
+                      }
+                  }
+              } else {
+                  if (currentLabelText.length > 0 && ![displayLocation isEqualToString:@"未知"]) {
+                      label.text = [NSString stringWithFormat:@"%@  IP属地：%@", currentLabelText, displayLocation];
+                  } else if (![displayLocation isEqualToString:@"未知"]) {
+                      label.text = [NSString stringWithFormat:@"IP属地：%@", displayLocation];
+                  }
+              }
+              [DYYYUtils applyColorSettingsToLabel:label colorHexString:colorHexString];
+            });
+        } else {
+            [CityManager fetchLocationWithGeonameId:cityCode
+                                  completionHandler:^(NSDictionary *locationInfo, NSError *error) {
+                                    __block NSString *displayLocation = @"未知";
+
+                                    if (error) {
+                                        if ([error.domain isEqualToString:DYYYGeonamesErrorDomain] && error.code == 11) {
+                                            displayLocation = error.localizedDescription;
+                                        } else {
+                                            NSLog(@"[DYYY] GeoNames fetch failed: %@", error.localizedDescription);
+                                            return;
+                                        }
+                                    } else if (locationInfo) {
+                                        NSString *countryName = locationInfo[@"countryName"];
+                                        NSString *adminName1 = locationInfo[@"adminName1"];
+                                        NSString *localName = locationInfo[@"name"];
+
+                                        if (countryName.length > 0) {
+                                            if (adminName1.length > 0 && localName.length > 0 && ![countryName isEqualToString:@"中国"] && ![countryName isEqualToString:localName]) {
+                                                displayLocation = [NSString stringWithFormat:@"%@ %@ %@", countryName, adminName1, localName];
+                                            } else if (localName.length > 0 && ![countryName isEqualToString:localName]) {
+                                                displayLocation = [NSString stringWithFormat:@"%@ %@", countryName, localName];
+                                            } else {
+                                                displayLocation = countryName;
+                                            }
+                                        } else if (localName.length > 0) {
+                                            displayLocation = localName;
+                                        }
+
+                                        if (![displayLocation isEqualToString:@"未知"]) {
+                                            [geoNamesCache setObject:locationInfo forKey:cacheKey];
+                                            NSString *cachesDir = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) firstObject];
+                                            NSString *geoNamesCacheDir = [cachesDir stringByAppendingPathComponent:@"DYYYGeoNamesCache"];
+                                            NSString *cacheFilePath = [geoNamesCacheDir stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.plist", cacheKey]];
+                                            [locationInfo writeToFile:cacheFilePath atomically:YES];
+                                        }
+                                    }
+
+                                    dispatch_async(dispatch_get_main_queue(), ^{
+                                      NSString *currentRequestCode = objc_getAssociatedObject(label, kCurrentIPRequestCityCodeKey);
+                                      if (![currentRequestCode isEqualToString:cityCode]) {
+                                          return;
+                                      }
+
+                                      NSString *currentLabelText = label.text ?: @"";
+                                      if ([currentLabelText containsString:@"IP属地："]) {
+                                          NSRange range = [currentLabelText rangeOfString:@"IP属地："];
+                                          if (range.location != NSNotFound) {
+                                              NSString *baseText = [currentLabelText substringToIndex:range.location];
+                                              if (![currentLabelText containsString:displayLocation]) {
+                                                  label.text = [NSString stringWithFormat:@"%@IP属地：%@", baseText, displayLocation];
+                                              }
+                                          }
+                                      } else {
+                                          if (currentLabelText.length > 0 && ![displayLocation isEqualToString:@"未知"]) {
+                                              label.text = [NSString stringWithFormat:@"%@  IP属地：%@", currentLabelText, displayLocation];
+                                          } else if (![displayLocation isEqualToString:@"未知"]) {
+                                              label.text = [NSString stringWithFormat:@"IP属地：%@", displayLocation];
+                                          }
+                                      }
+                                      [DYYYUtils applyColorSettingsToLabel:label colorHexString:colorHexString];
+                                    });
+                                  }];
+        }
+    }
+
+    else if (![originalText containsString:cityName]) {
+        BOOL isDirectCity = [provinceName isEqualToString:cityName] || ([cityCode hasPrefix:@"11"] || [cityCode hasPrefix:@"12"] || [cityCode hasPrefix:@"31"] || [cityCode hasPrefix:@"50"]);
+        if (!model.ipAttribution) {
+            if (isDirectCity) {
+                label.text = [NSString stringWithFormat:@"%@  IP属地：%@", originalText, cityName];
+            } else {
+                label.text = [NSString stringWithFormat:@"%@  IP属地：%@ %@", originalText, provinceName, cityName];
+            }
+        } else {
+            BOOL containsProvince = [originalText containsString:provinceName];
+            BOOL containsCity = [originalText containsString:cityName];
+            if (containsProvince && !isDirectCity && !containsCity) {
+                label.text = [NSString stringWithFormat:@"%@ %@", originalText, cityName];
+            } else if (isDirectCity && !containsCity) {
+                label.text = [NSString stringWithFormat:@"%@  IP属地：%@", originalText, cityName];
+            }
+        }
+        [DYYYUtils applyColorSettingsToLabel:label colorHexString:colorHexString];
+    }
+}
 #pragma mark - Public UI Utilities (公共 UI/窗口/控制器 工具)
 
 + (UIWindow *)getActiveWindow {
@@ -89,10 +263,12 @@
 
     NSMutableArray *resultViews = [NSMutableArray array];
 
-    [self _traverseViewHierarchy:view forClass:targetClass usingBlock:^BOOL(UIView *foundView) {
-        [resultViews addObject:foundView];
-        return NO;
-    }];
+    [self _traverseViewHierarchy:view
+                        forClass:targetClass
+                      usingBlock:^BOOL(UIView *foundView) {
+                        [resultViews addObject:foundView];
+                        return NO;
+                      }];
 
     return [resultViews copy];
 }
@@ -103,23 +279,27 @@
     }
 
     __block UIView *resultView = nil;
-    [self _traverseViewHierarchy:view forClass:targetClass usingBlock:^BOOL(UIView *foundView) {
-        resultView = foundView;
-        return YES;
-    }];
+    [self _traverseViewHierarchy:view
+                        forClass:targetClass
+                      usingBlock:^BOOL(UIView *foundView) {
+                        resultView = foundView;
+                        return YES;
+                      }];
 
     return resultView;
 }
 
 + (__kindof UIView *)nearestCommonSuperviewOfViews:(NSArray<UIView *> *)views {
-    if (views.count == 0) return nil;
-    if (views.count == 1) return views.firstObject.superview;
-    
+    if (views.count == 0)
+        return nil;
+    if (views.count == 1)
+        return views.firstObject.superview;
+
     UIView *commonSuperview = views.firstObject;
     for (UIView *view in views) {
         commonSuperview = [self _nearestCommonSuperviewOfView:commonSuperview andView:view];
     }
-    
+
     return commonSuperview;
 }
 
@@ -657,7 +837,7 @@ static os_unfair_lock _staticColorCreationLock = OS_UNFAIR_LOCK_INIT;
         [ancestors addObject:view];
         view = view.superview;
     }
-    
+
     view = second;
     while (view) {
         if ([ancestors containsObject:view]) {
@@ -665,7 +845,7 @@ static os_unfair_lock _staticColorCreationLock = OS_UNFAIR_LOCK_INIT;
         }
         view = view.superview;
     }
-    
+
     return nil;
 }
 
@@ -879,7 +1059,8 @@ BOOL isLeftInteractionStack(UIView *stackView) {
 }
 
 UIViewController *findViewControllerOfClass(UIViewController *vc, Class targetClass) {
-    if (!vc || !targetClass) return nil;
+    if (!vc || !targetClass)
+        return nil;
     return [DYYYUtils findViewControllerOfClass:targetClass inViewController:vc];
 }
 
