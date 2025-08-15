@@ -27,24 +27,46 @@ static const NSTimeInterval kDYYYDefaultFrameDelay = 0.1f;
 static const CGFloat kDYYYMillisecondsPerSecond = 1000.0f;
 
 static inline CGFloat DYYYFrameDelayForProperties(CFDictionaryRef properties) {
-    CGFloat delayTime = kDYYYDefaultFrameDelay;
-    if (properties) {
-        CFDictionaryRef gifDict = CFDictionaryGetValue(properties, kCGImagePropertyGIFDictionary);
-        if (gifDict) {
-            CFNumberRef delayNum = CFDictionaryGetValue(gifDict, kCGImagePropertyGIFDelayTime);
-            if (delayNum)
-                CFNumberGetValue(delayNum, kCFNumberFloatType, &delayTime);
+    if (!properties) {
+        return kDYYYDefaultFrameDelay;
+    }
+
+    CGFloat delayTime = 0.1f;
+
+    CFDictionaryRef gifDict = CFDictionaryGetValue(properties, kCGImagePropertyGIFDictionary);
+    if (gifDict) {
+        CFNumberRef unclampedDelayNum = CFDictionaryGetValue(gifDict, kCGImagePropertyGIFUnclampedDelayTime);
+        if (unclampedDelayNum) {
+            CFNumberGetValue(unclampedDelayNum, kCFNumberFloatType, &delayTime);
         } else {
-            CFDictionaryRef heifDict = CFDictionaryGetValue(properties, kCGImagePropertyHEIFDictionary);
-            if (heifDict) {
-                CFNumberRef delayNum = CFDictionaryGetValue(heifDict, kCGImagePropertyHEIFDelayTime);
-                if (delayNum)
-                    CFNumberGetValue(delayNum, kCFNumberFloatType, &delayTime);
+            CFNumberRef delayNum = CFDictionaryGetValue(gifDict, kCGImagePropertyGIFDelayTime);
+            if (delayNum) {
+                CFNumberGetValue(delayNum, kCFNumberFloatType, &delayTime);
             }
         }
     }
-    if (delayTime <= 0.0f) {
-        delayTime = kDYYYDefaultFrameDelay;
+    else {
+        CFDictionaryRef pngDict = CFDictionaryGetValue(properties, kCGImagePropertyPNGDictionary);
+        if (pngDict) {
+            CFNumberRef unclampedDelayNum = CFDictionaryGetValue(pngDict, kCGImagePropertyAPNGUnclampedDelayTime);
+            if (unclampedDelayNum) {
+                CFNumberGetValue(unclampedDelayNum, kCFNumberFloatType, &delayTime);
+            } else {
+                CFNumberRef delayNum = CFDictionaryGetValue(pngDict, kCGImagePropertyAPNGDelayTime);
+                if (delayNum) {
+                    CFNumberGetValue(delayNum, kCFNumberFloatType, &delayTime);
+                }
+            }
+        }
+        else {
+            CFDictionaryRef heifDict = CFDictionaryGetValue(properties, kCGImagePropertyHEIFDictionary);
+            if (heifDict) {
+                CFNumberRef delayNum = CFDictionaryGetValue(heifDict, kCGImagePropertyHEIFDelayTime);
+                if (delayNum) {
+                    CFNumberGetValue(delayNum, kCFNumberFloatType, &delayTime);
+                }
+            }
+        }
     }
     return delayTime;
 }
