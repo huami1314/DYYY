@@ -532,6 +532,10 @@
 %end
 
 %hook AWEFeedTopBarContainer
+- (void)didMoveToSuperview {
+    %orig;
+    applyTopBarTransparency(self);
+}
 - (void)setAlpha:(CGFloat)alpha {
     NSString *transparentValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTopBarTransparent"];
     if (transparentValue && transparentValue.length > 0) {
@@ -6418,8 +6422,7 @@ static Class TagViewClass = nil;
         if (shouldShiftUp) {
             ty -= targetHeight;
         }
-
-        targetTransform = CGAffineTransformMake(currentScale, 0, 0, currentScale, tx, ty);
+        targetTransform = CGAffineTransformMakeTranslation(0, -20);
 
         if (!CGAffineTransformEqualToTransform(self.transform, targetTransform)) {
             self.transform = targetTransform;
