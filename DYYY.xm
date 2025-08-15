@@ -659,14 +659,6 @@
 - (void)layoutSubviews {
     %orig;
 
-    UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
-
-    if ([vc isKindOfClass:%c(AWEPlayInteractionViewController)]) {
-        if (self.markLabel) {
-            self.markLabel.textColor = [UIColor whiteColor];
-        }
-    }
-
     if (DYYYGetBool(@"DYYYHideLocation")) {
         self.hidden = YES;
         return;
