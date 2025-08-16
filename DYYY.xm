@@ -2419,7 +2419,7 @@ static AWEIMReusableCommonCell *currentCell;
 
 %end
 
-// Swift 类组 - 这些会在 %ctor 中动态初始化
+// Swift 类组
 %group CommentHeaderGeneralGroup
 %hook AWECommentPanelHeaderSwiftImpl_CommentHeaderGeneralView
 - (void)layoutSubviews {
@@ -2463,30 +2463,6 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 %end
-// Swift 类初始化
-%ctor {
-
-    // 动态获取 Swift 类并初始化对应的组
-    Class commentHeaderGeneralClass = objc_getClass("AWECommentPanelHeaderSwiftImpl.CommentHeaderGeneralView");
-    if (commentHeaderGeneralClass) {
-        %init(CommentHeaderGeneralGroup, AWECommentPanelHeaderSwiftImpl_CommentHeaderGeneralView = commentHeaderGeneralClass);
-    }
-
-    Class commentHeaderGoodsClass = objc_getClass("AWECommentPanelHeaderSwiftImpl.CommentHeaderGoodsView");
-    if (commentHeaderGoodsClass) {
-        %init(CommentHeaderGoodsGroup, AWECommentPanelHeaderSwiftImpl_CommentHeaderGoodsView = commentHeaderGoodsClass);
-    }
-
-    Class commentHeaderTemplateClass = objc_getClass("AWECommentPanelHeaderSwiftImpl.CommentHeaderTemplateAnchorView");
-    if (commentHeaderTemplateClass) {
-        %init(CommentHeaderTemplateGroup, AWECommentPanelHeaderSwiftImpl_CommentHeaderTemplateAnchorView = commentHeaderTemplateClass);
-    }
-
-    Class tipsVCClass = objc_getClass("AWECommentPanelListSwiftImpl.CommentBottomTipsContainerViewController");
-    if (tipsVCClass) {
-        %init(CommentBottomTipsVCGroup, AWECommentPanelListSwiftImpl_CommentBottomTipsContainerViewController = tipsVCClass);
-    }
-}
 
 // 去除隐藏大家都在搜后的留白
 %hook AWESearchAnchorListModel
@@ -6872,38 +6848,6 @@ static NSString *const kStreamlineSidebarKey = @"DYYYHideSidebarElements";
 
 %end
 
-// Swift 类初始化
-%ctor {
-
-    // 初始化红包激励挂件容器视图类组
-    Class incentivePendantClass = objc_getClass("AWEIncentiveSwiftImplDOUYINLite.IncentivePendantContainerView");
-    if (incentivePendantClass) {
-        %init(IncentivePendantGroup, AWEIncentiveSwiftImplDOUYINLite_IncentivePendantContainerView = incentivePendantClass);
-    }
-    Class imageContentClass = objc_getClass("BDMultiContentContainer.ImageContentView");
-    if (imageContentClass) {
-        %init(BDMultiContentImageViewGroup, BDMultiContentContainer_ImageContentView = imageContentClass);
-    }
-}
-
-%ctor {
-    %init(DYYYSettingsGesture);
-    if (DYYYGetBool(@"DYYYUserAgreementAccepted")) {
-        static dispatch_once_t onceToken;
-        dispatch_once(&onceToken, ^{
-          Class wSwiftImpl = objc_getClass("AWECommentInputViewSwiftImpl.CommentInputContainerView");
-          %init(CommentInputContainerView = wSwiftImpl);
-        });
-        BOOL isAutoPlayEnabled = DYYYGetBool(@"DYYYEnableAutoPlay");
-        if (isAutoPlayEnabled) {
-            %init(AutoPlay);
-        }
-        if (DYYYGetBool(@"DYYYForceDownloadEmotion")) {
-            %init(EnableStickerSaveMenu);
-        }
-    }
-}
-
 // 隐藏键盘 AI
 static __weak UIView *cachedHideView = nil;
 static void hideParentViewsSubviews(UIView *view) {
@@ -6923,6 +6867,7 @@ static void hideParentViewsSubviews(UIView *view) {
         subview.hidden = YES;
     }
 }
+
 // 递归查找目标视图
 static void findTargetViewInView(UIView *view) {
     if (cachedHideView)
@@ -6939,8 +6884,54 @@ static void findTargetViewInView(UIView *view) {
 }
 
 %ctor {
-    // 注册键盘通知
+    %init(DYYYSettingsGesture);
     if (DYYYGetBool(@"DYYYUserAgreementAccepted")) {
+        static dispatch_once_t onceToken;
+        dispatch_once(&onceToken, ^{
+          Class wSwiftImpl = objc_getClass("AWECommentInputViewSwiftImpl.CommentInputContainerView");
+          %init(CommentInputContainerView = wSwiftImpl);
+        });
+        BOOL isAutoPlayEnabled = DYYYGetBool(@"DYYYEnableAutoPlay");
+        if (isAutoPlayEnabled) {
+            %init(AutoPlay);
+        }
+        if (DYYYGetBool(@"DYYYForceDownloadEmotion")) {
+            %init(EnableStickerSaveMenu);
+        }
+        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+        isFloatSpeedButtonEnabled = [defaults boolForKey:@"DYYYEnableFloatSpeedButton"];
+
+        // 初始化红包激励挂件容器视图类组
+        Class incentivePendantClass = objc_getClass("AWEIncentiveSwiftImplDOUYINLite.IncentivePendantContainerView");
+        if (incentivePendantClass) {
+            %init(IncentivePendantGroup, AWEIncentiveSwiftImplDOUYINLite_IncentivePendantContainerView = incentivePendantClass);
+        }
+        Class imageContentClass = objc_getClass("BDMultiContentContainer.ImageContentView");
+        if (imageContentClass) {
+            %init(BDMultiContentImageViewGroup, BDMultiContentContainer_ImageContentView = imageContentClass);
+        }
+
+        // 动态获取 Swift 类并初始化对应的组
+        Class commentHeaderGeneralClass = objc_getClass("AWECommentPanelHeaderSwiftImpl.CommentHeaderGeneralView");
+        if (commentHeaderGeneralClass) {
+            %init(CommentHeaderGeneralGroup, AWECommentPanelHeaderSwiftImpl_CommentHeaderGeneralView = commentHeaderGeneralClass);
+        }
+
+        Class commentHeaderGoodsClass = objc_getClass("AWECommentPanelHeaderSwiftImpl.CommentHeaderGoodsView");
+        if (commentHeaderGoodsClass) {
+            %init(CommentHeaderGoodsGroup, AWECommentPanelHeaderSwiftImpl_CommentHeaderGoodsView = commentHeaderGoodsClass);
+        }
+
+        Class commentHeaderTemplateClass = objc_getClass("AWECommentPanelHeaderSwiftImpl.CommentHeaderTemplateAnchorView");
+        if (commentHeaderTemplateClass) {
+            %init(CommentHeaderTemplateGroup, AWECommentPanelHeaderSwiftImpl_CommentHeaderTemplateAnchorView = commentHeaderTemplateClass);
+        }
+
+        Class tipsVCClass = objc_getClass("AWECommentPanelListSwiftImpl.CommentBottomTipsContainerViewController");
+        if (tipsVCClass) {
+            %init(CommentBottomTipsVCGroup, AWECommentPanelListSwiftImpl_CommentBottomTipsContainerViewController = tipsVCClass);
+        }
+
         [[NSNotificationCenter defaultCenter] addObserverForName:UIKeyboardWillShowNotification
                                                           object:nil
                                                            queue:[NSOperationQueue mainQueue]
@@ -6960,10 +6951,4 @@ static void findTargetViewInView(UIView *view) {
                                                         }
                                                       }];
     }
-}
-
-%ctor {
-    signal(SIGSEGV, SIG_IGN);
-    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    isFloatSpeedButtonEnabled = [defaults boolForKey:@"DYYYEnableFloatSpeedButton"];
 }
