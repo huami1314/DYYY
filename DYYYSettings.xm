@@ -1918,7 +1918,7 @@ extern "C"
           @{
               @"identifier" : @"DYYYForceDownloadEmotion",
               @"title" : @"保存评论区表情包",
-              @"subTitle" : @"iOS 17+的用户请长按表情本身保存",
+              @"subTitle" : @"长按评论区表情本身保存",
               @"detail" : @"",
               @"cellType" : @37,
               @"imageName" : @"ic_emoji_outlined"

@@ -1967,67 +1967,6 @@ bool commentLivePhotoNotWaterMark = DYYYGetBool(@"DYYYCommentLivePhotoNotWaterMa
 }
 %end
 
-%hook _TtC33AWECommentLongPressPanelSwiftImpl37CommentLongPressPanelSaveImageElement
-
-static BOOL isDownloadFlied = NO;
-
-- (BOOL)elementShouldShow {
-    BOOL DYYYForceDownloadEmotion = DYYYGetBool(@"DYYYForceDownloadEmotion");
-    if (DYYYForceDownloadEmotion) {
-        AWECommentLongPressPanelContext *commentPageContext = [self commentPageContext];
-        AWECommentModel *selectdComment = [commentPageContext selectdComment];
-        if (!selectdComment) {
-            AWECommentLongPressPanelParam *params = [commentPageContext params];
-            selectdComment = [params selectdComment];
-        }
-        AWEIMStickerModel *sticker = [selectdComment sticker];
-        if (sticker) {
-            AWEURLModel *staticURLModel = [sticker staticURLModel];
-            NSArray *originURLList = [staticURLModel originURLList];
-            if (originURLList.count > 0) {
-                return YES;
-            }
-        }
-    }
-    return %orig;
-}
-
-- (void)elementTapped {
-    BOOL DYYYForceDownloadEmotion = DYYYGetBool(@"DYYYForceDownloadEmotion");
-    if (DYYYForceDownloadEmotion) {
-        AWECommentLongPressPanelContext *commentPageContext = [self commentPageContext];
-        AWECommentModel *selectdComment = [commentPageContext selectdComment];
-        if (!selectdComment) {
-            AWECommentLongPressPanelParam *params = [commentPageContext params];
-            selectdComment = [params selectdComment];
-        }
-        AWEIMStickerModel *sticker = [selectdComment sticker];
-        if (sticker) {
-            AWEURLModel *staticURLModel = [sticker staticURLModel];
-            NSArray *originURLList = [staticURLModel originURLList];
-            if (originURLList.count > 0) {
-                NSString *urlString = @"";
-                if (isDownloadFlied) {
-                    urlString = originURLList[originURLList.count - 1];
-                    isDownloadFlied = NO;
-                } else {
-                    urlString = originURLList[0];
-                }
-
-                NSURL *heifURL = [NSURL URLWithString:urlString];
-                [DYYYManager downloadMedia:heifURL
-                                 mediaType:MediaTypeHeic
-                                     audio:nil
-                                completion:^(BOOL success){
-                                }];
-                return;
-            }
-        }
-    }
-    %orig;
-}
-%end
-
 %group EnableStickerSaveMenu
 static __weak YYAnimatedImageView *targetStickerView = nil;
 
