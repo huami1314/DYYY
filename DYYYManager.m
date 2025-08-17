@@ -26,6 +26,50 @@
 static const NSTimeInterval kDYYYDefaultFrameDelay = 0.1f;
 static const CGFloat kDYYYMillisecondsPerSecond = 1000.0f;
 
+static inline CGFloat DYYYFrameDelayForProperties(CFDictionaryRef properties) {
+    if (!properties) {
+        return kDYYYDefaultFrameDelay;
+    }
+
+    CGFloat delayTime = 0.1f;
+
+    CFDictionaryRef gifDict = CFDictionaryGetValue(properties, kCGImagePropertyGIFDictionary);
+    if (gifDict) {
+        CFNumberRef unclampedDelayNum = CFDictionaryGetValue(gifDict, kCGImagePropertyGIFUnclampedDelayTime);
+        if (unclampedDelayNum) {
+            CFNumberGetValue(unclampedDelayNum, kCFNumberFloatType, &delayTime);
+        } else {
+            CFNumberRef delayNum = CFDictionaryGetValue(gifDict, kCGImagePropertyGIFDelayTime);
+            if (delayNum) {
+                CFNumberGetValue(delayNum, kCFNumberFloatType, &delayTime);
+            }
+        }
+    }
+    else {
+        CFDictionaryRef pngDict = CFDictionaryGetValue(properties, kCGImagePropertyPNGDictionary);
+        if (pngDict) {
+            CFNumberRef unclampedDelayNum = CFDictionaryGetValue(pngDict, kCGImagePropertyAPNGUnclampedDelayTime);
+            if (unclampedDelayNum) {
+                CFNumberGetValue(unclampedDelayNum, kCFNumberFloatType, &delayTime);
+            } else {
+                CFNumberRef delayNum = CFDictionaryGetValue(pngDict, kCGImagePropertyAPNGDelayTime);
+                if (delayNum) {
+                    CFNumberGetValue(delayNum, kCFNumberFloatType, &delayTime);
+                }
+            }
+        }
+        else {
+            CFDictionaryRef heifDict = CFDictionaryGetValue(properties, kCGImagePropertyHEIFDictionary);
+            if (heifDict) {
+                CFNumberRef delayNum = CFDictionaryGetValue(heifDict, kCGImagePropertyHEIFDelayTime);
+                if (delayNum) {
+                    CFNumberGetValue(delayNum, kCFNumberFloatType, &delayTime);
+                }
+            }
+        }
+    }
+    return delayTime;
+}
 
 @interface DYYYManager () {
     AVAssetExportSession *session;
@@ -123,6 +167,29 @@ static const CGFloat kDYYYMillisecondsPerSecond = 1000.0f;
                                           }
                                       }
                                     }];
+              } else if ([actualFormat isEqualToString:@"heic"] || [actualFormat isEqualToString:@"heif"]) {
+                  // HEIC/HEIF格式处理
+                  [self convertHeicToGif:mediaURL
+                              completion:^(NSURL *gifURL, BOOL success) {
+                                if (success && gifURL) {
+                                    [self saveGifToPhotoLibrary:gifURL
+                                                      mediaType:mediaType
+                                                     completion:^{
+                                                       // 清理原始文件
+                                                       [[NSFileManager defaultManager] removeItemAtPath:mediaURL.path error:nil];
+                                                       if (completion) {
+                                                           completion();
+                                                       }
+                                                     }];
+                                } else {
+                                    [DYYYUtils showToast:@"转换失败"];
+                                    // 清理临时文件
+                                    [[NSFileManager defaultManager] removeItemAtPath:mediaURL.path error:nil];
+                                    if (completion) {
+                                        completion();
+                                    }
+                                }
+                              }];
               } else if ([actualFormat isEqualToString:@"gif"]) {
                   // 已经是GIF格式，直接保存
                   [self saveGifToPhotoLibrary:mediaURL mediaType:mediaType completion:completion];
@@ -536,6 +603,72 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width, in
     if (srcData && dstData) {
         memcpy(dstData, srcData, bytesPerRow * height);
     }
+}
+
+// 将HEIC转换为GIF的方法
++ (void)convertHeicToGif:(NSURL *)heicURL completion:(void (^)(NSURL *gifURL, BOOL success))completion {
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+      // 1. 创建ImageSource
+      NSDictionary *options = @{(__bridge NSString *)kCGImageSourceTypeIdentifierHint : (__bridge NSString *)kUTTypeHEIC, (__bridge NSString *)kCGImageSourceShouldCache : @NO};
+      CGImageSourceRef src = CGImageSourceCreateWithURL((__bridge CFURLRef)heicURL, (__bridge CFDictionaryRef)options);
+      if (!src) {
+          dispatch_async(dispatch_get_main_queue(), ^{
+            if (completion)
+                completion(nil, NO);
+          });
+          return;
+      }
+
+      // 2. 获取帧数
+      size_t count = CGImageSourceGetCount(src);
+
+      // 3. 生成GIF路径
+      NSString *gifFileName = [[heicURL.lastPathComponent stringByDeletingPathExtension] stringByAppendingPathExtension:@"gif"];
+      NSURL *gifURL = [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:gifFileName]];
+
+      // 4. GIF属性
+      NSDictionary *gifProperties = @{(__bridge NSString *)kCGImagePropertyGIFDictionary : @{(__bridge NSString *)kCGImagePropertyGIFLoopCount : @0}};
+
+      // 5. 创建GIF目标
+      CGImageDestinationRef dest = CGImageDestinationCreateWithURL((__bridge CFURLRef)gifURL, kUTTypeGIF, count, NULL);
+      if (!dest) {
+          CFRelease(src);
+          dispatch_async(dispatch_get_main_queue(), ^{
+            if (completion)
+                completion(nil, NO);
+          });
+          return;
+      }
+      CGImageDestinationSetProperties(dest, (__bridge CFDictionaryRef)gifProperties);
+
+      // 6. 遍历帧并写入GIF
+      for (size_t i = 0; i < count; i++) {
+          CGImageRef imgRef = CGImageSourceCreateImageAtIndex(src, i, NULL);
+
+          // 获取帧延迟
+          CFDictionaryRef properties = CGImageSourceCopyPropertiesAtIndex(src, i, NULL);
+          CGFloat delayTime = DYYYFrameDelayForProperties(properties);
+          if (properties)
+              CFRelease(properties);
+
+          NSDictionary *frameProps = @{(__bridge NSString *)kCGImagePropertyGIFDictionary : @{(__bridge NSString *)kCGImagePropertyGIFDelayTime : @(delayTime)}};
+
+          if (imgRef) {
+              CGImageDestinationAddImage(dest, imgRef, (__bridge CFDictionaryRef)frameProps);
+              CGImageRelease(imgRef);
+          }
+      }
+
+      // 7. 完成GIF生成
+      BOOL success = CGImageDestinationFinalize(dest);
+      CFRelease(dest);
+      CFRelease(src);
+
+      dispatch_async(dispatch_get_main_queue(), ^{
+        if (completion)
+            completion(gifURL, success);
+      });
+    });
 }
 
 + (void)downloadLivePhoto:(NSURL *)imageURL videoURL:(NSURL *)videoURL completion:(void (^)(void))completion {
@@ -3207,7 +3340,33 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width, in
         [DYYYUtils showToast:@"无法获取表情URL"];
         return;
     }
-    [DYYYUtils showToast:@"不支持保存HEIF格式的表情"];
+    [DYYYManager convertHeicToGif:heifURL
+                       completion:^(NSURL *gifURL, BOOL success) {
+                         if (!success || !gifURL) {
+                             [DYYYUtils showToast:@"表情转换失败"];
+                             return;
+                         }
+                         [[PHPhotoLibrary sharedPhotoLibrary]
+                             performChanges:^{
+                               PHAssetCreationRequest *request = [PHAssetCreationRequest creationRequestForAsset];
+                               [request addResourceWithType:PHAssetResourceTypePhoto fileURL:gifURL options:nil];
+                             }
+                             completionHandler:^(BOOL success, NSError *_Nullable error) {
+                               dispatch_async(dispatch_get_main_queue(), ^{
+                                 if (success) {
+                                     [DYYYToast showSuccessToastWithMessage:@"已保存到相册"];
+                                 } else {
+                                     NSString *errorMsg = error ? error.localizedDescription : @"未知错误";
+                                     [DYYYUtils showToast:[NSString stringWithFormat:@"保存失败: %@", errorMsg]];
+                                 }
+                                 NSError *removeError = nil;
+                                 [[NSFileManager defaultManager] removeItemAtURL:gifURL error:&removeError];
+                                 if (removeError) {
+                                     NSLog(@"删除临时转换文件失败: %@", removeError);
+                                 }
+                               });
+                             }];
+                       }];
 }
 + (NSArray *)getImagesFromYYAnimatedImageView:(YYAnimatedImageView *)imageView {
     if (!imageView || !imageView.image) {
