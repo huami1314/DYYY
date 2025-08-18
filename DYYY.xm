@@ -6081,6 +6081,7 @@ static Class TagViewClass = nil;
         }
         attempts = 0;
         pureModeSet = NO;
+        %orig(alpha);
     }
 
     // 倍速和清屏按钮的状态控制
