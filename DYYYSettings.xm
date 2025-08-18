@@ -418,7 +418,7 @@ extern "C"
             @"title" : @"启用首页净化",
             @"detail" : @"",
             @"cellType" : @6,
-            @"imageName" : @"ic_broom_outlined"},
+            @"imageName" : @"ic_rectangleportraittriangle_outlined_20"},
           @{@"identifier" : @"DYYYEnableFullScreen",
             @"title" : @"启用首页全屏",
             @"detail" : @"",

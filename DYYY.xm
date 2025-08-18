@@ -471,66 +471,6 @@
 
 %end
 
-%hook AWEFeedContainerContentView
-- (void)setAlpha:(CGFloat)alpha {
-    // 纯净模式功能
-    static dispatch_source_t timer = nil;
-    static int attempts = 0;
-    static BOOL pureModeSet = NO;
-    if (DYYYGetBool(@"DYYYEnablePure")) {
-        %orig(0.0);
-        if (pureModeSet) {
-            return;
-        }
-        if (!timer) {
-            timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
-            dispatch_source_set_timer(timer, DISPATCH_TIME_NOW, 0.5 * NSEC_PER_SEC, 0);
-            dispatch_source_set_event_handler(timer, ^{
-              UIWindow *keyWindow = [DYYYUtils getActiveWindow];
-              if (keyWindow && keyWindow.rootViewController) {
-                  UIViewController *feedVC = [DYYYUtils findViewControllerOfClass:NSClassFromString(@"AWEFeedTableViewController") inViewController:keyWindow.rootViewController];
-                  if (feedVC) {
-                      [feedVC setValue:@YES forKey:@"pureMode"];
-                      pureModeSet = YES;
-                      dispatch_source_cancel(timer);
-                      timer = nil;
-                      attempts = 0;
-                      return;
-                  }
-              }
-              attempts++;
-              if (attempts >= 10) {
-                  dispatch_source_cancel(timer);
-                  timer = nil;
-                  attempts = 0;
-              }
-            });
-            dispatch_resume(timer);
-        }
-        return;
-    } else {
-        if (timer) {
-            dispatch_source_cancel(timer);
-            timer = nil;
-        }
-        attempts = 0;
-        pureModeSet = NO;
-    }
-    NSString *transparentValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTopBarTransparent"];
-    if (transparentValue && transparentValue.length > 0) {
-        CGFloat alphaValue = [transparentValue floatValue];
-        if (alphaValue >= 0.0 && alphaValue <= 1.0) {
-            CGFloat finalAlpha = (alphaValue < 0.011) ? 0.011 : alphaValue;
-            %orig(finalAlpha);
-        } else {
-            %orig(1.0);
-        }
-    } else {
-        %orig(1.0);
-    }
-}
-%end
-
 %hook AWEFeedTopBarContainer
 - (void)didMoveToSuperview {
     %orig;
@@ -6098,6 +6038,62 @@ static Class TagViewClass = nil;
 
 %hook AWEElementStackView
 
+- (void)setAlpha:(CGFloat)alpha {
+    // 纯净模式功能
+    static dispatch_source_t timer = nil;
+    static int attempts = 0;
+    static BOOL pureModeSet = NO;
+    if (DYYYGetBool(@"DYYYEnablePure")) {
+        %orig(0.0);
+        if (pureModeSet) {
+            return;
+        }
+        if (!timer) {
+            timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
+            dispatch_source_set_timer(timer, DISPATCH_TIME_NOW, 0.5 * NSEC_PER_SEC, 0);
+            dispatch_source_set_event_handler(timer, ^{
+              UIWindow *keyWindow = [DYYYUtils getActiveWindow];
+              if (keyWindow && keyWindow.rootViewController) {
+                  UIViewController *feedVC = [DYYYUtils findViewControllerOfClass:NSClassFromString(@"AWEFeedTableViewController") inViewController:keyWindow.rootViewController];
+                  if (feedVC) {
+                      [feedVC setValue:@YES forKey:@"pureMode"];
+                      pureModeSet = YES;
+                      dispatch_source_cancel(timer);
+                      timer = nil;
+                      attempts = 0;
+                      return;
+                  }
+              }
+              attempts++;
+              if (attempts >= 10) {
+                  dispatch_source_cancel(timer);
+                  timer = nil;
+                  attempts = 0;
+              }
+            });
+            dispatch_resume(timer);
+        }
+        return;
+    } else {
+        if (timer) {
+            dispatch_source_cancel(timer);
+            timer = nil;
+        }
+        attempts = 0;
+        pureModeSet = NO;
+    }
+
+    // 倍速和清屏按钮的状态控制
+    if (speedButton && isFloatSpeedButtonEnabled) {
+        if (alpha == 0) {
+        } else if (alpha == 1) {
+            dyyyCommentViewVisible = NO;
+        }
+        updateSpeedButtonVisibility();
+        updateClearButtonVisibility();
+    }
+}
+
 + (void)initialize {
     GuideViewClass = NSClassFromString(@"AWELivePrestreamGuideView");
     MuteViewClass = NSClassFromString(@"AFDCancelMuteAwemeView");
@@ -6116,18 +6112,6 @@ static Class TagViewClass = nil;
     dyyyCommentViewVisible = YES;
     updateSpeedButtonVisibility();
     updateClearButtonVisibility();
-}
-
-- (void)setAlpha:(CGFloat)alpha {
-    %orig;
-    if (speedButton && isFloatSpeedButtonEnabled) {
-        if (alpha == 0) {
-        } else if (alpha == 1) {
-            dyyyCommentViewVisible = NO;
-        }
-        updateSpeedButtonVisibility();
-        updateClearButtonVisibility();
-    }
 }
 
 - (void)layoutSubviews {
