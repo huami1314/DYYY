@@ -298,7 +298,7 @@ extern "C"
               @"subTitle" : @"使用 Geonames.org 账号解析国外 IP 属地",
               @"detail" : @"",
               @"cellType" : @20,
-              @"imageName" : @"ic_location_outlined_20"
+              @"imageName" : @"ic_ip_outlined_12"
           },
           @{@"identifier" : @"DYYYLabelStyle",
             @"title" : @"文案标签样式",
