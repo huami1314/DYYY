@@ -15,4 +15,7 @@ DYYY
  
 ## 推荐迁移至活跃分支  
 👉 [Wtrwx/DYYY](https://github.com/Wtrwx/DYYY)  
-（持续维护、多人贡献）
+（持续维护、多人贡献） 
+
+## 合并说明  
+本项目代码已合并至 [wtrwx/DYYY](https://github.com/Wtrwx/DYYY) 的 **v2.2-8 版本**。  
