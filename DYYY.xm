@@ -262,7 +262,7 @@
 
     // 保险起见再fallback,遍历 subviews
     if (!gFeedCV) {
-        gFeedCV = [DYYYUtils findSubviewOfClass:[UICollectionView class] inView:self.view];
+        gFeedCV = [DYYYUtils findSubviewOfClass:[UICollectionView class] inContainer:self.view];
     }
 }
 %end
@@ -716,63 +716,6 @@
         [DYYYUtils clearBackgroundRecursivelyInView:self.view];
     }
 }
-%end
-
-// 重写全局透明方法
-%hook AWEPlayInteractionViewController
-- (UIView *)view {
-    NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
-    NSScanner *scanner = [NSScanner scannerWithString:transparentValue];
-    float alphaValue;
-    if (![scanner scanFloat:&alphaValue] || !scanner.isAtEnd || alphaValue < 0 || alphaValue > 1) {
-        return %orig;
-    }
-
-    UIView *originalView = %orig;
-    for (UIView *subview in originalView.subviews) {
-        if (subview.alpha > 0 && fabs(subview.alpha - alphaValue) > 0.01 && subview.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG) {
-            subview.alpha = alphaValue;
-        }
-    }
-
-    return originalView;
-}
-
-%end
-
-%hook AWEAwemeDetailNaviBarContainerView
-
-- (void)layoutSubviews {
-    %orig;
-
-    NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
-    NSScanner *scanner = [NSScanner scannerWithString:transparentValue];
-    float alphaValue;
-    if (![scanner scanFloat:&alphaValue] || !scanner.isAtEnd || alphaValue < 0 || alphaValue > 1) {
-        return;
-    }
-
-    if ([NSStringFromClass([self.superview class]) isEqualToString:NSStringFromClass([self class])])
-        return;
-
-    static char kDYYNaviAlphaCacheKey;
-    NSArray *alphaViews = objc_getAssociatedObject(self, &kDYYNaviAlphaCacheKey);
-    if (!alphaViews) {
-        NSMutableArray *tmp = [NSMutableArray array];
-        for (UIView *subview in self.subviews) {
-            if (subview.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG && subview.superview == self && subview.alpha > 0) {
-                [tmp addObject:subview];
-            }
-        }
-        alphaViews = [tmp copy];
-        objc_setAssociatedObject(self, &kDYYNaviAlphaCacheKey, alphaViews, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-    }
-
-    for (UIView *v in alphaViews) {
-        v.alpha = alphaValue;
-    }
-}
-
 %end
 
 %hook AWEFeedVideoButton
@@ -3470,26 +3413,6 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
-%hook AWEPlayInteractionViewController
-
-- (void)onVideoPlayerViewDoubleClicked:(id)arg1 {
-    BOOL isSwitchOn = DYYYGetBool(@"DYYYDisableDoubleTapLike");
-    if (!isSwitchOn) {
-        %orig;
-    }
-}
-%end
-
-%hook AFDPureModePageTapController
-
-- (void)onVideoPlayerViewDoubleClicked:(id)arg1 {
-    BOOL isSwitchOn = DYYYGetBool(@"DYYYDisableDoubleTapLike");
-    if (!isSwitchOn) {
-        %orig;
-    }
-}
-%end
-
 // 隐藏右上搜索，但可点击
 %hook AWEHPDiscoverFeedEntranceView
 
@@ -5318,7 +5241,7 @@ static CGFloat originalTabHeight = 0;
         return;
 
     Class containerViewClass = NSClassFromString(@"AWECommentInputViewSwiftImpl.CommentInputContainerView");
-    NSArray<UIView *> *containerViews = [DYYYUtils findAllSubviewsOfClass:containerViewClass inView:self.view];
+    NSArray<UIView *> *containerViews = [DYYYUtils findAllSubviewsOfClass:containerViewClass inContainer:self.view];
     for (UIView *containerView in containerViews) {
         for (UIView *subview in containerView.subviews) {
             if (subview.hidden == NO && subview.backgroundColor && CGColorGetAlpha(subview.backgroundColor.CGColor) == 1) {
@@ -5332,7 +5255,7 @@ static CGFloat originalTabHeight = 0;
     }
 
     Class middleContainerClass = NSClassFromString(@"AWECommentInputViewSwiftImpl.CommentInputViewMiddleContainer");
-    NSArray<UIView *> *middleContainers = [DYYYUtils findAllSubviewsOfClass:middleContainerClass inView:self.view];
+    NSArray<UIView *> *middleContainers = [DYYYUtils findAllSubviewsOfClass:middleContainerClass inContainer:self.view];
     for (UIView *middleContainer in middleContainers) {
         BOOL containsDanmu = NO;
         for (UIView *innerSubviewCheck in middleContainer.subviews) {
@@ -5500,7 +5423,62 @@ static CGFloat originalTabHeight = 0;
 
 %end
 
+static NSArray<Class> *kStackViewClasses = @[ NSClassFromString(@"AWEElementStackView"), NSClassFromString(@"IESLiveStackView") ];
+static char kCachedStackViewsKey;
+
+void applyGlobalTransparency(id targetObject) {
+    if (!targetObject) {
+        return;
+    }
+
+    NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
+    NSScanner *scanner = [NSScanner scannerWithString:transparentValue];
+    float alphaValue;
+    if (![scanner scanFloat:&alphaValue] || !scanner.isAtEnd || alphaValue < 0 || alphaValue > 1) {
+        return;
+    }
+
+    NSHashTable *cachedStackViews = objc_getAssociatedObject(targetObject, &kCachedStackViewsKey);
+    if (!cachedStackViews) {
+        cachedStackViews = [NSHashTable weakObjectsHashTable];
+        objc_setAssociatedObject(targetObject, &kCachedStackViewsKey, cachedStackViews, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+        for (Class stackViewClass in kStackViewClasses) {
+            NSArray *foundViews = [DYYYUtils findAllSubviewsOfClass:stackViewClass inContainer:targetObject];
+            for (UIView *view in foundViews) {
+                [cachedStackViews addObject:view];
+            }
+        }
+    }
+
+    if (cachedStackViews.count > 0) {
+        for (UIView *stackViews in cachedStackViews) {
+            if (stackViews.alpha > 0 && fabs(stackViews.alpha - alphaValue) > 0.01 && stackViews.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG) {
+                stackViews.alpha = alphaValue;
+            }
+        }
+    }
+}
+
+%hook AFDPureModePageTapController
+
+- (void)onVideoPlayerViewDoubleClicked:(id)arg1 {
+    BOOL isSwitchOn = DYYYGetBool(@"DYYYDisableDoubleTapLike");
+    if (!isSwitchOn) {
+        %orig;
+    }
+}
+
+%end
+
 %hook AWEPlayInteractionViewController
+
+- (void)onVideoPlayerViewDoubleClicked:(id)arg1 {
+    BOOL isSwitchOn = DYYYGetBool(@"DYYYDisableDoubleTapLike");
+    if (!isSwitchOn) {
+        %orig;
+    }
+}
 
 - (void)viewWillAppear:(BOOL)animated {
     %orig;
@@ -5512,12 +5490,15 @@ static CGFloat originalTabHeight = 0;
 
 - (void)viewDidLayoutSubviews {
     %orig;
+
+    applyGlobalTransparency(self);
+
     if (isFloatSpeedButtonEnabled) {
         BOOL hasRightStack = NO;
         Class stackClass = NSClassFromString(@"AWEElementStackView");
         for (UIView *sub in self.view.subviews) {
             if ([sub isKindOfClass:stackClass] && ([sub.accessibilityLabel isEqualToString:@"right"] || [DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEPlayInteractionUserAvatarView")
-                                                                                                                                   inView:self.view])) {
+                                                                                                                              inContainer:self.view])) {
                 hasRightStack = YES;
                 break;
             }
@@ -5545,7 +5526,7 @@ static CGFloat originalTabHeight = 0;
                 }
             }
             dyyyInteractionViewVisible = YES;
-            UIWindow *keyWindow = [UIApplication sharedApplication].keyWindow;
+            UIWindow *keyWindow = [DYYYUtils getActiveWindow];
             if (keyWindow && ![speedButton isDescendantOfView:keyWindow]) {
                 [keyWindow addSubview:speedButton];
                 [speedButton loadSavedPosition];
@@ -5554,8 +5535,8 @@ static CGFloat originalTabHeight = 0;
         }
     }
 
-    UIWindow *window = [UIApplication sharedApplication].keyWindow;
-    if (window && window.safeAreaInsets.bottom == 0) {
+    UIWindow *keyWindow = [DYYYUtils getActiveWindow];
+    if (keyWindow && keyWindow.safeAreaInsets.bottom == 0) {
         return;
     }
 
@@ -5610,7 +5591,7 @@ static CGFloat originalTabHeight = 0;
     Class stackClass = NSClassFromString(@"AWEElementStackView");
     for (UIView *sub in self.view.subviews) {
         if ([sub isKindOfClass:stackClass] && ([sub.accessibilityLabel isEqualToString:@"right"] || [DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEPlayInteractionUserAvatarView")
-                                                                                                                               inView:self.view])) {
+                                                                                                                          inContainer:self.view])) {
             hasRightStack = YES;
             break;
         }
@@ -5621,18 +5602,6 @@ static CGFloat originalTabHeight = 0;
         updateSpeedButtonVisibility();
         updateClearButtonVisibility();
     }
-}
-
-%new
-- (UIViewController *)firstAvailableUIViewController {
-    UIResponder *responder = [self.view nextResponder];
-    while (responder != nil) {
-        if ([responder isKindOfClass:[UIViewController class]]) {
-            return (UIViewController *)responder;
-        }
-        responder = [responder nextResponder];
-    }
-    return nil;
 }
 
 %new
@@ -5838,9 +5807,10 @@ static CGFloat originalTabHeight = 0;
         frame.size.height = self.superview.frame.size.height;
         self.frame = frame;
     } else if (tabHeight > 0) {
-        UIWindow *window = [UIApplication sharedApplication].keyWindow;
-        if (window && window.safeAreaInsets.bottom == 0)
+        UIWindow *keyWindow = [DYYYUtils getActiveWindow];
+        if (keyWindow && keyWindow.safeAreaInsets.bottom == 0) {
             return;
+        }
 
         CGRect frame = self.frame;
         frame.size.height = self.superview.frame.size.height - tabHeight;
@@ -5995,46 +5965,37 @@ static CGFloat originalTabHeight = 0;
 
 %hook AWELiveNewPreStreamViewController
 
-static NSArray<Class> *kTargetViewClasses = @[ NSClassFromString(@"AWEElementStackView"), NSClassFromString(@"IESLiveStackView") ];
-static char kCachedTargetViewsKey;
-static Class GuideViewClass = nil;
-static Class MuteViewClass = nil;
-static Class TagViewClass = nil;
+- (void)viewDidLayoutSubviews {
+    %orig;
+
+    applyGlobalTransparency(self);
+}
+
+%end
+
+%hook AWECommentInputViewController
 
 - (void)viewDidLayoutSubviews {
     %orig;
 
-    NSHashTable *cachedTargetViews = objc_getAssociatedObject(self, &kCachedTargetViewsKey);
-    if (!cachedTargetViews) {
-        cachedTargetViews = [NSHashTable weakObjectsHashTable];
-        objc_setAssociatedObject(self, &kCachedTargetViewsKey, cachedTargetViews, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-
-        UIViewController *PreStreamVC = (UIViewController *)self;
-        for (Class targetClass in kTargetViewClasses) {
-            NSArray *foundViews = [DYYYUtils findAllSubviewsOfClass:targetClass inView:PreStreamVC.view];
-            for (UIView *view in foundViews) {
-                [cachedTargetViews addObject:view];
-            }
-        }
-    }
-
-    if (cachedTargetViews.count > 0) {
-        NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
-        NSScanner *scanner = [NSScanner scannerWithString:transparentValue];
-        float alphaValue;
-        if (![scanner scanFloat:&alphaValue] || !scanner.isAtEnd || alphaValue < 0 || alphaValue > 1) {
-            return;
-        }
-
-        for (UIView *targetView in cachedTargetViews) {
-            if (targetView.alpha > 0 && fabs(targetView.alpha - alphaValue) > 0.01 && targetView.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG) {
-                targetView.alpha = alphaValue;
-            }
-        }
-    }
+    applyGlobalTransparency(self);
 }
 
 %end
+
+%hook AWEAwemeDetailNaviBarContainerView
+
+- (void)layoutSubviews {
+    %orig;
+
+    applyGlobalTransparency(self);
+}
+
+%end
+
+static Class GuideViewClass = nil;
+static Class MuteViewClass = nil;
+static Class TagViewClass = nil;
 
 %hook AWEElementStackView
 
@@ -6093,6 +6054,22 @@ static Class TagViewClass = nil;
         updateSpeedButtonVisibility();
         updateClearButtonVisibility();
     }
+
+    // 全局透明
+    CGFloat finalAlpha = alpha;
+    if (alpha > 0 && self.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG) {
+        NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
+        NSScanner *scanner = [NSScanner scannerWithString:transparentValue];
+        float alphaValue;
+
+        if ([scanner scanFloat:&alphaValue] && scanner.isAtEnd && alphaValue >= 0 && alphaValue <= 1) {
+            finalAlpha = alphaValue;
+        }
+    }
+
+    if (fabs(self.alpha - finalAlpha) > 0.01) {
+        %orig(finalAlpha);
+    }
 }
 
 + (void)initialize {
@@ -6120,22 +6097,8 @@ static Class TagViewClass = nil;
 
     UIViewController *viewController = [DYYYUtils firstAvailableViewControllerFromView:self];
 
-    if ([viewController isKindOfClass:%c(AWECommentInputViewController)]) {
-        NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
-        NSScanner *scanner = [NSScanner scannerWithString:transparentValue];
-        float alphaValue;
-        if (![scanner scanFloat:&alphaValue] || !scanner.isAtEnd || alphaValue < 0 || alphaValue > 1) {
-            return;
-        }
-
-        if (self.alpha > 0 && fabs(self.alpha - alphaValue) > 0.01 && self.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG) {
-            self.alpha = alphaValue;
-        }
-    }
-
     if ([viewController isKindOfClass:%c(AWELiveNewPreStreamViewController)]) {
         const BOOL shouldShiftUp = DYYYGetBool(@"DYYYEnableFullScreen");
-        const CGFloat targetHeight = tabHeight;
         const CGFloat labelScaleValue = DYYYGetFloat(@"DYYYNicknameScale");
         const CGFloat targetLabelScale = (labelScaleValue != 0.0) ? MAX(0.01, labelScaleValue) : 1.0;
         const CGFloat elementScaleValue = DYYYGetFloat(@"DYYYElementScale");
@@ -6144,16 +6107,21 @@ static Class TagViewClass = nil;
         CGAffineTransform targetTransform = CGAffineTransformIdentity;
         CGFloat boundsWidth = self.bounds.size.width;
         CGFloat currentScale = 1.0;
-        CGFloat tx = 0;
-        CGFloat ty = 0;
+        CGFloat targetHeight, tx, ty = 0;
+        UIWindow *keyWindow = [DYYYUtils getActiveWindow];
+        if (keyWindow && keyWindow.safeAreaInsets.bottom == 0) {
+            targetHeight = tabHeight - originalTabHeight;
+        } else {
+            targetHeight = tabHeight;
+        }
 
-        if ([DYYYUtils containsSubviewOfClass:GuideViewClass inView:self]) {
+        if ([DYYYUtils containsSubviewOfClass:GuideViewClass inContainer:self]) {
             currentScale = targetLabelScale;
             tx = 0; // 中对齐
-        } else if ([DYYYUtils containsSubviewOfClass:MuteViewClass inView:self]) {
+        } else if ([DYYYUtils containsSubviewOfClass:MuteViewClass inContainer:self]) {
             currentScale = targetElementScale;
             tx = (boundsWidth - boundsWidth * currentScale) / 2; // 右对齐
-        } else if ([DYYYUtils containsSubviewOfClass:TagViewClass inView:self]) {
+        } else if ([DYYYUtils containsSubviewOfClass:TagViewClass inContainer:self]) {
             currentScale = targetLabelScale;
             tx = (boundsWidth - boundsWidth * currentScale) / -2; // 左对齐
         }
@@ -6177,7 +6145,7 @@ static Class TagViewClass = nil;
 
     if ([viewController isKindOfClass:%c(AWEPlayInteractionViewController)]) {
         // 右侧元素的处理逻辑
-        if ([self.accessibilityLabel isEqualToString:@"right"] || [DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEPlayInteractionUserAvatarView") inView:self]) {
+        if ([self.accessibilityLabel isEqualToString:@"right"] || [DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEPlayInteractionUserAvatarView") inContainer:self]) {
             NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYElementScale"];
             self.transform = CGAffineTransformIdentity;
             if (scaleValue.length > 0) {
@@ -6198,7 +6166,7 @@ static Class TagViewClass = nil;
             }
         }
         // 左侧元素的处理逻辑
-        else if ([self.accessibilityLabel isEqualToString:@"left"] || [DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEFeedAnchorContainerView") inView:self]) {
+        else if ([self.accessibilityLabel isEqualToString:@"left"] || [DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEFeedAnchorContainerView") inContainer:self]) {
             NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
             if (scaleValue.length > 0) {
                 CGFloat scale = [scaleValue floatValue];
@@ -6226,7 +6194,7 @@ static Class TagViewClass = nil;
     UIViewController *viewController = [DYYYUtils firstAvailableViewControllerFromView:self];
     if ([viewController isKindOfClass:%c(AWEPlayInteractionViewController)]) {
 
-        if ([self.accessibilityLabel isEqualToString:@"left"] || [DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEFeedAnchorContainerView") inView:self]) {
+        if ([self.accessibilityLabel isEqualToString:@"left"] || [DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEFeedAnchorContainerView") inContainer:self]) {
             NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
             if (scaleValue.length > 0) {
                 CGFloat scale = [scaleValue floatValue];
@@ -6282,7 +6250,6 @@ static Class TagViewClass = nil;
 
     if ([viewController isKindOfClass:%c(AWELiveNewPreStreamViewController)]) {
         const BOOL shouldShiftUp = DYYYGetBool(@"DYYYEnableFullScreen");
-        const CGFloat targetHeight = tabHeight;
         const CGFloat labelScaleValue = DYYYGetFloat(@"DYYYNicknameScale");
         const CGFloat targetLabelScale = (labelScaleValue != 0.0) ? MAX(0.01, labelScaleValue) : 1.0;
         const CGFloat elementScaleValue = DYYYGetFloat(@"DYYYElementScale");
@@ -6291,16 +6258,21 @@ static Class TagViewClass = nil;
         CGAffineTransform targetTransform = CGAffineTransformIdentity;
         CGFloat boundsWidth = self.bounds.size.width;
         CGFloat currentScale = 1.0;
-        CGFloat tx = 0;
-        CGFloat ty = 0;
+        CGFloat targetHeight, tx, ty = 0;
+        UIWindow *keyWindow = [DYYYUtils getActiveWindow];
+        if (keyWindow && keyWindow.safeAreaInsets.bottom == 0) {
+            targetHeight = tabHeight - originalTabHeight;
+        } else {
+            targetHeight = tabHeight;
+        }
 
-        if ([DYYYUtils containsSubviewOfClass:GuideViewClass inView:self]) {
+        if ([DYYYUtils containsSubviewOfClass:GuideViewClass inContainer:self]) {
             currentScale = targetLabelScale;
             tx = 0; // 中对齐
-        } else if ([DYYYUtils containsSubviewOfClass:MuteViewClass inView:self]) {
+        } else if ([DYYYUtils containsSubviewOfClass:MuteViewClass inContainer:self]) {
             currentScale = targetElementScale;
             tx = (boundsWidth - boundsWidth * currentScale) / 2; // 右对齐
-        } else if ([DYYYUtils containsSubviewOfClass:TagViewClass inView:self]) {
+        } else if ([DYYYUtils containsSubviewOfClass:TagViewClass inContainer:self]) {
             currentScale = targetLabelScale;
             tx = (boundsWidth - boundsWidth * currentScale) / -2; // 左对齐
         }

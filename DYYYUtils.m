@@ -186,12 +186,23 @@ static const void *kCurrentIPRequestCityCodeKey = &kCurrentIPRequestCityCodeKey;
 #pragma mark - Public UI Utilities (公共 UI/窗口/控制器 工具)
 
 + (UIWindow *)getActiveWindow {
-    if (@available(iOS 15.0, *)) {
+    if (@available(iOS 13.0, *)) {
+        UIWindowScene *activeScene = nil;
         for (UIScene *scene in [UIApplication sharedApplication].connectedScenes) {
-            if ([scene isKindOfClass:[UIWindowScene class]] && scene.activationState == UISceneActivationStateForegroundActive) {
-                for (UIWindow *w in ((UIWindowScene *)scene).windows) {
-                    if (w.isKeyWindow)
-                        return w;
+            if (scene.activationState == UISceneActivationStateForegroundActive && [scene isKindOfClass:[UIWindowScene class]]) {
+                activeScene = (UIWindowScene *)scene;
+                break;
+            }
+        }
+
+        if (activeScene) {
+            if (@available(iOS 15.0, *)) {
+                return activeScene.keyWindow;
+            } else {
+                for (UIWindow *window in [UIApplication sharedApplication].windows) {
+                    if (window.windowScene == activeScene && window.isKeyWindow) {
+                        return window;
+                    }
                 }
             }
         }
@@ -199,7 +210,7 @@ static const void *kCurrentIPRequestCityCodeKey = &kCurrentIPRequestCityCodeKey;
     } else {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-        return [UIApplication sharedApplication].windows.firstObject;
+        return [UIApplication sharedApplication].keyWindow ?: [UIApplication sharedApplication].windows.firstObject;
 #pragma clang diagnostic pop
     }
 }
@@ -256,14 +267,20 @@ static const void *kCurrentIPRequestCityCodeKey = &kCurrentIPRequestCityCodeKey;
     return nil;
 }
 
-+ (NSArray<__kindof UIView *> *)findAllSubviewsOfClass:(Class)targetClass inView:(UIView *)view {
-    if (!targetClass || !view) {
++ (NSArray<__kindof UIView *> *)findAllSubviewsOfClass:(Class)targetClass inContainer:(id)container {
+    if (!targetClass || !container) {
         return @[];
     }
 
-    NSMutableArray *resultViews = [NSMutableArray array];
+    UIView *startView = nil;
+    if ([container isKindOfClass:[UIView class]]) {
+        startView = (UIView *)container;
+    } else if ([container isKindOfClass:[UIViewController class]]) {
+        startView = ((UIViewController *)container).view;
+    }
 
-    [self _traverseViewHierarchy:view
+    NSMutableArray *resultViews = [NSMutableArray array];
+    [self _traverseViewHierarchy:startView
                         forClass:targetClass
                       usingBlock:^BOOL(UIView *foundView) {
                         [resultViews addObject:foundView];
@@ -273,13 +290,20 @@ static const void *kCurrentIPRequestCityCodeKey = &kCurrentIPRequestCityCodeKey;
     return [resultViews copy];
 }
 
-+ (__kindof UIView *)findSubviewOfClass:(Class)targetClass inView:(UIView *)view {
-    if (!targetClass || !view) {
++ (__kindof UIView *)findSubviewOfClass:(Class)targetClass inContainer:(id)container {
+    if (!targetClass || !container) {
         return nil;
     }
 
+    UIView *startView = nil;
+    if ([container isKindOfClass:[UIView class]]) {
+        startView = (UIView *)container;
+    } else if ([container isKindOfClass:[UIViewController class]]) {
+        startView = ((UIViewController *)container).view;
+    }
+
     __block UIView *resultView = nil;
-    [self _traverseViewHierarchy:view
+    [self _traverseViewHierarchy:startView
                         forClass:targetClass
                       usingBlock:^BOOL(UIView *foundView) {
                         resultView = foundView;
@@ -298,13 +322,14 @@ static const void *kCurrentIPRequestCityCodeKey = &kCurrentIPRequestCityCodeKey;
     UIView *commonSuperview = views.firstObject;
     for (UIView *view in views) {
         commonSuperview = [self _nearestCommonSuperviewOfView:commonSuperview andView:view];
+        if (!commonSuperview) break;
     }
 
     return commonSuperview;
 }
 
-+ (BOOL)containsSubviewOfClass:(Class)targetClass inView:(UIView *)view {
-    return [self findSubviewOfClass:targetClass inView:view] != nil;
++ (BOOL)containsSubviewOfClass:(Class)targetClass inContainer:(id)container {
+    return [self findSubviewOfClass:targetClass inContainer:container] != nil;
 }
 
 + (void)applyBlurEffectToView:(UIView *)view transparency:(float)userTransparency blurViewTag:(NSInteger)tag {
@@ -1018,44 +1043,6 @@ NSString *cleanShareURL(NSString *url) {
 
 UIViewController *topView(void) {
     return [DYYYUtils topView];
-}
-
-BOOL isRightInteractionStack(UIView *stackView) {
-    if (!stackView)
-        return NO;
-    NSString *label = stackView.accessibilityLabel;
-    if (label) {
-        if ([label isEqualToString:@"right"])
-            return YES;
-        if ([label isEqualToString:@"left"])
-            return NO;
-    }
-    for (UIView *sub in stackView.subviews) {
-        if ([DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEPlayInteractionUserAvatarView") inView:sub])
-            return YES;
-        if ([DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEFeedAnchorContainerView") inView:sub])
-            return NO;
-    }
-    return NO;
-}
-
-BOOL isLeftInteractionStack(UIView *stackView) {
-    if (!stackView)
-        return NO;
-    NSString *label = stackView.accessibilityLabel;
-    if (label) {
-        if ([label isEqualToString:@"left"])
-            return YES;
-        if ([label isEqualToString:@"right"])
-            return NO;
-    }
-    for (UIView *sub in stackView.subviews) {
-        if ([DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEFeedAnchorContainerView") inView:sub])
-            return YES;
-        if ([DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEPlayInteractionUserAvatarView") inView:sub])
-            return NO;
-    }
-    return NO;
 }
 
 UIViewController *findViewControllerOfClass(UIViewController *vc, Class targetClass) {
