@@ -712,8 +712,6 @@
 
         // 应用毛玻璃效果
         [DYYYUtils applyBlurEffectToView:self.view transparency:userTransparency blurViewTag:999];
-
-        [DYYYUtils clearBackgroundRecursivelyInView:self.view];
     }
 }
 %end
@@ -1424,7 +1422,6 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
             continue;
         }
         subview.backgroundColor = [UIColor clearColor];
-        subview.opaque = NO;
         [self clearBackgroundRecursivelyInView:subview];
     }
 }
@@ -1455,7 +1452,6 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 
         [DYYYUtils applyBlurEffectToView:self.containerView transparency:userTransparency blurViewTag:9999];
         [DYYYUtils clearBackgroundRecursivelyInView:self.containerView];
-
         // 调用新的通用方法设置文本颜色，这里没有排除需求，所以传入 nil Block
         [DYYYUtils applyTextColorRecursively:[UIColor whiteColor] inView:self.containerView shouldExcludeViewBlock:nil];
     }
@@ -2363,12 +2359,10 @@ static AWEIMReusableCommonCell *currentCell;
 // 隐藏消息页顶栏头像气泡
 %hook AFDSkylightCellBubble
 - (void)layoutSubviews {
-    %orig;
-
     if (DYYYGetBool(@"DYYYHideAvatarBubble")) {
-        self.hidden = YES;
-        return;
+        [self removeFromSuperview];
     }
+    %orig;
 }
 %end
 
@@ -5379,14 +5373,6 @@ static CGFloat originalTabHeight = 0;
 
     BOOL enableBlur = DYYYGetBool(@"DYYYEnableCommentBlur");
     BOOL enableFS = DYYYGetBool(@"DYYYEnableFullScreen");
-    BOOL hideAvatar = DYYYGetBool(@"DYYYHideAvatarList");
-
-    Class SkylightListViewClass = NSClassFromString(@"AWEIMSkylightListView");
-    if (hideAvatar && SkylightListViewClass && [self isKindOfClass:SkylightListViewClass]) {
-        frame = CGRectZero;
-        %orig(frame);
-        return;
-    }
 
     UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
     Class DetailVCClass = NSClassFromString(@"AWEMixVideoPanelDetailTableViewController");
@@ -5421,6 +5407,17 @@ static CGFloat originalTabHeight = 0;
     %orig(frame);
 }
 
+%end
+
+%hook AWEIMSkylightListView
+- (void)setFrame:(CGRect)frame {
+    if (DYYYGetBool(@"DYYYHideAvatarList")) {
+        CGFloat scale = [UIScreen mainScreen].scale ?: 2.0;
+        CGFloat minH = MAX(1.0/scale, 0.5);
+        frame.size.height = minH;
+    }
+    %orig(frame);
+}
 %end
 
 static NSArray<Class> *kStackViewClasses = @[ NSClassFromString(@"AWEElementStackView"), NSClassFromString(@"IESLiveStackView") ];
