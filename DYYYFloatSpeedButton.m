@@ -87,6 +87,10 @@ void updateSpeedButtonUI() {
 FloatingSpeedButton *getSpeedButton(void) { return speedButton; }
 
 NSArray *findViewControllersInHierarchy(UIViewController *rootViewController) {
+    if (!rootViewController) {
+        return @[];
+    }
+
     NSMutableArray *viewControllers = [NSMutableArray array];
     [viewControllers addObject:rootViewController];
 
@@ -378,16 +382,19 @@ void updateSpeedButtonVisibility() {
     }
 
     if (!self.interactionController) {
-        UIViewController *topVC = [UIApplication sharedApplication].keyWindow.rootViewController;
-        while (topVC.presentedViewController) {
+        UIWindow *win = [DYYYUtils getActiveWindow];
+        UIViewController *topVC = win.rootViewController;
+        while (topVC && topVC.presentedViewController) {
             topVC = topVC.presentedViewController;
         }
 
-        Class PlayVCClass = NSClassFromString(@"AWEPlayInteractionViewController");
-        for (UIViewController *vc in findViewControllersInHierarchy(topVC)) {
-            if (PlayVCClass && [vc isKindOfClass:PlayVCClass]) {
-                self.interactionController = vc;
-                break;
+        if (topVC) {
+            Class PlayVCClass = NSClassFromString(@"AWEPlayInteractionViewController");
+            for (UIViewController *vc in findViewControllersInHierarchy(topVC)) {
+                if (PlayVCClass && [vc isKindOfClass:PlayVCClass]) {
+                    self.interactionController = vc;
+                    break;
+                }
             }
         }
     }
@@ -402,4 +409,3 @@ void updateSpeedButtonVisibility() {
     }
 }
 @end
-

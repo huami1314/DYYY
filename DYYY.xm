@@ -5648,12 +5648,13 @@ void applyGlobalTransparency(id targetObject) {
 
     BOOL speedApplied = NO;
 
-    UIViewController *rootVC = [UIApplication sharedApplication].keyWindow.rootViewController;
-    while (rootVC.presentedViewController) {
+    UIWindow *win = [DYYYUtils getActiveWindow];
+    UIViewController *rootVC = win.rootViewController;
+    while (rootVC && rootVC.presentedViewController) {
         rootVC = rootVC.presentedViewController;
     }
 
-    NSArray *viewControllers = findViewControllersInHierarchy(rootVC);
+    NSArray *viewControllers = rootVC ? findViewControllersInHierarchy(rootVC) : @[];
 
     for (UIViewController *vc in viewControllers) {
         if ([vc isKindOfClass:%c(AWEAwemePlayVideoViewController)]) {
