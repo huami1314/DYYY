@@ -4911,6 +4911,8 @@ static CGFloat originalTabHeight = 0;
         BOOL isFriendsSelected = NO;
         BOOL hideFriendsButton = DYYYGetBool(@"DYYYHideFriendsButton");
         Class generalButtonClass = %c(AWENormalModeTabBarGeneralButton);
+        Class plusButtonClass = %c(AWENormalModeTabBarGeneralPlusButton);
+        Class barBackgroundClass = NSClassFromString(@"_UIBarBackground");
 
         for (UIView *subview in self.subviews) {
             if ([subview isKindOfClass:generalButtonClass]) {
@@ -4928,10 +4930,14 @@ static CGFloat originalTabHeight = 0;
         BOOL shouldHideBackground = isHomeSelected || (isFriendsSelected && !hideFriendsButton);
 
         void (^__block traverseSubviews)(UIView *, BOOL) = ^(UIView *view, BOOL hide) {
-          for (UIView *subview in view.subviews) {
-              if (fabs(subview.frame.size.height - tabHeight) < 0.1) {
-                  subview.hidden = hide;
-              }
+            for (UIView *subview in view.subviews) {
+                if ([subview isKindOfClass:generalButtonClass] || [subview isKindOfClass:plusButtonClass]) {
+                    continue;
+                }
+
+                if ([subview isKindOfClass:barBackgroundClass] || ([subview isMemberOfClass:[UIView class]] && originalTabHeight > 0 && fabs(subview.frame.size.height - tabHeight) < 0.1)) {
+                    subview.hidden = hide;
+                }
           }
         };
 
