@@ -4723,33 +4723,39 @@ static CGFloat originalTabHeight = 0;
 - (void)layoutSubviews {
     %orig;
 
-    if (originalTabHeight == 0 && self.frame.size.height > 30) {
-        originalTabHeight = self.frame.size.height;
+    if (originalTabHeight == 0) {
+        NSString *sourceDescription = @"";
+        if (self.frame.size.height > 30) {
+            originalTabHeight = self.frame.size.height;
+            sourceDescription = [NSString stringWithFormat:@"from self.frame.size.height: %.1f", originalTabHeight];
+        } else {
+            CGFloat bottomInset = (self.window ?: [DYYYUtils getActiveWindow]).safeAreaInsets.bottom;
+            originalTabHeight = 49 + bottomInset;
+            sourceDescription = [NSString stringWithFormat:@"by fallback calculation: 49.0 + %.1f", bottomInset];
+        }
+    NSLog(@"[DYYY] Initialized originalTabHeight: %.1f (%@)", originalTabHeight, sourceDescription);
     }
 
     CGFloat customHeight = DYYYGetFloat(@"DYYYTabBarHeight");
-    if (customHeight > 0) {
-        tabHeight = customHeight;
-    } else if (originalTabHeight > 0) {
-        tabHeight = originalTabHeight;
-    } else {
-        tabHeight = self.frame.size.height;
-    }
+    tabHeight = (customHeight > 0) ? customHeight : originalTabHeight;
 
     if (tabHeight <= 0)
         return;
 
-    if ([self respondsToSelector:@selector(setDesiredHeight:)]) {
-        ((void (*)(id, SEL, double))objc_msgSend)(self, @selector(setDesiredHeight:), tabHeight);
-    }
-
     if (fabs(self.frame.size.height - tabHeight) > 0.1) {
+        NSLog(@"[DYYY] Adjusting tabHeight to: %f", tabHeight);
+
+        if ([self respondsToSelector:@selector(setDesiredHeight:)]) {
+            ((void (*)(id, SEL, double))objc_msgSend)(self, @selector(setDesiredHeight:), tabHeight);
+        }
+
         CGRect frame = self.frame;
         frame.size.height = tabHeight;
         if (self.superview) {
             frame.origin.y = self.superview.bounds.size.height - tabHeight;
         }
         self.frame = frame;
+        return;
     }
 
     BOOL hideShop = DYYYGetBool(@"DYYYHideShopButton");
