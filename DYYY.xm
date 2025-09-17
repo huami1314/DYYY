@@ -4709,6 +4709,20 @@ static CGFloat originalTabHeight = 0;
 
 %hook AWENormalModeTabBar
 
+static Class barBackgroundClass = nil;
+static Class generalButtonClass = nil;
+static Class plusButtonClass = nil;
+static Class tabBarButtonClass = nil;
+
++ (void)initialize {
+    if (self == [%c(AWENormalModeTabBar) class]) {
+        barBackgroundClass = NSClassFromString(@"_UIBarBackground");
+        generalButtonClass = %c(AWENormalModeTabBarGeneralButton);
+        plusButtonClass = %c(AWENormalModeTabBarGeneralPlusButton);
+        tabBarButtonClass = %c(UITabBarButton);
+    }
+}
+
 - (void)layoutSubviews {
     %orig;
 
@@ -4751,73 +4765,51 @@ static CGFloat originalTabHeight = 0;
     BOOL hideMsg = DYYYGetBool(@"DYYYHideMessageButton");
     BOOL hideFri = DYYYGetBool(@"DYYYHideFriendsButton");
     BOOL hideMe = DYYYGetBool(@"DYYYHideMyButton");
+    BOOL isPad = (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad);
 
     NSMutableArray *visibleButtons = [NSMutableArray array];
-    NSMutableArray *buttonsToRemove = [NSMutableArray array];
-    BOOL isPad = (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad);
     UIView *ipadContainerView = nil;
-
-    Class generalButtonClass = %c(AWENormalModeTabBarGeneralButton);
-    Class plusButtonClass = %c(AWENormalModeTabBarGeneralPlusButton);
-    Class tabBarButtonClass = %c(UITabBarButton);
-    Class barBackgroundClass = NSClassFromString(@"_UIBarBackground");
 
     for (UIView *subview in self.subviews) {
         if ([subview isKindOfClass:generalButtonClass] || [subview isKindOfClass:plusButtonClass]) {
             NSString *label = subview.accessibilityLabel;
-            BOOL shouldHide = NO;
-            if ([label isEqualToString:@"商城"])
-                shouldHide = hideShop;
-            else if ([label containsString:@"消息"])
-                shouldHide = hideMsg;
-            else if ([label containsString:@"朋友"])
-                shouldHide = hideFri;
-            else if ([label containsString:@"我"])
-                shouldHide = hideMe;
+            BOOL shouldHide = ([label containsString:@"商城"] && hideShop) ||
+                              ([label containsString:@"消息"] && hideMsg) ||
+                              ([label containsString:@"朋友"] && hideFri) ||
+                              ([label isEqualToString:@"我"] && hideMe);
 
-            if (shouldHide) {
-                [buttonsToRemove addObject:subview];
-            } else {
+            subview.userInteractionEnabled = !shouldHide;
+            subview.hidden = shouldHide;
+
+            if (!shouldHide) {
                 [visibleButtons addObject:subview];
             }
         } else if ([subview isKindOfClass:tabBarButtonClass]) {
-            [buttonsToRemove addObject:subview];
-        } else if (isPad && ipadContainerView == nil && [subview class] == [UIView class] && fabs(subview.frame.size.width - self.bounds.size.width) > 0.1) {
+            subview.userInteractionEnabled = NO;
+            subview.hidden = YES;
+        } else if (isPad && !ipadContainerView && [subview isMemberOfClass:UIView.class] && fabs(subview.frame.size.width - self.bounds.size.width) > 0.1) {
             ipadContainerView = subview;
-        } else if (DYYYGetBool(@"DYYYHideBottomBg") && ![subview isKindOfClass:barBackgroundClass]) {
-            [buttonsToRemove addObject:subview];
         }
-    }
-
-    for (UIView *button in buttonsToRemove) {
-        button.userInteractionEnabled = NO;
-        [button removeFromSuperview];
     }
 
     [visibleButtons sortUsingComparator:^NSComparisonResult(UIView *a, UIView *b) {
       return [@(a.frame.origin.x) compare:@(b.frame.origin.x)];
     }];
 
-    if (isPad) {
-        // iPad端布局逻辑
-        CGFloat containerWidth = ipadContainerView ? ipadContainerView.bounds.size.width : self.bounds.size.width;
-        CGFloat offsetX = ipadContainerView ? ipadContainerView.frame.origin.x : 0;
-        CGFloat buttonWidth = (visibleButtons.count > 0) ? (containerWidth / visibleButtons.count) : 0;
-
-        // 在目标容器内均匀分布按钮
-        for (NSInteger i = 0; i < visibleButtons.count; i++) {
-            UIView *button = visibleButtons[i];
-            button.frame = CGRectMake(offsetX + (i * buttonWidth), button.frame.origin.y, buttonWidth, button.frame.size.height);
-        }
+    CGFloat offsetX, totalWidth;
+    if (ipadContainerView) {
+        offsetX = ipadContainerView.frame.origin.x;
+        totalWidth = ipadContainerView.bounds.size.width;
     } else {
-        // iPhone端布局逻辑
-        CGFloat totalWidth = self.bounds.size.width;
-        CGFloat buttonWidth = (visibleButtons.count > 0) ? (totalWidth / visibleButtons.count) : 0;
+        offsetX = 0;
+        totalWidth = self.bounds.size.width;
+    }
+    CGFloat buttonWidth = (visibleButtons.count > 0) ? (totalWidth / visibleButtons.count) : 0;
 
-        for (NSInteger i = 0; i < visibleButtons.count; i++) {
-            UIView *button = visibleButtons[i];
-            button.frame = CGRectMake(i * buttonWidth, button.frame.origin.y, buttonWidth, button.frame.size.height);
-        }
+    // 均匀布局按钮
+    for (NSInteger i = 0; i < visibleButtons.count; i++) {
+        UIView *button = visibleButtons[i];
+        button.frame = CGRectMake(offsetX + i * buttonWidth, button.frame.origin.y, buttonWidth, button.frame.size.height);
     }
 }
 
@@ -4826,7 +4818,6 @@ static CGFloat originalTabHeight = 0;
 
     // 禁用首页刷新功能
     if (DYYYGetBool(@"DYYYDisableHomeRefresh")) {
-        Class generalButtonClass = %c(AWENormalModeTabBarGeneralButton);
         for (UIView *subview in self.subviews) {
             if ([subview isKindOfClass:generalButtonClass]) {
                 AWENormalModeTabBarGeneralButton *button = (AWENormalModeTabBarGeneralButton *)subview;
@@ -4846,37 +4837,11 @@ static CGFloat originalTabHeight = 0;
         if (self.skinContainerView) {
             self.skinContainerView.hidden = YES;
         }
-    } else {
-        if (self.skinContainerView) {
-            self.skinContainerView.hidden = NO;
-        }
-    }
 
-    UIView *backgroundView = nil;
-    for (UIView *subview in self.subviews) {
-        if ([subview class] == [UIView class]) {
-            BOOL hasImageView = NO;
-            for (UIView *childView in subview.subviews) {
-                if ([childView isKindOfClass:[UIImageView class]]) {
-                    hasImageView = YES;
-                    break;
-                }
-            }
-            if (hasImageView) {
-                backgroundView = subview;
-                break;
-            }
-        }
-    }
+        BOOL isHomeSelected = NO;
+        BOOL isFriendsSelected = NO;
 
-    if (backgroundView) {
-        if (hideBottomBg) {
-            backgroundView.hidden = YES;
-        } else if (enableFullScreen) {
-            BOOL isHomeSelected = NO;
-            BOOL isFriendsSelected = NO;
-            Class generalButtonClass = %c(AWENormalModeTabBarGeneralButton);
-
+        if (enableFullScreen && !hideBottomBg) {
             for (UIView *subview in self.subviews) {
                 if ([subview isKindOfClass:generalButtonClass]) {
                     AWENormalModeTabBarGeneralButton *button = (AWENormalModeTabBarGeneralButton *)subview;
@@ -4888,55 +4853,34 @@ static CGFloat originalTabHeight = 0;
                     }
                 }
             }
-
-            BOOL hideFriendsButton = DYYYGetBool(@"DYYYHideFriendsButton");
-            BOOL shouldShowBackground = isHomeSelected || (isFriendsSelected && !hideFriendsButton);
-            backgroundView.hidden = shouldShowBackground;
         }
-    }
 
-    if (enableFullScreen) {
-        BOOL isHomeSelected = NO;
-        BOOL isFriendsSelected = NO;
         BOOL hideFriendsButton = DYYYGetBool(@"DYYYHideFriendsButton");
-        Class generalButtonClass = %c(AWENormalModeTabBarGeneralButton);
-        Class plusButtonClass = %c(AWENormalModeTabBarGeneralPlusButton);
-        Class barBackgroundClass = NSClassFromString(@"_UIBarBackground");
+        BOOL shouldHideBackgrounds = hideBottomBg || (enableFullScreen && (isHomeSelected || (isFriendsSelected && !hideFriendsButton)));
 
+        // 单次遍历处理所有背景和分割线
         for (UIView *subview in self.subviews) {
-            if ([subview isKindOfClass:generalButtonClass]) {
-                AWENormalModeTabBarGeneralButton *button = (AWENormalModeTabBarGeneralButton *)subview;
-                if (button.status == 2) {
-                    if ([button.accessibilityLabel isEqualToString:@"首页"]) {
-                        isHomeSelected = YES;
-                    } else if ([button.accessibilityLabel containsString:@"朋友"]) {
-                        isFriendsSelected = YES;
-                    }
-                }
+            // 跳过底栏按钮
+            if ([subview isKindOfClass:generalButtonClass] || [subview isKindOfClass:plusButtonClass]) {
+                continue;
+            }
+            // 隐藏底栏背景
+            if ([subview isKindOfClass:barBackgroundClass] || ([subview isMemberOfClass:[UIView class]] && originalTabHeight > 0 && fabs(subview.frame.size.height - tabHeight) < 0.1)) {
+                subview.hidden = shouldHideBackgrounds;
+            }
+            // 隐藏细分割线
+            if (subview.frame.size.height > 0 && subview.frame.size.height < 1 && subview.frame.size.width > 300) {
+                subview.hidden = enableFullScreen;
             }
         }
+    } else {
+        if (self.skinContainerView) {
+            self.skinContainerView.hidden = NO;
+        }
 
-        BOOL shouldHideBackground = isHomeSelected || (isFriendsSelected && !hideFriendsButton);
-
-        void (^__block traverseSubviews)(UIView *, BOOL) = ^(UIView *view, BOOL hide) {
-            for (UIView *subview in view.subviews) {
-                if ([subview isKindOfClass:generalButtonClass] || [subview isKindOfClass:plusButtonClass]) {
-                    continue;
-                }
-
-                if ([subview isKindOfClass:barBackgroundClass] || ([subview isMemberOfClass:[UIView class]] && originalTabHeight > 0 && fabs(subview.frame.size.height - tabHeight) < 0.1)) {
-                    subview.hidden = hide;
-                }
-          }
-        };
-
-        traverseSubviews(self, shouldHideBackground);
-    }
-
-    if (enableFullScreen) {
         for (UIView *subview in self.subviews) {
-            if (subview.frame.size.height > 0 && subview.frame.size.height <= 0.5 && subview.frame.size.width > 300) {
-                subview.hidden = YES;
+            if ([subview isKindOfClass:barBackgroundClass] || [subview isMemberOfClass:[UIView class]]) {
+                subview.hidden = NO;
             }
         }
     }
