@@ -2068,17 +2068,6 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
-%hook AWECommentInputBackgroundView
-- (void)layoutSubviews {
-    %orig;
-
-    if (DYYYGetBool(@"DYYYHideComment")) {
-        [self removeFromSuperview];
-        return;
-    }
-}
-%end
-
 // 隐藏头像加号和透明
 %hook LOTAnimationView
 - (void)layoutSubviews {
@@ -4743,7 +4732,7 @@ static CGFloat originalTabHeight = 0;
         return;
 
     if (fabs(self.frame.size.height - tabHeight) > 0.1) {
-        NSLog(@"[DYYY] Adjusting tabHeight to: %f", tabHeight);
+        NSLog(@"[DYYY] Adjusting tabHeight to: %1f", tabHeight);
 
         if ([self respondsToSelector:@selector(setDesiredHeight:)]) {
             ((void (*)(id, SEL, double))objc_msgSend)(self, @selector(setDesiredHeight:), tabHeight);
@@ -5210,6 +5199,23 @@ static CGFloat originalTabHeight = 0;
             frame.origin.y -= tabHeight;
             subview.frame = frame;
         }
+    }
+}
+%end
+
+%hook AWECommentInputBackgroundView
+- (void)layoutSubviews {
+    %orig;
+
+    if (DYYYGetBool(@"DYYYHideComment")) {
+        [self removeFromSuperview];
+        return;
+    }
+
+    CGAffineTransform newTransform = CGAffineTransformMakeTranslation(0, originalTabHeight - tabHeight);
+
+    if (!CGAffineTransformEqualToTransform(self.transform, newTransform)) {
+        self.transform = newTransform;
     }
 }
 %end
