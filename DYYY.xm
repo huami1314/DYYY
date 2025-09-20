@@ -6610,46 +6610,43 @@ static Class TagViewClass = nil;
 }
 %end
 
-static NSString *const kStreamlineSidebarKey = @"DYYYHideSidebarElements";
+static NSString *const kHideRecentAppsKey = @"DYYYHideSidebarRecentApps";
+static NSString *const kHideRecentUsersKey = @"DYYYHideSidebarRecentUsers";
 
 %hook AWELeftSideBarModel
 
 - (NSArray *)moduleModels {
     NSArray *originalModels = %orig;
 
-    if (!DYYYGetBool(kStreamlineSidebarKey)) {
+    BOOL shouldHideRecentApps = DYYYGetBool(kHideRecentAppsKey);
+    BOOL shouldHideRecentUsers = DYYYGetBool(kHideRecentUsersKey);
+
+    if (!shouldHideRecentApps && !shouldHideRecentUsers) {
         return originalModels;
     }
 
-    // 只保留这两个 moduleID
-    NSSet *allowedModuleIDs = [NSSet setWithArray:@[ @"top_area", @"more_function_module", @"notification_module_module" ]];
-
-    NSMutableArray *filteredModels = [NSMutableArray array];
+    NSMutableArray *filteredModels = [NSMutableArray arrayWithCapacity:originalModels.count];
 
     for (id moduleModel in originalModels) {
         if ([moduleModel respondsToSelector:@selector(moduleID)]) {
             NSString *moduleID = [moduleModel moduleID];
-            if ([allowedModuleIDs containsObject:moduleID]) {
-                // 进一步过滤模块内的items
-                id filteredModule = [self filterModuleItems:moduleModel];
-                if (filteredModule) {
-                    [filteredModels addObject:filteredModule];
-                }
+
+            if (shouldHideRecentApps && [moduleID isEqualToString:@"recently_apps_module"]) {
+                continue;
             }
+
+            if (shouldHideRecentUsers && [moduleID isEqualToString:@"recently_users_module"]) {
+                continue;
+            }
+        }
+
+        id filteredModule = [self filterModuleItems:moduleModel];
+        if (filteredModule) {
+            [filteredModels addObject:filteredModule];
         }
     }
 
     return [filteredModels copy];
-}
-
-- (NSArray *)bottomModuleModels {
-    NSArray *originalBottomModels = %orig;
-
-    if (!DYYYGetBool(kStreamlineSidebarKey)) {
-        return originalBottomModels;
-    }
-
-    return @[];
 }
 
 %new

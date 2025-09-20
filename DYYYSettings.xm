@@ -1026,14 +1026,16 @@ extern "C"
       // 【侧边栏】分类
       NSMutableArray<AWESettingItemModel *> *sidebarItems = [NSMutableArray array];
       NSArray *sidebarSettings = @[
-          @{
-              @"identifier" : @"DYYYHideSidebarElements",
-              @"title" : @"隐藏侧栏元素",
-              @"subTitle" : @"隐藏侧边栏的常用小程序和常访问的人",
-              @"detail" : @"",
-              @"cellType" : @37,
-              @"imageName" : @"ic_eyeslash_outlined_16"
-          },
+          @{@"identifier" : @"DYYYHideSidebarRecentApps",
+            @"title" : @"隐藏常用小程序",
+            @"detail" : @"",
+            @"cellType" : @6,
+            @"imageName" : @"ic_eyeslash_outlined_16"},
+          @{@"identifier" : @"DYYYHideSidebarRecentUsers",
+            @"title" : @"隐藏常访问的人",
+            @"detail" : @"",
+            @"cellType" : @6,
+            @"imageName" : @"ic_eyeslash_outlined_16"},
           @{@"identifier" : @"DYYYHideSidebarDot",
             @"title" : @"隐藏侧栏红点",
             @"detail" : @"",
