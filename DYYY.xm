@@ -4713,6 +4713,8 @@ static Class barBackgroundClass = nil;
 static Class generalButtonClass = nil;
 static Class plusButtonClass = nil;
 static Class tabBarButtonClass = nil;
+static NSString * const TabBarHeightKey = @"DYYYTabBarHeight";
+static void *TabBarHeightObservationContext = &TabBarHeightObservationContext;
 
 + (void)initialize {
     if (self == [%c(AWENormalModeTabBar) class]) {
@@ -4721,6 +4723,40 @@ static Class tabBarButtonClass = nil;
         plusButtonClass = %c(AWENormalModeTabBarGeneralPlusButton);
         tabBarButtonClass = %c(UITabBarButton);
     }
+}
+
+- (instancetype)initWithFrame:(CGRect)frame {
+    self = %orig;
+    if (self) {
+        [[NSUserDefaults standardUserDefaults] addObserver:self
+                                                forKeyPath:TabBarHeightKey
+                                                   options:NSKeyValueObservingOptionNew
+                                                   context:TabBarHeightObservationContext];
+    }
+    return self;
+}
+
+- (void)dealloc {
+    @try {
+        [[NSUserDefaults standardUserDefaults] removeObserver:self
+                                                   forKeyPath:TabBarHeightKey
+                                                      context:TabBarHeightObservationContext];
+    } @catch (NSException *exception) {
+        NSLog(@"[DYYY] KVO removeObserver failed: %@", exception);
+    }
+    %orig;
+}
+
+%new
+- (void)observeValueForKeyPath:(NSString *)keyPath 
+                      ofObject:(id)object 
+                        change:(NSDictionary<NSKeyValueChangeKey,id> *)change 
+                       context:(void *)context {
+    if (context == TabBarHeightObservationContext) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self setNeedsLayout];
+        });
+    } 
 }
 
 - (void)layoutSubviews {
