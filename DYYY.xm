@@ -3205,6 +3205,17 @@ static AWEIMReusableCommonCell *currentCell;
 
 // 隐藏昵称右侧
 %hook UILabel
+
+static NSHashTable *processedParentViews = nil;
+
++ (void)load {
+    %orig;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        processedParentViews = [NSHashTable weakObjectsHashTable];
+    });
+}
+
 - (void)layoutSubviews {
     %orig;
 
@@ -3216,31 +3227,56 @@ static AWEIMReusableCommonCell *currentCell;
     if (!accessibilityLabel || accessibilityLabel.length == 0)
         return;
 
-    NSString *trimmedLabel = [accessibilityLabel stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
-    BOOL shouldHide = NO;
+    // 避免重复处理同一个父视图
+    UIView *parentView = self.superview;
+    if (!parentView) return;
+    
+    @synchronized(processedParentViews) {
+        if ([processedParentViews containsObject:parentView]) {
+            return;
+        }
+    }
 
-    if ([trimmedLabel hasSuffix:@"人共创"]) {
+    NSString *trimmedLabel = [accessibilityLabel stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+    BOOL shouldRemove = NO;
+
+    if ([trimmedLabel hasSuffix:@"人共创"] && trimmedLabel.length > 3) {
         NSString *prefix = [trimmedLabel substringToIndex:trimmedLabel.length - 3];
         NSCharacterSet *nonDigits = [[NSCharacterSet decimalDigitCharacterSet] invertedSet];
-        shouldHide = ([prefix rangeOfCharacterFromSet:nonDigits].location == NSNotFound);
+        shouldRemove = ([prefix rangeOfCharacterFromSet:nonDigits].location == NSNotFound);
     }
 
-    if (!shouldHide) {
-        shouldHide = [trimmedLabel isEqualToString:@"章节要点"] || [trimmedLabel isEqualToString:@"图集"];
+    if (!shouldRemove) {
+        shouldRemove = [trimmedLabel isEqualToString:@"章节要点"] || 
+                      [trimmedLabel isEqualToString:@"图集"] ||
+                      [trimmedLabel isEqualToString:@"下一章"];
     }
 
-    if (shouldHide) {
-        self.hidden = YES;
+    if (shouldRemove) {
+        @synchronized(processedParentViews) {
+            [processedParentViews addObject:parentView];
+        }
+        
+        UIView *grandparentView = parentView.superview;  // 爷爷视图
+        
+        if (grandparentView) {
 
-        // 找到父视图是否为 UIStackView
-        UIView *superview = self.superview;
-        if ([superview isKindOfClass:[UIStackView class]]) {
-            UIStackView *stackView = (UIStackView *)superview;
-            // 刷新 UIStackView 的布局
-            [stackView layoutIfNeeded];
+            dispatch_async(dispatch_get_main_queue(), ^{
+                if ([grandparentView isKindOfClass:[UIStackView class]]) {
+                    UIStackView *stackView = (UIStackView *)grandparentView;
+                    [stackView removeArrangedSubview:parentView];
+                }
+                
+                [parentView removeFromSuperview];
+                
+                // 强制刷新爷爷视图布局
+                [grandparentView setNeedsLayout];
+                [grandparentView layoutIfNeeded];
+            });
         }
     }
 }
+
 %end
 
 // 隐藏顶栏关注下的提示线
