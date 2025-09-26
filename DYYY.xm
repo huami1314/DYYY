@@ -2064,17 +2064,6 @@ static AWEIMReusableCommonCell *currentCell;
 }
 %end
 
-%hook AWECommentInputBackgroundView
-- (void)layoutSubviews {
-    %orig;
-
-    if (DYYYGetBool(@"DYYYHideComment")) {
-        [self removeFromSuperview];
-        return;
-    }
-}
-%end
-
 // 隐藏头像加号和透明
 %hook LOTAnimationView
 - (void)layoutSubviews {
@@ -4750,109 +4739,143 @@ static CGFloat originalTabHeight = 0;
 
 %hook AWENormalModeTabBar
 
+static Class barBackgroundClass = nil;
+static Class generalButtonClass = nil;
+static Class plusButtonClass = nil;
+static Class tabBarButtonClass = nil;
+static NSString * const TabBarHeightKey = @"DYYYTabBarHeight";
+static void *TabBarHeightObservationContext = &TabBarHeightObservationContext;
+
++ (void)initialize {
+    if (self == [%c(AWENormalModeTabBar) class]) {
+        barBackgroundClass = NSClassFromString(@"_UIBarBackground");
+        generalButtonClass = %c(AWENormalModeTabBarGeneralButton);
+        plusButtonClass = %c(AWENormalModeTabBarGeneralPlusButton);
+        tabBarButtonClass = %c(UITabBarButton);
+    }
+}
+
+- (instancetype)initWithFrame:(CGRect)frame {
+    self = %orig;
+    if (self) {
+        [[NSUserDefaults standardUserDefaults] addObserver:self
+                                                forKeyPath:TabBarHeightKey
+                                                   options:NSKeyValueObservingOptionNew
+                                                   context:TabBarHeightObservationContext];
+    }
+    return self;
+}
+
+- (void)dealloc {
+    @try {
+        [[NSUserDefaults standardUserDefaults] removeObserver:self
+                                                   forKeyPath:TabBarHeightKey
+                                                      context:TabBarHeightObservationContext];
+    } @catch (NSException *exception) {
+        NSLog(@"[DYYY] KVO removeObserver failed: %@", exception);
+    }
+    %orig;
+}
+
+%new
+- (void)observeValueForKeyPath:(NSString *)keyPath 
+                      ofObject:(id)object 
+                        change:(NSDictionary<NSKeyValueChangeKey,id> *)change 
+                       context:(void *)context {
+    if (context == TabBarHeightObservationContext) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self setNeedsLayout];
+        });
+    } 
+}
+
 - (void)layoutSubviews {
     %orig;
 
-    if (originalTabHeight == 0 && self.frame.size.height > 30) {
-        originalTabHeight = self.frame.size.height;
+    if (originalTabHeight == 0) {
+        NSString *sourceDescription = @"";
+        if (self.frame.size.height > 30) {
+            originalTabHeight = self.frame.size.height;
+            sourceDescription = [NSString stringWithFormat:@"from self.frame.size.height: %.1f", originalTabHeight];
+        } else {
+            CGFloat bottomInset = (self.window ?: [DYYYUtils getActiveWindow]).safeAreaInsets.bottom;
+            originalTabHeight = 49 + bottomInset;
+            sourceDescription = [NSString stringWithFormat:@"by fallback calculation: 49.0 + %.1f", bottomInset];
+        }
+    NSLog(@"[DYYY] Initialized originalTabHeight: %.1f (%@)", originalTabHeight, sourceDescription);
     }
 
     CGFloat customHeight = DYYYGetFloat(@"DYYYTabBarHeight");
-    if (customHeight > 0) {
-        tabHeight = customHeight;
-    } else if (originalTabHeight > 0) {
-        tabHeight = originalTabHeight;
-    } else {
-        tabHeight = self.frame.size.height;
-    }
+    tabHeight = (customHeight > 0) ? customHeight : originalTabHeight;
 
     if (tabHeight <= 0)
         return;
 
-    if ([self respondsToSelector:@selector(setDesiredHeight:)]) {
-        ((void (*)(id, SEL, double))objc_msgSend)(self, @selector(setDesiredHeight:), tabHeight);
-    }
-
     if (fabs(self.frame.size.height - tabHeight) > 0.1) {
+        NSLog(@"[DYYY] Adjusting tabHeight to: %1f", tabHeight);
+
+        if ([self respondsToSelector:@selector(setDesiredHeight:)]) {
+            ((void (*)(id, SEL, double))objc_msgSend)(self, @selector(setDesiredHeight:), tabHeight);
+        }
+
         CGRect frame = self.frame;
         frame.size.height = tabHeight;
         if (self.superview) {
             frame.origin.y = self.superview.bounds.size.height - tabHeight;
         }
         self.frame = frame;
+        return;
     }
 
     BOOL hideShop = DYYYGetBool(@"DYYYHideShopButton");
     BOOL hideMsg = DYYYGetBool(@"DYYYHideMessageButton");
     BOOL hideFri = DYYYGetBool(@"DYYYHideFriendsButton");
     BOOL hideMe = DYYYGetBool(@"DYYYHideMyButton");
+    BOOL isPad = (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad);
 
     NSMutableArray *visibleButtons = [NSMutableArray array];
-    NSMutableArray *buttonsToRemove = [NSMutableArray array];
-    BOOL isPad = (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad);
     UIView *ipadContainerView = nil;
-
-    Class generalButtonClass = %c(AWENormalModeTabBarGeneralButton);
-    Class plusButtonClass = %c(AWENormalModeTabBarGeneralPlusButton);
-    Class tabBarButtonClass = %c(UITabBarButton);
-    Class barBackgroundClass = NSClassFromString(@"_UIBarBackground");
 
     for (UIView *subview in self.subviews) {
         if ([subview isKindOfClass:generalButtonClass] || [subview isKindOfClass:plusButtonClass]) {
             NSString *label = subview.accessibilityLabel;
-            BOOL shouldHide = NO;
-            if ([label isEqualToString:@"商城"])
-                shouldHide = hideShop;
-            else if ([label containsString:@"消息"])
-                shouldHide = hideMsg;
-            else if ([label containsString:@"朋友"])
-                shouldHide = hideFri;
-            else if ([label containsString:@"我"])
-                shouldHide = hideMe;
+            BOOL shouldHide = ([label containsString:@"商城"] && hideShop) ||
+                              ([label containsString:@"消息"] && hideMsg) ||
+                              ([label containsString:@"朋友"] && hideFri) ||
+                              ([label isEqualToString:@"我"] && hideMe);
 
-            if (shouldHide) {
-                [buttonsToRemove addObject:subview];
-            } else {
+            subview.userInteractionEnabled = !shouldHide;
+            subview.hidden = shouldHide;
+
+            if (!shouldHide) {
                 [visibleButtons addObject:subview];
             }
         } else if ([subview isKindOfClass:tabBarButtonClass]) {
-            [buttonsToRemove addObject:subview];
-        } else if (isPad && ipadContainerView == nil && [subview class] == [UIView class] && fabs(subview.frame.size.width - self.bounds.size.width) > 0.1) {
+            subview.userInteractionEnabled = NO;
+            subview.hidden = YES;
+        } else if (isPad && !ipadContainerView && [subview isMemberOfClass:UIView.class] && fabs(subview.frame.size.width - self.bounds.size.width) > 0.1) {
             ipadContainerView = subview;
-        } else if (DYYYGetBool(@"DYYYHideBottomBg") && ![subview isKindOfClass:barBackgroundClass]) {
-            [buttonsToRemove addObject:subview];
         }
-    }
-
-    for (UIView *button in buttonsToRemove) {
-        button.userInteractionEnabled = NO;
-        [button removeFromSuperview];
     }
 
     [visibleButtons sortUsingComparator:^NSComparisonResult(UIView *a, UIView *b) {
       return [@(a.frame.origin.x) compare:@(b.frame.origin.x)];
     }];
 
-    if (isPad) {
-        // iPad端布局逻辑
-        CGFloat containerWidth = ipadContainerView ? ipadContainerView.bounds.size.width : self.bounds.size.width;
-        CGFloat offsetX = ipadContainerView ? ipadContainerView.frame.origin.x : 0;
-        CGFloat buttonWidth = (visibleButtons.count > 0) ? (containerWidth / visibleButtons.count) : 0;
-
-        // 在目标容器内均匀分布按钮
-        for (NSInteger i = 0; i < visibleButtons.count; i++) {
-            UIView *button = visibleButtons[i];
-            button.frame = CGRectMake(offsetX + (i * buttonWidth), button.frame.origin.y, buttonWidth, button.frame.size.height);
-        }
+    CGFloat offsetX, totalWidth;
+    if (ipadContainerView) {
+        offsetX = ipadContainerView.frame.origin.x;
+        totalWidth = ipadContainerView.bounds.size.width;
     } else {
-        // iPhone端布局逻辑
-        CGFloat totalWidth = self.bounds.size.width;
-        CGFloat buttonWidth = (visibleButtons.count > 0) ? (totalWidth / visibleButtons.count) : 0;
+        offsetX = 0;
+        totalWidth = self.bounds.size.width;
+    }
+    CGFloat buttonWidth = (visibleButtons.count > 0) ? (totalWidth / visibleButtons.count) : 0;
 
-        for (NSInteger i = 0; i < visibleButtons.count; i++) {
-            UIView *button = visibleButtons[i];
-            button.frame = CGRectMake(i * buttonWidth, button.frame.origin.y, buttonWidth, button.frame.size.height);
-        }
+    // 均匀布局按钮
+    for (NSInteger i = 0; i < visibleButtons.count; i++) {
+        UIView *button = visibleButtons[i];
+        button.frame = CGRectMake(offsetX + i * buttonWidth, button.frame.origin.y, buttonWidth, button.frame.size.height);
     }
 }
 
@@ -4861,7 +4884,6 @@ static CGFloat originalTabHeight = 0;
 
     // 禁用首页刷新功能
     if (DYYYGetBool(@"DYYYDisableHomeRefresh")) {
-        Class generalButtonClass = %c(AWENormalModeTabBarGeneralButton);
         for (UIView *subview in self.subviews) {
             if ([subview isKindOfClass:generalButtonClass]) {
                 AWENormalModeTabBarGeneralButton *button = (AWENormalModeTabBarGeneralButton *)subview;
@@ -4881,37 +4903,11 @@ static CGFloat originalTabHeight = 0;
         if (self.skinContainerView) {
             self.skinContainerView.hidden = YES;
         }
-    } else {
-        if (self.skinContainerView) {
-            self.skinContainerView.hidden = NO;
-        }
-    }
 
-    UIView *backgroundView = nil;
-    for (UIView *subview in self.subviews) {
-        if ([subview class] == [UIView class]) {
-            BOOL hasImageView = NO;
-            for (UIView *childView in subview.subviews) {
-                if ([childView isKindOfClass:[UIImageView class]]) {
-                    hasImageView = YES;
-                    break;
-                }
-            }
-            if (hasImageView) {
-                backgroundView = subview;
-                break;
-            }
-        }
-    }
+        BOOL isHomeSelected = NO;
+        BOOL isFriendsSelected = NO;
 
-    if (backgroundView) {
-        if (hideBottomBg) {
-            backgroundView.hidden = YES;
-        } else if (enableFullScreen) {
-            BOOL isHomeSelected = NO;
-            BOOL isFriendsSelected = NO;
-            Class generalButtonClass = %c(AWENormalModeTabBarGeneralButton);
-
+        if (enableFullScreen && !hideBottomBg) {
             for (UIView *subview in self.subviews) {
                 if ([subview isKindOfClass:generalButtonClass]) {
                     AWENormalModeTabBarGeneralButton *button = (AWENormalModeTabBarGeneralButton *)subview;
@@ -4923,49 +4919,34 @@ static CGFloat originalTabHeight = 0;
                     }
                 }
             }
-
-            BOOL hideFriendsButton = DYYYGetBool(@"DYYYHideFriendsButton");
-            BOOL shouldShowBackground = isHomeSelected || (isFriendsSelected && !hideFriendsButton);
-            backgroundView.hidden = shouldShowBackground;
         }
-    }
 
-    if (enableFullScreen) {
-        BOOL isHomeSelected = NO;
-        BOOL isFriendsSelected = NO;
         BOOL hideFriendsButton = DYYYGetBool(@"DYYYHideFriendsButton");
-        Class generalButtonClass = %c(AWENormalModeTabBarGeneralButton);
+        BOOL shouldHideBackgrounds = hideBottomBg || (enableFullScreen && (isHomeSelected || (isFriendsSelected && !hideFriendsButton)));
 
+        // 单次遍历处理所有背景和分割线
         for (UIView *subview in self.subviews) {
-            if ([subview isKindOfClass:generalButtonClass]) {
-                AWENormalModeTabBarGeneralButton *button = (AWENormalModeTabBarGeneralButton *)subview;
-                if (button.status == 2) {
-                    if ([button.accessibilityLabel isEqualToString:@"首页"]) {
-                        isHomeSelected = YES;
-                    } else if ([button.accessibilityLabel containsString:@"朋友"]) {
-                        isFriendsSelected = YES;
-                    }
-                }
+            // 跳过底栏按钮
+            if ([subview isKindOfClass:generalButtonClass] || [subview isKindOfClass:plusButtonClass]) {
+                continue;
+            }
+            // 隐藏底栏背景
+            if ([subview isKindOfClass:barBackgroundClass] || ([subview isMemberOfClass:[UIView class]] && originalTabHeight > 0 && fabs(subview.frame.size.height - tabHeight) < 0.1)) {
+                subview.hidden = shouldHideBackgrounds;
+            }
+            // 隐藏细分割线
+            if (subview.frame.size.height > 0 && subview.frame.size.height < 1 && subview.frame.size.width > 300) {
+                subview.hidden = enableFullScreen;
             }
         }
+    } else {
+        if (self.skinContainerView) {
+            self.skinContainerView.hidden = NO;
+        }
 
-        BOOL shouldHideBackground = isHomeSelected || (isFriendsSelected && !hideFriendsButton);
-
-        void (^__block traverseSubviews)(UIView *, BOOL) = ^(UIView *view, BOOL hide) {
-          for (UIView *subview in view.subviews) {
-              if (fabs(subview.frame.size.height - tabHeight) < 0.1) {
-                  subview.hidden = hide;
-              }
-          }
-        };
-
-        traverseSubviews(self, shouldHideBackground);
-    }
-
-    if (enableFullScreen) {
         for (UIView *subview in self.subviews) {
-            if (subview.frame.size.height > 0 && subview.frame.size.height <= 0.5 && subview.frame.size.width > 300) {
-                subview.hidden = YES;
+            if ([subview isKindOfClass:barBackgroundClass] || [subview isMemberOfClass:[UIView class]]) {
+                subview.hidden = NO;
             }
         }
     }
@@ -5228,6 +5209,23 @@ static CGFloat originalTabHeight = 0;
             frame.origin.y -= tabHeight;
             subview.frame = frame;
         }
+    }
+}
+%end
+
+%hook AWECommentInputBackgroundView
+- (void)layoutSubviews {
+    %orig;
+
+    if (DYYYGetBool(@"DYYYHideComment")) {
+        [self removeFromSuperview];
+        return;
+    }
+
+    CGAffineTransform newTransform = CGAffineTransformMakeTranslation(0, originalTabHeight - tabHeight);
+
+    if (!CGAffineTransformEqualToTransform(self.transform, newTransform)) {
+        self.transform = newTransform;
     }
 }
 %end
@@ -6644,46 +6642,43 @@ static Class TagViewClass = nil;
 }
 %end
 
-static NSString *const kStreamlineSidebarKey = @"DYYYHideSidebarElements";
+static NSString *const kHideRecentAppsKey = @"DYYYHideSidebarRecentApps";
+static NSString *const kHideRecentUsersKey = @"DYYYHideSidebarRecentUsers";
 
 %hook AWELeftSideBarModel
 
 - (NSArray *)moduleModels {
     NSArray *originalModels = %orig;
 
-    if (!DYYYGetBool(kStreamlineSidebarKey)) {
+    BOOL shouldHideRecentApps = DYYYGetBool(kHideRecentAppsKey);
+    BOOL shouldHideRecentUsers = DYYYGetBool(kHideRecentUsersKey);
+
+    if (!shouldHideRecentApps && !shouldHideRecentUsers) {
         return originalModels;
     }
 
-    // 只保留这两个 moduleID
-    NSSet *allowedModuleIDs = [NSSet setWithArray:@[ @"top_area", @"more_function_module", @"notification_module_module" ]];
-
-    NSMutableArray *filteredModels = [NSMutableArray array];
+    NSMutableArray *filteredModels = [NSMutableArray arrayWithCapacity:originalModels.count];
 
     for (id moduleModel in originalModels) {
         if ([moduleModel respondsToSelector:@selector(moduleID)]) {
             NSString *moduleID = [moduleModel moduleID];
-            if ([allowedModuleIDs containsObject:moduleID]) {
-                // 进一步过滤模块内的items
-                id filteredModule = [self filterModuleItems:moduleModel];
-                if (filteredModule) {
-                    [filteredModels addObject:filteredModule];
-                }
+
+            if (shouldHideRecentApps && [moduleID isEqualToString:@"recently_apps_module"]) {
+                continue;
             }
+
+            if (shouldHideRecentUsers && [moduleID isEqualToString:@"recently_users_module"]) {
+                continue;
+            }
+        }
+
+        id filteredModule = [self filterModuleItems:moduleModel];
+        if (filteredModule) {
+            [filteredModels addObject:filteredModule];
         }
     }
 
     return [filteredModels copy];
-}
-
-- (NSArray *)bottomModuleModels {
-    NSArray *originalBottomModels = %orig;
-
-    if (!DYYYGetBool(kStreamlineSidebarKey)) {
-        return originalBottomModels;
-    }
-
-    return @[];
 }
 
 %new
