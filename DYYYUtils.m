@@ -186,33 +186,45 @@ static const void *kCurrentIPRequestCityCodeKey = &kCurrentIPRequestCityCodeKey;
 #pragma mark - Public UI Utilities (公共 UI/窗口/控制器 工具)
 
 + (UIWindow *)getActiveWindow {
-    if (@available(iOS 13.0, *)) {
-        UIWindowScene *activeScene = nil;
-        for (UIScene *scene in [UIApplication sharedApplication].connectedScenes) {
-            if (scene.activationState == UISceneActivationStateForegroundActive && [scene isKindOfClass:[UIWindowScene class]]) {
-                activeScene = (UIWindowScene *)scene;
-                break;
-            }
-        }
+    UIWindow *fallbackWindow = [UIApplication sharedApplication].keyWindow ?: [UIApplication sharedApplication].delegate.window ?: [UIApplication sharedApplication].windows.firstObject;
 
-        if (activeScene) {
-            if (@available(iOS 15.0, *)) {
-                return activeScene.keyWindow;
-            } else {
-                for (UIWindow *window in [UIApplication sharedApplication].windows) {
-                    if (window.windowScene == activeScene && window.isKeyWindow) {
-                        return window;
+    if (@available(iOS 13.0, *)) {
+        UIWindowScene *activeScene = nil, *inactiveScene = nil;
+        for (UIScene *scene in [UIApplication sharedApplication].connectedScenes) {
+            if ([scene isKindOfClass:[UIWindowScene class]]) {
+                UISceneActivationState state = scene.activationState;
+                if (state == UISceneActivationStateForegroundActive) {
+                    activeScene = (UIWindowScene *)scene;
+                    break;
+                } else if (state == UISceneActivationStateForegroundInactive) {
+                    if (inactiveScene == nil) {
+                        inactiveScene = (UIWindowScene *)scene;
                     }
                 }
             }
         }
-        return nil;
-    } else {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-        return [UIApplication sharedApplication].keyWindow ?: [UIApplication sharedApplication].windows.firstObject;
-#pragma clang diagnostic pop
+
+        UIWindowScene *targetScene = activeScene ?: inactiveScene;
+        if (targetScene) {
+            if (@available(iOS 15.0, *)) {
+                return targetScene.keyWindow ?: targetScene.windows.firstObject ?: fallbackWindow;
+            } else {
+                UIWindow *firstVisibleWindow = nil;
+
+                for (UIWindow *window in targetScene.windows) {
+                    if (window.isKeyWindow) {
+                        return window;
+                    } else if (firstVisibleWindow == nil && !window.isHidden && window.rootViewController) {
+                        firstVisibleWindow = window;
+                    }
+                }
+
+                return firstVisibleWindow ?: targetScene.windows.firstObject ?: fallbackWindow;
+            }
+        }
     }
+
+    return fallbackWindow;
 }
 
 + (UIViewController *)topView {

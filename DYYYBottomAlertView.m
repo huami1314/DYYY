@@ -93,7 +93,7 @@
     }
 
     UIViewController *topVC = [DYYYUtils topView];
-    if (topVC && [vc respondsToSelector:@selector(presentOnViewController:)] && !topVC.presentedViewController && ![topVC isBeingPresented] && ![topVC isBeingDismissed]) {
+    if (topVC && [vc respondsToSelector:@selector(presentOnViewController:)] && ![topVC isBeingPresented] && ![topVC isBeingDismissed]) {
         [vc presentOnViewController:topVC];
     } else {
         return nil;
