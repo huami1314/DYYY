@@ -6755,6 +6755,42 @@ static Class TagViewClass = nil;
 
 %hook AWELandscapeFeedEntryView
 
+- (void)setAlpha:(CGFloat)alpha {
+    CGFloat finalAlpha = alpha;
+    if (alpha > 0 && self.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG) {
+        NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
+        if (transparentValue.length > 0) {
+            float alphaValue;
+            NSScanner *scanner = [NSScanner scannerWithString:transparentValue];
+            if ([scanner scanFloat:&alphaValue] && scanner.isAtEnd) {
+                finalAlpha = MIN(MAX(alphaValue, 0.0), 1.0);
+            }
+        }
+    }
+
+    if (fabs(self.alpha - finalAlpha) >= 0.01) {
+        %orig(finalAlpha);
+    }
+}
+
+- (void)didMoveToWindow {
+    %orig;
+
+    if (self.window && self.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG) {
+        NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
+        if (transparentValue.length > 0) {
+            float alphaValue;
+            NSScanner *scanner = [NSScanner scannerWithString:transparentValue];
+            if ([scanner scanFloat:&alphaValue] && scanner.isAtEnd) {
+                CGFloat targetAlpha = MIN(MAX(alphaValue, 0.0), 1.0);
+                if (fabs(self.alpha - targetAlpha) > 0.01) {
+                    self.alpha = targetAlpha;
+                }
+            }
+        }
+    }
+}
+
 - (void)layoutSubviews {
     %orig;
     if (DYYYGetBool(@"DYYYRemoveEntry")) {
