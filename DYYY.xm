@@ -5692,43 +5692,6 @@ static void *TabBarHeightObservationContext = &TabBarHeightObservationContext;
 }
 %end
 
-static NSArray<Class> *kStackViewClasses = @[ NSClassFromString(@"AWEElementStackView"), NSClassFromString(@"IESLiveStackView") ];
-static char kCachedStackViewsKey;
-
-void applyGlobalTransparency(id targetObject) {
-    if (!targetObject) {
-        return;
-    }
-
-    NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
-    NSScanner *scanner = [NSScanner scannerWithString:transparentValue];
-    float alphaValue;
-    if (![scanner scanFloat:&alphaValue] || !scanner.isAtEnd || alphaValue < 0 || alphaValue > 1) {
-        return;
-    }
-
-    NSHashTable *cachedStackViews = objc_getAssociatedObject(targetObject, &kCachedStackViewsKey);
-    if (!cachedStackViews) {
-        cachedStackViews = [NSHashTable weakObjectsHashTable];
-        objc_setAssociatedObject(targetObject, &kCachedStackViewsKey, cachedStackViews, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-
-        for (Class stackViewClass in kStackViewClasses) {
-            NSArray *foundViews = [DYYYUtils findAllSubviewsOfClass:stackViewClass inContainer:targetObject];
-            for (UIView *view in foundViews) {
-                [cachedStackViews addObject:view];
-            }
-        }
-    }
-
-    if (cachedStackViews.count > 0) {
-        for (UIView *stackViews in cachedStackViews) {
-            if (stackViews.alpha > 0 && fabs(stackViews.alpha - alphaValue) > 0.01 && stackViews.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG) {
-                stackViews.alpha = alphaValue;
-            }
-        }
-    }
-}
-
 %hook AFDPureModePageTapController
 
 - (void)onVideoPlayerViewDoubleClicked:(id)arg1 {
@@ -5759,8 +5722,6 @@ void applyGlobalTransparency(id targetObject) {
 
 - (void)viewDidLayoutSubviews {
     %orig;
-
-    applyGlobalTransparency(self);
 
     if (isFloatSpeedButtonEnabled) {
         BOOL hasRightStack = NO;
@@ -6312,36 +6273,6 @@ static void DYYYRemoveKeyboardObserver(void) {
 }
 %end
 
-%hook AWELiveNewPreStreamViewController
-
-- (void)viewDidLayoutSubviews {
-    %orig;
-
-    applyGlobalTransparency(self);
-}
-
-%end
-
-%hook AWECommentInputViewController
-
-- (void)viewDidLayoutSubviews {
-    %orig;
-
-    applyGlobalTransparency(self);
-}
-
-%end
-
-%hook AWEAwemeDetailNaviBarContainerView
-
-- (void)layoutSubviews {
-    %orig;
-
-    applyGlobalTransparency(self);
-}
-
-%end
-
 static Class GuideViewClass = nil;
 static Class MuteViewClass = nil;
 static Class TagViewClass = nil;
@@ -6450,6 +6381,24 @@ static Class TagViewClass = nil;
     dyyyCommentViewVisible = YES;
     updateSpeedButtonVisibility();
     updateClearButtonVisibility();
+}
+
+- (void)didMoveToWindow {
+    %orig;
+
+    if (self.window && self.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG) {
+        NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
+        if (transparentValue.length > 0) {
+            float alphaValue;
+            NSScanner *scanner = [NSScanner scannerWithString:transparentValue];
+            if ([scanner scanFloat:&alphaValue] && scanner.isAtEnd) {
+                CGFloat targetAlpha = MIN(MAX(alphaValue, 0.0), 1.0);
+                if (fabs(self.alpha - targetAlpha) > 0.01) {
+                    self.alpha = targetAlpha;
+                }
+            }
+        }
+    }
 }
 
 - (void)layoutSubviews {
@@ -6591,7 +6540,6 @@ static Class TagViewClass = nil;
 }
 
 - (void)setAlpha:(CGFloat)alpha {
-    %orig;
     if (speedButton && isFloatSpeedButtonEnabled) {
         if (alpha == 0) {
             dyyyCommentViewVisible = YES;
@@ -6600,6 +6548,40 @@ static Class TagViewClass = nil;
         }
         updateSpeedButtonVisibility();
         updateClearButtonVisibility();
+    }
+
+    CGFloat finalAlpha = alpha;
+    if (alpha > 0 && self.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG) {
+        NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
+        if (transparentValue.length > 0) {
+            float alphaValue;
+            NSScanner *scanner = [NSScanner scannerWithString:transparentValue];
+            if ([scanner scanFloat:&alphaValue] && scanner.isAtEnd) {
+                finalAlpha = MIN(MAX(alphaValue, 0.0), 1.0);
+            }
+        }
+    }
+
+    if (fabs(self.alpha - finalAlpha) >= 0.01) {
+        %orig(finalAlpha);
+    }
+}
+
+- (void)didMoveToWindow {
+    %orig;
+
+    if (self.window && self.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG) {
+        NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
+        if (transparentValue.length > 0) {
+            float alphaValue;
+            NSScanner *scanner = [NSScanner scannerWithString:transparentValue];
+            if ([scanner scanFloat:&alphaValue] && scanner.isAtEnd) {
+                CGFloat targetAlpha = MIN(MAX(alphaValue, 0.0), 1.0);
+                if (fabs(self.alpha - targetAlpha) > 0.01) {
+                    self.alpha = targetAlpha;
+                }
+            }
+        }
     }
 }
 
