@@ -6392,19 +6392,20 @@ static Class TagViewClass = nil;
                                      }];
         }
         return;
-    } else {
-        if (pureModeTimer) {
-            [pureModeTimer cancel];
-            pureModeTimer = nil;
-        }
-        attempts = 0;
-        pureModeSet = NO;
-        %orig(alpha);
     }
+
+    // 清理纯净模式的残留状态
+    if (pureModeTimer) {
+        [pureModeTimer cancel];
+        pureModeTimer = nil;
+    }
+    attempts = 0;
+    pureModeSet = NO;
 
     // 倍速和清屏按钮的状态控制
     if (speedButton && isFloatSpeedButtonEnabled) {
         if (alpha == 0) {
+            dyyyCommentViewVisible = YES;
         } else if (alpha == 1) {
             dyyyCommentViewVisible = NO;
         }
@@ -6412,19 +6413,21 @@ static Class TagViewClass = nil;
         updateClearButtonVisibility();
     }
 
-    // 全局透明
+    // 值守全局透明度
     CGFloat finalAlpha = alpha;
     if (alpha > 0 && self.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG) {
         NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
-        NSScanner *scanner = [NSScanner scannerWithString:transparentValue];
-        float alphaValue;
-
-        if ([scanner scanFloat:&alphaValue] && scanner.isAtEnd && alphaValue >= 0 && alphaValue <= 1) {
-            finalAlpha = alphaValue;
+        if (transparentValue.length > 0) {
+            float alphaValue;
+            NSScanner *scanner = [NSScanner scannerWithString:transparentValue];
+            if ([scanner scanFloat:&alphaValue] && scanner.isAtEnd) {
+                finalAlpha = MIN(MAX(alphaValue, 0.0), 1.0);
+            }
         }
     }
 
-    if (fabs(self.alpha - finalAlpha) > 0.01) {
+    // 统一应用透明度
+    if (fabs(self.alpha - finalAlpha) >= 0.01) {
         %orig(finalAlpha);
     }
 }
