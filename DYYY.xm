@@ -5425,17 +5425,35 @@ static CGFloat originalTabHeight = 0;
     }
 
     if (isPlayVC && enableFS) {
-        if (frame.origin.x != 0 && frame.origin.y != 0) {
+        if (dyyyCommentViewVisible) {
             %orig(frame);
             return;
         }
-        CGRect superF = self.superview.frame;
-        if (CGRectGetHeight(superF) > 0 && CGRectGetHeight(frame) > 0 && CGRectGetHeight(frame) < CGRectGetHeight(superF)) {
-            CGFloat diff = CGRectGetHeight(superF) - CGRectGetHeight(frame);
-            if (fabs(diff - tabHeight) < 1.0) {
-                frame.size.height = CGRectGetHeight(superF);
+
+        if (fabs(frame.origin.x) > 0.1 || fabs(frame.origin.y) > 0.1) {
+            %orig(frame);
+            return;
+        }
+
+        UIView *superView = self.superview;
+        if (!superView) {
+            %orig(frame);
+            return;
+        }
+
+        CGFloat superHeight = CGRectGetHeight(superView.bounds);
+        CGFloat frameHeight = CGRectGetHeight(frame);
+        CGFloat frameWidth = CGRectGetWidth(frame);
+
+        if (superHeight > 0 && frameHeight > 0 && frameHeight < superHeight) {
+            CGFloat diff = superHeight - frameHeight;
+            BOOL isLandscapeFrame = (frameWidth > frameHeight);
+
+            if (!isLandscapeFrame && fabs(diff - tabHeight) < 1.0) {
+                frame.size.height = superHeight;
             }
         }
+
         %orig(frame);
         return;
     }
