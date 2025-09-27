@@ -24,6 +24,23 @@
 #import "DYYYUtils.h"
 
 static CGFloat DYYYCurrentTabHeight(void);
+static const CGFloat kInvalidAlpha = -1.0;
+static CGFloat gGlobalTransparency = kInvalidAlpha;
+static NSString *const kDYYYGlobalTransparencyKey = @"DYYYGlobalTransparency";
+static NSString *const kDYYYGlobalTransparencyDidChangeNotification = @"DYYYGlobalTransparencyDidChangeNotification";
+
+static void updateGlobalTransparencyCache() {
+    NSString *transparentValue = DYYYGetString(kDYYYGlobalTransparencyKey);
+    if (transparentValue.length > 0) {
+        float alphaValue;
+        NSScanner *scanner = [NSScanner scannerWithString:transparentValue];
+        if ([scanner scanFloat:&alphaValue] && scanner.isAtEnd) {
+            gGlobalTransparency = MIN(MAX(alphaValue, 0.0), 1.0);
+            return;
+        }
+    }
+    gGlobalTransparency = kInvalidAlpha;
+}
 
 static NSDictionary<NSString *, NSString *> *DYYYTopTabTitleMapping(void) {
     static NSString *cachedRawValue = nil;
@@ -5589,6 +5606,7 @@ static void *TabBarHeightObservationContext = &TabBarHeightObservationContext;
 %end
 
 %hook UIView
+
 - (id)initWithFrame:(CGRect)frame {
     UIView *view = %orig;
     if (hideButton && hideButton.isElementsHidden) {
@@ -5610,6 +5628,7 @@ static void *TabBarHeightObservationContext = &TabBarHeightObservationContext;
     }
     return view;
 }
+
 - (void)layoutSubviews {
     %orig;
 
@@ -5677,6 +5696,23 @@ static void *TabBarHeightObservationContext = &TabBarHeightObservationContext;
         return;
     }
     %orig(frame);
+}
+
+%new
+- (void)dyyy_applyGlobalTransparency {
+    if ([NSThread isMainThread]) {
+        if (self.window && self.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG) {
+            if (gGlobalTransparency != kInvalidAlpha && fabs(self.alpha - gGlobalTransparency) >= 0.01) {
+                [UIView animateWithDuration:0.2 animations:^{
+                    self.alpha = gGlobalTransparency;
+                }];
+            }
+        }
+    } else {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self dyyy_applyGlobalTransparency];
+        });
+    }
 }
 
 %end
@@ -6177,6 +6213,7 @@ static id dyyyWindowKeyObserverToken = nil;
 static id dyyyDidBecomeActiveToken = nil;
 static id dyyyWillResignActiveToken = nil;
 static id dyyyKeyboardWillShowToken = nil;
+static void *DYYYGlobalTransparencyContext = &DYYYGlobalTransparencyContext;
 
 static void DYYYRemoveAppLifecycleObservers(void) {
     NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
@@ -6202,9 +6239,17 @@ static void DYYYRemoveKeyboardObserver(void) {
 }
 
 %hook AppDelegate
+
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     BOOL result = %orig;
     initTargetClassNames();
+
+    updateGlobalTransparencyCache();
+
+    [[NSUserDefaults standardUserDefaults] addObserver:(NSObject *)self
+                                            forKeyPath:kDYYYGlobalTransparencyKey
+                                               options:NSKeyValueObservingOptionNew
+                                               context:DYYYGlobalTransparencyContext];
 
     BOOL isEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableFloatClearButton"];
     if (isEnabled) {
@@ -6269,8 +6314,30 @@ static void DYYYRemoveKeyboardObserver(void) {
 - (void)dealloc {
     DYYYRemoveAppLifecycleObservers();
     DYYYRemoveKeyboardObserver();
+    @try {
+        [[NSUserDefaults standardUserDefaults] removeObserver:(NSObject *)self
+                                                   forKeyPath:kDYYYGlobalTransparencyKey
+                                                      context:DYYYGlobalTransparencyContext];
+    } @catch (NSException *exception) {
+        NSLog(@"[DYYY] KVO removeObserver failed: %@", exception);
+    }
     %orig;
 }
+
+- (void)observeValueForKeyPath:(NSString *)keyPath
+                      ofObject:(id)object
+                        change:(NSDictionary<NSKeyValueChangeKey,id> *)change 
+                       context:(void *)context {
+    if (context == DYYYGlobalTransparencyContext) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            updateGlobalTransparencyCache();
+            [[NSNotificationCenter defaultCenter] postNotificationName:kDYYYGlobalTransparencyDidChangeNotification object:nil];
+        });
+    } else {
+        %orig(keyPath, object, change, context);
+    }
+}
+
 %end
 
 static Class GuideViewClass = nil;
@@ -6346,15 +6413,8 @@ static Class TagViewClass = nil;
 
     // 值守全局透明度
     CGFloat finalAlpha = alpha;
-    if (alpha > 0 && self.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG) {
-        NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
-        if (transparentValue.length > 0) {
-            float alphaValue;
-            NSScanner *scanner = [NSScanner scannerWithString:transparentValue];
-            if ([scanner scanFloat:&alphaValue] && scanner.isAtEnd) {
-                finalAlpha = MIN(MAX(alphaValue, 0.0), 1.0);
-            }
-        }
+    if (alpha > 0 && self.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG && gGlobalTransparency != kInvalidAlpha) {
+        finalAlpha = gGlobalTransparency;
     }
 
     // 统一应用透明度
@@ -6385,20 +6445,17 @@ static Class TagViewClass = nil;
 
 - (void)didMoveToWindow {
     %orig;
-
-    if (self.window && self.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG) {
-        NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
-        if (transparentValue.length > 0) {
-            float alphaValue;
-            NSScanner *scanner = [NSScanner scannerWithString:transparentValue];
-            if ([scanner scanFloat:&alphaValue] && scanner.isAtEnd) {
-                CGFloat targetAlpha = MIN(MAX(alphaValue, 0.0), 1.0);
-                if (fabs(self.alpha - targetAlpha) > 0.01) {
-                    self.alpha = targetAlpha;
-                }
-            }
-        }
+    if (self.window) {
+        [self dyyy_applyGlobalTransparency];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(dyyy_applyGlobalTransparency) name:kDYYYGlobalTransparencyDidChangeNotification object:nil];
+    } else {
+        [[NSNotificationCenter defaultCenter] removeObserver:self name:kDYYYGlobalTransparencyDidChangeNotification object:nil];
     }
+}
+
+- (void)dealloc {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+    %orig;
 }
 
 - (void)layoutSubviews {
@@ -6551,15 +6608,8 @@ static Class TagViewClass = nil;
     }
 
     CGFloat finalAlpha = alpha;
-    if (alpha > 0 && self.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG) {
-        NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
-        if (transparentValue.length > 0) {
-            float alphaValue;
-            NSScanner *scanner = [NSScanner scannerWithString:transparentValue];
-            if ([scanner scanFloat:&alphaValue] && scanner.isAtEnd) {
-                finalAlpha = MIN(MAX(alphaValue, 0.0), 1.0);
-            }
-        }
+    if (alpha > 0 && self.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG && gGlobalTransparency != kInvalidAlpha) {
+        finalAlpha = gGlobalTransparency;
     }
 
     if (fabs(self.alpha - finalAlpha) >= 0.01) {
@@ -6569,20 +6619,17 @@ static Class TagViewClass = nil;
 
 - (void)didMoveToWindow {
     %orig;
-
-    if (self.window && self.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG) {
-        NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
-        if (transparentValue.length > 0) {
-            float alphaValue;
-            NSScanner *scanner = [NSScanner scannerWithString:transparentValue];
-            if ([scanner scanFloat:&alphaValue] && scanner.isAtEnd) {
-                CGFloat targetAlpha = MIN(MAX(alphaValue, 0.0), 1.0);
-                if (fabs(self.alpha - targetAlpha) > 0.01) {
-                    self.alpha = targetAlpha;
-                }
-            }
-        }
+    if (self.window) {
+        [self dyyy_applyGlobalTransparency];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(dyyy_applyGlobalTransparency) name:kDYYYGlobalTransparencyDidChangeNotification object:nil];
+    } else {
+        [[NSNotificationCenter defaultCenter] removeObserver:self name:kDYYYGlobalTransparencyDidChangeNotification object:nil];
     }
+}
+
+- (void)dealloc {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+    %orig;
 }
 
 - (void)layoutSubviews {
@@ -6757,15 +6804,8 @@ static Class TagViewClass = nil;
 
 - (void)setAlpha:(CGFloat)alpha {
     CGFloat finalAlpha = alpha;
-    if (alpha > 0 && self.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG) {
-        NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
-        if (transparentValue.length > 0) {
-            float alphaValue;
-            NSScanner *scanner = [NSScanner scannerWithString:transparentValue];
-            if ([scanner scanFloat:&alphaValue] && scanner.isAtEnd) {
-                finalAlpha = MIN(MAX(alphaValue, 0.0), 1.0);
-            }
-        }
+    if (alpha > 0 && self.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG && gGlobalTransparency != kInvalidAlpha) {
+        finalAlpha = gGlobalTransparency;
     }
 
     if (fabs(self.alpha - finalAlpha) >= 0.01) {
@@ -6775,20 +6815,17 @@ static Class TagViewClass = nil;
 
 - (void)didMoveToWindow {
     %orig;
-
-    if (self.window && self.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG) {
-        NSString *transparentValue = DYYYGetString(@"DYYYGlobalTransparency");
-        if (transparentValue.length > 0) {
-            float alphaValue;
-            NSScanner *scanner = [NSScanner scannerWithString:transparentValue];
-            if ([scanner scanFloat:&alphaValue] && scanner.isAtEnd) {
-                CGFloat targetAlpha = MIN(MAX(alphaValue, 0.0), 1.0);
-                if (fabs(self.alpha - targetAlpha) > 0.01) {
-                    self.alpha = targetAlpha;
-                }
-            }
-        }
+    if (self.window) {
+        [self dyyy_applyGlobalTransparency];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(dyyy_applyGlobalTransparency) name:kDYYYGlobalTransparencyDidChangeNotification object:nil];
+    } else {
+        [[NSNotificationCenter defaultCenter] removeObserver:self name:kDYYYGlobalTransparencyDidChangeNotification object:nil];
     }
+}
+
+- (void)dealloc {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+    %orig;
 }
 
 - (void)layoutSubviews {
