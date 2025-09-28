@@ -1027,6 +1027,7 @@ static CGFloat rightLabelRightMargin = -1;
             [parentView addSubview:leftLabel];
 
             [DYYYUtils applyColorSettingsToLabel:leftLabel colorHexString:labelColorHex];
+            [leftLabel dyyy_applyGlobalTransparency];
         }
 
         if (!showLeftRemainingTime && !showLeftCompleteTime) {
@@ -1051,6 +1052,7 @@ static CGFloat rightLabelRightMargin = -1;
             [parentView addSubview:rightLabel];
 
             [DYYYUtils applyColorSettingsToLabel:rightLabel colorHexString:labelColorHex];
+            [rightLabel dyyy_applyGlobalTransparency];
         }
 
         [self setNeedsLayout];
@@ -1457,7 +1459,7 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 
 - (void)didMoveToWindow {
     %orig;
-    if (DYYYGetBool(@"DYYYEnableNotificationTransparency")) {
+    if (self.window && DYYYGetBool(@"DYYYEnableNotificationTransparency")) {
         [self setupBlurEffectForNotificationView];
     }
 }
