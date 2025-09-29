@@ -5209,60 +5209,59 @@ static void *DYYYTabBarHeightContext = &DYYYTabBarHeightContext;
 - (void)setHidden:(BOOL)hidden {
     %orig(hidden);
 
-    // 禁用首页刷新功能
-    if (DYYYGetBool(@"DYYYDisableHomeRefresh")) {
-        for (UIView *subview in self.subviews) {
-            if ([subview isKindOfClass:generalButtonClass]) {
-                AWENormalModeTabBarGeneralButton *button = (AWENormalModeTabBarGeneralButton *)subview;
+    BOOL disableHomeRefresh = DYYYGetBool(@"DYYYDisableHomeRefresh");
+    BOOL enableFullScreen = DYYYGetBool(@"DYYYEnableFullScreen");
+    BOOL hideBottomBg = DYYYGetBool(@"DYYYHideBottomBg");
+    BOOL hideFriendsButton = DYYYGetBool(@"DYYYHideFriendsButton");
+
+    BOOL isHomeSelected = NO;
+    BOOL isFriendsSelected = NO;
+
+    for (UIView *subview in self.subviews) {
+        if ([subview isKindOfClass:generalButtonClass]) {
+            AWENormalModeTabBarGeneralButton *button = (AWENormalModeTabBarGeneralButton *)subview;
+
+            // 禁用首页刷新功能
+            if (disableHomeRefresh && [button.accessibilityLabel isEqualToString:@"首页"]) {
+                button.userInteractionEnabled = (button.status != 2);
+            }
+
+            // 检查当前选中的页
+            if (enableFullScreen && button.status == 2) {
                 if ([button.accessibilityLabel isEqualToString:@"首页"]) {
-                    // status == 2 表示选中状态
-                    button.userInteractionEnabled = (button.status != 2);
+                    isHomeSelected = YES;
+                } else if ([button.accessibilityLabel containsString:@"朋友"]) {
+                    isFriendsSelected = YES;
                 }
             }
         }
     }
-
-    // 背景和分隔线处理
-    BOOL hideBottomBg = DYYYGetBool(@"DYYYHideBottomBg");
-    BOOL enableFullScreen = DYYYGetBool(@"DYYYEnableFullScreen");
 
     if (hideBottomBg || enableFullScreen) {
         if (self.skinContainerView) {
             self.skinContainerView.hidden = YES;
         }
 
-        BOOL isHomeSelected = NO;
-        BOOL isFriendsSelected = NO;
-
-        if (enableFullScreen && !hideBottomBg) {
-            for (UIView *subview in self.subviews) {
-                if ([subview isKindOfClass:generalButtonClass]) {
-                    AWENormalModeTabBarGeneralButton *button = (AWENormalModeTabBarGeneralButton *)subview;
-                    if (button.status == 2) {
-                        if ([button.accessibilityLabel isEqualToString:@"首页"])
-                            isHomeSelected = YES;
-                        else if ([button.accessibilityLabel containsString:@"朋友"])
-                            isFriendsSelected = YES;
-                    }
-                }
-            }
+        BOOL shouldHideBackgrounds = NO;
+        if (hideBottomBg) {
+            shouldHideBackgrounds = YES;
+        } else if (enableFullScreen) {
+            shouldHideBackgrounds = isHomeSelected || (isFriendsSelected && !hideFriendsButton);
         }
 
-        BOOL hideFriendsButton = DYYYGetBool(@"DYYYHideFriendsButton");
-        BOOL shouldHideBackgrounds = hideBottomBg || (enableFullScreen && (isHomeSelected || (isFriendsSelected && !hideFriendsButton)));
-
-        // 单次遍历处理所有背景和分割线
+        // 处理所有背景和分割线
         for (UIView *subview in self.subviews) {
+            CGFloat subviewHeight = subview.frame.size.height;
             // 跳过底栏按钮
             if ([subview isKindOfClass:generalButtonClass] || [subview isKindOfClass:plusButtonClass]) {
                 continue;
             }
             // 隐藏底栏背景
-            if ([subview isKindOfClass:barBackgroundClass] || ([subview isMemberOfClass:[UIView class]] && originalTabBarHeight > 0 && fabs(subview.frame.size.height - gCurrentTabBarHeight) < 0.1)) {
+            if ([subview isKindOfClass:barBackgroundClass] || ([subview isMemberOfClass:[UIView class]] && originalTabBarHeight > 0 && fabs(subviewHeight - gCurrentTabBarHeight) < 0.1)) {
                 subview.hidden = shouldHideBackgrounds;
             }
             // 隐藏细分割线
-            if (subview.frame.size.height > 0 && subview.frame.size.height < 1 && subview.frame.size.width > 300) {
+            if (subviewHeight > 0 && subviewHeight < 1 && subview.frame.size.width > 300) {
                 subview.hidden = enableFullScreen;
             }
         }
@@ -5270,7 +5269,6 @@ static void *DYYYTabBarHeightContext = &DYYYTabBarHeightContext;
         if (self.skinContainerView) {
             self.skinContainerView.hidden = NO;
         }
-
         for (UIView *subview in self.subviews) {
             if ([subview isKindOfClass:barBackgroundClass] || [subview isMemberOfClass:[UIView class]]) {
                 subview.hidden = NO;
