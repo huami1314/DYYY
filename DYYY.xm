@@ -23,11 +23,19 @@
 #import "DYYYToast.h"
 #import "DYYYUtils.h"
 
-static CGFloat DYYYCurrentTabHeight(void);
+static CGFloat gStartY = 0.0;
+static CGFloat gStartVal = 0.0;
+static DYEdgeMode gMode = DYEdgeModeNone;
+static __weak UICollectionView *gFeedCV = nil;
+
 static const CGFloat kInvalidAlpha = -1.0;
+static const CGFloat kInvalidHeight = -1.0;
 static CGFloat gGlobalTransparency = kInvalidAlpha;
+static CGFloat gCurrentTabBarHeight = kInvalidHeight;
+static CGFloat originalTabBarHeight = kInvalidHeight;
 static NSString *const kDYYYGlobalTransparencyKey = @"DYYYGlobalTransparency";
 static NSString *const kDYYYGlobalTransparencyDidChangeNotification = @"DYYYGlobalTransparencyDidChangeNotification";
+static NSString *const kDYYYTabBarHeightKey = @"DYYYTabBarHeight";
 
 static void updateGlobalTransparencyCache() {
     NSString *transparentValue = DYYYGetString(kDYYYGlobalTransparencyKey);
@@ -4314,11 +4322,10 @@ static CGFloat DYYYDesiredMTKViewShiftOffset(UIView *view) {
     if (viewWidth < screenWidth * 0.995f) {
         return 0.0f;
     }
-    CGFloat tabHeight = DYYYCurrentTabHeight();
-    if (tabHeight <= 0.0f) {
+    if (gCurrentTabBarHeight <= 0.0f) {
         return 0.0f;
     }
-    return tabHeight * 0.5f;
+    return gCurrentTabBarHeight * 0.5f;
 }
 
 static void DYYYApplyMTKViewShiftIfNeeded(UIView *view) {
@@ -4930,19 +4937,13 @@ static void DYYYApplyMTKViewShiftIfNeeded(UIView *view) {
 %end
 
 // 底栏高度
-static CGFloat tabHeight = 0;
-static CGFloat originalTabHeight = 0;
-
-static CGFloat DYYYCurrentTabHeight(void) { return tabHeight; }
-
 %hook AWENormalModeTabBar
 
 static Class barBackgroundClass = nil;
 static Class generalButtonClass = nil;
 static Class plusButtonClass = nil;
 static Class tabBarButtonClass = nil;
-static NSString *const TabBarHeightKey = @"DYYYTabBarHeight";
-static void *TabBarHeightObservationContext = &TabBarHeightObservationContext;
+static void *DYYYTabBarHeightContext = &DYYYTabBarHeightContext;
 
 + (void)initialize {
     if (self == [%c(AWENormalModeTabBar) class]) {
@@ -4953,69 +4954,138 @@ static void *TabBarHeightObservationContext = &TabBarHeightObservationContext;
     }
 }
 
+%new
+- (void)initializeOriginalTabBarHeight {
+    if (originalTabBarHeight != kInvalidHeight) {
+        NSLog(@"[DYYY] initializeOriginalTabBarHeight: Skipped! originalTabBarHeight already initialized.");
+        return;
+    }
+
+    UIWindow *targetWindow = self.window ?: [DYYYUtils getActiveWindow];
+    if (self.frame.size.height >= 30) {
+        originalTabBarHeight = self.frame.size.height;
+        NSLog(@"[DYYY] initializeOriginalTabBarHeight: Success! originalTabBarHeight set to %.1f (from self.frame.size.height)", originalTabBarHeight);
+    } else if (targetWindow) {
+        CGFloat bottomInset = targetWindow.safeAreaInsets.bottom;
+        originalTabBarHeight = 49 + bottomInset;
+        NSLog(@"[DYYY] initializeOriginalTabBarHeight: Success! originalTabBarHeight set to %.1f (fallback calculation: 49.0 + %.1f)", originalTabBarHeight, bottomInset);
+    } else {
+        NSLog(@"[DYYY] initializeOriginalTabBarHeight: Failed! No window available.");
+    }
+}
+
+%new
+- (void)calculateTabBarHeight {
+    if (originalTabBarHeight == kInvalidHeight) {
+        NSLog(@"[DYYY] calculateTabBarHeight: Skipped! originalTabBarHeight not initialized yet.");
+        return;
+    }
+
+    CGFloat newHeight = originalTabBarHeight;
+    NSString *tabBarHeightStr = [[NSUserDefaults standardUserDefaults] stringForKey:kDYYYTabBarHeightKey];
+
+    if (tabBarHeightStr.length > 0) {
+        float tabBarHeightValue;
+        NSScanner *scanner = [NSScanner scannerWithString:tabBarHeightStr];
+        if ([scanner scanFloat:&tabBarHeightValue]) {
+            newHeight = MAX(tabBarHeightValue, 0.0);
+        } else {
+            NSLog(@"[DYYY] calculateTabBarHeight: Failed! Could not parse float value for key %@: '%@'", kDYYYTabBarHeightKey, tabBarHeightStr);
+        }
+    }
+
+    if (fabs(gCurrentTabBarHeight - newHeight) > 0.1) {
+        NSLog(@"[DYYY] calculateTabBarHeight: Success! gCurrentTabBarHeight updated from %.1f to %.1f", gCurrentTabBarHeight, newHeight);
+        gCurrentTabBarHeight = newHeight;
+    }
+}
+
+%new
+- (BOOL)applyTabBarHeight {
+    if (gCurrentTabBarHeight == kInvalidHeight) {
+        NSLog(@"[DYYY] applyTabBarHeight: Skipped! gCurrentTabBarHeight not calculated yet.");
+        return NO;
+    }
+
+    CGRect frame = self.frame;
+    if (fabs(frame.size.height - gCurrentTabBarHeight) < 0.1) {
+        NSLog(@"[DYYY] applyTabBarHeight: Skipped! Frame height already applied.");
+        return NO;
+    }
+
+    if ([self respondsToSelector:@selector(setDesiredHeight:)]) {
+        ((void (*)(id, SEL, double))objc_msgSend)(self, @selector(setDesiredHeight:), gCurrentTabBarHeight);
+    }
+
+    frame.size.height = gCurrentTabBarHeight;
+    if (self.superview) {
+        frame.origin.y = self.superview.bounds.size.height - gCurrentTabBarHeight;
+    }
+    self.frame = frame;
+    NSLog(@"[DYYY] applyTabBarHeight: Success! Frame height applied to %.1f", gCurrentTabBarHeight);
+    return YES;
+}
+
 - (instancetype)initWithFrame:(CGRect)frame {
     self = %orig;
     if (self) {
-        [[NSUserDefaults standardUserDefaults] addObserver:self forKeyPath:TabBarHeightKey options:NSKeyValueObservingOptionNew context:TabBarHeightObservationContext];
+        [[NSUserDefaults standardUserDefaults] addObserver:self forKeyPath:kDYYYTabBarHeightKey options:NSKeyValueObservingOptionNew context:DYYYTabBarHeightContext];
     }
     return self;
 }
 
 - (void)dealloc {
     @try {
-        [[NSUserDefaults standardUserDefaults] removeObserver:self forKeyPath:TabBarHeightKey context:TabBarHeightObservationContext];
+        [[NSUserDefaults standardUserDefaults] removeObserver:self forKeyPath:kDYYYTabBarHeightKey context:DYYYTabBarHeightContext];
     } @catch (NSException *exception) {
         NSLog(@"[DYYY] KVO removeObserver failed: %@", exception);
     }
     %orig;
 }
 
-%new
-- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey, id> *)change context:(void *)context {
-    if (context == TabBarHeightObservationContext) {
+- (void)observeValueForKeyPath:(NSString *)keyPath 
+                      ofObject:(id)object 
+                        change:(NSDictionary<NSKeyValueChangeKey, id> *)change 
+                       context:(void *)context {
+    if (context == DYYYTabBarHeightContext) {
+        __weak __typeof(self) weakSelf = self;
         dispatch_async(dispatch_get_main_queue(), ^{
-          [self setNeedsLayout];
+            __strong __typeof(weakSelf) strongSelf = weakSelf;
+            if (strongSelf) {
+            NSLog(@"[DYYY] observeValueForKeyPath: %@ has new value: '%@'", kDYYYTabBarHeightKey, change[NSKeyValueChangeNewKey]);
+            if (originalTabBarHeight == kInvalidHeight) {
+                [strongSelf initializeOriginalTabBarHeight];
+            }
+            [strongSelf calculateTabBarHeight];
+            [strongSelf applyTabBarHeight];
+            }
         });
+    }
+}
+
+- (void)didMoveToWindow {
+    %orig;
+    if (self.window) {
+        [self initializeOriginalTabBarHeight];
+        [self calculateTabBarHeight];
     }
 }
 
 - (void)layoutSubviews {
     %orig;
 
-    if (originalTabHeight == 0) {
-        NSString *sourceDescription = @"";
-        if (self.frame.size.height > 30) {
-            originalTabHeight = self.frame.size.height;
-            sourceDescription = [NSString stringWithFormat:@"from self.frame.size.height: %.1f", originalTabHeight];
-        } else {
-            CGFloat bottomInset = (self.window ?: [DYYYUtils getActiveWindow]).safeAreaInsets.bottom;
-            originalTabHeight = 49 + bottomInset;
-            sourceDescription = [NSString stringWithFormat:@"by fallback calculation: 49.0 + %.1f", bottomInset];
-        }
-        NSLog(@"[DYYY] Initialized originalTabHeight: %.1f (%@)", originalTabHeight, sourceDescription);
+    if (originalTabBarHeight == kInvalidHeight) {
+        NSLog(@"[DYYY] layoutSubviews: Fallback! originalTabBarHeight initialization triggered.");
+        [self initializeOriginalTabBarHeight];
     }
 
-    CGFloat customHeight = DYYYGetFloat(@"DYYYTabBarHeight");
-    tabHeight = (customHeight > 0) ? customHeight : originalTabHeight;
-
-    if (tabHeight <= 0)
-        return;
-
-    if (fabs(self.frame.size.height - tabHeight) > 0.1) {
-        NSLog(@"[DYYY] Adjusting tabHeight to: %1f", tabHeight);
-
-        if ([self respondsToSelector:@selector(setDesiredHeight:)]) {
-            ((void (*)(id, SEL, double))objc_msgSend)(self, @selector(setDesiredHeight:), tabHeight);
-        }
-
-        CGRect frame = self.frame;
-        frame.size.height = tabHeight;
-        if (self.superview) {
-            frame.origin.y = self.superview.bounds.size.height - tabHeight;
-        }
-        self.frame = frame;
-        return;
+    if (gCurrentTabBarHeight == kInvalidHeight) {
+        NSLog(@"[DYYY] layoutSubviews: Fallback! gCurrentTabBarHeight calculation triggered.");
+        [self calculateTabBarHeight];
     }
+
+    if ([self applyTabBarHeight])
+        return;
 
     BOOL hideShop = DYYYGetBool(@"DYYYHideShopButton");
     BOOL hideMsg = DYYYGetBool(@"DYYYHideMessageButton");
@@ -5115,7 +5185,7 @@ static void *TabBarHeightObservationContext = &TabBarHeightObservationContext;
                 continue;
             }
             // 隐藏底栏背景
-            if ([subview isKindOfClass:barBackgroundClass] || ([subview isMemberOfClass:[UIView class]] && originalTabHeight > 0 && fabs(subview.frame.size.height - tabHeight) < 0.1)) {
+            if ([subview isKindOfClass:barBackgroundClass] || ([subview isMemberOfClass:[UIView class]] && originalTabBarHeight > 0 && fabs(subview.frame.size.height - gCurrentTabBarHeight) < 0.1)) {
                 subview.hidden = shouldHideBackgrounds;
             }
             // 隐藏细分割线
@@ -5188,7 +5258,7 @@ static void *TabBarHeightObservationContext = &TabBarHeightObservationContext;
                 continue;
             }
             // 隐藏底栏背景
-            if ([subview isKindOfClass:barBackgroundClass] || ([subview isMemberOfClass:[UIView class]] && originalTabHeight > 0 && fabs(subview.frame.size.height - tabHeight) < 0.1)) {
+            if ([subview isKindOfClass:barBackgroundClass] || ([subview isMemberOfClass:[UIView class]] && originalTabBarHeight > 0 && fabs(subview.frame.size.height - gCurrentTabBarHeight) < 0.1)) {
                 subview.hidden = shouldHideBackgrounds;
             }
             // 隐藏细分割线
@@ -5460,10 +5530,10 @@ static void *TabBarHeightObservationContext = &TabBarHeightObservationContext;
 - (void)layoutSubviews {
     %orig;
 
-    if (DYYYGetBool(@"DYYYEnableFullScreen") && tabHeight > 0) {
+    if (DYYYGetBool(@"DYYYEnableFullScreen") && gCurrentTabBarHeight > 0) {
         for (UIView *subview in self.subviews) {
             CGRect frame = subview.frame;
-            frame.origin.y -= tabHeight;
+            frame.origin.y -= gCurrentTabBarHeight;
             subview.frame = frame;
         }
     }
@@ -5479,7 +5549,7 @@ static void *TabBarHeightObservationContext = &TabBarHeightObservationContext;
         return;
     }
 
-    CGAffineTransform newTransform = CGAffineTransformMakeTranslation(0, originalTabHeight - tabHeight);
+    CGAffineTransform newTransform = CGAffineTransformMakeTranslation(0, originalTabBarHeight - gCurrentTabBarHeight);
 
     if (!CGAffineTransformEqualToTransform(self.transform, newTransform)) {
         self.transform = newTransform;
@@ -5635,7 +5705,7 @@ static void *TabBarHeightObservationContext = &TabBarHeightObservationContext;
     %orig;
 
     if (DYYYGetBool(@"DYYYEnableFullScreen")) {
-        if (self.frame.size.height == originalTabHeight && originalTabHeight > 0) {
+        if (self.frame.size.height == originalTabBarHeight && originalTabBarHeight > 0) {
             UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
             if ([vc isKindOfClass:NSClassFromString(@"AWEMixVideoPanelDetailTableViewController")] || [vc isKindOfClass:NSClassFromString(@"AWECommentInputViewController")] ||
                 [vc isKindOfClass:NSClassFromString(@"AWEAwemeDetailTableViewController")]) {
@@ -5686,11 +5756,28 @@ static void *TabBarHeightObservationContext = &TabBarHeightObservationContext;
             %orig(frame);
             return;
         }
-        CGRect superF = self.superview.frame;
-        if (CGRectGetHeight(superF) > 0 && CGRectGetHeight(frame) > 0 && CGRectGetHeight(frame) < CGRectGetHeight(superF)) {
-            CGFloat diff = CGRectGetHeight(superF) - CGRectGetHeight(frame);
-            if (fabs(diff - tabHeight) < 1.0) {
-                frame.size.height = CGRectGetHeight(superF);
+
+        if (fabs(frame.origin.x) > 0.1 || fabs(frame.origin.y) > 0.1) {
+            %orig(frame);
+            return;
+        }
+
+        UIView *superView = self.superview;
+        if (!superView) {
+            %orig(frame);
+            return;
+        }
+
+        CGFloat superHeight = CGRectGetHeight(superView.bounds);
+        CGFloat frameHeight = CGRectGetHeight(frame);
+        CGFloat frameWidth = CGRectGetWidth(frame);
+
+        if (superHeight > 0 && frameHeight > 0 && frameHeight < superHeight) {
+            CGFloat diff = superHeight - frameHeight;
+            BOOL isLandscapeFrame = (frameWidth > frameHeight);
+
+            if (!isLandscapeFrame && fabs(diff - gCurrentTabBarHeight) < 1.0) {
+                frame.size.height = superHeight;
             }
         }
 
@@ -5868,7 +5955,7 @@ static void *TabBarHeightObservationContext = &TabBarHeightObservationContext;
     if (useFullHeight) {
         frame.size.height = superviewHeight;
     } else {
-        frame.size.height = superviewHeight - tabHeight;
+        frame.size.height = superviewHeight - gCurrentTabBarHeight;
     }
 
     if (fabs(frame.size.height - self.view.frame.size.height) > 0.5) {
@@ -6045,11 +6132,11 @@ static void *TabBarHeightObservationContext = &TabBarHeightObservationContext;
             CGRect frame = contentView.frame;
             CGFloat parentHeight = contentView.superview.frame.size.height;
 
-            if (frame.size.height == parentHeight - tabHeight) {
+            if (frame.size.height == parentHeight - gCurrentTabBarHeight) {
                 frame.size.height = parentHeight;
                 contentView.frame = frame;
-            } else if (frame.size.height == parentHeight - (tabHeight * 2)) {
-                frame.size.height = parentHeight - tabHeight;
+            } else if (frame.size.height == parentHeight - (gCurrentTabBarHeight * 2)) {
+                frame.size.height = parentHeight - gCurrentTabBarHeight;
                 contentView.frame = frame;
             }
         }
@@ -6110,14 +6197,14 @@ static void *TabBarHeightObservationContext = &TabBarHeightObservationContext;
         CGRect frame = self.frame;
         frame.size.height = self.superview.frame.size.height;
         self.frame = frame;
-    } else if (tabHeight > 0) {
+    } else if (gCurrentTabBarHeight > 0) {
         UIWindow *keyWindow = [DYYYUtils getActiveWindow];
         if (keyWindow && keyWindow.safeAreaInsets.bottom == 0) {
             return;
         }
 
         CGRect frame = self.frame;
-        frame.size.height = self.superview.frame.size.height - tabHeight;
+        frame.size.height = self.superview.frame.size.height - gCurrentTabBarHeight;
         self.frame = frame;
     }
 }
@@ -6478,9 +6565,9 @@ static Class TagViewClass = nil;
         CGFloat targetHeight, tx, ty = 0;
         UIWindow *keyWindow = [DYYYUtils getActiveWindow];
         if (keyWindow && keyWindow.safeAreaInsets.bottom == 0) {
-            targetHeight = tabHeight - originalTabHeight;
+            targetHeight = gCurrentTabBarHeight - originalTabBarHeight;
         } else {
-            targetHeight = tabHeight;
+            targetHeight = gCurrentTabBarHeight;
         }
 
         if ([DYYYUtils containsSubviewOfClass:GuideViewClass inContainer:self]) {
@@ -6652,9 +6739,9 @@ static Class TagViewClass = nil;
         CGFloat targetHeight, tx, ty = 0;
         UIWindow *keyWindow = [DYYYUtils getActiveWindow];
         if (keyWindow && keyWindow.safeAreaInsets.bottom == 0) {
-            targetHeight = tabHeight - originalTabHeight;
+            targetHeight = gCurrentTabBarHeight - originalTabBarHeight;
         } else {
-            targetHeight = tabHeight;
+            targetHeight = gCurrentTabBarHeight;
         }
 
         if ([DYYYUtils containsSubviewOfClass:GuideViewClass inContainer:self]) {
@@ -6724,7 +6811,7 @@ static Class TagViewClass = nil;
 
                 CGRect frame = subview.frame;
                 if (DYYYGetBool(@"DYYYEnableFullScreen")) {
-                    frame.size.height = subview.superview.frame.size.height - tabHeight;
+                    frame.size.height = subview.superview.frame.size.height - gCurrentTabBarHeight;
                     subview.frame = frame;
                 }
             }
@@ -6744,7 +6831,7 @@ static Class TagViewClass = nil;
                 if (isWorkImage) {
                     // 修复作者主页作品图片上移问题
                     CGRect frame = subview.frame;
-                    frame.origin.y += tabHeight;
+                    frame.origin.y += gCurrentTabBarHeight;
                     subview.frame = frame;
                 }
             }
@@ -6785,7 +6872,7 @@ static Class TagViewClass = nil;
 - (void)setCenter:(CGPoint)center {
     UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
     if ([vc isKindOfClass:NSClassFromString(@"AWEFeedPlayControlImpl.PureModePageCellViewController")] && DYYYGetBool(@"DYYYEnableFullScreen")) {
-        center.y -= tabHeight;
+        center.y -= gCurrentTabBarHeight;
     }
     %orig(center);
 }
@@ -6803,6 +6890,13 @@ static Class TagViewClass = nil;
 %end
 
 %hook AWELandscapeFeedEntryView
+- (void)setCenter:(CGPoint)center {
+    if (DYYYGetBool(@"DYYYEnableFullScreen")) {
+        center.y += gCurrentTabBarHeight * 0.5;
+    }
+
+    %orig(center);
+}
 
 - (void)setAlpha:(CGFloat)alpha {
     CGFloat finalAlpha = alpha;
@@ -6874,8 +6968,8 @@ static Class TagViewClass = nil;
 
 - (void)setFrame:(CGRect)frame {
     if (DYYYGetBool(@"DYYYEnableFullScreen")) {
-        CGFloat targetY = frame.origin.y - tabHeight;
-        CGFloat screenHeightMinusGDiff = [UIScreen mainScreen].bounds.size.height - tabHeight;
+        CGFloat targetY = frame.origin.y - gCurrentTabBarHeight;
+        CGFloat screenHeightMinusGDiff = [UIScreen mainScreen].bounds.size.height - gCurrentTabBarHeight;
 
         CGFloat tolerance = 10.0;
 
@@ -6921,7 +7015,7 @@ static Class TagViewClass = nil;
             }
         }
         if (target) {
-            target.hidden = ([(UIView *)self frame].size.height == tabHeight);
+            target.hidden = ([(UIView *)self frame].size.height == gCurrentTabBarHeight);
         }
     }
 }
