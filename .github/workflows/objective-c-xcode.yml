@@ -42,9 +42,11 @@ jobs:
           make package FINALPACKAGE=1 -j$(sysctl -n hw.ncpu)
           make package THEOS_PACKAGE_SCHEME=rootless FINALPACKAGE=1 -j$(sysctl -n hw.ncpu)
           make package THEOS_PACKAGE_SCHEME=roothide FINALPACKAGE=1 -j$(sysctl -n hw.ncpu)
+          ls -la ${{ github.workspace }}  # Debug: List files in workspace
+          ls -la ${{ github.workspace }}/packages  # Debug: List files in packages directory
 
       - name: Upload specific Deb packages
         uses: actions/upload-artifact@v4.6.0
         with:
           name: WeChat_LiquidGlass
-          path: ${{ github.workspace }}/*.deb
+          path: ${{ github.workspace }}/packages/*.deb  # Adjust this path based on debug output
