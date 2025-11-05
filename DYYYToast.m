@@ -22,6 +22,7 @@
         self.backgroundColor = [UIColor clearColor];
         self.userInteractionEnabled = YES;
         self.isCancelled = NO;
+        self.allowSuccessAnimation = NO;
 
         BOOL isDarkMode = [DYYYUtils isDarkMode];
 
@@ -136,22 +137,33 @@
 }
 
 - (void)dismiss {
-    if (_progress >= 0.5 && !self.isShowingSuccessAnimation && !self.isCancelled) {
-        self.isShowingSuccessAnimation = YES;
-        [self showSuccessAnimation:nil];
-    }
-    if (self.isCancelled) {
-        [self showCancelAnimation:nil];
+    void (^dismissBlock)(void) = ^{
+      if (self.isCancelled) {
+          [self showCancelAnimation:nil];
+          return;
+      }
+
+      if (self.allowSuccessAnimation) {
+          if (!self.isShowingSuccessAnimation) {
+              self.isShowingSuccessAnimation = YES;
+              [self showSuccessAnimation:nil];
+          }
+          return;
+      }
+
+      [UIView animateWithDuration:0.2
+          animations:^{
+            self.alpha = 0;
+          }
+          completion:^(BOOL finished) {
+            [self removeFromSuperview];
+          }];
+    };
+
+    if ([NSThread isMainThread]) {
+        dismissBlock();
     } else {
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-          [UIView animateWithDuration:0.3
-              animations:^{
-                self.alpha = 0;
-              }
-              completion:^(BOOL finished) {
-                [self removeFromSuperview];
-              }];
-        });
+        dispatch_async(dispatch_get_main_queue(), dismissBlock);
     }
 }
 

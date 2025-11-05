@@ -30,7 +30,7 @@
  * @param mediaType 媒体类型
  * @param completion 完成回调
  */
-+ (void)saveMedia:(NSURL *)mediaURL mediaType:(MediaType)mediaType completion:(void (^)(void))completion;
++ (void)saveMedia:(NSURL *)mediaURL mediaType:(MediaType)mediaType completion:(void (^)(BOOL success))completion;
 
 /**
  * 保存实况照片

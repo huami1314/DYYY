@@ -88,6 +88,7 @@ static inline CGFloat DYYYFrameDelayForProperties(CFDictionaryRef properties) {
 @property(nonatomic, strong) NSMutableDictionary<NSString *, NSNumber *> *taskProgressMap;
 @property(nonatomic, strong) NSMutableDictionary<NSString *, void (^)(BOOL success, NSURL *fileURL)> *completionBlocks;
 @property(nonatomic, strong) NSMutableDictionary<NSString *, NSNumber *> *mediaTypeMap;
+@property(nonatomic, strong) NSMutableDictionary<NSString *, NSString *> *filePathToDownloadID;
 
 // 批量下载相关属性
 @property(nonatomic, strong) NSMutableDictionary<NSString *, NSString *> *downloadToBatchMap;                                                 // 下载ID到批量ID的映射
@@ -120,6 +121,7 @@ static inline CGFloat DYYYFrameDelayForProperties(CFDictionaryRef properties) {
         _taskProgressMap = [NSMutableDictionary dictionary];
         _completionBlocks = [NSMutableDictionary dictionary];
         _mediaTypeMap = [NSMutableDictionary dictionary];
+        _filePathToDownloadID = [NSMutableDictionary dictionary];
 
         // 初始化批量下载相关字典
         _downloadToBatchMap = [NSMutableDictionary dictionary];
@@ -132,114 +134,131 @@ static inline CGFloat DYYYFrameDelayForProperties(CFDictionaryRef properties) {
     return self;
 }
 
-+ (void)saveMedia:(NSURL *)mediaURL mediaType:(MediaType)mediaType completion:(void (^)(void))completion {
++ (void)saveMedia:(NSURL *)mediaURL mediaType:(MediaType)mediaType completion:(void (^)(BOOL success))completion {
     if (mediaType == MediaTypeAudio) {
+        if (completion) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+              completion(NO);
+            });
+        }
         return;
     }
 
     [PHPhotoLibrary requestAuthorization:^(PHAuthorizationStatus status) {
-      if (status == PHAuthorizationStatusAuthorized) {
-          // 如果是表情包类型，先检查实际格式
-          if (mediaType == MediaTypeHeic) {
-              // 检测文件的实际格式
-              NSString *actualFormat = [self detectFileFormat:mediaURL];
-
-              if ([actualFormat isEqualToString:@"webp"]) {
-                  // WebP格式处理
-                  [self convertWebpToGifSafely:mediaURL
-                                    completion:^(NSURL *gifURL, BOOL success) {
-                                      if (success && gifURL) {
-                                          [self saveGifToPhotoLibrary:gifURL
-                                                            mediaType:mediaType
-                                                           completion:^{
-                                                             // 清理原始文件
-                                                             [[NSFileManager defaultManager] removeItemAtPath:mediaURL.path error:nil];
-                                                             if (completion) {
-                                                                 completion();
-                                                             }
-                                                           }];
-                                      } else {
-                                          [DYYYUtils showToast:@"转换失败"];
-                                          // 清理临时文件
-                                          [[NSFileManager defaultManager] removeItemAtPath:mediaURL.path error:nil];
-                                          if (completion) {
-                                              completion();
-                                          }
-                                      }
-                                    }];
-              } else if ([actualFormat isEqualToString:@"heic"] || [actualFormat isEqualToString:@"heif"]) {
-                  // HEIC/HEIF格式处理
-                  [self convertHeicToGif:mediaURL
-                              completion:^(NSURL *gifURL, BOOL success) {
-                                if (success && gifURL) {
-                                    [self saveGifToPhotoLibrary:gifURL
-                                                      mediaType:mediaType
-                                                     completion:^{
-                                                       // 清理原始文件
-                                                       [[NSFileManager defaultManager] removeItemAtPath:mediaURL.path error:nil];
-                                                       if (completion) {
-                                                           completion();
-                                                       }
-                                                     }];
-                                } else {
-                                    [DYYYUtils showToast:@"转换失败"];
-                                    // 清理临时文件
-                                    [[NSFileManager defaultManager] removeItemAtPath:mediaURL.path error:nil];
-                                    if (completion) {
-                                        completion();
-                                    }
-                                }
-                              }];
-              } else if ([actualFormat isEqualToString:@"gif"]) {
-                  // 已经是GIF格式，直接保存
-                  [self saveGifToPhotoLibrary:mediaURL mediaType:mediaType completion:completion];
-              } else {
-                  // 其他格式，尝试作为普通图像保存
-                  [[PHPhotoLibrary sharedPhotoLibrary]
-                      performChanges:^{
-                        UIImage *image = [UIImage imageWithContentsOfFile:mediaURL.path];
-                        if (image) {
-                            [PHAssetChangeRequest creationRequestForAssetFromImage:image];
-                        }
-                      }
-                      completionHandler:^(BOOL success, NSError *_Nullable error) {
-                        if (success) {
-                            if (completion) {
-                                completion();
-                            }
-                        } else {
-                            [DYYYUtils showToast:@"保存失败"];
-                        }
-                        // 不管成功失败都清理临时文件
-                        [[NSFileManager defaultManager] removeItemAtPath:mediaURL.path error:nil];
-                      }];
-              }
-          } else {
-              // 非表情包类型的正常保存流程
-              [[PHPhotoLibrary sharedPhotoLibrary]
-                  performChanges:^{
-                    if (mediaType == MediaTypeVideo) {
-                        [PHAssetChangeRequest creationRequestForAssetFromVideoAtFileURL:mediaURL];
-                    } else {
-                        UIImage *image = [UIImage imageWithContentsOfFile:mediaURL.path];
-                        if (image) {
-                            [PHAssetChangeRequest creationRequestForAssetFromImage:image];
-                        }
-                    }
-                  }
-                  completionHandler:^(BOOL success, NSError *_Nullable error) {
-                    if (success) {
-                        if (completion) {
-                            completion();
-                        }
-                    } else {
-                        [DYYYUtils showToast:@"保存失败"];
-                    }
-                    // 不管成功失败都清理临时文件
-                    [[NSFileManager defaultManager] removeItemAtPath:mediaURL.path error:nil];
-                  }];
-          }
+      if (status != PHAuthorizationStatusAuthorized) {
+          dispatch_async(dispatch_get_main_queue(), ^{
+            [DYYYUtils showToast:@"请允许访问相册权限后重试"];
+            [[NSFileManager defaultManager] removeItemAtPath:mediaURL.path error:nil];
+            [[DYYYManager shared] finalizeDownloadWithFileURL:mediaURL success:NO];
+            if (completion) {
+                completion(NO);
+            }
+          });
+          return;
       }
+
+      void (^reportResult)(BOOL) = ^(BOOL success) {
+          dispatch_async(dispatch_get_main_queue(), ^{
+            [[DYYYManager shared] finalizeDownloadWithFileURL:mediaURL success:success];
+            if (completion) {
+                completion(success);
+            }
+          });
+      };
+
+      if (mediaType == MediaTypeHeic) {
+          NSString *actualFormat = [self detectFileFormat:mediaURL];
+
+          if ([actualFormat isEqualToString:@"webp"]) {
+              [self convertWebpToGifSafely:mediaURL
+                                completion:^(NSURL *gifURL, BOOL success) {
+                                  if (success && gifURL) {
+                                      [self saveGifToPhotoLibrary:gifURL
+                                                        mediaType:mediaType
+                                                       completion:^(BOOL gifSuccess) {
+                                                         [[NSFileManager defaultManager] removeItemAtPath:mediaURL.path error:nil];
+                                                         reportResult(gifSuccess);
+                                                       }];
+                                  } else {
+                                      dispatch_async(dispatch_get_main_queue(), ^{
+                                        [DYYYUtils showToast:@"转换失败"];
+                                        [[NSFileManager defaultManager] removeItemAtPath:mediaURL.path error:nil];
+                                        reportResult(NO);
+                                      });
+                                  }
+                                }];
+              return;
+          }
+
+          if ([actualFormat isEqualToString:@"heic"] || [actualFormat isEqualToString:@"heif"]) {
+              [self convertHeicToGif:mediaURL
+                          completion:^(NSURL *gifURL, BOOL success) {
+                            if (success && gifURL) {
+                                [self saveGifToPhotoLibrary:gifURL
+                                                  mediaType:mediaType
+                                                 completion:^(BOOL gifSuccess) {
+                                                   [[NSFileManager defaultManager] removeItemAtPath:mediaURL.path error:nil];
+                                                   reportResult(gifSuccess);
+                                                 }];
+                            } else {
+                                dispatch_async(dispatch_get_main_queue(), ^{
+                                  [DYYYUtils showToast:@"转换失败"];
+                                  [[NSFileManager defaultManager] removeItemAtPath:mediaURL.path error:nil];
+                                  reportResult(NO);
+                                });
+                            }
+                          }];
+              return;
+          }
+
+          if ([actualFormat isEqualToString:@"gif"]) {
+              [self saveGifToPhotoLibrary:mediaURL
+                                mediaType:mediaType
+                               completion:^(BOOL gifSuccess) {
+                                 reportResult(gifSuccess);
+                               }];
+              return;
+          }
+
+          [[PHPhotoLibrary sharedPhotoLibrary]
+              performChanges:^{
+                UIImage *image = [UIImage imageWithContentsOfFile:mediaURL.path];
+                if (image) {
+                    [PHAssetChangeRequest creationRequestForAssetFromImage:image];
+                }
+              }
+              completionHandler:^(BOOL success, NSError *_Nullable error) {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                  if (!success) {
+                      [DYYYUtils showToast:@"保存失败"];
+                  }
+                  [[NSFileManager defaultManager] removeItemAtPath:mediaURL.path error:nil];
+                  reportResult(success);
+                });
+              }];
+          return;
+      }
+
+      [[PHPhotoLibrary sharedPhotoLibrary]
+          performChanges:^{
+            if (mediaType == MediaTypeVideo) {
+                [PHAssetChangeRequest creationRequestForAssetFromVideoAtFileURL:mediaURL];
+            } else {
+                UIImage *image = [UIImage imageWithContentsOfFile:mediaURL.path];
+                if (image) {
+                    [PHAssetChangeRequest creationRequestForAssetFromImage:image];
+                }
+            }
+          }
+          completionHandler:^(BOOL success, NSError *_Nullable error) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+              if (!success) {
+                  [DYYYUtils showToast:@"保存失败"];
+              }
+              [[NSFileManager defaultManager] removeItemAtPath:mediaURL.path error:nil];
+              reportResult(success);
+            });
+          }];
     }];
 }
 
@@ -294,30 +313,26 @@ static inline CGFloat DYYYFrameDelayForProperties(CFDictionaryRef properties) {
 }
 
 // 保存GIF到相册的方法
-+ (void)saveGifToPhotoLibrary:(NSURL *)gifURL mediaType:(MediaType)mediaType completion:(void (^)(void))completion {
++ (void)saveGifToPhotoLibrary:(NSURL *)gifURL mediaType:(MediaType)mediaType completion:(void (^)(BOOL success))completion {
+    (void)mediaType;
     [[PHPhotoLibrary sharedPhotoLibrary]
         performChanges:^{
-          // 获取GIF数据
           NSData *gifData = [NSData dataWithContentsOfURL:gifURL];
-          // 创建相册资源
           PHAssetCreationRequest *request = [PHAssetCreationRequest creationRequestForAsset];
-          // 实例相册类资源参数
           PHAssetResourceCreationOptions *options = [[PHAssetResourceCreationOptions alloc] init];
-          // 定义GIF参数
           options.uniformTypeIdentifier = @"com.compuserve.gif";
-          // 保存GIF图片
           [request addResourceWithType:PHAssetResourceTypePhoto data:gifData options:options];
         }
         completionHandler:^(BOOL success, NSError *_Nullable error) {
-          if (success) {
-              if (completion) {
-                  completion();
-              }
-          } else {
-              [DYYYUtils showToast:@"保存失败"];
-          }
-          // 不管成功失败都清理临时文件
-          [[NSFileManager defaultManager] removeItemAtPath:gifURL.path error:nil];
+          dispatch_async(dispatch_get_main_queue(), ^{
+            if (!success) {
+                [DYYYUtils showToast:@"保存失败"];
+            }
+            [[NSFileManager defaultManager] removeItemAtPath:gifURL.path error:nil];
+            if (completion) {
+                completion(success);
+            }
+          });
         }];
 }
 
@@ -847,10 +862,11 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width, in
         BOOL imageExists = [[NSFileManager defaultManager] fileExistsAtPath:imagePath];
         BOOL videoExists = [[NSFileManager defaultManager] fileExistsAtPath:videoPath];
 
-        // 隐藏进度视图
+        BOOL downloadSucceeded = imageExists && videoExists;
+        progressView.allowSuccessAnimation = downloadSucceeded;
         [progressView dismiss];
 
-        if (imageExists && videoExists) {
+        if (downloadSucceeded) {
             @try {
                 // 添加iOS版本检查
                 if (@available(iOS 15.0, *)) {
@@ -900,9 +916,16 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width, in
                               audio:audioURL
                            progress:nil
                          completion:^(BOOL success, NSURL *fileURL) {
+                           void (^notifyCompletion)(BOOL) = ^(BOOL result) {
+                               if (completion) {
+                                   completion(result);
+                               }
+                           };
+
                            if (success) {
                                if (mediaType == MediaTypeAudio) {
                                    dispatch_async(dispatch_get_main_queue(), ^{
+                                     [[DYYYManager shared] finalizeDownloadWithFileURL:fileURL success:YES];
                                      UIActivityViewController *activityVC = [[UIActivityViewController alloc] initWithActivityItems:@[ fileURL ] applicationActivities:nil];
 
                                      [activityVC setCompletionWithItemsHandler:^(UIActivityType _Nullable activityType, BOOL completed, NSArray *_Nullable returnedItems, NSError *_Nullable error) {
@@ -912,9 +935,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width, in
                                      }];
                                      UIViewController *rootVC = [UIApplication sharedApplication].keyWindow.rootViewController;
                                      [rootVC presentViewController:activityVC animated:YES completion:nil];
-                                     if (completion) {
-                                         completion(YES);
-                                     }
+                                     notifyCompletion(YES);
                                    });
                                } else {
                                    if (mediaType == MediaTypeVideo && audioURL) {
@@ -923,20 +944,18 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width, in
                                                                        audioURL:audioURL
                                                                      completion:^(BOOL mergeSuccess, NSURL *mergedURL) {
                                                                        if (mergeSuccess) {
+                                                                           [[DYYYManager shared] replaceFileURL:fileURL withFileURL:mergedURL];
+                                                                           [[NSFileManager defaultManager] removeItemAtURL:fileURL error:nil];
                                                                            [self saveMedia:mergedURL
                                                                                  mediaType:mediaType
-                                                                                completion:^{
-                                                                                  if (completion) {
-                                                                                      completion(YES);
-                                                                                  }
+                                                                                completion:^(BOOL saveSuccess) {
+                                                                                  notifyCompletion(saveSuccess);
                                                                                 }];
                                                                        } else {
                                                                            [self saveMedia:fileURL
                                                                                  mediaType:mediaType
-                                                                                completion:^{
-                                                                                  if (completion) {
-                                                                                      completion(NO);
-                                                                                  }
+                                                                                completion:^(BOOL saveSuccess) {
+                                                                                  notifyCompletion(saveSuccess);
                                                                                 }];
                                                                        }
                                                                      }];
@@ -945,15 +964,14 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width, in
                                    }
                                    [self saveMedia:fileURL
                                          mediaType:mediaType
-                                        completion:^{
-                                          if (completion) {
-                                              completion(YES);
-                                          }
+                                        completion:^(BOOL saveSuccess) {
+                                          notifyCompletion(saveSuccess);
                                         }];
                                }
                            } else {
-                               if (completion) {
-                                   completion(NO);
+                               notifyCompletion(NO);
+                               if (fileURL) {
+                                   [[DYYYManager shared] finalizeDownloadWithFileURL:fileURL success:NO];
                                }
                            }
                          }];
@@ -986,6 +1004,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width, in
 
       // 创建下载任务 - 不使用completionHandler，使用代理方法
       NSURLSessionDownloadTask *downloadTask = [session downloadTaskWithURL:url];
+      downloadTask.taskDescription = downloadID;
 
       // 存储下载任务
       [[DYYYManager shared].downloadTasks setObject:downloadTask forKey:downloadID];
@@ -1110,6 +1129,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width, in
 
         DYYYToast *progressView = [[DYYYManager shared].progressViews objectForKey:downloadID];
         if (progressView) {
+            progressView.isCancelled = YES;
             [progressView dismiss];
         }
     }
@@ -1262,7 +1282,10 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width, in
                 completionBlock(successCount, totalCount);
             }
 
-            [progressView dismiss];
+            if (progressView) {
+                progressView.allowSuccessAnimation = (successCount == totalCount);
+                [progressView dismiss];
+            }
             [self.progressViews removeObjectForKey:batchID];
 
             // 清理批量下载相关信息
@@ -1291,6 +1314,112 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width, in
 // 保存媒体类型
 - (void)setMediaType:(MediaType)mediaType forDownloadID:(NSString *)downloadID {
     [self.mediaTypeMap setObject:@(mediaType) forKey:downloadID];
+}
+
+- (void)associateFileURL:(NSURL *)fileURL withDownloadID:(NSString *)downloadID {
+    if (!fileURL || downloadID.length == 0) {
+        return;
+    }
+    NSString *filePath = fileURL.path;
+    if (filePath.length == 0) {
+        return;
+    }
+    @synchronized(self.filePathToDownloadID) {
+        self.filePathToDownloadID[filePath] = downloadID;
+    }
+}
+
+- (NSString *)downloadIDForFileURL:(NSURL *)fileURL {
+    if (!fileURL) {
+        return nil;
+    }
+    NSString *filePath = fileURL.path;
+    if (filePath.length == 0) {
+        return nil;
+    }
+    @synchronized(self.filePathToDownloadID) {
+        return self.filePathToDownloadID[filePath];
+    }
+}
+
+- (void)replaceFileURL:(NSURL *)oldURL withFileURL:(NSURL *)newURL {
+    if (!newURL) {
+        return;
+    }
+    NSString *downloadID = [self downloadIDForFileURL:oldURL];
+    if (downloadID.length == 0) {
+        return;
+    }
+    NSString *newPath = newURL.path;
+    if (newPath.length == 0) {
+        return;
+    }
+    @synchronized(self.filePathToDownloadID) {
+        if (oldURL.path.length > 0) {
+            [self.filePathToDownloadID removeObjectForKey:oldURL.path];
+        }
+        self.filePathToDownloadID[newPath] = downloadID;
+    }
+}
+
+- (void)removeMappingsForDownloadID:(NSString *)downloadID {
+    if (downloadID.length == 0) {
+        return;
+    }
+    @synchronized(self.filePathToDownloadID) {
+        NSArray *keys = [self.filePathToDownloadID allKeysForObject:downloadID];
+        for (NSString *key in keys) {
+            [self.filePathToDownloadID removeObjectForKey:key];
+        }
+    }
+}
+
+- (void)finalizeDownloadWithFileURL:(NSURL *)fileURL success:(BOOL)success {
+    NSString *downloadID = [self downloadIDForFileURL:fileURL];
+    if (downloadID.length == 0) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+          if (!success) {
+              [DYYYUtils showToast:@"保存失败"];
+          }
+        });
+        return;
+    }
+    [self finalizeDownloadWithID:downloadID success:success fileURL:fileURL];
+}
+
+- (void)finalizeDownloadWithID:(NSString *)downloadID success:(BOOL)success fileURL:(NSURL *_Nullable)fileURL {
+    if (downloadID.length == 0) {
+        return;
+    }
+
+    [self removeMappingsForDownloadID:downloadID];
+
+    dispatch_async(dispatch_get_main_queue(), ^{
+      DYYYToast *progressView = self.progressViews[downloadID];
+      if (progressView) {
+          progressView.allowSuccessAnimation = success;
+          if (success) {
+              [progressView setProgress:1.0f];
+          }
+          [progressView dismiss];
+          [self.progressViews removeObjectForKey:downloadID];
+      }
+
+      [self.taskProgressMap removeObjectForKey:downloadID];
+      [self.completionBlocks removeObjectForKey:downloadID];
+      [self.mediaTypeMap removeObjectForKey:downloadID];
+      [self.downloadTasks removeObjectForKey:downloadID];
+      [self.downloadToBatchMap removeObjectForKey:downloadID];
+    });
+
+    if (fileURL) {
+        NSString *filePath = fileURL.path;
+        if (filePath.length > 0) {
+            @synchronized(self.filePathToDownloadID) {
+                [self.filePathToDownloadID removeObjectForKey:filePath];
+            }
+        }
+    }
 }
 
 #pragma mark - NSURLSessionDownloadDelegate
@@ -1391,53 +1520,43 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width, in
     [[NSFileManager defaultManager] moveItemAtURL:location toURL:destinationURL error:&moveError];
 
     if (isBatchDownload) {
-        // 批量下载处理
         if (!moveError) {
             [DYYYManager saveMedia:destinationURL
                          mediaType:mediaType
-                        completion:^{
-                          [[DYYYManager shared] incrementCompletedAndUpdateProgressForBatch:batchID success:YES];
+                        completion:^(BOOL success) {
+                          [[DYYYManager shared] incrementCompletedAndUpdateProgressForBatch:batchID success:success];
                         }];
         } else {
             [[DYYYManager shared] incrementCompletedAndUpdateProgressForBatch:batchID success:NO];
         }
 
-        // 清理下载任务
         [self.downloadTasks removeObjectForKey:downloadIDForTask];
         [self.taskProgressMap removeObjectForKey:downloadIDForTask];
         [self.mediaTypeMap removeObjectForKey:downloadIDForTask];
     } else {
-        // 单个下载处理
-        // 获取保存的完成回调
         void (^completionBlock)(BOOL success, NSURL *fileURL) = self.completionBlocks[downloadIDForTask];
 
-        dispatch_async(dispatch_get_main_queue(), ^{
-          // 隐藏进度视图
-          DYYYToast *progressView = self.progressViews[downloadIDForTask];
-          BOOL wasCancelled = progressView.isCancelled;
+        if (!moveError) {
+            [self associateFileURL:destinationURL withDownloadID:downloadIDForTask];
+            [self.downloadTasks removeObjectForKey:downloadIDForTask];
+            [self.taskProgressMap setObject:@1.0f forKey:downloadIDForTask];
 
-          [progressView dismiss];
-          [self.progressViews removeObjectForKey:downloadIDForTask];
-          [self.downloadTasks removeObjectForKey:downloadIDForTask];
-          [self.taskProgressMap removeObjectForKey:downloadIDForTask];
-          [self.completionBlocks removeObjectForKey:downloadIDForTask];
-          [self.mediaTypeMap removeObjectForKey:downloadIDForTask];
-
-          // 如果已取消，直接返回
-          if (wasCancelled) {
-              return;
-          }
-
-          if (!moveError) {
-              if (completionBlock) {
+            if (completionBlock) {
+                dispatch_async(dispatch_get_main_queue(), ^{
                   completionBlock(YES, destinationURL);
-              }
-          } else {
-              if (completionBlock) {
+                });
+            } else {
+                [[DYYYManager shared] finalizeDownloadWithFileURL:destinationURL success:YES];
+            }
+        } else {
+            [self.downloadTasks removeObjectForKey:downloadIDForTask];
+            if (completionBlock) {
+                dispatch_async(dispatch_get_main_queue(), ^{
                   completionBlock(NO, nil);
-              }
-          }
-        });
+                });
+            }
+            [self finalizeDownloadWithID:downloadIDForTask success:NO fileURL:nil];
+        }
     }
 }
 
@@ -1477,25 +1596,19 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width, in
         // 单个下载错误处理
         void (^completionBlock)(BOOL success, NSURL *fileURL) = self.completionBlocks[downloadIDForTask];
 
-        dispatch_async(dispatch_get_main_queue(), ^{
-          // 隐藏进度视图
-          DYYYToast *progressView = self.progressViews[downloadIDForTask];
-          [progressView dismiss];
-
-          [self.progressViews removeObjectForKey:downloadIDForTask];
-          [self.downloadTasks removeObjectForKey:downloadIDForTask];
-          [self.taskProgressMap removeObjectForKey:downloadIDForTask];
-          [self.completionBlocks removeObjectForKey:downloadIDForTask];
-          [self.mediaTypeMap removeObjectForKey:downloadIDForTask];
-
-          if (error.code != NSURLErrorCancelled) {
+        if (error.code != NSURLErrorCancelled) {
+            dispatch_async(dispatch_get_main_queue(), ^{
               [DYYYUtils showToast:@"下载失败"];
-          }
+            });
+        }
 
-          if (completionBlock) {
+        if (completionBlock) {
+            dispatch_async(dispatch_get_main_queue(), ^{
               completionBlock(NO, nil);
-          }
-        });
+            });
+        }
+
+        [self finalizeDownloadWithID:downloadIDForTask success:NO fileURL:nil];
     }
 }
 
@@ -1800,6 +1913,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width, in
 
               if (validFileCount == 0) {
                   dispatch_async(dispatch_get_main_queue(), ^{
+                    progressView.allowSuccessAnimation = NO;
                     [progressView dismiss];
                     [fileManager removeItemAtPath:livePhotoPath error:nil];
                     if (completion) {
@@ -1895,6 +2009,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width, in
               }
 
               dispatch_group_notify(saveGroup, dispatch_get_main_queue(), ^{
+                progressView.allowSuccessAnimation = (successCount > 0 && successCount == validFileCount);
                 [progressView dismiss];
 
                 [fileManager removeItemAtPath:livePhotoPath error:nil];
@@ -1906,6 +2021,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width, in
           } else {
               // 没有相册权限
               dispatch_async(dispatch_get_main_queue(), ^{
+                progressView.allowSuccessAnimation = NO;
                 [progressView dismiss];
                 [DYYYUtils showToast:@"没有相册权限，无法保存实况照片"];
 
@@ -2679,6 +2795,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width, in
             // 如果没有成功下载任何媒体，则退出
             if (imageFilePaths.count == 0 && livePhotoFilePaths.count == 0) {
                 DYYYLogVideo(@"错误: 没有成功下载任何媒体文件，取消合成");
+                progressView.allowSuccessAnimation = NO;
                 [progressView dismiss];
                 if (completion) {
                     completion(NO, @"没有成功下载任何媒体文件");
@@ -2716,6 +2833,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width, in
                                 completedSteps++;
 
                                 dispatch_async(dispatch_get_main_queue(), ^{
+                                  progressView.allowSuccessAnimation = success;
                                   [progressView dismiss];
 
                                   if (success) {
@@ -2736,6 +2854,7 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width, in
                               }];
                       } else {
                           dispatch_async(dispatch_get_main_queue(), ^{
+                            progressView.allowSuccessAnimation = NO;
                             [progressView dismiss];
                             if (completion) {
                                 completion(NO, @"视频合成失败");

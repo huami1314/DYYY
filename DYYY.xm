@@ -6,6 +6,8 @@
 //  Created on: 2024/10/04
 //
 #import <UIKit/UIKit.h>
+#import <float.h>
+#import <math.h>
 #import <objc/runtime.h>
 
 #import "AwemeHeaders.h"
@@ -18,6 +20,156 @@
 #import "DYYYSettingViewController.h"
 #import "DYYYToast.h"
 #import "DYYYUtils.h"
+
+static NSDictionary<NSString *, NSString *> *DYYYTopTabTitleMapping(void) {
+    static NSString *cachedRawValue = nil;
+    static NSDictionary<NSString *, NSString *> *cachedMapping = nil;
+
+    NSString *currentValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYModifyTopTabText"];
+    BOOL rawValueChanged = (cachedRawValue != currentValue) && ![cachedRawValue isEqualToString:currentValue];
+
+    if (!rawValueChanged) {
+        return cachedMapping;
+    }
+
+    cachedRawValue = [currentValue copy];
+
+    if (currentValue.length == 0) {
+        cachedMapping = nil;
+        return nil;
+    }
+
+    NSMutableDictionary<NSString *, NSString *> *mapping = [NSMutableDictionary dictionary];
+    NSArray<NSString *> *titlePairs = [currentValue componentsSeparatedByString:@"#"];
+    NSCharacterSet *whitespace = [NSCharacterSet whitespaceAndNewlineCharacterSet];
+
+    for (NSString *pair in titlePairs) {
+        NSArray<NSString *> *components = [pair componentsSeparatedByString:@"="];
+        if (components.count != 2) {
+            continue;
+        }
+
+        NSString *originalTitle = [components[0] stringByTrimmingCharactersInSet:whitespace];
+        NSString *newTitle = [components[1] stringByTrimmingCharactersInSet:whitespace];
+
+        if (originalTitle.length == 0 || newTitle.length == 0) {
+            continue;
+        }
+
+        mapping[originalTitle] = newTitle;
+    }
+
+    cachedMapping = mapping.count > 0 ? [mapping copy] : nil;
+    return cachedMapping;
+}
+
+static NSString *DYYYCustomAssetsDirectory(void) {
+    static NSString *customDirectory = nil;
+    static dispatch_once_t onceToken;
+
+    dispatch_once(&onceToken, ^{
+      NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
+      customDirectory = [documentsPath stringByAppendingPathComponent:@"DYYY"];
+      [[NSFileManager defaultManager] createDirectoryAtPath:customDirectory withIntermediateDirectories:YES attributes:nil error:nil];
+    });
+
+    return customDirectory;
+}
+
+static NSString *DYYYCustomIconFileNameForButtonName(NSString *nameString) {
+    if (nameString.length == 0) {
+        return nil;
+    }
+
+    static NSDictionary<NSString *, NSString *> *prefixMapping = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+      prefixMapping = @{
+          @"icon_home_like_after" : @"like_after.png",
+          @"icon_home_like_before" : @"like_before.png",
+          @"icon_home_comment" : @"comment.png",
+          @"icon_home_unfavorite" : @"unfavorite.png",
+          @"icon_home_favorite" : @"favorite.png",
+          @"iconHomeShareRight" : @"share.png"
+      };
+    });
+
+    if ([nameString containsString:@"_comment"]) {
+        return @"comment.png";
+    }
+    if ([nameString containsString:@"_like"]) {
+        return @"like_before.png";
+    }
+    if ([nameString containsString:@"_collect"]) {
+        return @"unfavorite.png";
+    }
+    if ([nameString containsString:@"_share"]) {
+        return @"share.png";
+    }
+
+    for (NSString *prefix in prefixMapping) {
+        if ([nameString hasPrefix:prefix]) {
+            return prefixMapping[prefix];
+        }
+    }
+
+    return nil;
+}
+
+static UIImage *DYYYLoadCustomImage(NSString *fileName, CGSize targetSize) {
+    if (fileName.length == 0) {
+        return nil;
+    }
+
+    static NSCache<NSString *, UIImage *> *imageCache = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+      imageCache = [[NSCache alloc] init];
+      imageCache.name = @"com.dyyy.customIcons.cache";
+    });
+
+    NSString *cacheKey = (targetSize.width > 0.0 && targetSize.height > 0.0) ? [NSString stringWithFormat:@"%@_%0.1f_%0.1f", fileName, targetSize.width, targetSize.height] : fileName;
+
+    UIImage *cachedImage = [imageCache objectForKey:cacheKey];
+    if (cachedImage) {
+        return cachedImage;
+    }
+
+    NSString *fullPath = [DYYYCustomAssetsDirectory() stringByAppendingPathComponent:fileName];
+    UIImage *sourceImage = [UIImage imageWithContentsOfFile:fullPath];
+    if (!sourceImage) {
+        return nil;
+    }
+
+    if (targetSize.width <= 0.0 || targetSize.height <= 0.0) {
+        [imageCache setObject:sourceImage forKey:cacheKey];
+        return sourceImage;
+    }
+
+    CGSize originalSize = sourceImage.size;
+    if (originalSize.width <= 0.0 || originalSize.height <= 0.0) {
+        return sourceImage;
+    }
+
+    CGFloat widthScale = targetSize.width / originalSize.width;
+    CGFloat heightScale = targetSize.height / originalSize.height;
+    CGFloat scale = fmin(widthScale, heightScale);
+
+    if (fabs(1.0 - scale) <= FLT_EPSILON) {
+        [imageCache setObject:sourceImage forKey:cacheKey];
+        return sourceImage;
+    }
+
+    CGSize newSize = CGSizeMake(originalSize.width * scale, originalSize.height * scale);
+    UIGraphicsBeginImageContextWithOptions(newSize, NO, 0.0);
+    [sourceImage drawInRect:CGRectMake(0, 0, newSize.width, newSize.height)];
+    UIImage *resizedImage = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+
+    UIImage *resultImage = resizedImage ?: sourceImage;
+    [imageCache setObject:resultImage forKey:cacheKey];
+    return resultImage;
+}
 
 // 关闭不可见水印
 %hook AWEHPChannelInvisibleWaterMarkModel
@@ -497,35 +649,28 @@
 
 - (void)layoutSubviews {
     %orig;
-    NSString *topTitleConfig = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYModifyTopTabText"];
-    if (topTitleConfig.length == 0)
+    NSDictionary<NSString *, NSString *> *titleMapping = DYYYTopTabTitleMapping();
+    if (titleMapping.count == 0) {
         return;
-
-    NSArray *titlePairs = [topTitleConfig componentsSeparatedByString:@"#"];
+    }
 
     NSString *accessibilityLabel = nil;
     if ([self.superview respondsToSelector:@selector(accessibilityLabel)]) {
         accessibilityLabel = self.superview.accessibilityLabel;
     }
-    if (accessibilityLabel.length == 0)
+    if (accessibilityLabel.length == 0) {
         return;
+    }
 
-    for (NSString *pair in titlePairs) {
-        NSArray *components = [pair componentsSeparatedByString:@"="];
-        if (components.count != 2)
-            continue;
+    NSString *newTitle = titleMapping[accessibilityLabel];
+    if (newTitle.length == 0) {
+        return;
+    }
 
-        NSString *originalTitle = components[0];
-        NSString *newTitle = components[1];
-
-        if ([accessibilityLabel isEqualToString:originalTitle]) {
-            if ([self respondsToSelector:@selector(setContentText:)]) {
-                [self setContentText:newTitle];
-            } else {
-                [self setValue:newTitle forKey:@"contentText"];
-            }
-            break;
-        }
+    if ([self respondsToSelector:@selector(setContentText:)]) {
+        [self setContentText:newTitle];
+    } else {
+        [self setValue:newTitle forKey:@"contentText"];
     }
 }
 
@@ -1183,77 +1328,28 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 %hook AWEFeedVideoButton
 
 - (void)setImage:(id)arg1 {
-    %orig;
-
+    UIImage *imageToApply = arg1;
     NSString *nameString = nil;
 
     if ([self respondsToSelector:@selector(imageNameString)]) {
-        nameString = [self performSelector:@selector(imageNameString)];
-    }
-
-    if (!nameString) {
-        %orig;
-        return;
-    }
-
-    NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
-    NSString *dyyyFolderPath = [documentsPath stringByAppendingPathComponent:@"DYYY"];
-
-    [[NSFileManager defaultManager] createDirectoryAtPath:dyyyFolderPath withIntermediateDirectories:YES attributes:nil error:nil];
-
-    NSDictionary *iconMapping = @{
-        @"icon_home_like_after" : @"like_after.png",
-        @"icon_home_like_before" : @"like_before.png",
-        @"icon_home_comment" : @"comment.png",
-        @"icon_home_unfavorite" : @"unfavorite.png",
-        @"icon_home_favorite" : @"favorite.png",
-        @"iconHomeShareRight" : @"share.png"
-    };
-
-    NSString *customFileName = nil;
-    if ([nameString containsString:@"_comment"]) {
-        customFileName = @"comment.png";
-    } else if ([nameString containsString:@"_like"]) {
-        customFileName = @"like_before.png";
-    } else if ([nameString containsString:@"_collect"]) {
-        customFileName = @"unfavorite.png";
-    } else if ([nameString containsString:@"_share"]) {
-        customFileName = @"share.png";
-    }
-
-    for (NSString *prefix in iconMapping.allKeys) {
-        if ([nameString hasPrefix:prefix]) {
-            customFileName = iconMapping[prefix];
-            break;
-        }
-    }
-
-    if (customFileName) {
-        NSString *customImagePath = [dyyyFolderPath stringByAppendingPathComponent:customFileName];
-
-        if ([[NSFileManager defaultManager] fileExistsAtPath:customImagePath]) {
-            UIImage *customImage = [UIImage imageWithContentsOfFile:customImagePath];
-            if (customImage) {
-                CGFloat targetWidth = 44.0;
-                CGFloat targetHeight = 44.0;
-                CGSize originalSize = customImage.size;
-
-                CGFloat scale = MIN(targetWidth / originalSize.width, targetHeight / originalSize.height);
-                CGFloat newWidth = originalSize.width * scale;
-                CGFloat newHeight = originalSize.height * scale;
-
-                UIGraphicsBeginImageContextWithOptions(CGSizeMake(newWidth, newHeight), NO, 0.0);
-                [customImage drawInRect:CGRectMake(0, 0, newWidth, newHeight)];
-                UIImage *resizedImage = UIGraphicsGetImageFromCurrentImageContext();
-                UIGraphicsEndImageContext();
-
-                if (resizedImage) {
-                    %orig(resizedImage);
-                    return;
-                }
+        IMP imp = [self methodForSelector:@selector(imageNameString)];
+        if (imp) {
+            NSString *(*func)(id, SEL) = (NSString *(*)(id, SEL))imp;
+            if (func) {
+                nameString = func(self, @selector(imageNameString));
             }
         }
     }
+
+    NSString *customFileName = DYYYCustomIconFileNameForButtonName(nameString);
+    if (customFileName.length > 0) {
+        UIImage *customImage = DYYYLoadCustomImage(customFileName, CGSizeMake(44.0, 44.0));
+        if (customImage) {
+            imageToApply = customImage;
+        }
+    }
+
+    %orig(imageToApply);
 }
 
 %end
@@ -1261,24 +1357,15 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
 %hook AWENormalModeTabBarGeneralPlusButton
 - (void)setImage:(UIImage *)image forState:(UIControlState)state {
 
+    UIImage *imageToApply = image;
     if ([self.accessibilityLabel isEqualToString:@"拍摄"]) {
-
-        NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
-        NSString *dyyyFolderPath = [documentsPath stringByAppendingPathComponent:@"DYYY"];
-
-        NSString *customImagePath = [dyyyFolderPath stringByAppendingPathComponent:@"tab_plus.png"];
-
-        if ([[NSFileManager defaultManager] fileExistsAtPath:customImagePath]) {
-            UIImage *customImage = [UIImage imageWithContentsOfFile:customImagePath];
-            if (customImage) {
-
-                %orig(customImage, state);
-                return;
-            }
+        UIImage *customImage = DYYYLoadCustomImage(@"tab_plus.png", CGSizeZero);
+        if (customImage) {
+            imageToApply = customImage;
         }
     }
 
-    %orig;
+    %orig(imageToApply, state);
 }
 %end
 

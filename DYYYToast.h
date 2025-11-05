@@ -9,6 +9,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, strong) UIView *progressBar;
 @property(nonatomic, copy) void (^cancelBlock)(void);
 @property(nonatomic, assign) BOOL isCancelled;
+@property(nonatomic, assign) BOOL allowSuccessAnimation;
 
 - (instancetype)initWithFrame:(CGRect)frame;
 - (void)setProgress:(float)progress;
