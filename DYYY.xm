@@ -2120,18 +2120,6 @@ static AWEIMReusableCommonCell *currentCell;
 
 %end
 
-%hook AWELongVideoControlModel
-- (bool)allowDownload {
-    return YES;
-}
-%end
-
-%hook AWELongVideoControlModel
-- (long long)preventDownloadType {
-    return 0;
-}
-%end
-
 %hook AWEFeedTabJumpGuideView
 
 - (void)layoutSubviews {
@@ -4025,13 +4013,6 @@ static NSHashTable *processedParentViews = nil;
 %hook AWEAwemeModel
 
 - (id)initWithDictionary:(id)arg1 error:(id *)arg2 {
-    id orig = %orig;
-    if (orig && [self contentFilter])
-        return nil;
-    return orig;
-}
-
-- (id)init {
     id orig = %orig;
     if (orig && [self contentFilter])
         return nil;
