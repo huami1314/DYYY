@@ -156,8 +156,7 @@ static void DYYYRemoveRemoteConfigObserver(void) {
 #ifdef __cplusplus
 extern "C"
 #endif
-    void
-    showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
+void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
     AWESettingBaseViewController *settingsVC = [[%c(AWESettingBaseViewController) alloc] init];
     if (!hasAgreed) {
         [DYYYSettingsHelper showAboutDialog:@"用户协议"
@@ -3088,6 +3087,7 @@ extern "C"
       [rootVC.navigationController pushViewController:(UIViewController *)subVC animated:YES];
     };
     [mainItems addObject:floatButtonSettingItem];
+    };
 
     // 创建备份设置分类
     AWESettingSectionModel *backupSection = [[%c(AWESettingSectionModel) alloc] init];
@@ -3495,7 +3495,6 @@ extern "C"
     viewModel.sectionDataArray = @[ mainSection, cleanupSection, backupSection, aboutSection ];
     objc_setAssociatedObject(settingsVC, kViewModelKey, viewModel, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     [rootVC.navigationController pushViewController:(UIViewController *)settingsVC animated:YES];
-    };
 }
 
 %hook AWESettingsViewModel
