@@ -11,6 +11,7 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 #import <signal.h>
+#import "DYYYLifecycleSafety.h"
 
 void updateClearButtonVisibility(void);
 void showClearButton(void);
@@ -53,15 +54,21 @@ void updateClearButtonVisibility() {
     if (!hideButton || !isAppActive)
         return;
 
+    __weak HideUIButton *weakButton = hideButton;
     dispatch_async(dispatch_get_main_queue(), ^{
+        HideUIButton *strongButton = weakButton;
+        if (!strongButton) {
+            DYYYDebugLog("hideButton nil before visibility update");
+            return;
+        }
         if (!dyyyInteractionViewVisible) {
-            hideButton.hidden = YES;
+            strongButton.hidden = YES;
             return;
         }
 
         BOOL shouldHide = dyyyCommentViewVisible || clearButtonForceHidden || isPureViewVisible;
-        if (hideButton.hidden != shouldHide) {
-            hideButton.hidden = shouldHide;
+        if (strongButton.hidden != shouldHide) {
+            strongButton.hidden = shouldHide;
         }
     });
 }
@@ -74,8 +81,14 @@ void showClearButton(void) {
 void hideClearButton(void) {
     clearButtonForceHidden = YES;
     if (hideButton) {
+        __weak HideUIButton *weakButton = hideButton;
         dispatch_async(dispatch_get_main_queue(), ^{
-            hideButton.hidden = YES;
+            HideUIButton *strongButton = weakButton;
+            if (!strongButton) {
+                DYYYDebugLog("hideButton nil before hide");
+                return;
+            }
+            strongButton.hidden = YES;
         });
     }
 }
@@ -171,32 +184,80 @@ void initTargetClassNames(void) {
     }
 }
 
+- (void)didMoveToWindow {
+    [super didMoveToWindow];
+    if (!self.window) {
+        [self stopTimers];
+        return;
+    }
+    [self startPeriodicCheck];
+    [self resetFadeTimer];
+}
+
 - (void)startPeriodicCheck {
-    [self.checkTimer invalidate];
-    self.checkTimer = [NSTimer scheduledTimerWithTimeInterval:0.2
-                                                     repeats:YES
-                                                       block:^(NSTimer *timer) {
-                                                           if (self.isElementsHidden) {
-                                                               [self hideUIElements];
-                                                           }
-                                                       }];
+    if (self.checkTimer) {
+        DYYYDebugLog("clearButton checkTimer invalidated owner=%p", self);
+        [self.checkTimer invalidate];
+        self.checkTimer = nil;
+    }
+    @weakify(self);
+    NSTimer *timer = [NSTimer scheduledTimerWithTimeInterval:0.2
+                                                    repeats:YES
+                                                      block:^(NSTimer *timer) {
+                                                        @strongify(self);
+                                                        if (!self) {
+                                                            DYYYDebugLog("checkTimer fired after owner release");
+                                                            return;
+                                                        }
+                                                        if (self.isElementsHidden) {
+                                                            [self hideUIElements];
+                                                        }
+                                                      }];
+    self.checkTimer = timer;
+    DYYYDebugLog("clearButton checkTimer scheduled owner=%p", self);
 }
 
 - (void)resetFadeTimer {
-    [self.fadeTimer invalidate];
-    self.fadeTimer = [NSTimer scheduledTimerWithTimeInterval:3.0
-                                                     repeats:NO
-                                                       block:^(NSTimer *timer) {
-                                                           [UIView animateWithDuration:0.3
-                                                                            animations:^{
+    if (self.fadeTimer) {
+        DYYYDebugLog("clearButton fadeTimer invalidated owner=%p", self);
+        [self.fadeTimer invalidate];
+        self.fadeTimer = nil;
+    }
+    @weakify(self);
+    NSTimer *fadeTimer = [NSTimer scheduledTimerWithTimeInterval:3.0
+                                                         repeats:NO
+                                                           block:^(NSTimer *timer) {
+                                                             @strongify(self);
+                                                             if (!self) {
+                                                                 DYYYDebugLog("fadeTimer fired after owner release");
+                                                                 return;
+                                                             }
+                                                             [UIView animateWithDuration:0.3
+                                                                              animations:^{
                                                                                 self.alpha = 0.5;
-                                                                            }];
-                                                       }];
+                                                                              }];
+                                                             self.fadeTimer = nil;
+                                                           }];
+    self.fadeTimer = fadeTimer;
+    DYYYDebugLog("clearButton fadeTimer scheduled owner=%p", self);
     if (self.alpha != self.originalAlpha) {
         [UIView animateWithDuration:0.2
                          animations:^{
                            self.alpha = self.originalAlpha;
                          }];
+    }
+}
+
+- (void)stopTimers {
+    if (self.checkTimer) {
+        DYYYDebugLog("clearButton checkTimer invalidated owner=%p", self);
+        [self.checkTimer invalidate];
+        self.checkTimer = nil;
+    }
+    if (self.fadeTimer) {
+        DYYYDebugLog("clearButton fadeTimer invalidated owner=%p", self);
+        [self.fadeTimer invalidate];
+        self.fadeTimer = nil;
     }
 }
 
@@ -476,9 +537,6 @@ void initTargetClassNames(void) {
     }
 }
 - (void)dealloc {
-    [self.checkTimer invalidate];
-    [self.fadeTimer invalidate];
-    self.checkTimer = nil;
-    self.fadeTimer = nil;
+    [self stopTimers];
 }
 @end

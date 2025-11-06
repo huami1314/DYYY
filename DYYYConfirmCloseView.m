@@ -1,5 +1,6 @@
 #import <UIKit/UIKit.h>
 #import "DYYYUtils.h"
+#import "DYYYLifecycleSafety.h"
 
 // 自定义确认关闭弹窗类
 @interface DYYYConfirmCloseView : UIView
@@ -125,6 +126,7 @@
     UIWindow *window = [UIApplication sharedApplication].keyWindow;
     [window addSubview:self];
 
+    @weakify(self);
     [UIView animateWithDuration:0.12
         animations:^{
           self.alpha = 1;
@@ -132,8 +134,13 @@
           self.contentView.transform = CGAffineTransformIdentity;
         }
         completion:^(BOOL finished) {
+          @strongify(self);
+          if (!self) {
+              DYYYDebugLog("ConfirmCloseView released before countdown start");
+              return;
+          }
           // 开始倒计时
-          self.countdownTimer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(updateCountdown) userInfo:nil repeats:YES];
+          [self startCountdownTimer];
         }];
 }
 
@@ -142,14 +149,15 @@
     self.countdownLabel.text = [NSString stringWithFormat:@"%ld 秒后自动关闭", (long)self.countdown];
 
     if (self.countdown <= 0) {
-        [self.countdownTimer invalidate];
+        [self stopCountdownTimer];
         [self confirmTapped];
     }
 }
 
 - (void)dismiss {
-    [self.countdownTimer invalidate];
+    [self stopCountdownTimer];
 
+    @weakify(self);
     [UIView animateWithDuration:0.1
         animations:^{
           self.alpha = 0;
@@ -157,6 +165,10 @@
           self.contentView.transform = CGAffineTransformMakeScale(0.8, 0.8);
         }
         completion:^(BOOL finished) {
+          @strongify(self);
+          if (!self) {
+              return;
+          }
           [self removeFromSuperview];
         }];
 }
@@ -171,6 +183,27 @@
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
       exit(0);
     });
+}
+
+- (void)startCountdownTimer {
+    if (self.countdownTimer && [self.countdownTimer isValid]) {
+        return;
+    }
+    NSTimer *timer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(updateCountdown) userInfo:nil repeats:YES];
+    self.countdownTimer = timer;
+    DYYYDebugLog("ConfirmCloseView countdown timer started owner=%p", self);
+}
+
+- (void)stopCountdownTimer {
+    if (self.countdownTimer) {
+        DYYYDebugLog("ConfirmCloseView countdown timer invalidated owner=%p", self);
+        [self.countdownTimer invalidate];
+        self.countdownTimer = nil;
+    }
+}
+
+- (void)dealloc {
+    [self stopCountdownTimer];
 }
 
 @end

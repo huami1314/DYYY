@@ -20,6 +20,8 @@
 #import "DYYYSettingViewController.h"
 #import "DYYYToast.h"
 #import "DYYYUtils.h"
+#import "AWMSafeDispatchTimer.h"
+#import "DYYYLifecycleSafety.h"
 
 static NSDictionary<NSString *, NSString *> *DYYYTopTabTitleMapping(void) {
     static NSString *cachedRawValue = nil;
@@ -6025,6 +6027,38 @@ void applyGlobalTransparency(id targetObject) {
 }
 %end
 
+static id dyyyWindowKeyObserverToken = nil;
+static id dyyyDidBecomeActiveToken = nil;
+static id dyyyWillResignActiveToken = nil;
+static id dyyyKeyboardWillShowToken = nil;
+
+static void DYYYRemoveAppLifecycleObservers(void) {
+    NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
+    if (dyyyWindowKeyObserverToken) {
+        [center removeObserver:dyyyWindowKeyObserverToken];
+        DYYYDebugLog("Removed window key observer");
+        dyyyWindowKeyObserverToken = nil;
+    }
+    if (dyyyDidBecomeActiveToken) {
+        [center removeObserver:dyyyDidBecomeActiveToken];
+        DYYYDebugLog("Removed didBecomeActive observer");
+        dyyyDidBecomeActiveToken = nil;
+    }
+    if (dyyyWillResignActiveToken) {
+        [center removeObserver:dyyyWillResignActiveToken];
+        DYYYDebugLog("Removed willResignActive observer");
+        dyyyWillResignActiveToken = nil;
+    }
+}
+
+static void DYYYRemoveKeyboardObserver(void) {
+    if (dyyyKeyboardWillShowToken) {
+        [[NSNotificationCenter defaultCenter] removeObserver:dyyyKeyboardWillShowToken];
+        DYYYDebugLog("Removed keyboardWillShow observer");
+        dyyyKeyboardWillShowToken = nil;
+    }
+}
+
 %hook AppDelegate
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     BOOL result = %orig;
@@ -6053,31 +6087,50 @@ void applyGlobalTransparency(id targetObject) {
         hideButton.hidden = NO;
         [getKeyWindow() addSubview:hideButton];
 
-        [[NSNotificationCenter defaultCenter] addObserverForName:UIWindowDidBecomeKeyNotification
-                                                          object:nil
-                                                           queue:[NSOperationQueue mainQueue]
-                                                      usingBlock:^(NSNotification *_Nonnull notification) {
-                                                        updateClearButtonVisibility();
-                                                      }];
+        DYYYRemoveAppLifecycleObservers();
 
-        [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationDidBecomeActiveNotification
-                                                          object:nil
-                                                           queue:[NSOperationQueue mainQueue]
-                                                      usingBlock:^(NSNotification *_Nonnull notification) {
-                                                        isAppActive = YES;
-                                                        updateClearButtonVisibility();
-                                                      }];
+        dyyyWindowKeyObserverToken = [[NSNotificationCenter defaultCenter] addObserverForName:UIWindowDidBecomeKeyNotification
+                                                                                       object:nil
+                                                                                        queue:[NSOperationQueue mainQueue]
+                                                                                   usingBlock:^(NSNotification *_Nonnull notification) {
+                                                                                     DYYYDebugLog("UIWindowDidBecomeKeyNotification received");
+                                                                                     updateClearButtonVisibility();
+                                                                                   }];
 
-        [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationWillResignActiveNotification
-                                                          object:nil
-                                                           queue:[NSOperationQueue mainQueue]
-                                                      usingBlock:^(NSNotification *_Nonnull notification) {
-                                                        isAppActive = NO;
-                                                        updateClearButtonVisibility();
-                                                      }];
+        dyyyDidBecomeActiveToken = [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationDidBecomeActiveNotification
+                                                                                     object:nil
+                                                                                      queue:[NSOperationQueue mainQueue]
+                                                                                 usingBlock:^(NSNotification *_Nonnull notification) {
+                                                                                   isAppActive = YES;
+                                                                                   DYYYDebugLog("UIApplicationDidBecomeActiveNotification received");
+                                                                                   updateClearButtonVisibility();
+                                                                                 }];
+
+        dyyyWillResignActiveToken = [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationWillResignActiveNotification
+                                                                                      object:nil
+                                                                                       queue:[NSOperationQueue mainQueue]
+                                                                                  usingBlock:^(NSNotification *_Nonnull notification) {
+                                                                                    isAppActive = NO;
+                                                                                    DYYYDebugLog("UIApplicationWillResignActiveNotification received");
+                                                                                    updateClearButtonVisibility();
+                                                                                  }];
+    } else {
+        DYYYRemoveAppLifecycleObservers();
     }
 
     return result;
+}
+
+- (void)applicationWillTerminate:(UIApplication *)application {
+    DYYYRemoveAppLifecycleObservers();
+    DYYYRemoveKeyboardObserver();
+    %orig;
+}
+
+- (void)dealloc {
+    DYYYRemoveAppLifecycleObservers();
+    DYYYRemoveKeyboardObserver();
+    %orig;
 }
 %end
 
@@ -6119,7 +6172,7 @@ static Class TagViewClass = nil;
 
 - (void)setAlpha:(CGFloat)alpha {
     // 纯净模式功能
-    static dispatch_source_t timer = nil;
+    static AWMSafeDispatchTimer *pureModeTimer = nil;
     static int attempts = 0;
     static BOOL pureModeSet = NO;
     if (DYYYGetBool(@"DYYYEnablePure")) {
@@ -6127,36 +6180,46 @@ static Class TagViewClass = nil;
         if (pureModeSet) {
             return;
         }
-        if (!timer) {
-            timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
-            dispatch_source_set_timer(timer, DISPATCH_TIME_NOW, 0.5 * NSEC_PER_SEC, 0);
-            dispatch_source_set_event_handler(timer, ^{
-              UIWindow *keyWindow = [DYYYUtils getActiveWindow];
-              if (keyWindow && keyWindow.rootViewController) {
-                  UIViewController *feedVC = [DYYYUtils findViewControllerOfClass:NSClassFromString(@"AWEFeedTableViewController") inViewController:keyWindow.rootViewController];
-                  if (feedVC) {
-                      [feedVC setValue:@YES forKey:@"pureMode"];
-                      pureModeSet = YES;
-                      dispatch_source_cancel(timer);
-                      timer = nil;
-                      attempts = 0;
-                      return;
-                  }
-              }
-              attempts++;
-              if (attempts >= 10) {
-                  dispatch_source_cancel(timer);
-                  timer = nil;
-                  attempts = 0;
-              }
-            });
-            dispatch_resume(timer);
+        if (!pureModeTimer) {
+            pureModeTimer = [[AWMSafeDispatchTimer alloc] init];
+        }
+        if (!pureModeTimer.isRunning) {
+            attempts = 0;
+            __weak AWMSafeDispatchTimer *weakTimer = pureModeTimer;
+            [pureModeTimer startWithInterval:0.5
+                                      leeway:0.1
+                                       queue:dispatch_get_main_queue()
+                                    repeats:YES
+                                    handler:^{
+                                      AWMSafeDispatchTimer *strongTimer = weakTimer;
+                                      DYYYDebugLog("pureModeTimer fire attempts=%{public}d set=%{public}d", attempts, pureModeSet);
+                                      UIWindow *keyWindow = [DYYYUtils getActiveWindow];
+                                      if (keyWindow && keyWindow.rootViewController) {
+                                          UIViewController *feedVC =
+                                              [DYYYUtils findViewControllerOfClass:NSClassFromString(@"AWEFeedTableViewController") inViewController:keyWindow.rootViewController];
+                                          if (feedVC) {
+                                              [feedVC setValue:@YES forKey:@"pureMode"];
+                                              pureModeSet = YES;
+                                              [strongTimer cancel];
+                                              pureModeTimer = nil;
+                                              attempts = 0;
+                                              return;
+                                          }
+                                      }
+                                      attempts++;
+                                      if (attempts >= 10) {
+                                          [strongTimer cancel];
+                                          pureModeTimer = nil;
+                                          attempts = 0;
+                                      }
+                                    }];
         }
         return;
     } else {
-        if (timer) {
-            dispatch_source_cancel(timer);
-            timer = nil;
+        if (pureModeTimer) {
+            [pureModeTimer cancel];
+            pureModeTimer = nil;
+            DYYYDebugLog("pureModeTimer cancelled due to disable");
         }
         attempts = 0;
         pureModeSet = NO;
@@ -6943,23 +7006,26 @@ static void findTargetViewInView(UIView *view) {
             %init(CommentBottomTipsVCGroup, AWECommentPanelListSwiftImpl_CommentBottomTipsContainerViewController = tipsVCClass);
         }
 
-        [[NSNotificationCenter defaultCenter] addObserverForName:UIKeyboardWillShowNotification
-                                                          object:nil
-                                                           queue:[NSOperationQueue mainQueue]
-                                                      usingBlock:^(NSNotification *notification) {
-                                                        if (DYYYGetBool(@"DYYYHideKeyboardAI")) {
-                                                            if (cachedHideView) {
-                                                                for (UIView *subview in cachedHideView.subviews) {
-                                                                    subview.hidden = YES;
-                                                                }
-                                                            } else {
-                                                                for (UIWindow *window in [UIApplication sharedApplication].windows) {
-                                                                    findTargetViewInView(window);
-                                                                    if (cachedHideView)
-                                                                        break;
-                                                                }
-                                                            }
-                                                        }
-                                                      }];
+        NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
+        DYYYRemoveKeyboardObserver();
+        dyyyKeyboardWillShowToken = [center addObserverForName:UIKeyboardWillShowNotification
+                                                        object:nil
+                                                         queue:[NSOperationQueue mainQueue]
+                                                    usingBlock:^(NSNotification *notification) {
+                                                      if (DYYYGetBool(@"DYYYHideKeyboardAI")) {
+                                                          DYYYDebugLog("UIKeyboardWillShowNotification received for AI hide");
+                                                          if (cachedHideView) {
+                                                              for (UIView *subview in cachedHideView.subviews) {
+                                                                  subview.hidden = YES;
+                                                              }
+                                                          } else {
+                                                              for (UIWindow *window in [UIApplication sharedApplication].windows) {
+                                                                  findTargetViewInView(window);
+                                                                  if (cachedHideView)
+                                                                      break;
+                                                              }
+                                                          }
+                                                      }
+                                                    }];
     }
 }

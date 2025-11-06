@@ -22,6 +22,7 @@
 
 #import "DYYYToast.h"
 #import "DYYYUtils.h"
+#import "DYYYLifecycleSafety.h"
 
 static const NSTimeInterval kDYYYDefaultFrameDelay = 0.1f;
 static const CGFloat kDYYYMillisecondsPerSecond = 1000.0f;
@@ -771,23 +772,33 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width, in
       NSString *videoDownloadID = [NSString stringWithFormat:@"video_%@", uniqueID];
 
       // 更新合并进度的定时器
+      __weak DYYYToast *weakProgressView = progressView;
       __block NSTimer *progressTimer = [NSTimer scheduledTimerWithTimeInterval:0.1
                                                                        repeats:YES
                                                                          block:^(NSTimer *_Nonnull timer) {
+                                                                           DYYYToast *strongProgressView = weakProgressView;
+                                                                           if (!strongProgressView) {
+                                                                               DYYYDebugLog("Progress view released before timer fire");
+                                                                               [timer invalidate];
+                                                                               progressTimer = nil;
+                                                                               return;
+                                                                           }
+
                                                                            float totalProgress = (imageProgress + videoProgress) / 2.0;
-                                                                           [progressView setProgress:totalProgress];
+                                                                           [strongProgressView setProgress:totalProgress];
 
                                                                            // 更新进度文字
-                                                                           NSString *statusText = @"正在下载实况照片...";
                                                                            if (imageDownloaded && !videoDownloaded) {
-                                                                               statusText = @"图片下载完成，等待视频...";
+                                                                               DYYYDebugLog("Image download done, waiting for video");
                                                                            } else if (!imageDownloaded && videoDownloaded) {
-                                                                               statusText = @"视频下载完成，等待图片...";
+                                                                               DYYYDebugLog("Video download done, waiting for image");
                                                                            } else if (imageDownloaded && videoDownloaded) {
-                                                                               statusText = @"下载完成，准备保存...";
+                                                                               DYYYDebugLog("Downloads completed, preparing to save");
                                                                                [timer invalidate];  // 全部完成时停止定时器
+                                                                               progressTimer = nil;
                                                                            }
-                                                                         }];
+                                                                        }];
+      DYYYDebugLog("Progress timer scheduled owner=%p", progressView);
 
       // 下载图片
       dispatch_group_enter(group);
@@ -846,7 +857,11 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width, in
       // 当两个下载都完成后，保存实况照片
       dispatch_group_notify(group, dispatch_get_main_queue(), ^{
         // 停止进度定时器
-        [progressTimer invalidate];
+        if (progressTimer) {
+            [progressTimer invalidate];
+            progressTimer = nil;
+            DYYYDebugLog("Progress timer invalidated after group completion");
+        }
 
         // 移除进度观察
         if (@available(iOS 11.0, *)) {

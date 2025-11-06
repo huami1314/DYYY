@@ -1,5 +1,6 @@
 #import "DYYYToast.h"
 #import "DYYYUtils.h"
+#import "DYYYLifecycleSafety.h"
 
 @interface DYYYToast ()
 
@@ -246,49 +247,49 @@
                 circleLayer.opacity = 1.0;
                 [circleLayer addAnimation:circleAnimation forKey:@"fadeIn"];
 
-                dispatch_after(dispatch_time(DISPATCH_TIME_NOW,
-                                             (int64_t)(0.1 * NSEC_PER_SEC)),  // 从0.2改为0.1
-                               dispatch_get_main_queue(), ^{
-                                 if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHapticFeedbackEnabled"]) {
-                                     UINotificationFeedbackGenerator *feedbackGenerator = [[UINotificationFeedbackGenerator alloc] init];
-                                     [feedbackGenerator notificationOccurred:UINotificationFeedbackTypeSuccess];
-                                 }
-                                 CABasicAnimation *checkmarkAnimation = [CABasicAnimation animationWithKeyPath:@"strokeEnd"];
-                                 checkmarkAnimation.fromValue = @0.0;
-                                 checkmarkAnimation.toValue = @1.0;
-                                 checkmarkAnimation.duration = 0.15;  // 从0.3改为0.15
-                                 checkmarkAnimation.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseOut];
-                                 checkmarkLayer.strokeEnd = 1.0;
-                                 [checkmarkLayer addAnimation:checkmarkAnimation forKey:@"drawCheckmark"];
+                DYYYDispatchAfterWeak(0.1, self, ^(id owner) {
+                  DYYYToast *toast = (DYYYToast *)owner;
+                  if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHapticFeedbackEnabled"]) {
+                      UINotificationFeedbackGenerator *feedbackGenerator = [[UINotificationFeedbackGenerator alloc] init];
+                      [feedbackGenerator notificationOccurred:UINotificationFeedbackTypeSuccess];
+                  }
+                  CABasicAnimation *checkmarkAnimation = [CABasicAnimation animationWithKeyPath:@"strokeEnd"];
+                  checkmarkAnimation.fromValue = @0.0;
+                  checkmarkAnimation.toValue = @1.0;
+                  checkmarkAnimation.duration = 0.15;  // 从0.3改为0.15
+                  checkmarkAnimation.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseOut];
+                  checkmarkLayer.strokeEnd = 1.0;
+                  [checkmarkLayer addAnimation:checkmarkAnimation forKey:@"drawCheckmark"];
 
-                                 [UIView animateWithDuration:0.15  // 从0.2改为0.15
-                                     delay:0.1
-                                     usingSpringWithDamping:0.6
-                                     initialSpringVelocity:0.8
-                                     options:UIViewAnimationOptionCurveEaseInOut
-                                     animations:^{
-                                       self.progressView.transform = CGAffineTransformMakeScale(1.15, 1.15);
-                                     }
-                                     completion:^(BOOL finished) {
-                                       [UIView animateWithDuration:0.2
-                                                        animations:^{
-                                                          self.progressView.transform = CGAffineTransformIdentity;
-                                                        }];
-                                     }];
+                  [UIView animateWithDuration:0.15  // 从0.2改为0.15
+                      delay:0.1
+                      usingSpringWithDamping:0.6
+                      initialSpringVelocity:0.8
+                      options:UIViewAnimationOptionCurveEaseInOut
+                      animations:^{
+                        toast.progressView.transform = CGAffineTransformMakeScale(1.15, 1.15);
+                      }
+                      completion:^(BOOL finished) {
+                        [UIView animateWithDuration:0.2
+                                         animations:^{
+                                           toast.progressView.transform = CGAffineTransformIdentity;
+                                         }];
+                      }];
 
-                                 dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                                   [UIView animateWithDuration:0.2  // 从0.3改为0.2
-                                       animations:^{
-                                         self.alpha = 0;
-                                       }
-                                       completion:^(BOOL finished) {
-                                         [self removeFromSuperview];
-                                         if (completion) {
-                                             completion();
-                                         }
-                                       }];
-                                 });
-                               });
+                  DYYYDispatchAfterWeak(1.2, toast, ^(id innerOwner) {
+                    DYYYToast *innerToast = (DYYYToast *)innerOwner;
+                    [UIView animateWithDuration:0.2  // 从0.3改为0.2
+                        animations:^{
+                          innerToast.alpha = 0;
+                        }
+                        completion:^(BOOL finished) {
+                          [innerToast removeFromSuperview];
+                          if (completion) {
+                              completion();
+                          }
+                        }];
+                  });
+                });
               }];
         }];
 }
@@ -349,49 +350,50 @@
           circleLayer.opacity = 1.0;
           [circleLayer addAnimation:circleAnimation forKey:@"fadeIn"];
 
-          dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)),  // 从0.2改为0.1
-                         dispatch_get_main_queue(), ^{
-                           if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHapticFeedbackEnabled"]) {
-                               UINotificationFeedbackGenerator *feedbackGenerator = [[UINotificationFeedbackGenerator alloc] init];
-                               [feedbackGenerator notificationOccurred:UINotificationFeedbackTypeError];
-                           }
-                           // 绘制叉号
-                           CABasicAnimation *crossAnimation = [CABasicAnimation animationWithKeyPath:@"strokeEnd"];
-                           crossAnimation.fromValue = @0.0;
-                           crossAnimation.toValue = @1.0;
-                           crossAnimation.duration = 0.15;  // 从0.3改为0.15
-                           crossAnimation.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseOut];
-                           crossLayer.strokeEnd = 1.0;
-                           [crossLayer addAnimation:crossAnimation forKey:@"drawCross"];
+          DYYYDispatchAfterWeak(0.1, self, ^(id owner) {
+            DYYYToast *toast = (DYYYToast *)owner;
+            if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHapticFeedbackEnabled"]) {
+                UINotificationFeedbackGenerator *feedbackGenerator = [[UINotificationFeedbackGenerator alloc] init];
+                [feedbackGenerator notificationOccurred:UINotificationFeedbackTypeError];
+            }
+            // 绘制叉号
+            CABasicAnimation *crossAnimation = [CABasicAnimation animationWithKeyPath:@"strokeEnd"];
+            crossAnimation.fromValue = @0.0;
+            crossAnimation.toValue = @1.0;
+            crossAnimation.duration = 0.15;  // 从0.3改为0.15
+            crossAnimation.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseOut];
+            crossLayer.strokeEnd = 1.0;
+            [crossLayer addAnimation:crossAnimation forKey:@"drawCross"];
 
-                           [UIView animateWithDuration:0.15  // 从0.2改为0.15
-                               delay:0.1
-                               usingSpringWithDamping:0.6
-                               initialSpringVelocity:0.8
-                               options:UIViewAnimationOptionCurveEaseInOut
-                               animations:^{
-                                 self.progressView.transform = CGAffineTransformMakeScale(1.15, 1.15);
-                               }
-                               completion:^(BOOL finished) {
-                                 [UIView animateWithDuration:0.2
-                                                  animations:^{
-                                                    self.progressView.transform = CGAffineTransformIdentity;
-                                                  }];
-                               }];
+            [UIView animateWithDuration:0.15  // 从0.2改为0.15
+                delay:0.1
+                usingSpringWithDamping:0.6
+                initialSpringVelocity:0.8
+                options:UIViewAnimationOptionCurveEaseInOut
+                animations:^{
+                  toast.progressView.transform = CGAffineTransformMakeScale(1.15, 1.15);
+                }
+                completion:^(BOOL finished) {
+                  [UIView animateWithDuration:0.2
+                                   animations:^{
+                                     toast.progressView.transform = CGAffineTransformIdentity;
+                                   }];
+                }];
 
-                           dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                             [UIView animateWithDuration:0.2  // 从0.3改为0.2
-                                 animations:^{
-                                   self.alpha = 0;
-                                 }
-                                 completion:^(BOOL finished) {
-                                   [self removeFromSuperview];
-                                   if (completion) {
-                                       completion();
-                                   }
-                                 }];
-                           });
-                         });
+            DYYYDispatchAfterWeak(1.2, toast, ^(id innerOwner) {
+              DYYYToast *innerToast = (DYYYToast *)innerOwner;
+              [UIView animateWithDuration:0.2  // 从0.3改为0.2
+                  animations:^{
+                    innerToast.alpha = 0;
+                  }
+                  completion:^(BOOL finished) {
+                    [innerToast removeFromSuperview];
+                    if (completion) {
+                        completion();
+                    }
+                  }];
+            });
+          });
         }];
 }
 
@@ -463,7 +465,8 @@
     circleLayer.opacity = 1.0;
     [circleLayer addAnimation:circleAnimation forKey:@"fadeIn"];
 
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+    DYYYDispatchAfterWeak(0.1, self, ^(id owner) {
+      DYYYToast *toast = (DYYYToast *)owner;
       if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHapticFeedbackEnabled"]) {
           UINotificationFeedbackGenerator *feedbackGenerator = [[UINotificationFeedbackGenerator alloc] init];
           [feedbackGenerator notificationOccurred:UINotificationFeedbackTypeSuccess];
@@ -483,22 +486,23 @@
           initialSpringVelocity:0.8
           options:UIViewAnimationOptionCurveEaseInOut
           animations:^{
-            self.progressView.transform = CGAffineTransformMakeScale(1.15, 1.15);
+            toast.progressView.transform = CGAffineTransformMakeScale(1.15, 1.15);
           }
           completion:^(BOOL finished) {
             [UIView animateWithDuration:0.2
                              animations:^{
-                               self.progressView.transform = CGAffineTransformIdentity;
+                               toast.progressView.transform = CGAffineTransformIdentity;
                              }];
           }];
 
-      dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+      DYYYDispatchAfterWeak(1.2, toast, ^(id innerOwner) {
+        DYYYToast *innerToast = (DYYYToast *)innerOwner;
         [UIView animateWithDuration:0.2
             animations:^{
-              self.alpha = 0;
+              innerToast.alpha = 0;
             }
             completion:^(BOOL finished) {
-              [self removeFromSuperview];
+              [innerToast removeFromSuperview];
               if (completion) {
                   completion();
               }
