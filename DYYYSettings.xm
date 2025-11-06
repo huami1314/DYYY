@@ -2092,88 +2092,68 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
       };
 
       void (^refreshConfigConflictState)(void) = ^{
-        __weak AWESettingItemModel *weakRemoteURLItem = remoteURLItemRef;
-        __weak AWESettingItemModel *weakCheckUpdateItem = checkUpdateItemRef;
-        __weak AWESettingItemModel *weakLoadConfigItem = loadConfigItemRef;
-        __weak AWESettingItemModel *weakDeleteConfigItem = deleteConfigItemRef;
-
-        void (^refreshConfigConflictState)(void) = ^{
-            AWESettingItemModel *remoteURLItem = weakRemoteURLItem;
-            AWESettingItemModel *checkUpdateItem = weakCheckUpdateItem;
-            AWESettingItemModel *loadConfigItem = weakLoadConfigItem;
-            AWESettingItemModel *deleteConfigItem = weakDeleteConfigItem;
-
-            if (!remoteURLItem && !checkUpdateItem && !loadConfigItem && !deleteConfigItem) {
-                DYYYDebugLog("Remote config setting items released before refresh");
-                return;
+        BOOL remoteMode = [DYYYABTestHook isRemoteMode];
+        BOOL localLoaded = [DYYYABTestHook isLocalConfigLoaded];
+        if (remoteMode) {
+            if (loadConfigItemRef) {
+                loadConfigItemRef.isEnable = NO;
+                [loadConfigItemRef refreshCell];
             }
-
-            BOOL remoteMode = [DYYYABTestHook isRemoteMode];
-            BOOL localLoaded = [DYYYABTestHook isLocalConfigLoaded];
-
-            if (remoteMode) {
-                if (loadConfigItem) {
-                    loadConfigItem.isEnable = NO;
-                    [loadConfigItem refreshCell];
-                }
-                if (deleteConfigItem) {
-                    deleteConfigItem.isEnable = NO;
-                    [deleteConfigItem refreshCell];
-                }
-                if (remoteURLItem) {
-                    remoteURLItem.isEnable = YES;
-                    [remoteURLItem refreshCell];
-                }
-                if (checkUpdateItem) {
-                    checkUpdateItem.isEnable = YES;
-                    [checkUpdateItem refreshCell];
-                }
-            } else if (localLoaded) {
-                if (remoteURLItem) {
-                    remoteURLItem.isEnable = NO;
-                    [remoteURLItem refreshCell];
-                }
-                if (checkUpdateItem) {
-                    checkUpdateItem.isEnable = NO;
-                    [checkUpdateItem refreshCell];
-                }
-                if (loadConfigItem) {
-                    loadConfigItem.isEnable = YES;
-                    [loadConfigItem refreshCell];
-                }
-                if (deleteConfigItem) {
-                    deleteConfigItem.isEnable = YES;
-                    [deleteConfigItem refreshCell];
-                }
-            } else {
-                if (remoteURLItem) {
-                    remoteURLItem.isEnable = YES;
-                    [remoteURLItem refreshCell];
-                }
-                if (checkUpdateItem) {
-                    checkUpdateItem.isEnable = YES;
-                    [checkUpdateItem refreshCell];
-                }
-                if (loadConfigItem) {
-                    loadConfigItem.isEnable = YES;
-                    [loadConfigItem refreshCell];
-                }
-                if (deleteConfigItem) {
-                    deleteConfigItem.isEnable = YES;
-                    [deleteConfigItem refreshCell];
-                }
+            if (deleteConfigItemRef) {
+                deleteConfigItemRef.isEnable = NO;
+                [deleteConfigItemRef refreshCell];
             }
-        };
+            if (remoteURLItemRef) {
+                remoteURLItemRef.isEnable = YES;
+                [remoteURLItemRef refreshCell];
+            }
+            if (checkUpdateItemRef) {
+                checkUpdateItemRef.isEnable = YES;
+                [checkUpdateItemRef refreshCell];
+            }
+        } else if (localLoaded) {
+            if (remoteURLItemRef) {
+                remoteURLItemRef.isEnable = NO;
+                [remoteURLItemRef refreshCell];
+            }
+            if (checkUpdateItemRef) {
+                checkUpdateItemRef.isEnable = NO;
+                [checkUpdateItemRef refreshCell];
+            }
+            if (loadConfigItemRef) {
+                loadConfigItemRef.isEnable = YES;
+                [loadConfigItemRef refreshCell];
+            }
+            if (deleteConfigItemRef) {
+                deleteConfigItemRef.isEnable = YES;
+                [deleteConfigItemRef refreshCell];
+            }
+        } else {
+            if (remoteURLItemRef) {
+                remoteURLItemRef.isEnable = YES;
+                [remoteURLItemRef refreshCell];
+            }
+            if (checkUpdateItemRef) {
+                checkUpdateItemRef.isEnable = YES;
+                [checkUpdateItemRef refreshCell];
+            }
+            if (loadConfigItemRef) {
+                loadConfigItemRef.isEnable = YES;
+                [loadConfigItemRef refreshCell];
+            }
+            if (deleteConfigItemRef) {
+                deleteConfigItemRef.isEnable = YES;
+                [deleteConfigItemRef refreshCell];
+            }
+        }
+      };
 
-        refreshConfigConflictState();
-
-        DYYYRemoveRemoteConfigObserver();
-        dyyyRemoteConfigChangedToken = [[NSNotificationCenter defaultCenter] addObserverForName:DYYY_REMOTE_CONFIG_CHANGED_NOTIFICATION
-                                                                                          object:nil
-                                                                                           queue:[NSOperationQueue mainQueue]
-                                                                                      usingBlock:^(NSNotification *_Nonnull note) {
-                                                                                        refreshConfigConflictState();
-                                                                                      }];
+      [[NSNotificationCenter defaultCenter] addObserverForName:DYYY_REMOTE_CONFIG_CHANGED_NOTIFICATION
+                                                        object:nil
+                                                         queue:[NSOperationQueue mainQueue]
+                                                    usingBlock:^(NSNotification *_Nonnull note) {
+                                                      refreshConfigConflictState();
+                                                    }];
 
       for (NSDictionary *dict in hotUpdateSettings) {
           AWESettingItemModel *item = [DYYYSettingsHelper createSettingItem:dict];
@@ -3087,7 +3067,6 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
       [rootVC.navigationController pushViewController:(UIViewController *)subVC animated:YES];
     };
     [mainItems addObject:floatButtonSettingItem];
-    };
 
     // 创建备份设置分类
     AWESettingSectionModel *backupSection = [[%c(AWESettingSectionModel) alloc] init];
