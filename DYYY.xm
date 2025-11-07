@@ -96,23 +96,24 @@ static NSString *DYYYCustomIconFileNameForButtonName(NSString *nameString) {
       };
     });
 
+    for (NSString *prefix in prefixMapping) {
+        if ([nameString hasPrefix:prefix]) {
+            return prefixMapping[prefix];
+        }
+    }
+
     if ([nameString containsString:@"_comment"]) {
         return @"comment.png";
     }
     if ([nameString containsString:@"_like"]) {
-        return @"like_before.png";
+        BOOL isLikedState = [nameString containsString:@"_after"] || [nameString containsString:@"_liked"];
+        return isLikedState ? @"like_after.png" : @"like_before.png";
     }
     if ([nameString containsString:@"_collect"]) {
         return @"unfavorite.png";
     }
     if ([nameString containsString:@"_share"]) {
         return @"share.png";
-    }
-
-    for (NSString *prefix in prefixMapping) {
-        if ([nameString hasPrefix:prefix]) {
-            return prefixMapping[prefix];
-        }
     }
 
     return nil;
