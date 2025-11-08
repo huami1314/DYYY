@@ -921,18 +921,49 @@ static UIImage *DYYYLoadCustomImage(NSString *fileName, CGSize targetSize) {
 
 %end
 
+// Keeps the forced progress overlay visible without hijacking feed gestures.
+static inline void DYYYUpdateProgressOverlayInteractivity(AWEFeedProgressSlider *slider, BOOL allowInteraction) {
+    if (!slider) {
+        return;
+    }
+
+    slider.userInteractionEnabled = allowInteraction;
+
+    UIView *parentView = slider.superview;
+    if (parentView) {
+        parentView.userInteractionEnabled = allowInteraction;
+    }
+
+    AWEPlayInteractionProgressController *controller = slider.progressSliderDelegate;
+    if ([controller isKindOfClass:%c(AWEPlayInteractionProgressController)]) {
+        controller.userInteractionEnabled = allowInteraction;
+    }
+}
+
 %hook AWEFeedProgressSlider
 
 - (void)setAlpha:(CGFloat)alpha {
-    if (DYYYGetBool(@"DYYYShowScheduleDisplay")) {
-        if (DYYYGetBool(@"DYYYHideVideoProgress")) {
-            %orig(0);
-        } else {
-            %orig(1.0);
-        }
-    } else {
+    BOOL showScheduleDisplay = DYYYGetBool(@"DYYYShowScheduleDisplay");
+    BOOL hideVideoProgress = DYYYGetBool(@"DYYYHideVideoProgress");
+    CGFloat requestedAlpha = alpha;
+
+    if (!showScheduleDisplay) {
         %orig;
+        BOOL allowInteraction = requestedAlpha > 0.05f;
+        DYYYUpdateProgressOverlayInteractivity(self, allowInteraction);
+        return;
     }
+
+    if (hideVideoProgress) {
+        %orig(0.0f);
+        self.hidden = YES;
+    } else {
+        %orig(1.0f);
+        self.hidden = NO;
+    }
+
+    BOOL allowInteraction = !hideVideoProgress && requestedAlpha > 0.05f;
+    DYYYUpdateProgressOverlayInteractivity(self, allowInteraction);
 }
 
 static CGFloat leftLabelLeftMargin = -1;
@@ -1124,8 +1155,14 @@ static CGFloat rightLabelRightMargin = -1;
     %orig;
     BOOL hideVideoProgress = DYYYGetBool(@"DYYYHideVideoProgress");
     BOOL showScheduleDisplay = DYYYGetBool(@"DYYYShowScheduleDisplay");
-    if (hideVideoProgress && showScheduleDisplay && !hidden) {
-        self.alpha = 0;
+    if (hidden) {
+        return;
+    }
+
+    BOOL shouldDisableInteraction = hideVideoProgress && showScheduleDisplay;
+    self.userInteractionEnabled = !shouldDisableInteraction;
+    if (shouldDisableInteraction) {
+        self.alpha = 1.0;
     }
 }
 
