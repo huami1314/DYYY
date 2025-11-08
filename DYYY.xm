@@ -927,17 +927,89 @@ static inline void DYYYUpdateProgressOverlayInteractivity(AWEFeedProgressSlider 
         return;
     }
 
-    slider.userInteractionEnabled = allowInteraction;
+    if (slider.userInteractionEnabled != allowInteraction) {
+        slider.userInteractionEnabled = allowInteraction;
+    }
 
     UIView *parentView = slider.superview;
-    if (parentView) {
+    if (parentView && parentView.userInteractionEnabled != allowInteraction) {
         parentView.userInteractionEnabled = allowInteraction;
     }
 
-    AWEPlayInteractionProgressController *controller = slider.progressSliderDelegate;
-    if ([controller isKindOfClass:%c(AWEPlayInteractionProgressController)]) {
-        controller.userInteractionEnabled = allowInteraction;
+    UIView *controllerView = (UIView *)slider.progressSliderDelegate;
+    if ([controllerView isKindOfClass:%c(AWEPlayInteractionProgressController)] && controllerView.userInteractionEnabled != allowInteraction) {
+        controllerView.userInteractionEnabled = allowInteraction;
     }
+}
+
+static char kDYYYLeftProgressLabelKey;
+static char kDYYYRightProgressLabelKey;
+static char kDYYYProgressLabelColorKey;
+
+static inline UILabel *DYYYProgressLabel(AWEFeedProgressSlider *slider, BOOL isLeft) {
+    return objc_getAssociatedObject(slider, isLeft ? &kDYYYLeftProgressLabelKey : &kDYYYRightProgressLabelKey);
+}
+
+static inline void DYYYRemoveProgressLabel(AWEFeedProgressSlider *slider, BOOL isLeft) {
+    UILabel *label = DYYYProgressLabel(slider, isLeft);
+    if (!label) {
+        return;
+    }
+    [label removeFromSuperview];
+    objc_setAssociatedObject(slider, isLeft ? &kDYYYLeftProgressLabelKey : &kDYYYRightProgressLabelKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
+static inline void DYYYCleanupProgressLabels(AWEFeedProgressSlider *slider) {
+    DYYYRemoveProgressLabel(slider, YES);
+    DYYYRemoveProgressLabel(slider, NO);
+}
+
+static inline UILabel *DYYYEnsureProgressLabel(AWEFeedProgressSlider *slider, BOOL isLeft, UIFont *font) {
+    if (!slider) {
+        return nil;
+    }
+
+    UIView *parentView = slider.superview;
+    if (!parentView) {
+        DYYYRemoveProgressLabel(slider, isLeft);
+        return nil;
+    }
+
+    void *key = isLeft ? &kDYYYLeftProgressLabelKey : &kDYYYRightProgressLabelKey;
+    UILabel *label = objc_getAssociatedObject(slider, key);
+    if (!label) {
+        label = [[UILabel alloc] init];
+        label.backgroundColor = [UIColor clearColor];
+        label.font = font;
+        objc_setAssociatedObject(slider, key, label, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    } else if (font && label.font != font) {
+        label.font = font;
+    }
+
+    if (label.superview != parentView) {
+        [label removeFromSuperview];
+        [parentView addSubview:label];
+    }
+
+    label.hidden = NO;
+    return label;
+}
+
+static inline void DYYYApplyProgressLabelColorIfNeeded(UILabel *label, NSString *colorHexString, BOOL forceApply) {
+    if (!label) {
+        return;
+    }
+
+    NSString *normalizedHex = colorHexString.length > 0 ? colorHexString : nil;
+    NSString *lastAppliedHex = objc_getAssociatedObject(label, &kDYYYProgressLabelColorKey);
+    BOOL colorChanged = (lastAppliedHex || normalizedHex) && ![lastAppliedHex isEqualToString:normalizedHex];
+
+    if (!forceApply && !colorChanged) {
+        return;
+    }
+
+    objc_setAssociatedObject(label, &kDYYYProgressLabelColorKey, normalizedHex ? [normalizedHex copy] : nil, OBJC_ASSOCIATION_COPY_NONATOMIC);
+    [DYYYUtils applyColorSettingsToLabel:label colorHexString:normalizedHex];
 }
 
 %hook AWEFeedProgressSlider
@@ -956,112 +1028,120 @@ static inline void DYYYUpdateProgressOverlayInteractivity(AWEFeedProgressSlider 
 
     if (hideVideoProgress) {
         %orig(0.0f);
-        self.hidden = YES;
+        if (!self.hidden) {
+            self.hidden = YES;
+        }
     } else {
         %orig(1.0f);
-        self.hidden = NO;
+        if (self.hidden) {
+            self.hidden = NO;
+        }
     }
 
     BOOL allowInteraction = !hideVideoProgress && requestedAlpha > 0.05f;
     DYYYUpdateProgressOverlayInteractivity(self, allowInteraction);
 }
 
-static CGFloat leftLabelLeftMargin = -1;
-static CGFloat rightLabelRightMargin = -1;
-
 - (void)setLimitUpperActionArea:(BOOL)arg1 {
     %orig;
 
-    NSString *durationFormatted = [self.progressSliderDelegate formatTimeFromSeconds:floor(self.progressSliderDelegate.model.videoDuration / 1000)];
-
-    if (DYYYGetBool(@"DYYYShowScheduleDisplay")) {
-        UIView *parentView = self.superview;
-        if (!parentView)
-            return;
-
-        [[parentView viewWithTag:10001] removeFromSuperview];
-        [[parentView viewWithTag:10002] removeFromSuperview];
-
-        CGRect sliderOriginalFrameInParent = [self convertRect:self.bounds toView:parentView];
-        CGRect sliderFrame = self.frame;
-
-        CGFloat verticalOffset = -12.5;
-        NSString *offsetValueString = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTimelineVerticalPosition"];
-        if (offsetValueString.length > 0) {
-            CGFloat configOffset = [offsetValueString floatValue];
-            if (configOffset != 0)
-                verticalOffset = configOffset;
-        }
-
-        NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
-        BOOL showRemainingTime = [scheduleStyle isEqualToString:@"进度条右侧剩余"];
-        BOOL showCompleteTime = [scheduleStyle isEqualToString:@"进度条右侧完整"];
-        BOOL showLeftRemainingTime = [scheduleStyle isEqualToString:@"进度条左侧剩余"];
-        BOOL showLeftCompleteTime = [scheduleStyle isEqualToString:@"进度条左侧完整"];
-
-        NSString *labelColorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYProgressLabelColor"];
-
-        CGFloat labelYPosition = sliderOriginalFrameInParent.origin.y + verticalOffset;
-        CGFloat labelHeight = 15.0;
-        UIFont *labelFont = [UIFont systemFontOfSize:8];
-
-        if (!showRemainingTime && !showCompleteTime) {
-            UILabel *leftLabel = [[UILabel alloc] init];
-            leftLabel.backgroundColor = [UIColor clearColor];
-            leftLabel.font = labelFont;
-            leftLabel.tag = 10001;
-            if (showLeftRemainingTime)
-                leftLabel.text = @"00:00";
-            else if (showLeftCompleteTime)
-                leftLabel.text = [NSString stringWithFormat:@"00:00/%@", durationFormatted];
-            else
-                leftLabel.text = @"00:00";
-
-            [leftLabel sizeToFit];
-
-            if (leftLabelLeftMargin == -1) {
-                leftLabelLeftMargin = sliderFrame.origin.x;
-            }
-
-            leftLabel.frame = CGRectMake(leftLabelLeftMargin, labelYPosition, leftLabel.frame.size.width, labelHeight);
-            [parentView addSubview:leftLabel];
-
-            [DYYYUtils applyColorSettingsToLabel:leftLabel colorHexString:labelColorHex];
-        }
-
-        if (!showLeftRemainingTime && !showLeftCompleteTime) {
-            UILabel *rightLabel = [[UILabel alloc] init];
-            rightLabel.backgroundColor = [UIColor clearColor];
-            rightLabel.font = labelFont;
-            rightLabel.tag = 10002;
-            if (showRemainingTime)
-                rightLabel.text = @"00:00";
-            else if (showCompleteTime)
-                rightLabel.text = [NSString stringWithFormat:@"00:00/%@", durationFormatted];
-            else
-                rightLabel.text = durationFormatted;
-
-            [rightLabel sizeToFit];
-
-            if (rightLabelRightMargin == -1) {
-                rightLabelRightMargin = sliderFrame.origin.x + sliderFrame.size.width - rightLabel.frame.size.width;
-            }
-
-            rightLabel.frame = CGRectMake(rightLabelRightMargin, labelYPosition, rightLabel.frame.size.width, labelHeight);
-            [parentView addSubview:rightLabel];
-
-            [DYYYUtils applyColorSettingsToLabel:rightLabel colorHexString:labelColorHex];
-        }
-
+    if (!DYYYGetBool(@"DYYYShowScheduleDisplay")) {
+        DYYYCleanupProgressLabels(self);
         [self setNeedsLayout];
-    } else {
-        UIView *parentView = self.superview;
-        if (parentView) {
-            [[parentView viewWithTag:10001] removeFromSuperview];
-            [[parentView viewWithTag:10002] removeFromSuperview];
-        }
-        [self setNeedsLayout];
+        return;
     }
+
+    UIView *parentView = self.superview;
+    if (!parentView) {
+        DYYYCleanupProgressLabels(self);
+        return;
+    }
+
+    NSString *durationFormatted = [self.progressSliderDelegate formatTimeFromSeconds:floor(self.progressSliderDelegate.model.videoDuration / 1000)];
+    NSString *safeDurationString = durationFormatted.length > 0 ? durationFormatted : @"00:00";
+
+    CGRect sliderOriginalFrameInParent = [self convertRect:self.bounds toView:parentView];
+    CGRect sliderFrame = self.frame;
+
+    CGFloat verticalOffset = -12.5;
+    NSString *offsetValueString = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTimelineVerticalPosition"];
+    if (offsetValueString.length > 0) {
+        CGFloat configOffset = [offsetValueString floatValue];
+        if (configOffset != 0) {
+            verticalOffset = configOffset;
+        }
+    }
+
+    NSString *scheduleStyle = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYScheduleStyle"];
+    BOOL showRemainingTime = [scheduleStyle isEqualToString:@"进度条右侧剩余"];
+    BOOL showCompleteTime = [scheduleStyle isEqualToString:@"进度条右侧完整"];
+    BOOL showLeftRemainingTime = [scheduleStyle isEqualToString:@"进度条左侧剩余"];
+    BOOL showLeftCompleteTime = [scheduleStyle isEqualToString:@"进度条左侧完整"];
+
+    NSString *labelColorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYProgressLabelColor"];
+
+    CGFloat labelYPosition = sliderOriginalFrameInParent.origin.y + verticalOffset;
+    CGFloat labelHeight = 15.0;
+    UIFont *labelFont = [UIFont systemFontOfSize:8];
+
+    BOOL shouldShowLeftLabel = !showRemainingTime && !showCompleteTime;
+    BOOL shouldShowRightLabel = !showLeftRemainingTime && !showLeftCompleteTime;
+
+    if (shouldShowLeftLabel) {
+        UILabel *leftLabel = DYYYEnsureProgressLabel(self, YES, labelFont);
+        if (leftLabel) {
+            NSString *placeholderText = showLeftCompleteTime ? [NSString stringWithFormat:@"00:00/%@", safeDurationString] : @"00:00";
+            NSString *existingLeftText = leftLabel.text ?: @"";
+            BOOL leftTextChanged = ![existingLeftText isEqualToString:placeholderText];
+            if (leftTextChanged) {
+                leftLabel.text = placeholderText;
+                [leftLabel sizeToFit];
+            }
+
+            CGRect leftFrame = leftLabel.frame;
+            leftFrame.origin.x = sliderFrame.origin.x;
+            leftFrame.origin.y = labelYPosition;
+            leftFrame.size.height = labelHeight;
+            leftLabel.frame = leftFrame;
+
+            DYYYApplyProgressLabelColorIfNeeded(leftLabel, labelColorHex, leftTextChanged);
+        }
+    } else {
+        DYYYRemoveProgressLabel(self, YES);
+    }
+
+    if (shouldShowRightLabel) {
+        UILabel *rightLabel = DYYYEnsureProgressLabel(self, NO, labelFont);
+        if (rightLabel) {
+            NSString *placeholderText;
+            if (showRemainingTime) {
+                placeholderText = @"00:00";
+            } else if (showCompleteTime) {
+                placeholderText = [NSString stringWithFormat:@"00:00/%@", safeDurationString];
+            } else {
+                placeholderText = safeDurationString;
+            }
+
+            NSString *existingRightText = rightLabel.text ?: @"";
+            BOOL rightTextChanged = ![existingRightText isEqualToString:placeholderText];
+            if (rightTextChanged) {
+                rightLabel.text = placeholderText;
+                [rightLabel sizeToFit];
+            }
+
+            CGRect rightFrame = rightLabel.frame;
+            rightFrame.origin.x = sliderFrame.origin.x + sliderFrame.size.width - CGRectGetWidth(rightFrame);
+            rightFrame.origin.y = labelYPosition;
+            rightFrame.size.height = labelHeight;
+            rightLabel.frame = rightFrame;
+
+            DYYYApplyProgressLabelColorIfNeeded(rightLabel, labelColorHex, rightTextChanged);
+        }
+    } else {
+        DYYYRemoveProgressLabel(self, NO);
+    }
+
+    [self setNeedsLayout];
 }
 
 %end
@@ -1086,12 +1166,12 @@ static CGFloat rightLabelRightMargin = -1;
 
     if (DYYYGetBool(@"DYYYShowScheduleDisplay")) {
         AWEFeedProgressSlider *progressSlider = self.progressSlider;
-        UIView *parentView = progressSlider.superview;
-        if (!parentView)
+        if (!progressSlider) {
             return;
+        }
 
-        UILabel *leftLabel = [parentView viewWithTag:10001];
-        UILabel *rightLabel = [parentView viewWithTag:10002];
+        UILabel *leftLabel = DYYYProgressLabel(progressSlider, YES);
+        UILabel *rightLabel = DYYYProgressLabel(progressSlider, NO);
 
         NSString *labelColorHex = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYProgressLabelColor"];
 
@@ -1100,6 +1180,8 @@ static CGFloat rightLabelRightMargin = -1;
         BOOL showCompleteTime = [scheduleStyle isEqualToString:@"进度条右侧完整"];
         BOOL showLeftRemainingTime = [scheduleStyle isEqualToString:@"进度条左侧剩余"];
         BOOL showLeftCompleteTime = [scheduleStyle isEqualToString:@"进度条左侧完整"];
+        CGRect sliderFrame = progressSlider.frame;
+        CGFloat labelHeight = 15.0f;
 
         // 更新左标签
         if (arg1 >= 0 && leftLabel) {
@@ -1115,14 +1197,18 @@ static CGFloat rightLabelRightMargin = -1;
                 newLeftText = [self formatTimeFromSeconds:arg1];
             }
 
-            if (![leftLabel.text isEqualToString:newLeftText]) {
+            NSString *existingLeftText = leftLabel.text ?: @"";
+            BOOL leftTextChanged = ![existingLeftText isEqualToString:newLeftText];
+            CGRect leftFrame = leftLabel.frame;
+            if (leftTextChanged) {
                 leftLabel.text = newLeftText;
                 [leftLabel sizeToFit];
-                CGRect leftFrame = leftLabel.frame;
-                leftFrame.size.height = 15.0;
-                leftLabel.frame = leftFrame;
+                leftFrame = leftLabel.frame;
             }
-            [DYYYUtils applyColorSettingsToLabel:leftLabel colorHexString:labelColorHex];
+            leftFrame.origin.x = sliderFrame.origin.x;
+            leftFrame.size.height = labelHeight;
+            leftLabel.frame = leftFrame;
+            DYYYApplyProgressLabelColorIfNeeded(leftLabel, labelColorHex, leftTextChanged);
         }
 
         // 更新右标签
@@ -1139,30 +1225,19 @@ static CGFloat rightLabelRightMargin = -1;
                 newRightText = [self formatTimeFromSeconds:arg2];
             }
 
-            if (![rightLabel.text isEqualToString:newRightText]) {
+            NSString *existingRightText = rightLabel.text ?: @"";
+            BOOL rightTextChanged = ![existingRightText isEqualToString:newRightText];
+            CGRect rightFrame = rightLabel.frame;
+            if (rightTextChanged) {
                 rightLabel.text = newRightText;
                 [rightLabel sizeToFit];
-                CGRect rightFrame = rightLabel.frame;
-                rightFrame.size.height = 15.0;
-                rightLabel.frame = rightFrame;
+                rightFrame = rightLabel.frame;
             }
-            [DYYYUtils applyColorSettingsToLabel:rightLabel colorHexString:labelColorHex];
+            rightFrame.origin.x = sliderFrame.origin.x + sliderFrame.size.width - CGRectGetWidth(rightFrame);
+            rightFrame.size.height = labelHeight;
+            rightLabel.frame = rightFrame;
+            DYYYApplyProgressLabelColorIfNeeded(rightLabel, labelColorHex, rightTextChanged);
         }
-    }
-}
-
-- (void)setHidden:(BOOL)hidden {
-    %orig;
-    BOOL hideVideoProgress = DYYYGetBool(@"DYYYHideVideoProgress");
-    BOOL showScheduleDisplay = DYYYGetBool(@"DYYYShowScheduleDisplay");
-    if (hidden) {
-        return;
-    }
-
-    BOOL shouldDisableInteraction = hideVideoProgress && showScheduleDisplay;
-    self.userInteractionEnabled = !shouldDisableInteraction;
-    if (shouldDisableInteraction) {
-        self.alpha = 1.0;
     }
 }
 
