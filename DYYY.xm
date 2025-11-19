@@ -5857,7 +5857,7 @@ void applyGlobalTransparency(id targetObject) {
 
     NSString *currentReferString = self.referString;
 
-    BOOL useFullHeight = [currentReferString isEqualToString:@"general_search"] || [currentReferString isEqualToString:@"chat"] || [currentReferString isEqualToString:@"search_result"] ||
+    BOOL useFullHeight = [currentReferString isEqualToString:@"general_search"] || [currentReferString isEqualToString:@"search_result"] ||
                          [currentReferString isEqualToString:@"close_friends_moment"] || [currentReferString isEqualToString:@"offline_mode"] || [currentReferString isEqualToString:@"challenge"] ||
                          [currentReferString isEqualToString:@"general_search_scan"] || currentReferString == nil;
 
