@@ -2842,7 +2842,6 @@ static AWEIMReusableCommonCell *currentCell;
     %orig(timer);
 }
 %end
-
 %hook AWEMusicCoverButton
 
 - (void)layoutSubviews {
@@ -2852,7 +2851,11 @@ static AWEIMReusableCommonCell *currentCell;
 
     if ([accessibilityLabel isEqualToString:@"音乐详情"]) {
         if (DYYYGetBool(@"DYYYHideMusicButton")) {
-            [self removeFromSuperview];
+
+            UIView *parent = self.superview;
+            if (parent) {
+                [parent removeFromSuperview];
+            }
             return;
         }
     }
