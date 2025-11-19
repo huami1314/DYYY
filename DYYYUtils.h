@@ -167,6 +167,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (CALayer *)layerFromSchemeHexString:(NSString *)hexString frame:(CGRect)frame;
 
+#pragma mark - Version Utilities
+
+/**
+ * 按照点分格式比较版本号，例如 36.5.0
+ * @return lhs < rhs 返回 NSOrderedAscending，lhs > rhs 返回 NSOrderedDescending，相等返回 NSOrderedSame
+ */
++ (NSComparisonResult)compareVersion:(NSString *)lhs toVersion:(NSString *)rhs;
+
 @end
 
 #pragma mark - External C Functions (外部 C 函数)

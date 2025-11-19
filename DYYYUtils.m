@@ -1035,6 +1035,38 @@ static os_unfair_lock _staticColorCreationLock = OS_UNFAIR_LOCK_INIT;
     return image;
 }
 
+#pragma mark - Version Utilities
+
++ (NSComparisonResult)compareVersion:(NSString *)lhs toVersion:(NSString *)rhs {
+    if (lhs.length == 0 && rhs.length == 0) {
+        return NSOrderedSame;
+    }
+    if (lhs.length == 0) {
+        return NSOrderedAscending;
+    }
+    if (rhs.length == 0) {
+        return NSOrderedDescending;
+    }
+
+    NSArray<NSString *> *lhsComponents = [lhs componentsSeparatedByString:@"."];
+    NSArray<NSString *> *rhsComponents = [rhs componentsSeparatedByString:@"."];
+    NSUInteger maxCount = MAX(lhsComponents.count, rhsComponents.count);
+
+    for (NSUInteger idx = 0; idx < maxCount; idx++) {
+        NSInteger lhsValue = (idx < lhsComponents.count) ? lhsComponents[idx].integerValue : 0;
+        NSInteger rhsValue = (idx < rhsComponents.count) ? rhsComponents[idx].integerValue : 0;
+
+        if (lhsValue < rhsValue) {
+            return NSOrderedAscending;
+        }
+        if (lhsValue > rhsValue) {
+            return NSOrderedDescending;
+        }
+    }
+
+    return NSOrderedSame;
+}
+
 @end
 
 #pragma mark - External C Functions (外部 C 函数)

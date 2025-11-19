@@ -2842,16 +2842,14 @@ static AWEIMReusableCommonCell *currentCell;
     %orig(timer);
 }
 %end
+
 %hook AWEMusicCoverButton
 
 - (void)layoutSubviews {
     %orig;
-
     NSString *accessibilityLabel = self.accessibilityLabel;
-
     if ([accessibilityLabel isEqualToString:@"音乐详情"]) {
         if (DYYYGetBool(@"DYYYHideMusicButton")) {
-
             UIView *parent = self.superview;
             if (parent) {
                 [parent removeFromSuperview];
@@ -4950,7 +4948,7 @@ static void *TabBarHeightObservationContext = &TabBarHeightObservationContext;
         [[NSUserDefaults standardUserDefaults] removeObserver:self forKeyPath:TabBarHeightKey context:TabBarHeightObservationContext];
     } @catch (NSException *exception) {
         NSLog(@"[DYYY] KVO removeObserver failed: %@", exception);
-    } 
+    }
     %orig;
 }
 
@@ -5863,6 +5861,29 @@ void applyGlobalTransparency(id targetObject) {
     BOOL useFullHeight = [currentReferString isEqualToString:@"general_search"] || [currentReferString isEqualToString:@"search_result"] ||
                          [currentReferString isEqualToString:@"close_friends_moment"] || [currentReferString isEqualToString:@"offline_mode"] || [currentReferString isEqualToString:@"challenge"] ||
                          [currentReferString isEqualToString:@"general_search_scan"] || currentReferString == nil;
+
+    if (!useFullHeight && [currentReferString isEqualToString:@"chat"]) {
+        static NSNumber *shouldRestoreChat = nil;
+        static dispatch_once_t onceToken;
+        dispatch_once(&onceToken, ^{
+          BOOL includeChat = NO;
+          Class managerClass = %c(AWEVersionUpdateManager);
+          if (managerClass && [managerClass respondsToSelector:@selector(sharedInstance)]) {
+              AWEVersionUpdateManager *manager = [managerClass sharedInstance];
+              if ([manager respondsToSelector:@selector(currentVersion)]) {
+                  NSString *currentVersion = manager.currentVersion;
+                  if (currentVersion.length > 0) {
+                      includeChat = ([DYYYUtils compareVersion:currentVersion toVersion:@"35.5.0"] == NSOrderedAscending);
+                  }
+              }
+          }
+          shouldRestoreChat = @(includeChat);
+        });
+
+        if (shouldRestoreChat.boolValue) {
+            useFullHeight = YES;
+        }
+    }
 
     if (useFullHeight) {
         frame.size.height = superviewHeight;
