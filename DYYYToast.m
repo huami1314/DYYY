@@ -1,6 +1,5 @@
 #import "DYYYToast.h"
 #import "DYYYUtils.h"
-#import "DYYYLifecycleSafety.h"
 
 @interface DYYYToast ()
 
@@ -247,8 +246,12 @@
                 circleLayer.opacity = 1.0;
                 [circleLayer addAnimation:circleAnimation forKey:@"fadeIn"];
 
-                DYYYDispatchAfterWeak(0.1, self, ^(id owner) {
-                  DYYYToast *toast = (DYYYToast *)owner;
+                __weak __typeof(self) weakSelf = self;
+                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                  DYYYToast *toast = weakSelf;
+                  if (!toast) {
+                      return;
+                  }
                   if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHapticFeedbackEnabled"]) {
                       UINotificationFeedbackGenerator *feedbackGenerator = [[UINotificationFeedbackGenerator alloc] init];
                       [feedbackGenerator notificationOccurred:UINotificationFeedbackTypeSuccess];
@@ -276,8 +279,12 @@
                                          }];
                       }];
 
-                  DYYYDispatchAfterWeak(1.2, toast, ^(id innerOwner) {
-                    DYYYToast *innerToast = (DYYYToast *)innerOwner;
+                  __weak __typeof(toast) innerWeakToast = toast;
+                  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                    DYYYToast *innerToast = innerWeakToast;
+                    if (!innerToast) {
+                        return;
+                    }
                     [UIView animateWithDuration:0.2  // 从0.3改为0.2
                         animations:^{
                           innerToast.alpha = 0;
@@ -350,8 +357,12 @@
           circleLayer.opacity = 1.0;
           [circleLayer addAnimation:circleAnimation forKey:@"fadeIn"];
 
-          DYYYDispatchAfterWeak(0.1, self, ^(id owner) {
-            DYYYToast *toast = (DYYYToast *)owner;
+          __weak __typeof(self) weakSelf = self;
+          dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            DYYYToast *toast = weakSelf;
+            if (!toast) {
+                return;
+            }
             if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHapticFeedbackEnabled"]) {
                 UINotificationFeedbackGenerator *feedbackGenerator = [[UINotificationFeedbackGenerator alloc] init];
                 [feedbackGenerator notificationOccurred:UINotificationFeedbackTypeError];
@@ -380,8 +391,12 @@
                                    }];
                 }];
 
-            DYYYDispatchAfterWeak(1.2, toast, ^(id innerOwner) {
-              DYYYToast *innerToast = (DYYYToast *)innerOwner;
+            __weak __typeof(toast) innerWeakToast = toast;
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+              DYYYToast *innerToast = innerWeakToast;
+              if (!innerToast) {
+                  return;
+              }
               [UIView animateWithDuration:0.2  // 从0.3改为0.2
                   animations:^{
                     innerToast.alpha = 0;
@@ -465,8 +480,12 @@
     circleLayer.opacity = 1.0;
     [circleLayer addAnimation:circleAnimation forKey:@"fadeIn"];
 
-    DYYYDispatchAfterWeak(0.1, self, ^(id owner) {
-      DYYYToast *toast = (DYYYToast *)owner;
+    __weak __typeof(self) weakSelf = self;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+      DYYYToast *toast = weakSelf;
+      if (!toast) {
+          return;
+      }
       if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHapticFeedbackEnabled"]) {
           UINotificationFeedbackGenerator *feedbackGenerator = [[UINotificationFeedbackGenerator alloc] init];
           [feedbackGenerator notificationOccurred:UINotificationFeedbackTypeSuccess];
@@ -495,8 +514,12 @@
                              }];
           }];
 
-      DYYYDispatchAfterWeak(1.2, toast, ^(id innerOwner) {
-        DYYYToast *innerToast = (DYYYToast *)innerOwner;
+      __weak __typeof(toast) innerWeakToast = toast;
+      dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        DYYYToast *innerToast = innerWeakToast;
+        if (!innerToast) {
+            return;
+        }
         [UIView animateWithDuration:0.2
             animations:^{
               innerToast.alpha = 0;

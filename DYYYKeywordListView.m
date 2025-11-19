@@ -163,7 +163,7 @@
 - (void)addKeywordTapped {
     DYYYCustomInputView *inputView = [[DYYYCustomInputView alloc] initWithTitle:self.addItemTitle defaultText:nil placeholder:self.inputPlaceholder];
 
-    __weak typeof(self) weakSelf = self;
+    __weak __typeof(self) weakSelf = self;
     inputView.onConfirm = ^(NSString *text) {
       if (text.length > 0) {
           // 使用逗号分隔多个过滤项
@@ -266,7 +266,7 @@
     NSString *currentKeyword = self.keywords[indexPath.row];
     DYYYCustomInputView *inputView = [[DYYYCustomInputView alloc] initWithTitle:self.editItemTitle defaultText:currentKeyword placeholder:self.inputPlaceholder];
 
-    __weak typeof(self) weakSelf = self;
+    __weak __typeof(self) weakSelf = self;
     inputView.onConfirm = ^(NSString *text) {
       if (text.length > 0) {
           weakSelf.keywords[indexPath.row] = text;

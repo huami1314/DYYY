@@ -1,6 +1,5 @@
 #import "AWMSafeDispatchTimer.h"
 
-#import "DYYYLifecycleSafety.h"
 
 static const void *kAWMSafeDispatchTimerSpecificKey = &kAWMSafeDispatchTimerSpecificKey;
 
@@ -35,9 +34,9 @@ static const void *kAWMSafeDispatchTimerSpecificKey = &kAWMSafeDispatchTimerSpec
     uint64_t repeatInterval = repeats ? (uint64_t)(interval * NSEC_PER_SEC) : DISPATCH_TIME_FOREVER;
     uint64_t tolerance = leeway > 0 ? (uint64_t)(leeway * NSEC_PER_SEC) : (uint64_t)(0.1 * NSEC_PER_SEC);
 
-    __weak typeof(self) weakSelf = self;
+    __weak __typeof(self) weakSelf = self;
     dispatch_async(self.synchronizationQueue, ^{
-      __strong typeof(weakSelf) strongSelf = weakSelf;
+      __strong __typeof(weakSelf) strongSelf = weakSelf;
       if (!strongSelf) {
           return;
       }
@@ -55,7 +54,7 @@ static const void *kAWMSafeDispatchTimerSpecificKey = &kAWMSafeDispatchTimerSpec
 
       dispatch_source_set_timer(timer, startTime, repeatInterval, tolerance);
       dispatch_source_set_event_handler(timer, ^{
-        __strong typeof(weakSelf) innerSelf = weakSelf;
+        __strong __typeof(weakSelf) innerSelf = weakSelf;
         if (!innerSelf) {
             return;
         }
@@ -71,7 +70,6 @@ static const void *kAWMSafeDispatchTimerSpecificKey = &kAWMSafeDispatchTimerSpec
       if (!strongSelf.resumed) {
           dispatch_resume(timer);
           strongSelf.resumed = YES;
-          DYYYDebugLog("dispatch_timer_resume start interval=%.3f repeats=%{public}@", interval, repeats ? @"YES" : @"NO");
       }
 
       strongSelf.running = YES;
@@ -98,7 +96,6 @@ static const void *kAWMSafeDispatchTimerSpecificKey = &kAWMSafeDispatchTimerSpec
     if (self.resumed) {
         dispatch_source_cancel(timer);
         self.resumed = NO;
-        DYYYDebugLog("dispatch_timer_cancel");
     }
 
     self.running = NO;

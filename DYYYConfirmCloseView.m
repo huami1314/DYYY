@@ -1,6 +1,5 @@
 #import <UIKit/UIKit.h>
 #import "DYYYUtils.h"
-#import "DYYYLifecycleSafety.h"
 
 // 自定义确认关闭弹窗类
 @interface DYYYConfirmCloseView : UIView
@@ -126,7 +125,7 @@
     UIWindow *window = [UIApplication sharedApplication].keyWindow;
     [window addSubview:self];
 
-    @weakify(self);
+    __weak __typeof(self) weakSelf = self;
     [UIView animateWithDuration:0.12
         animations:^{
           self.alpha = 1;
@@ -134,13 +133,12 @@
           self.contentView.transform = CGAffineTransformIdentity;
         }
         completion:^(BOOL finished) {
-          @strongify(self);
-          if (!self) {
-              DYYYDebugLog("ConfirmCloseView released before countdown start");
+          __strong __typeof(weakSelf) strongSelf = weakSelf;
+          if (!strongSelf) {
               return;
           }
           // 开始倒计时
-          [self startCountdownTimer];
+          [strongSelf startCountdownTimer];
         }];
 }
 
@@ -157,7 +155,7 @@
 - (void)dismiss {
     [self stopCountdownTimer];
 
-    @weakify(self);
+    __weak __typeof(self) weakSelf = self;
     [UIView animateWithDuration:0.1
         animations:^{
           self.alpha = 0;
@@ -165,11 +163,11 @@
           self.contentView.transform = CGAffineTransformMakeScale(0.8, 0.8);
         }
         completion:^(BOOL finished) {
-          @strongify(self);
-          if (!self) {
+          __strong __typeof(weakSelf) strongSelf = weakSelf;
+          if (!strongSelf) {
               return;
           }
-          [self removeFromSuperview];
+          [strongSelf removeFromSuperview];
         }];
 }
 
@@ -191,12 +189,10 @@
     }
     NSTimer *timer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(updateCountdown) userInfo:nil repeats:YES];
     self.countdownTimer = timer;
-    DYYYDebugLog("ConfirmCloseView countdown timer started owner=%p", self);
 }
 
 - (void)stopCountdownTimer {
     if (self.countdownTimer) {
-        DYYYDebugLog("ConfirmCloseView countdown timer invalidated owner=%p", self);
         [self.countdownTimer invalidate];
         self.countdownTimer = nil;
     }

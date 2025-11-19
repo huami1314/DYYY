@@ -14,14 +14,13 @@
 #import "DYYYBottomAlertView.h"
 #import "DYYYManager.h"
 
+#import "AWMSafeDispatchTimer.h"
 #import "DYYYConstants.h"
 #import "DYYYFloatClearButton.h"
 #import "DYYYFloatSpeedButton.h"
 #import "DYYYSettingViewController.h"
 #import "DYYYToast.h"
 #import "DYYYUtils.h"
-#import "AWMSafeDispatchTimer.h"
-#import "DYYYLifecycleSafety.h"
 
 static NSDictionary<NSString *, NSString *> *DYYYTopTabTitleMapping(void) {
     static NSString *cachedRawValue = nil;
@@ -946,9 +945,7 @@ static char kDYYYLeftProgressLabelKey;
 static char kDYYYRightProgressLabelKey;
 static char kDYYYProgressLabelColorKey;
 
-static inline UILabel *DYYYProgressLabel(AWEFeedProgressSlider *slider, BOOL isLeft) {
-    return objc_getAssociatedObject(slider, isLeft ? &kDYYYLeftProgressLabelKey : &kDYYYRightProgressLabelKey);
-}
+static inline UILabel *DYYYProgressLabel(AWEFeedProgressSlider *slider, BOOL isLeft) { return objc_getAssociatedObject(slider, isLeft ? &kDYYYLeftProgressLabelKey : &kDYYYRightProgressLabelKey); }
 
 static inline void DYYYRemoveProgressLabel(AWEFeedProgressSlider *slider, BOOL isLeft) {
     UILabel *label = DYYYProgressLabel(slider, isLeft);
@@ -1449,7 +1446,7 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
     if ([self respondsToSelector:@selector(imageNameString)]) {
         IMP imp = [self methodForSelector:@selector(imageNameString)];
         if (imp) {
-            NSString *(*func)(id, SEL) = (NSString *(*)(id, SEL))imp;
+            NSString *(*func)(id, SEL) = (NSString * (*)(id, SEL)) imp;
             if (func) {
                 nameString = func(self, @selector(imageNameString));
             }
@@ -3385,7 +3382,7 @@ static NSHashTable *processedParentViews = nil;
     %orig;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        processedParentViews = [NSHashTable weakObjectsHashTable];
+      processedParentViews = [NSHashTable weakObjectsHashTable];
     });
 }
 
@@ -3402,8 +3399,9 @@ static NSHashTable *processedParentViews = nil;
 
     // 避免重复处理同一个父视图
     UIView *parentView = self.superview;
-    if (!parentView) return;
-    
+    if (!parentView)
+        return;
+
     @synchronized(processedParentViews) {
         if ([processedParentViews containsObject:parentView]) {
             return;
@@ -3420,31 +3418,29 @@ static NSHashTable *processedParentViews = nil;
     }
 
     if (!shouldRemove) {
-        shouldRemove = [trimmedLabel isEqualToString:@"章节要点"] || 
-                      [trimmedLabel isEqualToString:@"图集"] ||
-                      [trimmedLabel isEqualToString:@"下一章"];
+        shouldRemove = [trimmedLabel isEqualToString:@"章节要点"] || [trimmedLabel isEqualToString:@"图集"] || [trimmedLabel isEqualToString:@"下一章"];
     }
 
     if (shouldRemove) {
         @synchronized(processedParentViews) {
             [processedParentViews addObject:parentView];
         }
-        
-        UIView *grandparentView = parentView.superview;  // 爷爷视图
-        
+
+        UIView *grandparentView = parentView.superview; // 爷爷视图
+
         if (grandparentView) {
 
             dispatch_async(dispatch_get_main_queue(), ^{
-                if ([grandparentView isKindOfClass:[UIStackView class]]) {
-                    UIStackView *stackView = (UIStackView *)grandparentView;
-                    [stackView removeArrangedSubview:parentView];
-                }
-                
-                [parentView removeFromSuperview];
-                
-                // 强制刷新爷爷视图布局
-                [grandparentView setNeedsLayout];
-                [grandparentView layoutIfNeeded];
+              if ([grandparentView isKindOfClass:[UIStackView class]]) {
+                  UIStackView *stackView = (UIStackView *)grandparentView;
+                  [stackView removeArrangedSubview:parentView];
+              }
+
+              [parentView removeFromSuperview];
+
+              // 强制刷新爷爷视图布局
+              [grandparentView setNeedsLayout];
+              [grandparentView layoutIfNeeded];
             });
         }
     }
@@ -4926,7 +4922,7 @@ static Class barBackgroundClass = nil;
 static Class generalButtonClass = nil;
 static Class plusButtonClass = nil;
 static Class tabBarButtonClass = nil;
-static NSString * const TabBarHeightKey = @"DYYYTabBarHeight";
+static NSString *const TabBarHeightKey = @"DYYYTabBarHeight";
 static void *TabBarHeightObservationContext = &TabBarHeightObservationContext;
 
 + (void)initialize {
@@ -4941,35 +4937,27 @@ static void *TabBarHeightObservationContext = &TabBarHeightObservationContext;
 - (instancetype)initWithFrame:(CGRect)frame {
     self = %orig;
     if (self) {
-        [[NSUserDefaults standardUserDefaults] addObserver:self
-                                                forKeyPath:TabBarHeightKey
-                                                   options:NSKeyValueObservingOptionNew
-                                                   context:TabBarHeightObservationContext];
+        [[NSUserDefaults standardUserDefaults] addObserver:self forKeyPath:TabBarHeightKey options:NSKeyValueObservingOptionNew context:TabBarHeightObservationContext];
     }
     return self;
 }
 
 - (void)dealloc {
     @try {
-        [[NSUserDefaults standardUserDefaults] removeObserver:self
-                                                   forKeyPath:TabBarHeightKey
-                                                      context:TabBarHeightObservationContext];
+        [[NSUserDefaults standardUserDefaults] removeObserver:self forKeyPath:TabBarHeightKey context:TabBarHeightObservationContext];
     } @catch (NSException *exception) {
         NSLog(@"[DYYY] KVO removeObserver failed: %@", exception);
-    }
+    } 
     %orig;
 }
 
 %new
-- (void)observeValueForKeyPath:(NSString *)keyPath 
-                      ofObject:(id)object 
-                        change:(NSDictionary<NSKeyValueChangeKey,id> *)change 
-                       context:(void *)context {
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey, id> *)change context:(void *)context {
     if (context == TabBarHeightObservationContext) {
         dispatch_async(dispatch_get_main_queue(), ^{
-            [self setNeedsLayout];
+          [self setNeedsLayout];
         });
-    } 
+    }
 }
 
 - (void)layoutSubviews {
@@ -4985,7 +4973,7 @@ static void *TabBarHeightObservationContext = &TabBarHeightObservationContext;
             originalTabHeight = 49 + bottomInset;
             sourceDescription = [NSString stringWithFormat:@"by fallback calculation: 49.0 + %.1f", bottomInset];
         }
-    NSLog(@"[DYYY] Initialized originalTabHeight: %.1f (%@)", originalTabHeight, sourceDescription);
+        NSLog(@"[DYYY] Initialized originalTabHeight: %.1f (%@)", originalTabHeight, sourceDescription);
     }
 
     CGFloat customHeight = DYYYGetFloat(@"DYYYTabBarHeight");
@@ -5022,9 +5010,7 @@ static void *TabBarHeightObservationContext = &TabBarHeightObservationContext;
     for (UIView *subview in self.subviews) {
         if ([subview isKindOfClass:generalButtonClass] || [subview isKindOfClass:plusButtonClass]) {
             NSString *label = subview.accessibilityLabel;
-            BOOL shouldHide = ([label containsString:@"商城"] && hideShop) ||
-                              ([label containsString:@"消息"] && hideMsg) ||
-                              ([label containsString:@"朋友"] && hideFri) ||
+            BOOL shouldHide = ([label containsString:@"商城"] && hideShop) || ([label containsString:@"消息"] && hideMsg) || ([label containsString:@"朋友"] && hideFri) ||
                               ([label isEqualToString:@"我"] && hideMe);
 
             subview.userInteractionEnabled = !shouldHide;
@@ -5059,6 +5045,75 @@ static void *TabBarHeightObservationContext = &TabBarHeightObservationContext;
     for (NSInteger i = 0; i < visibleButtons.count; i++) {
         UIView *button = visibleButtons[i];
         button.frame = CGRectMake(offsetX + i * buttonWidth, button.frame.origin.y, buttonWidth, button.frame.size.height);
+    }
+
+    // 禁用首页刷新功能
+    if (DYYYGetBool(@"DYYYDisableHomeRefresh")) {
+        for (UIView *subview in self.subviews) {
+            if ([subview isKindOfClass:generalButtonClass]) {
+                AWENormalModeTabBarGeneralButton *button = (AWENormalModeTabBarGeneralButton *)subview;
+                if ([button.accessibilityLabel isEqualToString:@"首页"]) {
+                    // status == 2 表示选中状态
+                    button.userInteractionEnabled = (button.status != 2);
+                }
+            }
+        }
+    }
+
+    // 背景和分隔线处理
+    BOOL hideBottomBg = DYYYGetBool(@"DYYYHideBottomBg");
+    BOOL enableFullScreen = DYYYGetBool(@"DYYYEnableFullScreen");
+
+    if (hideBottomBg || enableFullScreen) {
+        if (self.skinContainerView) {
+            self.skinContainerView.hidden = YES;
+        }
+
+        BOOL isHomeSelected = NO;
+        BOOL isFriendsSelected = NO;
+
+        if (enableFullScreen && !hideBottomBg) {
+            for (UIView *subview in self.subviews) {
+                if ([subview isKindOfClass:generalButtonClass]) {
+                    AWENormalModeTabBarGeneralButton *button = (AWENormalModeTabBarGeneralButton *)subview;
+                    if (button.status == 2) {
+                        if ([button.accessibilityLabel isEqualToString:@"首页"])
+                            isHomeSelected = YES;
+                        else if ([button.accessibilityLabel containsString:@"朋友"])
+                            isFriendsSelected = YES;
+                    }
+                }
+            }
+        }
+
+        BOOL hideFriendsButton = DYYYGetBool(@"DYYYHideFriendsButton");
+        BOOL shouldHideBackgrounds = hideBottomBg || (enableFullScreen && (isHomeSelected || (isFriendsSelected && !hideFriendsButton)));
+
+        // 单次遍历处理所有背景和分割线
+        for (UIView *subview in self.subviews) {
+            // 跳过底栏按钮
+            if ([subview isKindOfClass:generalButtonClass] || [subview isKindOfClass:plusButtonClass]) {
+                continue;
+            }
+            // 隐藏底栏背景
+            if ([subview isKindOfClass:barBackgroundClass] || ([subview isMemberOfClass:[UIView class]] && originalTabHeight > 0 && fabs(subview.frame.size.height - tabHeight) < 0.1)) {
+                subview.hidden = shouldHideBackgrounds;
+            }
+            // 隐藏细分割线
+            if (subview.frame.size.height > 0 && subview.frame.size.height < 1 && subview.frame.size.width > 300) {
+                subview.hidden = enableFullScreen;
+            }
+        }
+    } else {
+        if (self.skinContainerView) {
+            self.skinContainerView.hidden = NO;
+        }
+
+        for (UIView *subview in self.subviews) {
+            if ([subview isKindOfClass:barBackgroundClass] || [subview isMemberOfClass:[UIView class]]) {
+                subview.hidden = NO;
+            }
+        }
     }
 }
 
@@ -5648,7 +5703,7 @@ static void *TabBarHeightObservationContext = &TabBarHeightObservationContext;
 - (void)setFrame:(CGRect)frame {
     if (DYYYGetBool(@"DYYYHideAvatarList")) {
         CGFloat scale = [UIScreen mainScreen].scale ?: 2.0;
-        CGFloat minH = MAX(1.0/scale, 0.5);
+        CGFloat minH = MAX(1.0 / scale, 0.5);
         frame.size.height = minH;
     }
     %orig(frame);
@@ -6149,17 +6204,14 @@ static void DYYYRemoveAppLifecycleObservers(void) {
     NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
     if (dyyyWindowKeyObserverToken) {
         [center removeObserver:dyyyWindowKeyObserverToken];
-        DYYYDebugLog("Removed window key observer");
         dyyyWindowKeyObserverToken = nil;
     }
     if (dyyyDidBecomeActiveToken) {
         [center removeObserver:dyyyDidBecomeActiveToken];
-        DYYYDebugLog("Removed didBecomeActive observer");
         dyyyDidBecomeActiveToken = nil;
     }
     if (dyyyWillResignActiveToken) {
         [center removeObserver:dyyyWillResignActiveToken];
-        DYYYDebugLog("Removed willResignActive observer");
         dyyyWillResignActiveToken = nil;
     }
 }
@@ -6167,7 +6219,6 @@ static void DYYYRemoveAppLifecycleObservers(void) {
 static void DYYYRemoveKeyboardObserver(void) {
     if (dyyyKeyboardWillShowToken) {
         [[NSNotificationCenter defaultCenter] removeObserver:dyyyKeyboardWillShowToken];
-        DYYYDebugLog("Removed keyboardWillShow observer");
         dyyyKeyboardWillShowToken = nil;
     }
 }
@@ -6206,7 +6257,6 @@ static void DYYYRemoveKeyboardObserver(void) {
                                                                                        object:nil
                                                                                         queue:[NSOperationQueue mainQueue]
                                                                                    usingBlock:^(NSNotification *_Nonnull notification) {
-                                                                                     DYYYDebugLog("UIWindowDidBecomeKeyNotification received");
                                                                                      updateClearButtonVisibility();
                                                                                    }];
 
@@ -6215,7 +6265,6 @@ static void DYYYRemoveKeyboardObserver(void) {
                                                                                       queue:[NSOperationQueue mainQueue]
                                                                                  usingBlock:^(NSNotification *_Nonnull notification) {
                                                                                    isAppActive = YES;
-                                                                                   DYYYDebugLog("UIApplicationDidBecomeActiveNotification received");
                                                                                    updateClearButtonVisibility();
                                                                                  }];
 
@@ -6224,7 +6273,6 @@ static void DYYYRemoveKeyboardObserver(void) {
                                                                                        queue:[NSOperationQueue mainQueue]
                                                                                   usingBlock:^(NSNotification *_Nonnull notification) {
                                                                                     isAppActive = NO;
-                                                                                    DYYYDebugLog("UIApplicationWillResignActiveNotification received");
                                                                                     updateClearButtonVisibility();
                                                                                   }];
     } else {
@@ -6302,37 +6350,35 @@ static Class TagViewClass = nil;
             [pureModeTimer startWithInterval:0.5
                                       leeway:0.1
                                        queue:dispatch_get_main_queue()
-                                    repeats:YES
-                                    handler:^{
-                                      AWMSafeDispatchTimer *strongTimer = weakTimer;
-                                      DYYYDebugLog("pureModeTimer fire attempts=%{public}d set=%{public}d", attempts, pureModeSet);
-                                      UIWindow *keyWindow = [DYYYUtils getActiveWindow];
-                                      if (keyWindow && keyWindow.rootViewController) {
-                                          UIViewController *feedVC =
-                                              [DYYYUtils findViewControllerOfClass:NSClassFromString(@"AWEFeedTableViewController") inViewController:keyWindow.rootViewController];
-                                          if (feedVC) {
-                                              [feedVC setValue:@YES forKey:@"pureMode"];
-                                              pureModeSet = YES;
-                                              [strongTimer cancel];
-                                              pureModeTimer = nil;
-                                              attempts = 0;
-                                              return;
-                                          }
-                                      }
-                                      attempts++;
-                                      if (attempts >= 10) {
-                                          [strongTimer cancel];
-                                          pureModeTimer = nil;
-                                          attempts = 0;
-                                      }
-                                    }];
+                                     repeats:YES
+                                     handler:^{
+                                       AWMSafeDispatchTimer *strongTimer = weakTimer;
+                                       UIWindow *keyWindow = [DYYYUtils getActiveWindow];
+                                       if (keyWindow && keyWindow.rootViewController) {
+                                           UIViewController *feedVC = [DYYYUtils findViewControllerOfClass:NSClassFromString(@"AWEFeedTableViewController")
+                                                                                          inViewController:keyWindow.rootViewController];
+                                           if (feedVC) {
+                                               [feedVC setValue:@YES forKey:@"pureMode"];
+                                               pureModeSet = YES;
+                                               [strongTimer cancel];
+                                               pureModeTimer = nil;
+                                               attempts = 0;
+                                               return;
+                                           }
+                                       }
+                                       attempts++;
+                                       if (attempts >= 10) {
+                                           [strongTimer cancel];
+                                           pureModeTimer = nil;
+                                           attempts = 0;
+                                       }
+                                     }];
         }
         return;
     } else {
         if (pureModeTimer) {
             [pureModeTimer cancel];
             pureModeTimer = nil;
-            DYYYDebugLog("pureModeTimer cancelled due to disable");
         }
         attempts = 0;
         pureModeSet = NO;
@@ -7126,7 +7172,6 @@ static void findTargetViewInView(UIView *view) {
                                                          queue:[NSOperationQueue mainQueue]
                                                     usingBlock:^(NSNotification *notification) {
                                                       if (DYYYGetBool(@"DYYYHideKeyboardAI")) {
-                                                          DYYYDebugLog("UIKeyboardWillShowNotification received for AI hide");
                                                           if (cachedHideView) {
                                                               for (UIView *subview in cachedHideView.subviews) {
                                                                   subview.hidden = YES;

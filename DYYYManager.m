@@ -22,7 +22,6 @@
 
 #import "DYYYToast.h"
 #import "DYYYUtils.h"
-#import "DYYYLifecycleSafety.h"
 
 static const NSTimeInterval kDYYYDefaultFrameDelay = 0.1f;
 static const CGFloat kDYYYMillisecondsPerSecond = 1000.0f;
@@ -778,7 +777,6 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width, in
                                                                          block:^(NSTimer *_Nonnull timer) {
                                                                            DYYYToast *strongProgressView = weakProgressView;
                                                                            if (!strongProgressView) {
-                                                                               DYYYDebugLog("Progress view released before timer fire");
                                                                                [timer invalidate];
                                                                                progressTimer = nil;
                                                                                return;
@@ -789,16 +787,12 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width, in
 
                                                                            // 更新进度文字
                                                                            if (imageDownloaded && !videoDownloaded) {
-                                                                               DYYYDebugLog("Image download done, waiting for video");
                                                                            } else if (!imageDownloaded && videoDownloaded) {
-                                                                               DYYYDebugLog("Video download done, waiting for image");
                                                                            } else if (imageDownloaded && videoDownloaded) {
-                                                                               DYYYDebugLog("Downloads completed, preparing to save");
                                                                                [timer invalidate];  // 全部完成时停止定时器
                                                                                progressTimer = nil;
                                                                            }
                                                                         }];
-      DYYYDebugLog("Progress timer scheduled owner=%p", progressView);
 
       // 下载图片
       dispatch_group_enter(group);
@@ -860,7 +854,6 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width, in
         if (progressTimer) {
             [progressTimer invalidate];
             progressTimer = nil;
-            DYYYDebugLog("Progress timer invalidated after group completion");
         }
 
         // 移除进度观察

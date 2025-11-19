@@ -3,7 +3,6 @@
 #import "DYYYUtils.h"
 #import <UIKit/UIKit.h>
 #import <objc/runtime.h>
-#import "DYYYLifecycleSafety.h"
 
 @class AWEFeedCellViewController;
 
@@ -83,7 +82,6 @@ void updateSpeedButtonUI() {
         dispatch_async(dispatch_get_main_queue(), ^{
           FloatingSpeedButton *strongButton = weakButton;
           if (!strongButton) {
-              DYYYDebugLog("speedButton nil before UI update");
               return;
           }
           [strongButton setTitle:formattedSpeed forState:UIControlStateNormal];
@@ -120,7 +118,6 @@ void hideSpeedButton(void) {
             dispatch_async(dispatch_get_main_queue(), ^{
               FloatingSpeedButton *strongButton = weakButton;
               if (!strongButton) {
-                  DYYYDebugLog("speedButton nil before hide");
                   return;
               }
               strongButton.hidden = YES;
@@ -150,7 +147,6 @@ void updateSpeedButtonVisibility() {
         dispatch_async(dispatch_get_main_queue(), ^{
           FloatingSpeedButton *strongButton = weakButton;
           if (!strongButton) {
-              DYYYDebugLog("speedButton nil before visibility update");
               return;
           }
           if (!dyyyInteractionViewVisible) {
@@ -299,26 +295,24 @@ void updateSpeedButtonVisibility() {
         [generator impactOccurred];
     }
 
-    @weakify(self);
+    __weak __typeof(self) weakSelf = self;
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-      @strongify(self);
-      if (!self) {
-          DYYYDebugLog("toggleLockState callback skipped owner released");
+      __strong __typeof(weakSelf) strongSelf = weakSelf;
+      if (!strongSelf) {
           return;
       }
-      self.justToggledLock = NO;
+      strongSelf.justToggledLock = NO;
     });
 }
 
 - (void)resetToggleLockFlag {
-    @weakify(self);
+    __weak __typeof(self) weakSelf = self;
     dispatch_async(dispatch_get_main_queue(), ^{
-      @strongify(self);
-      if (!self) {
-          DYYYDebugLog("resetToggleLockFlag skipped owner released");
+      __strong __typeof(weakSelf) strongSelf = weakSelf;
+      if (!strongSelf) {
           return;
       }
-      self.justToggledLock = NO;
+      strongSelf.justToggledLock = NO;
     });
 }
 
@@ -336,27 +330,24 @@ void updateSpeedButtonVisibility() {
 
 - (void)resetFadeTimer {
     if (self.fadeTimer) {
-        DYYYDebugLog("fadeTimer invalidated owner=%p", self);
         [self.fadeTimer invalidate];
         self.fadeTimer = nil;
     }
-    @weakify(self);
+    __weak __typeof(self) weakSelf = self;
     NSTimer *fadeTimer = [NSTimer scheduledTimerWithTimeInterval:3.0
                                                          repeats:NO
                                                            block:^(NSTimer *timer) {
-                                                             @strongify(self);
-                                                             if (!self) {
-                                                                 DYYYDebugLog("fadeTimer fired after owner release");
+                                                             __strong __typeof(weakSelf) strongSelf = weakSelf;
+                                                             if (!strongSelf) {
                                                                  return;
                                                              }
                                                              [UIView animateWithDuration:0.3
                                                                               animations:^{
-                                                                                self.alpha = 0.5;
+                                                                                strongSelf.alpha = 0.5;
                                                                               }];
-                                                             self.fadeTimer = nil;
+                                                             strongSelf.fadeTimer = nil;
                                                            }];
     self.fadeTimer = fadeTimer;
-    DYYYDebugLog("fadeTimer scheduled owner=%p", self);
 
     if (self.alpha != self.originalAlpha) {
         [UIView animateWithDuration:0.2
@@ -433,17 +424,14 @@ void updateSpeedButtonVisibility() {
     NSTimer *timer = [NSTimer scheduledTimerWithTimeInterval:60.0 target:self selector:@selector(checkAndRecoverButtonStatus) userInfo:nil repeats:YES];
     [[NSRunLoop mainRunLoop] addTimer:timer forMode:NSRunLoopCommonModes];
     self.statusCheckTimer = timer;
-    DYYYDebugLog("statusCheckTimer scheduled owner=%p", self);
 }
 
 - (void)stopTimers {
     if (self.statusCheckTimer) {
-        DYYYDebugLog("statusCheckTimer invalidated owner=%p", self);
         [self.statusCheckTimer invalidate];
         self.statusCheckTimer = nil;
     }
     if (self.fadeTimer) {
-        DYYYDebugLog("fadeTimer invalidated owner=%p", self);
         [self.fadeTimer invalidate];
         self.fadeTimer = nil;
     }
