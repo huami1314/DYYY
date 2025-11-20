@@ -5,6 +5,7 @@
 //  Channel: @huamidev
 //  Created on: 2024/10/04
 //
+#import <QuartzCore/QuartzCore.h>
 #import <UIKit/UIKit.h>
 #import <float.h>
 #import <math.h>
@@ -21,6 +22,8 @@
 #import "DYYYSettingViewController.h"
 #import "DYYYToast.h"
 #import "DYYYUtils.h"
+
+static CGFloat DYYYCurrentTabHeight(void);
 
 static NSDictionary<NSString *, NSString *> *DYYYTopTabTitleMapping(void) {
     static NSString *cachedRawValue = nil;
@@ -4242,6 +4245,83 @@ static NSHashTable *processedParentViews = nil;
 }
 %end
 
+static BOOL DYYYIsLandscapeVideoBounds(CGSize size) {
+    if (size.width <= 0.0f || size.height <= 0.0f) {
+        return NO;
+    }
+    if (size.width <= size.height) {
+        return NO;
+    }
+    const CGFloat referenceAspect = 414.0f / 232.875f;
+    const CGFloat tolerance = 0.5f;
+    CGFloat aspectRatio = size.width / size.height;
+    return aspectRatio >= (referenceAspect - tolerance);
+}
+
+static char kDYYYMTKViewShiftAppliedOffsetKey;
+
+static void DYYYResetMTKViewShiftState(UIView *view) {
+    if (!view) {
+        return;
+    }
+    objc_setAssociatedObject(view, &kDYYYMTKViewShiftAppliedOffsetKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
+static CGFloat DYYYDesiredMTKViewShiftOffset(UIView *view) {
+    if (!view || !view.superview) {
+        return 0.0f;
+    }
+    if (!DYYYGetBool(@"DYYYEnableFullScreen")) {
+        return 0.0f;
+    }
+    if (!DYYYIsLandscapeVideoBounds(view.bounds.size)) {
+        return 0.0f;
+    }
+    CGFloat tabHeight = DYYYCurrentTabHeight();
+    if (tabHeight <= 0.0f) {
+        return 0.0f;
+    }
+    return tabHeight * 0.5f;
+}
+
+static void DYYYApplyMTKViewShiftIfNeeded(UIView *view) {
+    if (!view) {
+        return;
+    }
+
+    NSNumber *storedValue = objc_getAssociatedObject(view, &kDYYYMTKViewShiftAppliedOffsetKey);
+    if (!view.superview) {
+        if (storedValue) {
+            objc_setAssociatedObject(view, &kDYYYMTKViewShiftAppliedOffsetKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        }
+        return;
+    }
+
+    CGFloat desiredOffset = DYYYDesiredMTKViewShiftOffset(view);
+    CGFloat appliedOffset = storedValue ? storedValue.doubleValue : 0.0f;
+    CGFloat delta = desiredOffset - appliedOffset;
+    if (fabs(delta) < 0.1f) {
+        if (desiredOffset <= 0.0f && storedValue) {
+            objc_setAssociatedObject(view, &kDYYYMTKViewShiftAppliedOffsetKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        }
+        return;
+    }
+
+    CGPoint position = view.layer.position;
+    position.y -= delta;
+
+    [CATransaction begin];
+    [CATransaction setDisableActions:YES];
+    view.layer.position = position;
+    [CATransaction commit];
+
+    if (desiredOffset > 0.0f) {
+        objc_setAssociatedObject(view, &kDYYYMTKViewShiftAppliedOffsetKey, @(desiredOffset), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    } else {
+        objc_setAssociatedObject(view, &kDYYYMTKViewShiftAppliedOffsetKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    }
+}
+
 %hook MTKView
 
 - (void)layoutSubviews {
@@ -4256,6 +4336,16 @@ static NSHashTable *processedParentViews = nil;
             if (customColor)
                 self.backgroundColor = customColor;
         }
+    }
+}
+
+- (void)setFrame:(CGRect)frame {
+    UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
+    Class playVCClass = NSClassFromString(@"AWEPlayVideoViewController");
+    DYYYResetMTKViewShiftState(self);
+    %orig(frame);
+    if (vc && playVCClass && [vc isKindOfClass:playVCClass]) {
+        DYYYApplyMTKViewShiftIfNeeded(self);
     }
 }
 
@@ -4805,6 +4895,8 @@ static NSHashTable *processedParentViews = nil;
 // 底栏高度
 static CGFloat tabHeight = 0;
 static CGFloat originalTabHeight = 0;
+
+static CGFloat DYYYCurrentTabHeight(void) { return tabHeight; }
 
 %hook AWENormalModeTabBar
 
@@ -6647,13 +6739,6 @@ static Class TagViewClass = nil;
 %end
 
 %hook AWELandscapeFeedEntryView
-- (void)setCenter:(CGPoint)center {
-    if (DYYYGetBool(@"DYYYEnableFullScreen")) {
-        center.y += tabHeight * 0.5;
-    }
-
-    %orig(center);
-}
 
 - (void)layoutSubviews {
     %orig;
