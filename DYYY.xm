@@ -4837,8 +4837,8 @@ static void *TabBarHeightObservationContext = &TabBarHeightObservationContext;
         [[NSUserDefaults standardUserDefaults] removeObserver:self forKeyPath:TabBarHeightKey context:TabBarHeightObservationContext];
     } @catch (NSException *exception) {
         NSLog(@"[DYYY] KVO removeObserver failed: %@", exception);
-    } @
-    logosformatorig;
+    }
+    %orig;
 }
 
 %new
