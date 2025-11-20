@@ -4277,6 +4277,11 @@ static CGFloat DYYYDesiredMTKViewShiftOffset(UIView *view) {
     if (!DYYYIsLandscapeVideoBounds(view.bounds.size)) {
         return 0.0f;
     }
+    CGFloat viewWidth = CGRectGetWidth(view.bounds);
+    CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
+    if (viewWidth < screenWidth * 0.75f) {
+        return 0.0f;
+    }
     CGFloat tabHeight = DYYYCurrentTabHeight();
     if (tabHeight <= 0.0f) {
         return 0.0f;
