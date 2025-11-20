@@ -4279,7 +4279,7 @@ static CGFloat DYYYDesiredMTKViewShiftOffset(UIView *view) {
     }
     CGFloat viewWidth = CGRectGetWidth(view.bounds);
     CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
-    if (viewWidth < screenWidth * 0.75f) {
+    if (viewWidth < screenWidth * 0.995f) {
         return 0.0f;
     }
     CGFloat tabHeight = DYYYCurrentTabHeight();
