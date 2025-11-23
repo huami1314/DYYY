@@ -7,9 +7,20 @@
 #define DYYYGetInteger(key) [[NSUserDefaults standardUserDefaults] integerForKey:key]
 #define DYYYGetString(key) [[NSUserDefaults standardUserDefaults] stringForKey:key]
 #define DYYY_IGNORE_GLOBAL_ALPHA_TAG 114514
+
 typedef NS_ENUM(NSInteger, MediaType) { MediaTypeVideo, MediaTypeImage, MediaTypeAudio, MediaTypeHeic };
 
-static __weak UICollectionView *gFeedCV = nil;
+// 调节模式&全局状态
+typedef NS_ENUM(NSUInteger, DYEdgeMode) {
+    DYEdgeModeNone = 0,
+    DYEdgeModeBrightness = 1,
+    DYEdgeModeVolume = 2,
+};
+
+@interface UIView (DYYYGlobalAlpha)
+- (void)dyyy_applyGlobalTransparency;
+@end
+
 // 音量控制
 @interface AVSystemController : NSObject
 + (instancetype)sharedAVSystemController;
@@ -21,15 +32,6 @@ static __weak UICollectionView *gFeedCV = nil;
 + (instancetype)sharedInstance;
 - (void)presentHUDWithIcon:(NSString *)name level:(float)level;
 @end
-// 调节模式&全局状态
-typedef NS_ENUM(NSUInteger, DYEdgeMode) {
-    DYEdgeModeNone = 0,
-    DYEdgeModeBrightness = 1,
-    DYEdgeModeVolume = 2,
-};
-static DYEdgeMode gMode = DYEdgeModeNone;
-static CGFloat gStartY = 0.0;
-static CGFloat gStartVal = 0.0;
 
 @interface URLModel : NSObject
 @property(nonatomic, strong) NSArray *originURLList;
@@ -351,6 +353,9 @@ static CGFloat gStartVal = 0.0;
 @interface AWENormalModeTabBar : UIView
 @property(nonatomic, assign, readonly) UITabBarController *yy_viewController;
 @property(retain, nonatomic) AWETabBarSkinContainerView *skinContainerView;
+- (void)initializeOriginalTabBarHeight;
+- (void)calculateTabBarHeight;
+- (BOOL)applyTabBarHeight;
 @end
 
 @interface AWEPlayInteractionListenFeedView : UIView
