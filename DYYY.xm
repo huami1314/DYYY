@@ -4448,74 +4448,6 @@ static BOOL DYYYIsLandscapeVideoBounds(CGSize size) {
     return aspectRatio >= (referenceAspect - tolerance);
 }
 
-static char kDYYYMTKViewShiftAppliedOffsetKey;
-
-static void DYYYResetMTKViewShiftState(UIView *view) {
-    if (!view) {
-        return;
-    }
-    objc_setAssociatedObject(view, &kDYYYMTKViewShiftAppliedOffsetKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-}
-
-static CGFloat DYYYDesiredMTKViewShiftOffset(UIView *view) {
-    if (!view || !view.superview) {
-        return 0.0f;
-    }
-    if (!DYYYGetBool(@"DYYYEnableFullScreen")) {
-        return 0.0f;
-    }
-    if (!DYYYIsLandscapeVideoBounds(view.bounds.size)) {
-        return 0.0f;
-    }
-    CGFloat viewWidth = CGRectGetWidth(view.bounds);
-    CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
-    if (viewWidth < screenWidth * 0.995f) {
-        return 0.0f;
-    }
-    if (gCurrentTabBarHeight <= 0.0f) {
-        return 0.0f;
-    }
-    return gCurrentTabBarHeight * 0.5f;
-}
-
-static void DYYYApplyMTKViewShiftIfNeeded(UIView *view) {
-    if (!view) {
-        return;
-    }
-
-    NSNumber *storedValue = objc_getAssociatedObject(view, &kDYYYMTKViewShiftAppliedOffsetKey);
-    if (!view.superview) {
-        if (storedValue) {
-            objc_setAssociatedObject(view, &kDYYYMTKViewShiftAppliedOffsetKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-        }
-        return;
-    }
-
-    CGFloat desiredOffset = DYYYDesiredMTKViewShiftOffset(view);
-    CGFloat appliedOffset = storedValue ? storedValue.doubleValue : 0.0f;
-    CGFloat delta = desiredOffset - appliedOffset;
-    if (fabs(delta) < 0.1f) {
-        if (desiredOffset <= 0.0f && storedValue) {
-            objc_setAssociatedObject(view, &kDYYYMTKViewShiftAppliedOffsetKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-        }
-        return;
-    }
-
-    CGPoint position = view.layer.position;
-    position.y -= delta;
-
-    [CATransaction begin];
-    [CATransaction setDisableActions:YES];
-    view.layer.position = position;
-    [CATransaction commit];
-
-    if (desiredOffset > 0.0f) {
-        objc_setAssociatedObject(view, &kDYYYMTKViewShiftAppliedOffsetKey, @(desiredOffset), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-    } else {
-        objc_setAssociatedObject(view, &kDYYYMTKViewShiftAppliedOffsetKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-    }
-}
-
 %hook MTKView
 
 - (void)layoutSubviews {
@@ -4536,10 +4468,64 @@ static void DYYYApplyMTKViewShiftIfNeeded(UIView *view) {
 - (void)setFrame:(CGRect)frame {
     UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
     Class playVCClass = NSClassFromString(@"AWEPlayVideoViewController");
-    DYYYResetMTKViewShiftState(self);
+    BOOL isPlayVC = (vc && playVCClass && [vc isKindOfClass:playVCClass]);
+
+    objc_setAssociatedObject(self, _cmd, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     %orig(frame);
-    if (vc && playVCClass && [vc isKindOfClass:playVCClass]) {
-        DYYYApplyMTKViewShiftIfNeeded(self);
+
+    if (!isPlayVC) {
+        return;
+    }
+
+    NSNumber *storedValue = objc_getAssociatedObject(self, _cmd);
+    if (!self.superview) {
+        if (storedValue) {
+            objc_setAssociatedObject(self, _cmd, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        }
+        return;
+    }
+
+    if (!DYYYGetBool(@"DYYYEnableFullScreen")) {
+        return;
+    }
+    if (!DYYYIsLandscapeVideoBounds(self.bounds.size)) {
+        return;
+    }
+
+    CGFloat viewWidth = CGRectGetWidth(self.bounds);
+    CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
+
+    if (viewWidth < screenWidth * 0.995f) {
+        return;
+    }
+
+    CGFloat tabHeight = gCurrentTabBarHeight;
+    if (tabHeight <= 0.0f) {
+        return;
+    }
+
+    CGFloat desiredOffset = tabHeight * 0.6f;
+    CGFloat appliedOffset = storedValue ? storedValue.doubleValue : 0.0f;
+    CGFloat delta = desiredOffset - appliedOffset;
+    if (fabs(delta) < 0.1f) {
+        if (desiredOffset <= 0.0f && storedValue) {
+            objc_setAssociatedObject(self, _cmd, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        }
+        return;
+    }
+
+    CGPoint position = self.layer.position;
+    position.y -= delta;
+
+    [CATransaction begin];
+    [CATransaction setDisableActions:YES];
+    self.layer.position = position;
+    [CATransaction commit];
+
+    if (desiredOffset > 0.0f) {
+        objc_setAssociatedObject(self, _cmd, @(desiredOffset), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    } else {
+        objc_setAssociatedObject(self, _cmd, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     }
 }
 
@@ -5904,28 +5890,11 @@ static void *DYYYTabBarHeightContext = &DYYYTabBarHeightContext;
             %orig(frame);
             return;
         }
-
-        if (fabs(frame.origin.x) > 0.1 || fabs(frame.origin.y) > 0.1) {
-            %orig(frame);
-            return;
-        }
-
-        UIView *superView = self.superview;
-        if (!superView) {
-            %orig(frame);
-            return;
-        }
-
-        CGFloat superHeight = CGRectGetHeight(superView.bounds);
-        CGFloat frameHeight = CGRectGetHeight(frame);
-        CGFloat frameWidth = CGRectGetWidth(frame);
-
-        if (superHeight > 0 && frameHeight > 0 && frameHeight < superHeight) {
-            CGFloat diff = superHeight - frameHeight;
-            BOOL isLandscapeFrame = (frameWidth > frameHeight);
-
-            if (!isLandscapeFrame && fabs(diff - gCurrentTabBarHeight) < 1.0) {
-                frame.size.height = superHeight;
+        CGRect superF = self.superview.frame;
+        if (CGRectGetHeight(superF) > 0 && CGRectGetHeight(frame) > 0 && CGRectGetHeight(frame) < CGRectGetHeight(superF)) {
+            CGFloat diff = CGRectGetHeight(superF) - CGRectGetHeight(frame);
+            if (fabs(diff - gCurrentTabBarHeight) < 1.0) {
+                frame.size.height = CGRectGetHeight(superF);
             }
         }
 
@@ -7040,11 +7009,8 @@ static Class TagViewClass = nil;
 %hook TTPlayerView
 
 - (void)setFrame:(CGRect)frame {
-    if (DYYYGetBool(@"DYYYEnableFullScreen")) {
-        CGFloat currentTabHeight = DYYYCurrentTabHeight();
-        if (currentTabHeight > 0.0f) {
-            frame.size.height += 25.0f;
-        }
+    if (DYYYGetBool(@"DYYYEnableFullScreen") && gCurrentTabBarHeight > 0.0f) {
+        frame.size.height += 25.0f;
     }
     %orig(frame);
 }
@@ -7052,9 +7018,14 @@ static Class TagViewClass = nil;
 %end
 
 %hook AWELandscapeFeedEntryView
+
 - (void)setCenter:(CGPoint)center {
     if (DYYYGetBool(@"DYYYEnableFullScreen")) {
-        center.y += gCurrentTabBarHeight * 0.5;
+        UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
+        Class pureModeVC = NSClassFromString(@"AWEFeedPlayControlImpl.PureModePageCellViewController");
+        if (vc && pureModeVC && [vc isKindOfClass:pureModeVC]) {
+            center.y += gCurrentTabBarHeight * 0.5;
+        }
     }
 
     %orig(center);
@@ -7084,18 +7055,6 @@ static Class TagViewClass = nil;
 - (void)dealloc {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
     %orig;
-}
-
-- (void)setCenter:(CGPoint)center {
-    if (DYYYGetBool(@"DYYYEnableFullScreen")) {
-        UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
-        Class pureModeVC = NSClassFromString(@"AWEFeedPlayControlImpl.PureModePageCellViewController");
-        if (vc && pureModeVC && [vc isKindOfClass:pureModeVC]) {
-            center.y += tabHeight * 0.5;
-        }
-    }
-
-    %orig(center);
 }
 
 - (void)layoutSubviews {
