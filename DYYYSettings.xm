@@ -524,7 +524,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
             @"detail" : @"",
             @"cellType" : @6,
             @"imageName" : @"ic_ad_outlined_20"},
-          @{@"identifier" : @"DYYYHideteenmode",
+          @{@"identifier" : @"DYYYHideTeenMode",
             @"title" : @"移除青少年弹窗",
             @"detail" : @"",
             @"cellType" : @6,
