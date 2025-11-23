@@ -4495,7 +4495,7 @@ static BOOL DYYYIsLandscapeVideoBounds(CGSize size) {
     CGFloat viewWidth = CGRectGetWidth(self.bounds);
     CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
 
-    if (viewWidth < screenWidth * 0.995f) {
+    if (viewWidth < screenWidth) {
         return;
     }
 
@@ -5175,26 +5175,23 @@ static void *DYYYTabBarHeightContext = &DYYYTabBarHeightContext;
         [[NSUserDefaults standardUserDefaults] removeObserver:self forKeyPath:kDYYYTabBarHeightKey context:DYYYTabBarHeightContext];
     } @catch (NSException *exception) {
         NSLog(@"[DYYY] KVO removeObserver failed: %@", exception);
-    }
+    } 
     %orig;
 }
 
-- (void)observeValueForKeyPath:(NSString *)keyPath 
-                      ofObject:(id)object 
-                        change:(NSDictionary<NSKeyValueChangeKey, id> *)change 
-                       context:(void *)context {
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey, id> *)change context:(void *)context {
     if (context == DYYYTabBarHeightContext) {
         __weak __typeof(self) weakSelf = self;
         dispatch_async(dispatch_get_main_queue(), ^{
-            __strong __typeof(weakSelf) strongSelf = weakSelf;
-            if (strongSelf) {
-            NSLog(@"[DYYY] observeValueForKeyPath: %@ has new value: '%@'", kDYYYTabBarHeightKey, change[NSKeyValueChangeNewKey]);
-            if (originalTabBarHeight == kInvalidHeight) {
-                [strongSelf initializeOriginalTabBarHeight];
-            }
-            [strongSelf calculateTabBarHeight];
-            [strongSelf applyTabBarHeight];
-            }
+          __strong __typeof(weakSelf) strongSelf = weakSelf;
+          if (strongSelf) {
+              NSLog(@"[DYYY] observeValueForKeyPath: %@ has new value: '%@'", kDYYYTabBarHeightKey, change[NSKeyValueChangeNewKey]);
+              if (originalTabBarHeight == kInvalidHeight) {
+                  [strongSelf initializeOriginalTabBarHeight];
+              }
+              [strongSelf calculateTabBarHeight];
+              [strongSelf applyTabBarHeight];
+          }
         });
     }
 }
@@ -5909,14 +5906,15 @@ static void *DYYYTabBarHeightContext = &DYYYTabBarHeightContext;
     if ([NSThread isMainThread]) {
         if (self.window && self.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG) {
             if (gGlobalTransparency != kInvalidAlpha && fabs(self.alpha - gGlobalTransparency) >= 0.01) {
-                [UIView animateWithDuration:0.2 animations:^{
-                    self.alpha = gGlobalTransparency;
-                }];
+                [UIView animateWithDuration:0.2
+                                 animations:^{
+                                   self.alpha = gGlobalTransparency;
+                                 }];
             }
         }
     } else {
         dispatch_async(dispatch_get_main_queue(), ^{
-            [self dyyy_applyGlobalTransparency];
+          [self dyyy_applyGlobalTransparency];
         });
     }
 }
@@ -6452,10 +6450,7 @@ static void DYYYRemoveKeyboardObserver(void) {
 
     updateGlobalTransparencyCache();
 
-    [[NSUserDefaults standardUserDefaults] addObserver:(NSObject *)self
-                                            forKeyPath:kDYYYGlobalTransparencyKey
-                                               options:NSKeyValueObservingOptionNew
-                                               context:DYYYGlobalTransparencyContext];
+    [[NSUserDefaults standardUserDefaults] addObserver:(NSObject *)self forKeyPath:kDYYYGlobalTransparencyKey options:NSKeyValueObservingOptionNew context:DYYYGlobalTransparencyContext];
 
     BOOL isEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableFloatClearButton"];
     if (isEnabled) {
@@ -6521,23 +6516,18 @@ static void DYYYRemoveKeyboardObserver(void) {
     DYYYRemoveAppLifecycleObservers();
     DYYYRemoveKeyboardObserver();
     @try {
-        [[NSUserDefaults standardUserDefaults] removeObserver:(NSObject *)self
-                                                   forKeyPath:kDYYYGlobalTransparencyKey
-                                                      context:DYYYGlobalTransparencyContext];
+        [[NSUserDefaults standardUserDefaults] removeObserver:(NSObject *)self forKeyPath:kDYYYGlobalTransparencyKey context:DYYYGlobalTransparencyContext];
     } @catch (NSException *exception) {
         NSLog(@"[DYYY] KVO removeObserver failed: %@", exception);
-    }
+    } 
     %orig;
 }
 
-- (void)observeValueForKeyPath:(NSString *)keyPath
-                      ofObject:(id)object
-                        change:(NSDictionary<NSKeyValueChangeKey,id> *)change 
-                       context:(void *)context {
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey, id> *)change context:(void *)context {
     if (context == DYYYGlobalTransparencyContext) {
         dispatch_async(dispatch_get_main_queue(), ^{
-            updateGlobalTransparencyCache();
-            [[NSNotificationCenter defaultCenter] postNotificationName:kDYYYGlobalTransparencyDidChangeNotification object:nil];
+          updateGlobalTransparencyCache();
+          [[NSNotificationCenter defaultCenter] postNotificationName:kDYYYGlobalTransparencyDidChangeNotification object:nil];
         });
     } else {
         %orig(keyPath, object, change, context);
@@ -7009,7 +6999,13 @@ static Class TagViewClass = nil;
 %hook TTPlayerView
 
 - (void)setFrame:(CGRect)frame {
-    if (DYYYGetBool(@"DYYYEnableFullScreen") && gCurrentTabBarHeight > 0.0f) {
+
+    CGFloat viewWidth = CGRectGetWidth(self.bounds);
+    CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
+
+    if (viewWidth < screenWidth) {
+        %orig(frame);
+    } else if (DYYYGetBool(@"DYYYEnableFullScreen") && gCurrentTabBarHeight > 0.0f) {
         frame.size.height += 25.0f;
     }
     %orig(frame);

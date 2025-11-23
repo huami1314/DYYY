@@ -1364,3 +1364,6 @@ typedef NS_ENUM(NSUInteger, DYEdgeMode) {
 
 @interface AWEListKitMagicCollectionView : UICollectionView
 @end
+
+@interface TTPlayerView : UIView
+@end
