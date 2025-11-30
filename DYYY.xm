@@ -4488,12 +4488,24 @@ static BOOL DYYYIsLandscapeVideoBounds(CGSize size) {
     if (!DYYYGetBool(@"DYYYEnableFullScreen")) {
         return;
     }
-    if (!DYYYIsLandscapeVideoBounds(self.bounds.size)) {
+    BOOL shouldAdjust = DYYYIsLandscapeVideoBounds(self.bounds.size);
+    if (!shouldAdjust) {
+        CGFloat width = self.bounds.size.width;
+        CGFloat height = self.bounds.size.height;
+        if (width > 0.0f && height > width) {
+            const CGFloat maxPortraitRatio = 1.5f;
+            CGFloat aspectRatio = height / width;
+            shouldAdjust = aspectRatio <= maxPortraitRatio;
+        }
+    }
+    if (!shouldAdjust) {
         return;
     }
 
     CGFloat viewWidth = CGRectGetWidth(self.bounds);
-    CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
+    CGRect screenBounds = [UIScreen mainScreen].bounds;
+    CGFloat screenWidth = CGRectGetWidth(screenBounds);
+    BOOL isScreenLandscape = screenWidth > CGRectGetHeight(screenBounds);
 
     if (viewWidth < screenWidth) {
         return;
@@ -4504,7 +4516,7 @@ static BOOL DYYYIsLandscapeVideoBounds(CGSize size) {
         return;
     }
 
-    CGFloat desiredOffset = tabHeight * 0.6f;
+    CGFloat desiredOffset = isScreenLandscape ? 0.0f : (tabHeight * 0.6f);
     CGFloat appliedOffset = storedValue ? storedValue.doubleValue : 0.0f;
     CGFloat delta = desiredOffset - appliedOffset;
     if (fabs(delta) < 0.1f) {
@@ -4553,15 +4565,6 @@ static BOOL DYYYIsLandscapeVideoBounds(CGSize size) {
     return %orig;
 }
 
-%end
-
-// 去广告功能
-%hook AwemeAdManager
-- (void)showAd {
-    if (DYYYGetBool(@"DYYYNoAds"))
-        return;
-    %orig;
-}
 %end
 
 %hook AWEPlayInteractionUserAvatarView
@@ -7001,12 +7004,16 @@ static Class TagViewClass = nil;
 - (void)setFrame:(CGRect)frame {
 
     CGFloat viewWidth = CGRectGetWidth(self.bounds);
-    CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
+    CGRect screenBounds = [UIScreen mainScreen].bounds;
+    CGFloat screenWidth = CGRectGetWidth(screenBounds);
+    BOOL isScreenLandscape = screenWidth > CGRectGetHeight(screenBounds);
 
     if (viewWidth < screenWidth) {
         %orig(frame);
     } else if (DYYYGetBool(@"DYYYEnableFullScreen") && gCurrentTabBarHeight > 0.0f) {
-        frame.size.height += 25.0f;
+        if (!isScreenLandscape) {
+            frame.size.height += 25.0f;
+        }
     }
     %orig(frame);
 }
