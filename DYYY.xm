@@ -4490,15 +4490,6 @@ static BOOL DYYYIsLandscapeVideoBounds(CGSize size) {
     }
     BOOL shouldAdjust = DYYYIsLandscapeVideoBounds(self.bounds.size);
     if (!shouldAdjust) {
-        CGFloat width = self.bounds.size.width;
-        CGFloat height = self.bounds.size.height;
-        if (width > 0.0f && height > width) {
-            const CGFloat maxPortraitRatio = 1.5f;
-            CGFloat aspectRatio = height / width;
-            shouldAdjust = aspectRatio <= maxPortraitRatio;
-        }
-    }
-    if (!shouldAdjust) {
         return;
     }
 
@@ -7026,8 +7017,14 @@ static Class TagViewClass = nil;
     if (DYYYGetBool(@"DYYYEnableFullScreen")) {
         UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
         Class pureModeVC = NSClassFromString(@"AWEFeedPlayControlImpl.PureModePageCellViewController");
-        if (vc && pureModeVC && [vc isKindOfClass:pureModeVC]) {
+        BOOL inPureMode = (vc && pureModeVC && [vc isKindOfClass:pureModeVC]);
+        if (inPureMode) {
             center.y += gCurrentTabBarHeight * 0.5;
+        } else {
+            CGFloat screenHeight = [UIScreen mainScreen].bounds.size.height;
+            if (center.y > screenHeight * 0.6) {
+                center.y += gCurrentTabBarHeight * 0.5;
+            }
         }
     }
 
