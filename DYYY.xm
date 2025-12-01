@@ -7414,7 +7414,9 @@ static void findTargetViewInView(UIView *view) {
 }
 
 %ctor {
-    %init(DYYYSettingsGesture);
+    if (!DYYYGetBool(@"DYYYDisableSettingsGesture")) {
+        %init(DYYYSettingsGesture);
+    }
     if (DYYYGetBool(@"DYYYUserAgreementAccepted")) {
         static dispatch_once_t onceToken;
         dispatch_once(&onceToken, ^{
