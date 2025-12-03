@@ -1,4 +1,5 @@
 #import "AwemeHeaders.h"
+#import "DYYYFloatClearButton.h"
 #import "DYYYFloatSpeedButton.h"
 #import "DYYYUtils.h"
 #import <UIKit/UIKit.h>
@@ -13,6 +14,50 @@ CGFloat speedButtonSize = 32.0;
 BOOL isFloatSpeedButtonEnabled = NO;
 BOOL speedButtonForceHidden = NO;
 BOOL dyyyInteractionViewVisible = NO;
+
+static void DYYYApplySpeedButtonHiddenState(UIView *button, BOOL hidden) {
+    if (!button) {
+        return;
+    }
+    void (^applyBlock)(UIView *) = ^(UIView *target) {
+        if (!target) {
+            return;
+        }
+        if (target.hidden != hidden) {
+            target.hidden = hidden;
+        }
+    };
+
+    if ([NSThread isMainThread]) {
+        applyBlock(button);
+    } else {
+        __weak UIView *weakButton = button;
+        dispatch_async(dispatch_get_main_queue(), ^{
+            applyBlock(weakButton);
+        });
+    }
+}
+
+static BOOL DYYYShouldHideSpeedButton(void) {
+    BOOL clearModeActive = (hideButton && hideButton.isElementsHidden);
+    if (clearModeActive) {
+        BOOL hideSpeedInClearMode = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideSpeed"];
+        if (hideSpeedInClearMode) {
+            return YES;
+        }
+        return speedButtonForceHidden;
+    }
+    if (!dyyyInteractionViewVisible) {
+        return YES;
+    }
+    if (dyyyCommentViewVisible) {
+        return YES;
+    }
+    if (speedButtonForceHidden) {
+        return YES;
+    }
+    return NO;
+}
 
 NSArray *getSpeedOptions() {
     NSString *speedConfig = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYSpeedSettings"] ?: @"1.0,1.25,1.5,2.0";
@@ -106,61 +151,21 @@ NSArray *findViewControllersInHierarchy(UIViewController *rootViewController) {
     return viewControllers;
 }
 
-void showSpeedButton(void) { speedButtonForceHidden = NO; }
+void showSpeedButton(void) {
+    speedButtonForceHidden = NO;
+    updateSpeedButtonVisibility();
+}
 
 void hideSpeedButton(void) {
     speedButtonForceHidden = YES;
-    if (speedButton) {
-        if ([NSThread isMainThread]) {
-            speedButton.hidden = YES;
-        } else {
-            __weak FloatingSpeedButton *weakButton = speedButton;
-            dispatch_async(dispatch_get_main_queue(), ^{
-              FloatingSpeedButton *strongButton = weakButton;
-              if (!strongButton) {
-                  return;
-              }
-              strongButton.hidden = YES;
-            });
-        }
-    }
+    updateSpeedButtonVisibility();
 }
 
 void updateSpeedButtonVisibility() {
     if (!speedButton || !isFloatSpeedButtonEnabled)
         return;
 
-    // 如果已经在主线程，直接执行；否则异步到主线程
-    if ([NSThread isMainThread]) {
-        if (!dyyyInteractionViewVisible) {
-            speedButton.hidden = YES;
-            return;
-        }
-
-        // 在交互界面时，根据评论界面状态决定是否显示
-        BOOL shouldHide = dyyyCommentViewVisible || speedButtonForceHidden;
-        if (speedButton.hidden != shouldHide) {
-            speedButton.hidden = shouldHide;
-        }
-    } else {
-        __weak FloatingSpeedButton *weakButton = speedButton;
-        dispatch_async(dispatch_get_main_queue(), ^{
-          FloatingSpeedButton *strongButton = weakButton;
-          if (!strongButton) {
-              return;
-          }
-          if (!dyyyInteractionViewVisible) {
-              strongButton.hidden = YES;
-              return;
-          }
-
-          // 在交互界面时，根据评论界面状态决定是否显示
-          BOOL shouldHide = dyyyCommentViewVisible || speedButtonForceHidden;
-          if (strongButton.hidden != shouldHide) {
-              strongButton.hidden = shouldHide;
-          }
-        });
-    }
+    DYYYApplySpeedButtonHiddenState(speedButton, DYYYShouldHideSpeedButton());
 }
 
 @implementation FloatingSpeedButton
