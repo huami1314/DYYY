@@ -20,6 +20,33 @@ BOOL isInPlayInteractionVC = NO;
 BOOL isPureViewVisible = NO;
 BOOL clearButtonForceHidden = NO;
 BOOL isAppActive = YES;
+BOOL dyyyIsPerformingFloatClearOperation = NO;
+
+static NSInteger dyyyClearButtonMutationDepth = 0;
+
+static inline void DYYYBeginClearButtonMutation(void) {
+    dyyyClearButtonMutationDepth++;
+    dyyyIsPerformingFloatClearOperation = YES;
+}
+
+static inline void DYYYEndClearButtonMutation(void) {
+    if (dyyyClearButtonMutationDepth > 0) {
+        dyyyClearButtonMutationDepth--;
+    }
+    dyyyIsPerformingFloatClearOperation = dyyyClearButtonMutationDepth > 0;
+}
+
+static void DYYYPerformClearButtonMutation(dispatch_block_t block) {
+    if (!block) {
+        return;
+    }
+    DYYYBeginClearButtonMutation();
+    @try {
+        block();
+    } @finally {
+        DYYYEndClearButtonMutation();
+    }
+}
 
 
 HideUIButton *hideButton;
@@ -49,26 +76,60 @@ UIWindow *getKeyWindow(void) {
     return keyWindow;
 }
 
-void updateClearButtonVisibility() {
-    if (!hideButton || !isAppActive)
+static void DYYYApplyClearButtonHiddenState(HideUIButton *button, BOOL hidden) {
+    if (!button) {
         return;
-
-    __weak HideUIButton *weakButton = hideButton;
-    dispatch_async(dispatch_get_main_queue(), ^{
-        HideUIButton *strongButton = weakButton;
-        if (!strongButton) {
+    }
+    void (^applyBlock)(HideUIButton *) = ^(HideUIButton *target) {
+        if (!target) {
             return;
         }
-        if (!dyyyInteractionViewVisible) {
-            strongButton.hidden = YES;
-            return;
+        if (target.hidden != hidden) {
+            target.hidden = hidden;
         }
+    };
 
-        BOOL shouldHide = dyyyCommentViewVisible || clearButtonForceHidden || isPureViewVisible;
-        if (strongButton.hidden != shouldHide) {
-            strongButton.hidden = shouldHide;
+    if ([NSThread isMainThread]) {
+        applyBlock(button);
+    } else {
+        __weak HideUIButton *weakButton = button;
+        dispatch_async(dispatch_get_main_queue(), ^{
+            applyBlock(weakButton);
+        });
+    }
+}
+
+static BOOL DYYYShouldHideClearButton(void) {
+    BOOL clearModeActive = (hideButton && hideButton.isElementsHidden);
+    if (clearModeActive) {
+        if (!isAppActive) {
+            return YES;
         }
-    });
+        return clearButtonForceHidden;
+    }
+    if (!isAppActive) {
+        return YES;
+    }
+    if (!dyyyInteractionViewVisible) {
+        return YES;
+    }
+    if (dyyyCommentViewVisible) {
+        return YES;
+    }
+    if (isPureViewVisible) {
+        return YES;
+    }
+    if (clearButtonForceHidden) {
+        return YES;
+    }
+    return NO;
+}
+
+void updateClearButtonVisibility() {
+    if (!hideButton) {
+        return;
+    }
+    DYYYApplyClearButtonHiddenState(hideButton, DYYYShouldHideClearButton());
 }
 
 void showClearButton(void) {
@@ -78,37 +139,30 @@ void showClearButton(void) {
 
 void hideClearButton(void) {
     clearButtonForceHidden = YES;
-    if (hideButton) {
-        __weak HideUIButton *weakButton = hideButton;
-        dispatch_async(dispatch_get_main_queue(), ^{
-            HideUIButton *strongButton = weakButton;
-            if (!strongButton) {
-                return;
-            }
-            strongButton.hidden = YES;
-        });
-    }
+    updateClearButtonVisibility();
 }
 
 static void forceResetAllUIElements(void) {
-    UIWindow *window = getKeyWindow();
-    if (!window)
-        return;
-    Class StackViewClass = NSClassFromString(@"AWEElementStackView");
-    for (NSString *className in targetClassNames) {
-        Class viewClass = NSClassFromString(className);
-        if (!viewClass)
-            continue;
-        NSMutableArray *views = [NSMutableArray array];
-        findViewsOfClassHelper(window, viewClass, views);
-        for (UIView *view in views) {
-            if ([view isKindOfClass:StackViewClass]) {
-                view.alpha = DYGetGlobalAlpha();
-            } else {
-                view.alpha = 1.0; // 恢复透明度
+    DYYYPerformClearButtonMutation(^{
+        UIWindow *window = getKeyWindow();
+        if (!window)
+            return;
+        Class StackViewClass = NSClassFromString(@"AWEElementStackView");
+        for (NSString *className in targetClassNames) {
+            Class viewClass = NSClassFromString(className);
+            if (!viewClass)
+                continue;
+            NSMutableArray *views = [NSMutableArray array];
+            findViewsOfClassHelper(window, viewClass, views);
+            for (UIView *view in views) {
+                if ([view isKindOfClass:StackViewClass]) {
+                    view.alpha = DYGetGlobalAlpha();
+                } else {
+                    view.alpha = 1.0; // 恢复透明度
+                }
             }
         }
-    }
+    });
 }
 static void reapplyHidingToAllElements(HideUIButton *button) {
     if (!button || !button.isElementsHidden)
@@ -415,9 +469,11 @@ void initTargetClassNames(void) {
 
 - (void)restoreAWEPlayInteractionProgressContainerView {
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYRemoveTimeProgress"] || [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTimeProgress"]) {
-        for (UIWindow *window in [UIApplication sharedApplication].windows) {
-            [self recursivelyRestoreAWEPlayInteractionProgressContainerViewInView:window];
-        }
+        DYYYPerformClearButtonMutation(^{
+            for (UIWindow *window in [UIApplication sharedApplication].windows) {
+                [self recursivelyRestoreAWEPlayInteractionProgressContainerViewInView:window];
+            }
+        });
     }
 }
 
@@ -450,15 +506,17 @@ void initTargetClassNames(void) {
     }
 }
 - (void)hideUIElements {
-    [self.hiddenViewsList removeAllObjects];
-    [self findAndHideViews:targetClassNames];
-    [self hideAWEPlayInteractionProgressContainerView];
-    self.isElementsHidden = YES;
-    // self.hidden should be managed by updateClearButtonVisibility
-    updateClearButtonVisibility();
-    if (self.superview) {
-        [self.superview bringSubviewToFront:self];
-    }
+    DYYYPerformClearButtonMutation(^{
+        [self.hiddenViewsList removeAllObjects];
+        [self findAndHideViews:targetClassNames];
+        [self hideAWEPlayInteractionProgressContainerView];
+        self.isElementsHidden = YES;
+        // self.hidden should be managed by updateClearButtonVisibility
+        updateClearButtonVisibility();
+        if (self.superview) {
+            [self.superview bringSubviewToFront:self];
+        }
+    });
 }
 
 - (void)hideAWEPlayInteractionProgressContainerView {

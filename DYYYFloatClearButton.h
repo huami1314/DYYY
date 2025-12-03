@@ -11,6 +11,7 @@ extern BOOL isInPlayInteractionVC;
 extern BOOL isPureViewVisible;
 extern BOOL clearButtonForceHidden;
 extern BOOL isAppActive;
+extern BOOL dyyyIsPerformingFloatClearOperation;
 extern BOOL isAppInTransition;
 extern NSArray *targetClassNames;
 extern BOOL dyyyInteractionViewVisible;
@@ -52,4 +53,3 @@ void initTargetClassNames(void);
 - (void)saveLockState;
 - (void)loadLockState;
 @end
-

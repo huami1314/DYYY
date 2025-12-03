@@ -6468,6 +6468,7 @@ static void DYYYRemoveKeyboardObserver(void) {
 
         hideButton.hidden = NO;
         [getKeyWindow() addSubview:hideButton];
+        updateClearButtonVisibility();
 
         DYYYRemoveAppLifecycleObservers();
 
@@ -6591,10 +6592,12 @@ static Class TagViewClass = nil;
     pureModeSet = NO;
 
     // 倍速和清屏按钮的状态控制
-    if (speedButton && isFloatSpeedButtonEnabled) {
-        if (alpha == 0) {
+    BOOL hasFloatingButtons = (speedButton && isFloatSpeedButtonEnabled) || hideButton;
+    if (hasFloatingButtons && !dyyyIsPerformingFloatClearOperation) {
+        const CGFloat threshold = 0.01f;
+        if (alpha <= threshold) {
             dyyyCommentViewVisible = YES;
-        } else if (alpha == 1) {
+        } else if (alpha >= (1.0f - threshold)) {
             dyyyCommentViewVisible = NO;
         }
         updateSpeedButtonVisibility();
