@@ -2543,6 +2543,14 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
       NSMutableArray<AWESettingItemModel *> *interactionItems = [NSMutableArray array];
       NSArray *interactionSettings = @[
           @{
+              @"identifier" : @"DYYYDisableSettingsGesture",
+              @"title" : @"禁用双指长按入口",
+              @"subTitle" : @"开启后将禁用双指长按弹出的设置入口，开启或者关闭此选项都需要重启抖音以生效",
+              @"detail" : @"",
+              @"cellType" : @37,
+              @"imageName" : @"ic_gearsimplify_outlined_20"
+          },
+          @{
               @"identifier" : @"DYYYEntrance",
               @"title" : @"左侧边栏快捷入口",
               @"subTitle" : @"将侧边栏替换为 DYYY 快捷入口",
