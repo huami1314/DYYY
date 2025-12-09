@@ -138,6 +138,7 @@ typedef NS_ENUM(NSUInteger, DYEdgeMode) {
 @property(nonatomic, strong) AWEAwemeStatisticsModel *statistics;
 @property(nonatomic, strong) AWEPropGuideV2Model *propGuideV2;
 @property(nonatomic, strong) AWEECommerceLabel *ecommerceBelowLabel;
+@property(nonatomic, assign) BOOL isShowLandscapeEntryView;
 - (BOOL)isLive;
 - (BOOL)contentFilter;
 - (AWESearchAwemeExtraModel *)searchExtraModel;
@@ -162,6 +163,10 @@ typedef NS_ENUM(NSUInteger, DYEdgeMode) {
 - (void)setDuxIconName:(NSString *)iconName;
 - (void)setDescribeString:(NSString *)descString;
 - (void)setAction:(void (^)(void))action;
+@end
+
+@interface AWEPlayVideoViewController : UIViewController
+@property(nonatomic, strong) AWEAwemeModel *model;
 @end
 
 @interface AWELongPressPanelViewGroupModel : NSObject
@@ -205,6 +210,9 @@ typedef NS_ENUM(NSUInteger, DYEdgeMode) {
 @end
 
 @interface AWEFeedContainerContentView : UIView
+@end
+
+@interface TTMetalView : UIView
 @end
 
 @interface AWELeftSideBarEntranceView : UIView

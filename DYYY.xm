@@ -4435,19 +4435,6 @@ static NSHashTable *processedParentViews = nil;
 }
 %end
 
-static BOOL DYYYIsLandscapeVideoBounds(CGSize size) {
-    if (size.width <= 0.0f || size.height <= 0.0f) {
-        return NO;
-    }
-    if (size.width <= size.height) {
-        return NO;
-    }
-    const CGFloat referenceAspect = 414.0f / 232.875f;
-    const CGFloat tolerance = 0.5f;
-    CGFloat aspectRatio = size.width / size.height;
-    return aspectRatio >= (referenceAspect - tolerance);
-}
-
 %hook MTKView
 
 - (void)layoutSubviews {
@@ -4462,73 +4449,6 @@ static BOOL DYYYIsLandscapeVideoBounds(CGSize size) {
             if (customColor)
                 self.backgroundColor = customColor;
         }
-    }
-}
-
-- (void)setFrame:(CGRect)frame {
-    UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
-    Class playVCClass = NSClassFromString(@"AWEPlayVideoViewController");
-    BOOL isPlayVC = (vc && playVCClass && [vc isKindOfClass:playVCClass]);
-
-    objc_setAssociatedObject(self, _cmd, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-    %orig(frame);
-
-    if (!isPlayVC) {
-        return;
-    }
-
-    NSNumber *storedValue = objc_getAssociatedObject(self, _cmd);
-    if (!self.superview) {
-        if (storedValue) {
-            objc_setAssociatedObject(self, _cmd, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-        }
-        return;
-    }
-
-    if (!DYYYGetBool(@"DYYYEnableFullScreen")) {
-        return;
-    }
-    BOOL shouldAdjust = DYYYIsLandscapeVideoBounds(self.bounds.size);
-    if (!shouldAdjust) {
-        return;
-    }
-
-    CGFloat viewWidth = CGRectGetWidth(self.bounds);
-    CGRect screenBounds = [UIScreen mainScreen].bounds;
-    CGFloat screenWidth = CGRectGetWidth(screenBounds);
-    BOOL isScreenLandscape = screenWidth > CGRectGetHeight(screenBounds);
-
-    if (viewWidth < screenWidth) {
-        return;
-    }
-
-    CGFloat tabHeight = gCurrentTabBarHeight;
-    if (tabHeight <= 0.0f) {
-        return;
-    }
-
-    CGFloat desiredOffset = isScreenLandscape ? 0.0f : (tabHeight * 0.6f);
-    CGFloat appliedOffset = storedValue ? storedValue.doubleValue : 0.0f;
-    CGFloat delta = desiredOffset - appliedOffset;
-    if (fabs(delta) < 0.1f) {
-        if (desiredOffset <= 0.0f && storedValue) {
-            objc_setAssociatedObject(self, _cmd, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-        }
-        return;
-    }
-
-    CGPoint position = self.layer.position;
-    position.y -= delta;
-
-    [CATransaction begin];
-    [CATransaction setDisableActions:YES];
-    self.layer.position = position;
-    [CATransaction commit];
-
-    if (desiredOffset > 0.0f) {
-        objc_setAssociatedObject(self, _cmd, @(desiredOffset), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-    } else {
-        objc_setAssociatedObject(self, _cmd, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     }
 }
 
@@ -6979,6 +6899,80 @@ static Class TagViewClass = nil;
 }
 %end
 
+%hook TTPlayerView
+
+- (void)layoutSubviews {
+    %orig;
+    UIView *parent = self.superview;
+    if (parent) {
+        parent.backgroundColor = self.backgroundColor;
+    }
+}
+
+%end
+
+%hook TTMetalView
+- (void)setCenter:(CGPoint)center {
+    BOOL shouldAdjust = NO;
+    UIView *view = (UIView *)self;
+    if (DYYYGetBool(@"DYYYEnableFullScreen")) {
+        CGFloat viewWidth = CGRectGetWidth(view.bounds);
+        CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
+        if (viewWidth + 0.5f >= screenWidth) {
+            UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:view];
+            Class playClass = %c(AWEPlayVideoViewController);
+            if (playClass && [vc isKindOfClass:playClass]) {
+                AWEPlayVideoViewController *playVC = (AWEPlayVideoViewController *)vc;
+                AWEAwemeModel *model = playVC.model;
+                if ([model respondsToSelector:@selector(isShowLandscapeEntryView)] && model.isShowLandscapeEntryView) {
+                    shouldAdjust = YES;
+                }
+            }
+        }
+    }
+
+    if (shouldAdjust) {
+        CGFloat offset = gCurrentTabBarHeight > 0 ? gCurrentTabBarHeight : originalTabBarHeight;
+        if (offset > 0) {
+            center.y -= offset * 0.5;
+        }
+    }
+
+    %orig(center);
+}
+%end
+
+%hook TTMetalViewNew
+- (void)setCenter:(CGPoint)center {
+    BOOL shouldAdjust = NO;
+    UIView *view = (UIView *)self;
+    if (DYYYGetBool(@"DYYYEnableFullScreen")) {
+        CGFloat viewWidth = CGRectGetWidth(view.bounds);
+        CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
+        if (viewWidth + 0.5f >= screenWidth) {
+            UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:view];
+            Class playClass = %c(AWEPlayVideoViewController);
+            if (playClass && [vc isKindOfClass:playClass]) {
+                AWEPlayVideoViewController *playVC = (AWEPlayVideoViewController *)vc;
+                AWEAwemeModel *model = playVC.model;
+                if ([model respondsToSelector:@selector(isShowLandscapeEntryView)] && model.isShowLandscapeEntryView) {
+                    shouldAdjust = YES;
+                }
+            }
+        }
+    }
+
+    if (shouldAdjust) {
+        CGFloat offset = gCurrentTabBarHeight > 0 ? gCurrentTabBarHeight : originalTabBarHeight;
+        if (offset > 0) {
+            center.y -= offset * 0.5;
+        }
+    }
+
+    %orig(center);
+}
+%end
+
 // 隐藏图片滑条
 %hook AWEStoryProgressContainerView
 - (void)setCenter:(CGPoint)center {
@@ -7001,46 +6995,7 @@ static Class TagViewClass = nil;
 }
 %end
 
-%hook TTPlayerView
-
-- (void)setFrame:(CGRect)frame {
-
-    CGFloat viewWidth = CGRectGetWidth(self.bounds);
-    CGRect screenBounds = [UIScreen mainScreen].bounds;
-    CGFloat screenWidth = CGRectGetWidth(screenBounds);
-    BOOL isScreenLandscape = screenWidth > CGRectGetHeight(screenBounds);
-
-    if (viewWidth < screenWidth) {
-        %orig(frame);
-    } else if (DYYYGetBool(@"DYYYEnableFullScreen") && gCurrentTabBarHeight > 0.0f) {
-        if (!isScreenLandscape) {
-            frame.size.height += 25.0f;
-        }
-    }
-    %orig(frame);
-}
-
-%end
-
 %hook AWELandscapeFeedEntryView
-
-- (void)setCenter:(CGPoint)center {
-    if (DYYYGetBool(@"DYYYEnableFullScreen")) {
-        UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
-        Class pureModeVC = NSClassFromString(@"AWEFeedPlayControlImpl.PureModePageCellViewController");
-        BOOL inPureMode = (vc && pureModeVC && [vc isKindOfClass:pureModeVC]);
-        if (inPureMode) {
-            center.y += gCurrentTabBarHeight * 0.5;
-        } else {
-            CGFloat screenHeight = [UIScreen mainScreen].bounds.size.height;
-            if (center.y > screenHeight * 0.6) {
-                center.y += gCurrentTabBarHeight * 0.5;
-            }
-        }
-    }
-
-    %orig(center);
-}
 
 - (void)setAlpha:(CGFloat)alpha {
     CGFloat finalAlpha = alpha;
