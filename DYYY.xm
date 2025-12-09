@@ -2595,6 +2595,33 @@ static AWEIMReusableCommonCell *currentCell;
 
 %end
 
+// 隐藏消息页顶栏红包
+%hook AWEIMMessageTabSideBarView
+- (void)layoutSubviews {
+    %orig;
+
+    if (!DYYYGetBool(@"DYYYHideMessageTabRedPacket")) {
+        return;
+    }
+
+    UIView *parentView = self.superview;
+    if (!parentView) {
+        return;
+    }
+
+    NSArray<UIView *> *siblings = [parentView.subviews copy];
+    if (siblings.count <= 1) {
+        return;
+    }
+
+    for (UIView *subview in siblings) {
+        if (subview != self) {
+            [subview removeFromSuperview];
+        }
+    }
+}
+%end
+
 // 隐藏合集和声明
 %hook AWEAntiAddictedNoticeBarView
 - (void)layoutSubviews {

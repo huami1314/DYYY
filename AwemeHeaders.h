@@ -583,6 +583,10 @@ typedef NS_ENUM(NSUInteger, DYEdgeMode) {
 @property(nonatomic, assign, getter=isHidden) BOOL hidden;
 @end
 
+@interface AWEIMMessageTabSideBarView : UIView
+@property(nonatomic, strong, readonly) UIView *superview;
+@end
+
 @interface AWEECommerceEntryView : UIView
 @property(nonatomic, strong, readonly) UIView *superview;
 @property(nonatomic, assign, getter=isHidden) BOOL hidden;
