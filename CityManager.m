@@ -504,14 +504,19 @@
                                                                NSDictionary *status = jsonResult[@"status"];
                                                                if (status && [status isKindOfClass:[NSDictionary class]]) {
                                                                    NSNumber *value = status[@"value"];
-                                                                   // 检查 geonameId 是否存在的特定错误码 (value: 11)
-                                                                   if (value && [value isEqualToNumber:@11]) {
-                                                                       NSString *message = status[@"message"] ?: @"the geoname feature does not exist.";
-                                                                       NSDictionary *userInfo = @{NSLocalizedDescriptionKey : message};
-                                                                       NSError *apiError = [NSError errorWithDomain:DYYYGeonamesErrorDomain code:11 userInfo:userInfo];
-                                                                       completionHandler(nil, apiError);
-                                                                       return;
+                                                                   NSInteger statusCode = value != nil ? value.integerValue : -1;
+                                                                   NSString *message = status[@"message"] ?: @"the geoname feature does not exist.";
+
+                                                                   NSMutableDictionary *userInfo = [NSMutableDictionary dictionary];
+                                                                   userInfo[NSLocalizedDescriptionKey] = message;
+                                                                   userInfo[DYYYGeonamesStatusUserInfoKey] = status;
+                                                                   if (geonameId) {
+                                                                       userInfo[@"geonameId"] = geonameId;
                                                                    }
+
+                                                                   NSError *apiError = [NSError errorWithDomain:DYYYGeonamesErrorDomain code:statusCode userInfo:userInfo];
+                                                                   completionHandler(nil, apiError);
+                                                                   return;
                                                                }
 
                                                                completionHandler(jsonResult, nil);
