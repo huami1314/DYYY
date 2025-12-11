@@ -411,7 +411,6 @@ static NSArray *allSettingsViewControllers(void) {
 
 #pragma mark
 
-extern void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed);
 extern void *kViewModelKey;
 
 static void showIconOptionsDialog(NSString *title, UIImage *previewImage, NSString *saveFilename, void (^onClear)(void), void (^onSelect)(void)) {
@@ -476,27 +475,48 @@ static void showIconOptionsDialog(NSString *title, UIImage *previewImage, NSStri
               if (!originalImageURL) {
                   originalImageURL = info[UIImagePickerControllerReferenceURL];
               }
-              if (originalImageURL) {
-                  NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
-                  NSString *dyyyFolderPath = [documentsPath stringByAppendingPathComponent:@"DYYY"];
-                  NSString *imagePath = [dyyyFolderPath stringByAppendingPathComponent:saveFilename];
-
-                  NSData *imageData = [NSData dataWithContentsOfURL:originalImageURL];
-                  const char *bytes = (const char *)imageData.bytes;
-                  BOOL isGIF = (imageData.length >= 6 && (memcmp(bytes, "GIF87a", 6) == 0 || memcmp(bytes, "GIF89a", 6) == 0));
-                  if (isGIF) {
-                      [imageData writeToFile:imagePath atomically:YES];
-                  } else {
-                      UIImage *selectedImage = [UIImage imageWithData:imageData];
-                      imageData = UIImagePNGRepresentation(selectedImage);
-                      [imageData writeToFile:imagePath atomically:YES];
-                  }
-
-                  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                    weakItem.detail = @"已设置";
-                    [weakItem refreshCell];
+              if (!originalImageURL) {
+                  dispatch_async(dispatch_get_main_queue(), ^{
+                    [DYYYUtils showToast:@"无法获取选中的图片"];
                   });
+                  return;
               }
+
+              dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+                NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
+                NSString *dyyyFolderPath = [documentsPath stringByAppendingPathComponent:@"DYYY"];
+                NSString *imagePath = [dyyyFolderPath stringByAppendingPathComponent:saveFilename];
+                NSData *imageData = [NSData dataWithContentsOfURL:originalImageURL];
+
+                if (!imageData) {
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                      [DYYYUtils showToast:@"读取图片数据失败"];
+                    });
+                    return;
+                }
+
+                NSFileManager *fileManager = [NSFileManager defaultManager];
+                if (![fileManager fileExistsAtPath:dyyyFolderPath]) {
+                    [fileManager createDirectoryAtPath:dyyyFolderPath withIntermediateDirectories:YES attributes:nil error:nil];
+                }
+
+                const char *bytes = (const char *)imageData.bytes;
+                BOOL isGIF = (imageData.length >= 6 && (memcmp(bytes, "GIF87a", 6) == 0 || memcmp(bytes, "GIF89a", 6) == 0));
+                if (!isGIF) {
+                    UIImage *selectedImage = [UIImage imageWithData:imageData];
+                    imageData = UIImagePNGRepresentation(selectedImage);
+                }
+
+                BOOL writeSuccess = [imageData writeToFile:imagePath atomically:YES];
+                dispatch_async(dispatch_get_main_queue(), ^{
+                  if (writeSuccess) {
+                      weakItem.detail = @"已设置";
+                      [weakItem refreshCell];
+                  } else {
+                      [DYYYUtils showToast:@"保存图标失败"];
+                  }
+                });
+              });
             };
 
             static char kDYYYPickerDelegateKey;

@@ -3196,57 +3196,70 @@ speedSettingsItem.detail = trimmedText;
       // 设置委托
       DYYYBackupPickerDelegate *pickerDelegate = [[DYYYBackupPickerDelegate alloc] init];
       pickerDelegate.completionBlock = ^(NSURL *url) {
-        NSData *jsonData = [NSData dataWithContentsOfURL:url];
-
-        if (!jsonData) {
-            [DYYYUtils showToast:@"无法读取备份文件"];
+        if (!url) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+              [DYYYUtils showToast:@"未选择备份文件"];
+            });
             return;
         }
 
-        NSError *jsonError;
-        NSDictionary *dyyySettings = [NSJSONSerialization JSONObjectWithData:jsonData options:0 error:&jsonError];
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+          NSData *jsonData = [NSData dataWithContentsOfURL:url];
 
-        if (jsonError || ![dyyySettings isKindOfClass:[NSDictionary class]]) {
-            [DYYYUtils showToast:@"备份文件格式错误"];
-            return;
-        }
+          if (!jsonData) {
+              dispatch_async(dispatch_get_main_queue(), ^{
+                [DYYYUtils showToast:@"无法读取备份文件"];
+              });
+              return;
+          }
 
-        // 恢复图标文件
-        NSDictionary *iconBase64Dict = dyyySettings[@"DYYYIconsBase64"];
-        if (iconBase64Dict && [iconBase64Dict isKindOfClass:[NSDictionary class]]) {
-            NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
-            NSString *dyyyFolderPath = [documentsPath stringByAppendingPathComponent:@"DYYY"];
+          NSError *jsonError;
+          NSDictionary *dyyySettings = [NSJSONSerialization JSONObjectWithData:jsonData options:0 error:&jsonError];
 
-            // 确保DYYY文件夹存在
-            if (![[NSFileManager defaultManager] fileExistsAtPath:dyyyFolderPath]) {
-                [[NSFileManager defaultManager] createDirectoryAtPath:dyyyFolderPath withIntermediateDirectories:YES attributes:nil error:nil];
-            }
+          if (jsonError || ![dyyySettings isKindOfClass:[NSDictionary class]]) {
+              dispatch_async(dispatch_get_main_queue(), ^{
+                [DYYYUtils showToast:@"备份文件格式错误"];
+              });
+              return;
+          }
 
-            // 从Base64还原图标文件
-            for (NSString *iconFileName in iconBase64Dict) {
-                NSString *base64String = iconBase64Dict[iconFileName];
-                if ([base64String isKindOfClass:[NSString class]]) {
-                    NSData *imageData = [[NSData alloc] initWithBase64EncodedString:base64String options:0];
-                    if (imageData) {
-                        NSString *iconPath = [dyyyFolderPath stringByAppendingPathComponent:iconFileName];
-                        [imageData writeToFile:iconPath atomically:YES];
-                    }
-                }
-            }
+          NSDictionary *iconBase64Dict = dyyySettings[@"DYYYIconsBase64"];
+          if (iconBase64Dict && [iconBase64Dict isKindOfClass:[NSDictionary class]]) {
+              NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
+              NSString *dyyyFolderPath = [documentsPath stringByAppendingPathComponent:@"DYYY"];
+              NSFileManager *fileManager = [NSFileManager defaultManager];
 
-            NSMutableDictionary *cleanSettings = [dyyySettings mutableCopy];
-            [cleanSettings removeObjectForKey:@"DYYYIconsBase64"];
-            dyyySettings = cleanSettings;
-        }
+              if (![fileManager fileExistsAtPath:dyyyFolderPath]) {
+                  [fileManager createDirectoryAtPath:dyyyFolderPath withIntermediateDirectories:YES attributes:nil error:nil];
+              }
 
-        // 恢复设置
-        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-        for (NSString *key in dyyySettings) {
-            [defaults setObject:dyyySettings[key] forKey:key];
-        }
-        [DYYYUtils showToast:@"设置已恢复，请重启应用以应用所有更改"];
+              for (NSString *iconFileName in iconBase64Dict) {
+                  NSString *base64String = iconBase64Dict[iconFileName];
+                  if (![base64String isKindOfClass:[NSString class]]) {
+                      continue;
+                  }
+                  NSData *imageData = [[NSData alloc] initWithBase64EncodedString:base64String options:0];
+                  if (imageData) {
+                      NSString *iconPath = [dyyyFolderPath stringByAppendingPathComponent:iconFileName];
+                      [imageData writeToFile:iconPath atomically:YES];
+                  }
+              }
 
-        [restoreItem refreshCell];
+              NSMutableDictionary *cleanSettings = [dyyySettings mutableCopy];
+              [cleanSettings removeObjectForKey:@"DYYYIconsBase64"];
+              dyyySettings = cleanSettings;
+          }
+
+          NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+          for (NSString *key in dyyySettings) {
+              [defaults setObject:dyyySettings[key] forKey:key];
+          }
+
+          dispatch_async(dispatch_get_main_queue(), ^{
+            [DYYYUtils showToast:@"设置已恢复，请重启应用以应用所有更改"];
+            [restoreItem refreshCell];
+          });
+        });
       };
 
       static char kDYYYRestorePickerDelegateKey;

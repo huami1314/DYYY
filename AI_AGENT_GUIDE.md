@@ -72,6 +72,13 @@
    - 在 `DYYYManager` 内添加对应实例/类方法，并封装异步流程。
    - 通过现有回调（下载完成、进度回调等）向 UI 传递状态。
 
+## 构建与测试（make）
+- 本地验证务必执行 `make clean package`，确认 tweak 能在当前环境编译并生成 `.deb`。
+- 需要安装到设备验证时，执行 `make package INSTALL=1`（依赖 `THEOS_DEVICE_IP` 配置），编译完成后会通过 `after-package` 自动推送并 `dpkg -i`。
+- 切换不同包方案（roothide/rootless）时，通过 `make package SCHEME=rootless` 之类的命令指定 `SCHEME`，保持与目标设备一致。
+- CI 或无人值守只需运行 `GITHUB_ACTIONS=true make package`，脚本会自动跳过安装并将产物放在 `packages/`。
+- 每次回答涉及编译/测试的需求前，先说明是否已运行上述 `make` 命令以及结果，避免 AI 漏检构建错误。
+
 ## 复查清单（AI 回复前自检）
 - 需求涉及的类是否已存在，若无应在 `AwemeHeaders.h` 与对应 `DYYY` 类中创建。
 - 逻辑是否保持线程安全（UI→主线程，IO→后台）。

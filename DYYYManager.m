@@ -1701,6 +1701,9 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width, in
     CGImageDestinationRef dest = CGImageDestinationCreateWithData((CFMutableDataRef)data, kUTTypeJPEG, 1, nil);
     CGImageDestinationAddImage(dest, imageRef, (CFDictionaryRef)imageMetadata);
     CGImageDestinationFinalize(dest);
+    if (dest) {
+        CFRelease(dest);
+    }
     [data writeToFile:outputFile atomically:YES];
 }
 

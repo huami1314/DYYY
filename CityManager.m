@@ -471,13 +471,31 @@
 }
 
 + (void)fetchLocationWithGeonameId:(NSString *)geonameId completionHandler:(void (^)(NSDictionary *locationInfo, NSError *error))completionHandler {
+    if (geonameId.length == 0) {
+        if (completionHandler) {
+            NSError *parameterError = [NSError errorWithDomain:DYYYGeonamesErrorDomain code:-2 userInfo:@{NSLocalizedDescriptionKey : @"GeoNames 参数无效"}];
+            completionHandler(nil, parameterError);
+        }
+        return;
+    }
+
     NSString *username = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGeonamesUsername"];
     if (!username || [username length] == 0) {
         username = @"your_username";
     }
-    NSString *urlString = [NSString stringWithFormat:@"https://secure.geonames.org/"
-                                                     @"getJSON?geonameId=%@&lang=zh&username=%@",
-                                                     geonameId, username];
+
+    NSCharacterSet *allowedSet = [NSCharacterSet URLQueryAllowedCharacterSet];
+    NSString *encodedGeonameId = [geonameId stringByAddingPercentEncodingWithAllowedCharacters:allowedSet];
+    NSString *encodedUsername = [username stringByAddingPercentEncodingWithAllowedCharacters:allowedSet];
+    if (!encodedGeonameId || !encodedUsername) {
+        if (completionHandler) {
+            NSError *encodingError = [NSError errorWithDomain:DYYYGeonamesErrorDomain code:-3 userInfo:@{NSLocalizedDescriptionKey : @"GeoNames 参数编码失败"}];
+            completionHandler(nil, encodingError);
+        }
+        return;
+    }
+
+    NSString *urlString = [NSString stringWithFormat:@"https://secure.geonames.org/getJSON?geonameId=%@&lang=zh&username=%@", encodedGeonameId, encodedUsername];
     NSURL *url = [NSURL URLWithString:urlString];
 
     NSURLSessionDataTask *task = [[NSURLSession sharedSession] dataTaskWithURL:url

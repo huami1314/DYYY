@@ -145,3 +145,5 @@
 + (void)showUserAgreementAlert;
 
 @end
+
+FOUNDATION_EXPORT void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed);

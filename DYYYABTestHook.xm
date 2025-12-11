@@ -3,25 +3,6 @@
 #import "DYYYUtils.h"
 #import <objc/runtime.h>
 
-@interface AWEABTestManager : NSObject
-@property(retain, nonatomic) NSMutableDictionary *consistentABTestDic;
-@property(copy, nonatomic) NSDictionary *abTestData;
-@property(copy, nonatomic) NSDictionary *performanceReversalDic;
-@property(nonatomic) BOOL performanceReversalEnabled;
-@property(nonatomic) BOOL handledNetFirstBackNotification;
-@property(nonatomic) BOOL lastUpdateByIncrement;
-@property(nonatomic) BOOL shouldPrintLog;
-@property(nonatomic) BOOL localABSettingEnabled;
-- (void)fetchConfiguration:(id)arg1;
-- (void)fetchConfigurationWithRetry:(BOOL)arg1 completion:(id)arg2;
-- (void)incrementalUpdateData:(id)arg1 unchangedKeyList:(id)arg2;
-- (void)overrideABTestData:(id)arg1 needCleanCache:(BOOL)arg2;
-- (void)setAbTestData:(id)arg1;
-- (void)_saveABTestData:(id)arg1;
-- (id)getValueOfConsistentABTestWithKey:(id)arg1;
-+ (id)sharedManager;
-@end
-
 static BOOL s_abTestBlockEnabled = NO;
 static BOOL s_isApplyingFixedData = NO;
 static NSDictionary *s_localABTestData = nil;
@@ -262,11 +243,17 @@ static void DYYYQueueSync(dispatch_block_t block) {
       if (urlString.length == 0) {
           urlString = kDefaultRemoteConfigURL;
       }
-      NSURL *url = [NSURL URLWithString:urlString];
-      if (!url) {
+      NSURLComponents *components = [NSURLComponents componentsWithString:urlString];
+      NSString *scheme = components.scheme.lowercaseString;
+      BOOL invalidURL = NO;
+      if (!components || components.host.length == 0 || !scheme || ![scheme isEqualToString:@"https"]) {
+          invalidURL = YES;
+      }
+      NSURL *url = components.URL;
+      if (invalidURL || !url) {
           if (notify) {
               dispatch_async(dispatch_get_main_queue(), ^{
-                [DYYYUtils showToast:@"配置更新失败"];
+                [DYYYUtils showToast:@"配置地址无效"];
               });
           }
           return;
@@ -274,26 +261,38 @@ static void DYYYQueueSync(dispatch_block_t block) {
       NSURLSessionDataTask *task = [[NSURLSession sharedSession] dataTaskWithURL:url
                                                                completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
                                                                  BOOL updated = NO;
+                                                                 NSError *validationError = nil;
                                                                  if (data && !error) {
-                                                                     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-                                                                     NSString *documentsDirectory = [paths firstObject];
-                                                                     NSString *dyyyFolderPath = [documentsDirectory stringByAppendingPathComponent:@"DYYY"];
-                                                                     NSString *jsonFilePath = [dyyyFolderPath stringByAppendingPathComponent:@"abtest_data_fixed.json"];
-                                                                     [[NSFileManager defaultManager] createDirectoryAtPath:dyyyFolderPath withIntermediateDirectories:YES attributes:nil error:nil];
-                                                                     NSData *existingData = [NSData dataWithContentsOfFile:jsonFilePath];
-                                                                     if (!existingData || ![existingData isEqualToData:data]) {
-                                                                         [data writeToFile:jsonFilePath atomically:YES];
-                                                                         updated = YES;
-                                                                     }
-                                                                     if ([DYYYABTestHook isRemoteMode]) {
-                                                                         [[NSUserDefaults standardUserDefaults] setBool:YES forKey:DYYY_REMOTE_CONFIG_FLAG_KEY];
-                                                                         [[NSNotificationCenter defaultCenter] postNotificationName:DYYY_REMOTE_CONFIG_CHANGED_NOTIFICATION object:nil];
+                                                                     id jsonObject = [NSJSONSerialization JSONObjectWithData:data options:0 error:&validationError];
+                                                                     if (validationError || ![jsonObject isKindOfClass:[NSDictionary class]]) {
+                                                                         if (!validationError) {
+                                                                             validationError = [NSError errorWithDomain:@"com.dyyy.remoteconfig" code:-1 userInfo:@{NSLocalizedDescriptionKey : @"配置格式错误"}];
+                                                                         }
+                                                                     } else {
+                                                                         NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+                                                                         NSString *documentsDirectory = [paths firstObject];
+                                                                         NSString *dyyyFolderPath = [documentsDirectory stringByAppendingPathComponent:@"DYYY"];
+                                                                         NSString *jsonFilePath = [dyyyFolderPath stringByAppendingPathComponent:@"abtest_data_fixed.json"];
+                                                                         [[NSFileManager defaultManager] createDirectoryAtPath:dyyyFolderPath withIntermediateDirectories:YES attributes:nil error:nil];
+                                                                         NSData *existingData = [NSData dataWithContentsOfFile:jsonFilePath];
+                                                                         if (!existingData || ![existingData isEqualToData:data]) {
+                                                                             [data writeToFile:jsonFilePath atomically:YES];
+                                                                             updated = YES;
+                                                                         }
+                                                                         if ([DYYYABTestHook isRemoteMode]) {
+                                                                             [[NSUserDefaults standardUserDefaults] setBool:YES forKey:DYYY_REMOTE_CONFIG_FLAG_KEY];
+                                                                             [[NSNotificationCenter defaultCenter] postNotificationName:DYYY_REMOTE_CONFIG_CHANGED_NOTIFICATION object:nil];
+                                                                         }
                                                                      }
                                                                  }
                                                                  dispatch_async(dispatch_get_main_queue(), ^{
                                                                    if (error || !data) {
                                                                        if (notify) {
                                                                            [DYYYUtils showToast:@"配置更新失败"];
+                                                                       }
+                                                                   } else if (validationError) {
+                                                                       if (notify) {
+                                                                           [DYYYUtils showToast:@"配置解析失败"];
                                                                        }
                                                                    } else if (updated) {
                                                                        if (notify) {
