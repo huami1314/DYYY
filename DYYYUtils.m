@@ -1,6 +1,7 @@
 #import "DYYYUtils.h"
 #import <MobileCoreServices/UTCoreTypes.h>
 #import <UIKit/UIKit.h>
+#import <math.h>
 #import <os/lock.h>
 #import <stdatomic.h>
 #import <objc/runtime.h>
@@ -8,6 +9,45 @@
 #import "DYYYManager.h"
 #import "DYYYToast.h"
 #import "DYYYConstants.h"
+
+static const void *kLabelColorStateKey = &kLabelColorStateKey;
+
+@interface DYYYLabelColorState : NSObject
+@property(nonatomic, copy) NSString *textSignature;
+@property(nonatomic, copy) NSString *colorKey;
+@property(nonatomic, copy) NSString *fontName;
+@property(nonatomic, assign) CGFloat fontSize;
+@end
+
+@implementation DYYYLabelColorState
+@end
+
+static inline BOOL DYYYStringsEqual(NSString *lhs, NSString *rhs) {
+    if (lhs == rhs) {
+        return YES;
+    }
+    return [lhs isEqualToString:rhs];
+}
+
+static NSString *DYYYNormalizedColorKey(NSString *colorHexString) {
+    if (colorHexString.length == 0) {
+        return nil;
+    }
+    NSCharacterSet *whitespace = [NSCharacterSet whitespaceAndNewlineCharacterSet];
+    NSString *trimmed = [colorHexString stringByTrimmingCharactersInSet:whitespace];
+    if (trimmed.length == 0) {
+        return nil;
+    }
+    return trimmed.lowercaseString;
+}
+
+static BOOL DYYYColorKeyIsDynamic(NSString *normalizedKey) {
+    if (normalizedKey.length == 0) {
+        return NO;
+    }
+    NSString *key = [normalizedKey hasPrefix:@"#"] ? [normalizedKey substringFromIndex:1] : normalizedKey;
+    return [key isEqualToString:@"random"] || [key isEqualToString:@"random_gradient"] || [key isEqualToString:@"rainbow_rotating"];
+}
 
 @interface DYYYUtils ()
 + (NSString *)fallbackLocationFromIPAttribution:(AWEAwemeModel *)model;
@@ -714,16 +754,43 @@ static os_unfair_lock _staticColorCreationLock = OS_UNFAIR_LOCK_INIT;
 }
 
 + (void)applyColorSettingsToLabel:(UILabel *)label colorHexString:(NSString *)colorHexString {
-    NSMutableAttributedString *attributedText;
-    if ([label.attributedText isKindOfClass:[NSAttributedString class]]) {
-        attributedText = [[NSMutableAttributedString alloc] initWithAttributedString:label.attributedText];
-    } else {
-        attributedText = [[NSMutableAttributedString alloc] initWithString:label.text ?: @""];
+    if (!label)
+        return;
+
+    NSAttributedString *existingAttributed = nil;
+    if ([label.attributedText isKindOfClass:[NSAttributedString class]] && label.attributedText.length > 0) {
+        existingAttributed = label.attributedText;
     }
 
-    if (attributedText.length == 0) {
-        label.attributedText = attributedText;
+    NSString *textSignature = existingAttributed.string;
+    if (textSignature.length == 0) {
+        NSString *fallbackText = label.text ?: @"";
+        textSignature = fallbackText;
+    }
+
+    if (textSignature.length == 0) {
+        label.attributedText = [[NSAttributedString alloc] initWithString:@""];
         return;
+    }
+
+    UIFont *font = label.font ?: [UIFont systemFontOfSize:[UIFont systemFontSize]];
+    NSString *fontName = font.fontName ?: @"";
+    CGFloat fontSize = font.pointSize;
+
+    NSString *normalizedKey = DYYYNormalizedColorKey(colorHexString);
+    BOOL allowCache = normalizedKey.length == 0 ? YES : !DYYYColorKeyIsDynamic(normalizedKey);
+
+    DYYYLabelColorState *state = objc_getAssociatedObject(label, &kLabelColorStateKey);
+    if (allowCache && state && DYYYStringsEqual(state.textSignature, textSignature) && DYYYStringsEqual(state.colorKey, normalizedKey ?: @"") &&
+        DYYYStringsEqual(state.fontName, fontName) && fabs(state.fontSize - fontSize) <= 0.01) {
+        return;
+    }
+
+    NSMutableAttributedString *attributedText = nil;
+    if (existingAttributed) {
+        attributedText = [[NSMutableAttributedString alloc] initWithAttributedString:existingAttributed];
+    } else {
+        attributedText = [[NSMutableAttributedString alloc] initWithString:textSignature];
     }
 
     NSRange fullRange = NSMakeRange(0, attributedText.length);
@@ -732,30 +799,37 @@ static os_unfair_lock _staticColorCreationLock = OS_UNFAIR_LOCK_INIT;
     [attributedText removeAttribute:NSStrokeWidthAttributeName range:fullRange];
     [attributedText removeAttribute:NSShadowAttributeName range:fullRange];
 
-    if (!colorHexString || colorHexString.length == 0) {
-        [attributedText addAttribute:NSForegroundColorAttributeName value:[UIColor whiteColor] range:fullRange];
-        label.attributedText = attributedText;
-        return;
+    if (![attributedText attribute:NSFontAttributeName atIndex:0 effectiveRange:nil] && font) {
+        [attributedText addAttribute:NSFontAttributeName value:font range:fullRange];
     }
 
-    if (![attributedText attribute:NSFontAttributeName atIndex:0 effectiveRange:nil]) {
-        if (label.font) {
-            [attributedText addAttribute:NSFontAttributeName value:label.font range:fullRange];
+    if (!colorHexString || colorHexString.length == 0) {
+        [attributedText addAttribute:NSForegroundColorAttributeName value:[UIColor whiteColor] range:fullRange];
+    } else {
+        CGSize maxTextSize = CGSizeMake(CGFLOAT_MAX, label.bounds.size.height);
+        CGRect textRect =
+            [attributedText boundingRectWithSize:maxTextSize options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil];
+        CGFloat actualTextWidth = MAX(1.0, ceil(textRect.size.width));
+
+        UIColor *finalTextColor = [self colorFromSchemeHexString:colorHexString targetWidth:actualTextWidth];
+
+        if (finalTextColor) {
+            [attributedText addAttribute:NSForegroundColorAttributeName value:finalTextColor range:fullRange];
+        } else {
+            [attributedText addAttribute:NSForegroundColorAttributeName value:[UIColor whiteColor] range:fullRange];
         }
     }
 
-    CGSize maxTextSize = CGSizeMake(CGFLOAT_MAX, label.bounds.size.height);
-    CGRect textRect = [attributedText boundingRectWithSize:maxTextSize options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil];
-    CGFloat actualTextWidth = MAX(1.0, ceil(textRect.size.width));
-
-    UIColor *finalTextColor = [self colorFromSchemeHexString:colorHexString targetWidth:actualTextWidth];
-
-    if (finalTextColor) {
-        [attributedText addAttribute:NSForegroundColorAttributeName value:finalTextColor range:fullRange];
-    } else {
-        [attributedText addAttribute:NSForegroundColorAttributeName value:[UIColor whiteColor] range:fullRange];
-    }
     label.attributedText = attributedText;
+
+    if (!state) {
+        state = [[DYYYLabelColorState alloc] init];
+        objc_setAssociatedObject(label, &kLabelColorStateKey, state, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    }
+    state.textSignature = [textSignature copy];
+    state.colorKey = normalizedKey ?: @"";
+    state.fontName = fontName;
+    state.fontSize = fontSize;
 }
 
 + (void)applyStrokeToLabel:(UILabel *)label strokeColor:(UIColor *)strokeColor strokeWidth:(CGFloat)strokeWidth {

@@ -109,6 +109,121 @@
     return config;
 }
 
+static NSDictionary<NSString *, NSArray<NSString *> *> *DYYYDependencyTargetSourcesLookup(void) {
+    static NSDictionary<NSString *, NSArray<NSString *> *> *lookup = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+      NSDictionary *dependencies = [DYYYSettingsHelper settingsDependencyConfig][@"dependencies"];
+      NSMutableDictionary<NSString *, NSMutableArray<NSString *> *> *reverseMap = [NSMutableDictionary dictionary];
+      [dependencies enumerateKeysAndObjectsUsingBlock:^(NSString *sourceKey, NSArray *dependentItems, BOOL *stop) {
+        if (![dependentItems isKindOfClass:[NSArray class]]) {
+            return;
+        }
+        for (NSString *identifier in dependentItems) {
+            if (identifier.length == 0) {
+                continue;
+            }
+            NSMutableArray<NSString *> *sources = reverseMap[identifier];
+            if (!sources) {
+                sources = [NSMutableArray array];
+                reverseMap[identifier] = sources;
+            }
+            [sources addObject:sourceKey];
+        }
+      }];
+      lookup = [reverseMap copy];
+    });
+    return lookup;
+}
+
+static NSDictionary<NSString *, NSArray<NSString *> *> *DYYYMutualExclusionTargetsLookup(void) {
+    static NSDictionary<NSString *, NSArray<NSString *> *> *lookup = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+      NSDictionary *mutualExclusions = [DYYYSettingsHelper settingsDependencyConfig][@"mutualExclusions"];
+      NSMutableDictionary<NSString *, NSMutableArray<NSString *> *> *reverseMap = [NSMutableDictionary dictionary];
+      [mutualExclusions enumerateKeysAndObjectsUsingBlock:^(NSString *sourceKey, NSArray *targetIdentifiers, BOOL *stop) {
+        if (![targetIdentifiers isKindOfClass:[NSArray class]]) {
+            return;
+        }
+        for (NSString *identifier in targetIdentifiers) {
+            if (identifier.length == 0) {
+                continue;
+            }
+            NSMutableArray<NSString *> *sources = reverseMap[identifier];
+            if (!sources) {
+                sources = [NSMutableArray array];
+                reverseMap[identifier] = sources;
+            }
+            [sources addObject:sourceKey];
+        }
+      }];
+      lookup = [reverseMap copy];
+    });
+    return lookup;
+}
+
+static NSDictionary<NSString *, NSArray<NSDictionary *> *> *DYYYValueDependencyTargetsLookup(void) {
+    static NSDictionary<NSString *, NSArray<NSDictionary *> *> *lookup = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+      NSDictionary *valueDependencies = [DYYYSettingsHelper settingsDependencyConfig][@"valueDependencies"];
+      NSMutableDictionary<NSString *, NSMutableArray<NSDictionary *> *> *targetMap = [NSMutableDictionary dictionary];
+      [valueDependencies enumerateKeysAndObjectsUsingBlock:^(NSString *sourceKey, NSDictionary *config, BOOL *stop) {
+        NSArray *dependents = config[@"dependents"];
+        if (dependents.count == 0)
+            return;
+
+        for (NSString *identifier in dependents) {
+            if (identifier.length == 0) {
+                continue;
+            }
+            NSMutableArray<NSDictionary *> *entries = targetMap[identifier];
+            if (!entries) {
+                entries = [NSMutableArray array];
+                targetMap[identifier] = entries;
+            }
+            NSMutableDictionary *entry = [NSMutableDictionary dictionary];
+            entry[@"sourceKey"] = sourceKey;
+            if (config[@"valueType"])
+                entry[@"valueType"] = config[@"valueType"];
+            if (config[@"condition"])
+                entry[@"condition"] = config[@"condition"];
+            [entries addObject:[entry copy]];
+        }
+      }];
+      lookup = [targetMap copy];
+    });
+    return lookup;
+}
+
+static NSDictionary<NSString *, NSArray<NSString *> *> *DYYYConditionalSourceTargetsLookup(void) {
+    static NSDictionary<NSString *, NSArray<NSString *> *> *lookup = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+      NSDictionary *conditionalDependencies = [DYYYSettingsHelper settingsDependencyConfig][@"conditionalDependencies"];
+      NSMutableDictionary<NSString *, NSMutableArray<NSString *> *> *sourceToTargets = [NSMutableDictionary dictionary];
+      [conditionalDependencies enumerateKeysAndObjectsUsingBlock:^(NSString *targetIdentifier, NSDictionary *conditionConfig, BOOL *stop) {
+        NSArray *settingsList = conditionConfig[@"settings"];
+        if (settingsList.count == 0)
+            return;
+        for (NSString *sourceIdentifier in settingsList) {
+            if (sourceIdentifier.length == 0) {
+                continue;
+            }
+            NSMutableArray<NSString *> *targets = sourceToTargets[sourceIdentifier];
+            if (!targets) {
+                targets = [NSMutableArray array];
+                sourceToTargets[sourceIdentifier] = targets;
+            }
+            [targets addObject:targetIdentifier];
+        }
+      }];
+      lookup = [sourceToTargets copy];
+    });
+    return lookup;
+}
+
 static BOOL settingActive(NSString *identifier) {
     id val = [[NSUserDefaults standardUserDefaults] objectForKey:identifier];
     if ([val isKindOfClass:[NSNumber class]]) {
@@ -149,25 +264,23 @@ static NSArray *allSettingsViewControllers(void) {
 }
 
 + (void)applyDependencyRulesForItem:(AWESettingItemModel *)item {
-    NSDictionary *dependencies = [self settingsDependencyConfig][@"dependencies"];
+    NSString *itemIdentifier = item.identifier;
+    if (itemIdentifier.length == 0) {
+        item.isEnable = YES;
+        return;
+    }
     NSDictionary *conditionalDependencies = [self settingsDependencyConfig][@"conditionalDependencies"];
-    NSDictionary *mutualExclusions = [self settingsDependencyConfig][@"mutualExclusions"];
-    NSDictionary *valueDependencies = [self settingsDependencyConfig][@"valueDependencies"];
 
     BOOL enableState = YES;
 
-    for (NSString *sourceKey in dependencies) {
-        NSArray *dependentItems = dependencies[sourceKey];
-        if ([dependentItems containsObject:item.identifier]) {
-            enableState = settingActive(sourceKey);
-            break;
-        }
+    NSArray<NSString *> *directSources = DYYYDependencyTargetSourcesLookup()[itemIdentifier];
+    if (directSources.count > 0) {
+        NSString *primarySource = directSources.firstObject;
+        enableState = settingActive(primarySource);
     }
 
-    for (NSString *targetKey in conditionalDependencies) {
-        if (![targetKey isEqualToString:item.identifier])
-            continue;
-        NSDictionary *conditionConfig = conditionalDependencies[targetKey];
+    NSDictionary *conditionConfig = conditionalDependencies[itemIdentifier];
+    if (conditionConfig) {
         NSString *conditionType = conditionConfig[@"condition"];
         NSArray *settingList = conditionConfig[@"settings"];
 
@@ -190,28 +303,24 @@ static NSArray *allSettingsViewControllers(void) {
             }
             enableState = shouldEnable;
         }
-        break;
     }
 
-    for (NSString *sourceKey in valueDependencies) {
-        NSDictionary *valueConfig = valueDependencies[sourceKey];
-        NSArray *dependentItems = valueConfig[@"dependents"];
+    NSArray<NSDictionary *> *valueRules = DYYYValueDependencyTargetsLookup()[itemIdentifier];
+    NSDictionary *valueRule = valueRules.firstObject;
+    if (valueRule) {
+        NSString *valueType = valueRule[@"valueType"];
+        NSString *condition = valueRule[@"condition"];
+        NSString *sourceKey = valueRule[@"sourceKey"];
 
-        if ([dependentItems containsObject:item.identifier]) {
-            NSString *valueType = valueConfig[@"valueType"];
-            NSString *condition = valueConfig[@"condition"];
-
-            if ([valueType isEqualToString:@"string"] && [condition isEqualToString:@"isNotEmpty"]) {
-                NSString *sourceValue = [[NSUserDefaults standardUserDefaults] objectForKey:sourceKey];
-                enableState = (sourceValue != nil && sourceValue.length > 0);
-            }
-            break;
+        if ([valueType isEqualToString:@"string"] && [condition isEqualToString:@"isNotEmpty"]) {
+            NSString *sourceValue = [[NSUserDefaults standardUserDefaults] objectForKey:sourceKey];
+            enableState = (sourceValue != nil && sourceValue.length > 0);
         }
     }
 
-    for (NSString *sourceKey in mutualExclusions) {
-        NSArray *exclusiveItems = mutualExclusions[sourceKey];
-        if ([exclusiveItems containsObject:item.identifier] && settingActive(sourceKey)) {
+    NSArray<NSString *> *exclusiveSources = DYYYMutualExclusionTargetsLookup()[itemIdentifier];
+    for (NSString *sourceKey in exclusiveSources) {
+        if (settingActive(sourceKey)) {
             enableState = NO;
             break;
         }
@@ -275,11 +384,11 @@ static NSArray *allSettingsViewControllers(void) {
 
 + (void)updateDependentItemsForSetting:(NSString *)identifier value:(id)value {
     NSDictionary *dependencies = [self settingsDependencyConfig][@"dependencies"];
-    NSDictionary *conditionalDependencies = [self settingsDependencyConfig][@"conditionalDependencies"];
     NSDictionary *mutualExclusions = [self settingsDependencyConfig][@"mutualExclusions"];
     NSDictionary *valueDependencies = [self settingsDependencyConfig][@"valueDependencies"];
     NSDictionary *conflicts = [self settingsDependencyConfig][@"conflicts"];
     NSDictionary *synchronizations = [self settingsDependencyConfig][@"synchronizations"];
+    NSDictionary *conditionalSourceTargets = DYYYConditionalSourceTargetsLookup();
 
     NSArray *allVCs = allSettingsViewControllers();
     for (AWESettingBaseViewController *settingsVC in allVCs) {
@@ -312,12 +421,9 @@ static NSArray *allSettingsViewControllers(void) {
             [itemsToUpdate addObjectsFromArray:itemsSynchronizedByMe];
         }
 
-        for (NSString *targetItem in conditionalDependencies) {
-            NSDictionary *conditionInfo = conditionalDependencies[targetItem];
-            NSArray *settingsList = conditionInfo[@"settings"];
-            if ([settingsList containsObject:identifier]) {
-                [itemsToUpdate addObject:targetItem];
-            }
+        NSArray *conditionalTargets = conditionalSourceTargets[identifier];
+        if (conditionalTargets.count > 0) {
+            [itemsToUpdate addObjectsFromArray:conditionalTargets];
         }
 
         NSDictionary *valueDepInfo = valueDependencies[identifier];
