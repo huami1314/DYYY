@@ -9,6 +9,33 @@
 - **模型/数据**：`CityManager` 负责本地城市映射及 GeoNames API 缓存；`DYYYConstants.h`、`DYYYSettingsHelper`中定义的 Key 控制远程配置、ABTest、依赖关系。
 - **AwemeHeaders**：项目依赖的抖音私有类、Category 声明、宏定义都集中在 `AwemeHeaders.h` 中，供整个 tweak 引入。
 
+## 类路径速查（按 UI/功能分组）
+- **入口 Hook / 控制器**
+  - `DYYY.xm`、`DYYYSettings.xm`：全局 Hook、设置页 Hook。
+  - `DYYYSettingViewController.(h/m)`：自定义设置主界面。
+  - `DYYYSettingsHelper.(h/m)`：设置项依赖、入口、协议弹窗。
+- **业务/下载**
+  - `DYYYManager.(h/m)`：下载、合成、缓存、授权。
+  - `CityManager.(h/m)`：城市映射与 GeoNames 缓存。
+  - `AWMSafeDispatchTimer.(h/m)`：安全延时定时器。
+- **通用工具/常量**
+  - `DYYYUtils.(h/m)`：窗口/颜色/路径等工具。
+  - `DYYYConstants.h`：Keys、URL、通知名。
+- **设置页复用 UI（按交互类型）**
+  - 列表/选择：`DYYYKeywordListView.(h/m)`、`DYYYOptionsSelectionView.(h/m)`、`DYYYFilterSettingsView.(h/m)`。
+  - 输入/图标配置：`DYYYCustomInputView.(h/m)`、`DYYYIconOptionsDialogView.(h/m)`、`DYYYImagePickerDelegate.(h/m)`、`DYYYBackupPickerDelegate.(h/m)`。
+  - 弹窗/提示：`DYYYBottomAlertView.(h/m)`、`DYYYConfirmCloseView.(h/m)`、`DYYYAboutDialogView.(h/m)`、`DYYYToast.(h/m)`。
+- **浮窗与快捷操作**
+  - 漂浮按钮：`DYYYFloatSpeedButton.(h/m)`、`DYYYFloatClearButton.(h/xm)`。
+  - 长按/面板：`DYYYLongPressPanel.xm`、`DYYYBottomAlertView.(h/m)`（复用提示）。
+- **辅助代理**
+  - `DYYYImagePickerDelegate.(h/m)`、`DYYYBackupPickerDelegate.(h/m)`：统一封装系统 Picker 逻辑。
+  - `DYYYCustomInputView.(h/m)`：文本输入。
+- **ABTest / 远程配置**
+  - `DYYYABTestHook.(h/xm)`：抖音 ABTest 注入。
+
+(按上述分组定位 `.h/.m/.xm` 文件，可快速找到对应 UI 或业务类。若新增类，请将文件放入同类路径并在这里补充。)
+
 ## 开发规范
 ### 1. 头文件管理
 1. **所有新增的抖音类/方法声明必须写入 `AwemeHeaders.h`**，保持集中管理，避免在其他文件里散落声明。
