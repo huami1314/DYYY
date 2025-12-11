@@ -71,7 +71,6 @@ NSInteger getCurrentSpeedIndex() {
     if (index >= speeds.count || index < 0) {
         index = 0;
         [[NSUserDefaults standardUserDefaults] setInteger:index forKey:@"DYYYCurrentSpeedIndex"];
-        [[NSUserDefaults standardUserDefaults] synchronize];
     }
 
     return index;
@@ -95,7 +94,6 @@ void setCurrentSpeedIndex(NSInteger index) {
     index = index % speeds.count;
 
     [[NSUserDefaults standardUserDefaults] setInteger:index forKey:@"DYYYCurrentSpeedIndex"];
-    [[NSUserDefaults standardUserDefaults] synchronize];
 }
 
 void updateSpeedButtonUI() {
@@ -396,7 +394,6 @@ void updateSpeedButtonVisibility() {
         [defaults setFloat:self.center.x / self.superview.bounds.size.width forKey:@"DYYYSpeedButtonCenterXPercent"];
         [defaults setFloat:self.center.y / self.superview.bounds.size.height forKey:@"DYYYSpeedButtonCenterYPercent"];
         [defaults setBool:self.isLocked forKey:@"DYYYSpeedButtonLocked"];
-        [defaults synchronize];
     }
 }
 

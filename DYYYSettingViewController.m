@@ -79,7 +79,6 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) { DYYYSettingItemTypeSwitch, DYY
         [defaults setFloat:32.0 forKey:@"DYYYSpeedButtonSize"];
     }
 
-    [defaults synchronize];
 }
 
 - (void)viewDidAppear:(BOOL)animated {
@@ -501,7 +500,6 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) { DYYYSettingItemTypeSwitch, DYY
 
                                                             if ([inputText isEqualToString:@"我已阅读并同意继续使用"]) {
                                                                 [[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"DYYYUserAgreementAccepted"];
-                                                                [[NSUserDefaults standardUserDefaults] synchronize];
                                                             } else {
                                                                 UIAlertController *errorAlert = [UIAlertController alertControllerWithTitle:@"输入错误"
                                                                                                                                     message:@"请正确输入"
@@ -711,7 +709,6 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) { DYYYSettingItemTypeSwitch, DYY
                                                        handler:^(UIAlertAction *_Nonnull action) {
                                                          // 保存到对应的key
                                                          [[NSUserDefaults standardUserDefaults] setObject:option forKey:item.key];
-                                                         [[NSUserDefaults standardUserDefaults] synchronize];
 
                                                          // 更新对应的cell显示
                                                          UITableViewCell *cell = [self.tableView cellForRowAtIndexPath:indexPath];
@@ -744,14 +741,12 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) { DYYYSettingItemTypeSwitch, DYY
     NSIndexPath *indexPath = [NSIndexPath indexPathForRow:sender.tag % 1000 inSection:sender.tag / 1000];
     DYYYSettingItem *item = self.settingSections[indexPath.section][indexPath.row];
     [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:item.key];
-    [[NSUserDefaults standardUserDefaults] synchronize];
 }
 
 - (void)textFieldDidChange:(UITextField *)textField {
     NSIndexPath *indexPath = [NSIndexPath indexPathForRow:textField.tag % 1000 inSection:textField.tag / 1000];
     DYYYSettingItem *item = self.settingSections[indexPath.section][indexPath.row];
     [[NSUserDefaults standardUserDefaults] setObject:textField.text forKey:item.key];
-    [[NSUserDefaults standardUserDefaults] synchronize];
 }
 
 - (void)headerTapped:(UIButton *)sender {

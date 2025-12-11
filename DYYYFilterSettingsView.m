@@ -398,7 +398,13 @@ static const int kDYYYButtonsPerRow = 10;
 #pragma mark - Show/Dismiss Methods
 
 - (void)show {
-    UIWindow *window = [UIApplication sharedApplication].keyWindow;
+    UIWindow *window = [DYYYUtils getActiveWindow];
+    if (!window) {
+        window = UIApplication.sharedApplication.windows.firstObject;
+    }
+    if (!window) {
+        return;
+    }
     [window addSubview:self];
 
     [UIView animateWithDuration:0.12
@@ -477,7 +483,6 @@ static const int kDYYYButtonsPerRow = 10;
 
     NSString *newString = [array componentsJoinedByString:@","];
     [[NSUserDefaults standardUserDefaults] setObject:newString forKey:@"DYYYFilterProp"];
-    [[NSUserDefaults standardUserDefaults] synchronize];
 
     [self updateFilterPropButton];
 }

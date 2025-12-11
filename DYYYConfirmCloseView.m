@@ -122,7 +122,13 @@
 }
 
 - (void)show {
-    UIWindow *window = [UIApplication sharedApplication].keyWindow;
+    UIWindow *window = [DYYYUtils getActiveWindow];
+    if (!window) {
+        window = UIApplication.sharedApplication.windows.firstObject;
+    }
+    if (!window) {
+        return;
+    }
     [window addSubview:self];
 
     __weak __typeof(self) weakSelf = self;

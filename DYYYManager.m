@@ -941,8 +941,13 @@ static void CGContextCopyBytes(CGContextRef dst, CGContextRef src, int width, in
                                          [[NSFileManager defaultManager] removeItemAtURL:fileURL error:nil];
                                        });
                                      }];
-                                     UIViewController *rootVC = [UIApplication sharedApplication].keyWindow.rootViewController;
-                                     [rootVC presentViewController:activityVC animated:YES completion:nil];
+                                     UIWindow *window = [DYYYUtils getActiveWindow];
+                                     UIViewController *rootVC = window.rootViewController ?: [DYYYUtils topView];
+                                     if (rootVC) {
+                                         [rootVC presentViewController:activityVC animated:YES completion:nil];
+                                     } else {
+                                         [DYYYUtils showToast:@"无法打开分享面板"];
+                                     }
                                      notifyCompletion(YES);
                                    });
                                } else {

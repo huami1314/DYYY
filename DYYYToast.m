@@ -124,9 +124,13 @@
 }
 
 - (void)show {
-    UIWindow *window = [UIApplication sharedApplication].keyWindow;
-    if (!window)
+    UIWindow *window = [DYYYUtils getActiveWindow];
+    if (!window) {
+        window = UIApplication.sharedApplication.windows.firstObject;
+    }
+    if (!window) {
         return;
+    }
 
     [window addSubview:self];
 
@@ -418,9 +422,13 @@
 }
 
 - (void)showSuccessToastWithMessage:(NSString *)message completion:(void (^)(void))completion {
-    UIWindow *window = [UIApplication sharedApplication].keyWindow;
-    if (!window)
+    UIWindow *window = [DYYYUtils getActiveWindow];
+    if (!window) {
+        window = UIApplication.sharedApplication.windows.firstObject;
+    }
+    if (!window) {
         return;
+    }
     for (UIGestureRecognizer *gesture in self.containerView.gestureRecognizers) {
         [self.containerView removeGestureRecognizer:gesture];
     }

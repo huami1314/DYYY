@@ -45,7 +45,6 @@
 
           NSString *selectedValue = [currentModel title];
           [[NSUserDefaults standardUserDefaults] setObject:selectedValue forKey:preferenceKey];
-          [[NSUserDefaults standardUserDefaults] synchronize];
 
           if (callback) {
               callback(selectedValue);

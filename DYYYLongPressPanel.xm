@@ -565,7 +565,6 @@
                 keywordListView.onConfirm = ^(NSArray *users) {
                   NSString *userString = [users componentsJoinedByString:@","];
                   [[NSUserDefaults standardUserDefaults] setObject:userString forKey:@"DYYYFilterUsers"];
-                  [[NSUserDefaults standardUserDefaults] synchronize];
                   [DYYYUtils showToast:@"过滤用户列表已更新"];
                 };
                 [keywordListView show];
@@ -596,7 +595,6 @@
                 // 保存更新后的列表
                 NSString *updatedUserString = [updatedUsers componentsJoinedByString:@","];
                 [[NSUserDefaults standardUserDefaults] setObject:updatedUserString forKey:@"DYYYFilterUsers"];
-                [[NSUserDefaults standardUserDefaults] synchronize];
               }];
         };
         [viewModels addObject:filterKeywords];
@@ -626,7 +624,6 @@
                     newKeywords = selectedText;
                 }
                 [[NSUserDefaults standardUserDefaults] setObject:newKeywords forKey:@"DYYYFilterKeywords"];
-                [[NSUserDefaults standardUserDefaults] synchronize];
                 [DYYYUtils showToast:[NSString stringWithFormat:@"已添加过滤词: %@", selectedText]];
             }
           };
@@ -643,7 +640,6 @@
               NSString *keywordString = [keywords componentsJoinedByString:@","];
               // 保存到用户默认设置
               [[NSUserDefaults standardUserDefaults] setObject:keywordString forKey:@"DYYYFilterKeywords"];
-              [[NSUserDefaults standardUserDefaults] synchronize];
               // 显示提示
               [DYYYUtils showToast:@"过滤关键词已更新"];
             };
@@ -673,7 +669,6 @@
           BOOL hasActiveTimer = shutdownTime != nil && [shutdownTime doubleValue] > [[NSDate date] timeIntervalSince1970];
           if (hasActiveTimer) {
               [[NSUserDefaults standardUserDefaults] removeObjectForKey:@"DYYYTimerShutdownTime"];
-              [[NSUserDefaults standardUserDefaults] synchronize];
               [DYYYUtils showToast:@"已取消定时关闭任务"];
               return;
           }
@@ -691,17 +686,14 @@
             }
             // 保存用户设置的时间以供下次使用
             [[NSUserDefaults standardUserDefaults] setInteger:minutes forKey:@"DYYYTimerCloseMinutes"];
-            [[NSUserDefaults standardUserDefaults] synchronize];
             NSInteger seconds = minutes * 60;
             NSTimeInterval shutdownTimeValue = [[NSDate date] timeIntervalSince1970] + seconds;
             [[NSUserDefaults standardUserDefaults] setObject:@(shutdownTimeValue) forKey:@"DYYYTimerShutdownTime"];
-            [[NSUserDefaults standardUserDefaults] synchronize];
             [DYYYUtils showToast:[NSString stringWithFormat:@"抖音将在%ld分钟后关闭...", (long)minutes]];
             dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(seconds * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
               NSNumber *currentShutdownTime = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTimerShutdownTime"];
               if (currentShutdownTime != nil && [currentShutdownTime doubleValue] <= [[NSDate date] timeIntervalSince1970]) {
                   [[NSUserDefaults standardUserDefaults] removeObjectForKey:@"DYYYTimerShutdownTime"];
-                  [[NSUserDefaults standardUserDefaults] synchronize];
                   // 显示确认关闭弹窗，而不是直接退出
                   DYYYConfirmCloseView *confirmView = [[DYYYConfirmCloseView alloc] initWithTitle:@"定时关闭" message:@"定时关闭时间已到，是否关闭抖音？"];
                   [confirmView show];
@@ -1368,7 +1360,6 @@
                 keywordListView.onConfirm = ^(NSArray *users) {
                   NSString *userString = [users componentsJoinedByString:@","];
                   [[NSUserDefaults standardUserDefaults] setObject:userString forKey:@"DYYYFilterUsers"];
-                  [[NSUserDefaults standardUserDefaults] synchronize];
                   [DYYYUtils showToast:@"过滤用户列表已更新"];
                 };
                 [keywordListView show];
@@ -1399,7 +1390,6 @@
                 // 保存更新后的列表
                 NSString *updatedUserString = [updatedUsers componentsJoinedByString:@","];
                 [[NSUserDefaults standardUserDefaults] setObject:updatedUserString forKey:@"DYYYFilterUsers"];
-                [[NSUserDefaults standardUserDefaults] synchronize];
               }];
         };
         [viewModels addObject:filterKeywords];
@@ -1429,7 +1419,6 @@
                     newKeywords = selectedText;
                 }
                 [[NSUserDefaults standardUserDefaults] setObject:newKeywords forKey:@"DYYYFilterKeywords"];
-                [[NSUserDefaults standardUserDefaults] synchronize];
                 [DYYYUtils showToast:[NSString stringWithFormat:@"已添加过滤词: %@", selectedText]];
             }
           };
@@ -1446,7 +1435,6 @@
               NSString *keywordString = [keywords componentsJoinedByString:@","];
               // 保存到用户默认设置
               [[NSUserDefaults standardUserDefaults] setObject:keywordString forKey:@"DYYYFilterKeywords"];
-              [[NSUserDefaults standardUserDefaults] synchronize];
               // 显示提示
               [DYYYUtils showToast:@"过滤关键词已更新"];
             };
@@ -1476,7 +1464,6 @@
           BOOL hasActiveTimer = shutdownTime != nil && [shutdownTime doubleValue] > [[NSDate date] timeIntervalSince1970];
           if (hasActiveTimer) {
               [[NSUserDefaults standardUserDefaults] removeObjectForKey:@"DYYYTimerShutdownTime"];
-              [[NSUserDefaults standardUserDefaults] synchronize];
               [DYYYUtils showToast:@"已取消定时关闭任务"];
               return;
           }
@@ -1494,17 +1481,14 @@
             }
             // 保存用户设置的时间以供下次使用
             [[NSUserDefaults standardUserDefaults] setInteger:minutes forKey:@"DYYYTimerCloseMinutes"];
-            [[NSUserDefaults standardUserDefaults] synchronize];
             NSInteger seconds = minutes * 60;
             NSTimeInterval shutdownTimeValue = [[NSDate date] timeIntervalSince1970] + seconds;
             [[NSUserDefaults standardUserDefaults] setObject:@(shutdownTimeValue) forKey:@"DYYYTimerShutdownTime"];
-            [[NSUserDefaults standardUserDefaults] synchronize];
             [DYYYUtils showToast:[NSString stringWithFormat:@"抖音将在%ld分钟后关闭...", (long)minutes]];
             dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(seconds * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
               NSNumber *currentShutdownTime = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYTimerShutdownTime"];
               if (currentShutdownTime != nil && [currentShutdownTime doubleValue] <= [[NSDate date] timeIntervalSince1970]) {
                   [[NSUserDefaults standardUserDefaults] removeObjectForKey:@"DYYYTimerShutdownTime"];
-                  [[NSUserDefaults standardUserDefaults] synchronize];
                   // 显示确认关闭弹窗，而不是直接退出
                   DYYYConfirmCloseView *confirmView = [[DYYYConfirmCloseView alloc] initWithTitle:@"定时关闭" message:@"定时关闭时间已到，是否关闭抖音？"];
                   [confirmView show];

@@ -32,6 +32,8 @@ void *kViewModelKey = &kViewModelKey;
 #endif
 
 static id dyyyRemoteConfigChangedToken = nil;
+static char kDYYYWeatherViewGestureInstalledKey;
+static char kDYYYWeatherSubviewGestureInstalledKey;
 
 static void DYYYRemoveRemoteConfigObserver(void) {
     if (dyyyRemoteConfigChangedToken) {
@@ -40,7 +42,7 @@ static void DYYYRemoveRemoteConfigObserver(void) {
     }
 }
 %hook AWESettingBaseViewController
-- (bool)useCardUIStyle {
+- (BOOL)useCardUIStyle {
     return YES;
 }
 
@@ -96,15 +98,21 @@ static void DYYYRemoveRemoteConfigObserver(void) {
 - (void)layoutSubviews {
     %orig;
     self.userInteractionEnabled = YES;
-    UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:[UIView class] action:@selector(openDYYYSettingsFromSender:)];
-    objc_setAssociatedObject(tapGesture, "targetView", self, OBJC_ASSOCIATION_ASSIGN);
-    [self addGestureRecognizer:tapGesture];
+    if (!objc_getAssociatedObject(self, &kDYYYWeatherViewGestureInstalledKey)) {
+        UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:[UIView class] action:@selector(openDYYYSettingsFromSender:)];
+        objc_setAssociatedObject(tapGesture, "targetView", self, OBJC_ASSOCIATION_ASSIGN);
+        [self addGestureRecognizer:tapGesture];
+        objc_setAssociatedObject(self, &kDYYYWeatherViewGestureInstalledKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    }
 
     for (UIView *subview in self.subviews) {
         subview.userInteractionEnabled = YES;
-        UITapGestureRecognizer *subTapGesture = [[UITapGestureRecognizer alloc] initWithTarget:[UIView class] action:@selector(openDYYYSettingsFromSender:)];
-        objc_setAssociatedObject(subTapGesture, "targetView", self, OBJC_ASSOCIATION_ASSIGN);
-        [subview addGestureRecognizer:subTapGesture];
+        if (!objc_getAssociatedObject(subview, &kDYYYWeatherSubviewGestureInstalledKey)) {
+            UITapGestureRecognizer *subTapGesture = [[UITapGestureRecognizer alloc] initWithTarget:[UIView class] action:@selector(openDYYYSettingsFromSender:)];
+            objc_setAssociatedObject(subTapGesture, "targetView", self, OBJC_ASSOCIATION_ASSIGN);
+            [subview addGestureRecognizer:subTapGesture];
+            objc_setAssociatedObject(subview, &kDYYYWeatherSubviewGestureInstalledKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        }
 
         [subview.subviews enumerateObjectsUsingBlock:^(UIView *childView, NSUInteger idx, BOOL *stop) {
           if (![childView isKindOfClass:%c(AWELeftSideBarWeatherLabel)]) {
@@ -127,7 +135,8 @@ static void DYYYRemoveRemoteConfigObserver(void) {
 
     UIViewController *feedVC = [DYYYSettingsHelper findViewController:self];
     if (![feedVC isKindOfClass:%c(AWEFeedContainerViewController)]) {
-        feedVC = UIApplication.sharedApplication.keyWindow.rootViewController;
+        UIWindow *activeWindow = [DYYYUtils getActiveWindow];
+        feedVC = activeWindow.rootViewController ?: [DYYYUtils topView];
         while (feedVC && ![feedVC isKindOfClass:%c(AWEFeedContainerViewController)]) {
             feedVC = feedVC.presentedViewController;
         }
@@ -2219,12 +2228,10 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
 
                                                  if ([selectedValue isEqualToString:DYYY_REMOTE_MODE_STRING]) {
                                                      [[NSUserDefaults standardUserDefaults] setBool:YES forKey:DYYY_REMOTE_CONFIG_FLAG_KEY];
-                                                     [[NSUserDefaults standardUserDefaults] synchronize];
                                                      refreshConfigConflictState();
                                                  } else {
                                                      if (wasRemote) {
                                                          [[NSUserDefaults standardUserDefaults] setBool:NO forKey:DYYY_REMOTE_CONFIG_FLAG_KEY];
-                                                         [[NSUserDefaults standardUserDefaults] synchronize];
                                                          refreshConfigConflictState();
                                                      }
                                                  }
@@ -2468,7 +2475,6 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
                                   [DYYYABTestHook loadLocalABTestConfig];
                                   [DYYYABTestHook applyFixedABTestData];
                                   [[NSUserDefaults standardUserDefaults] setBool:NO forKey:DYYY_REMOTE_CONFIG_FLAG_KEY];
-                                  [[NSUserDefaults standardUserDefaults] synchronize];
                                   [[NSNotificationCenter defaultCenter] postNotificationName:DYYY_REMOTE_CONFIG_CHANGED_NOTIFICATION object:nil];
                                   success = YES;
                                   message = @"配置已导入，部分设置需重启应用后生效";
@@ -2526,7 +2532,6 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
                     if (success) {
                         [DYYYABTestHook cleanLocalABTestData];
                         [[NSUserDefaults standardUserDefaults] setBool:NO forKey:DYYY_REMOTE_CONFIG_FLAG_KEY];
-                        [[NSUserDefaults standardUserDefaults] synchronize];
                         [[NSNotificationCenter defaultCenter] postNotificationName:DYYY_REMOTE_CONFIG_CHANGED_NOTIFICATION object:nil];
                         // 删除成功后修改 SaveABTestConfigFile item 的状态
                         saveABTestConfigFileItemRef.detail = @"(文件已删除)";
@@ -2868,8 +2873,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
                                        // 保存用户输入的倍速值
                                        NSString *trimmedText = [text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
                                        [[NSUserDefaults standardUserDefaults] setObject:trimmedText forKey:@"DYYYSpeedSettings"];
-                                       [[NSUserDefaults standardUserDefaults] synchronize];
-                                       speedSettingsItem.detail = trimmedText;
+speedSettingsItem.detail = trimmedText;
                                        [speedSettingsItem refreshCell];
                                      }
                                       onCancel:nil];
@@ -2890,8 +2894,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
         BOOL newValue = !autoRestoreSpeedItem.isSwitchOn;
         autoRestoreSpeedItem.isSwitchOn = newValue;
         [[NSUserDefaults standardUserDefaults] setBool:newValue forKey:@"DYYYAutoRestoreSpeed"];
-        [[NSUserDefaults standardUserDefaults] synchronize];
-      };
+};
       [speedButtonItems addObject:autoRestoreSpeedItem];
 
       AWESettingItemModel *showXItem = [[%c(AWESettingItemModel) alloc] init];
@@ -2908,8 +2911,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
         BOOL newValue = !showXItem.isSwitchOn;
         showXItem.isSwitchOn = newValue;
         [[NSUserDefaults standardUserDefaults] setBool:newValue forKey:@"DYYYSpeedButtonShowX"];
-        [[NSUserDefaults standardUserDefaults] synchronize];
-      };
+};
       [speedButtonItems addObject:showXItem];
       // 添加按钮大小配置项
       AWESettingItemModel *buttonSizeItem = [[%c(AWESettingItemModel) alloc] init];
@@ -2932,7 +2934,6 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
                                        NSInteger size = [text integerValue];
                                        if (size >= 20 && size <= 60) {
                                            [[NSUserDefaults standardUserDefaults] setFloat:size forKey:@"DYYYSpeedButtonSize"];
-                                           [[NSUserDefaults standardUserDefaults] synchronize];
                                            buttonSizeItem.detail = [NSString stringWithFormat:@"%.0f", (CGFloat)size];
                                            [buttonSizeItem refreshCell];
                                        } else {
@@ -2981,7 +2982,6 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
                                        // 确保输入值在有效范围内
                                        if (size >= 20 && size <= 60) {
                                            [[NSUserDefaults standardUserDefaults] setFloat:size forKey:@"DYYYEnableFloatClearButtonSize"];
-                                           [[NSUserDefaults standardUserDefaults] synchronize];
                                            clearButtonSizeItem.detail = [NSString stringWithFormat:@"%.0f", (CGFloat)size];
                                            [clearButtonSizeItem refreshCell];
                                        } else {
@@ -3244,8 +3244,6 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
         for (NSString *key in dyyySettings) {
             [defaults setObject:dyyySettings[key] forKey:key];
         }
-        [defaults synchronize];
-
         [DYYYUtils showToast:@"设置已恢复，请重启应用以应用所有更改"];
 
         [restoreItem refreshCell];
@@ -3334,7 +3332,6 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
                                                 [defaults removeObjectForKey:key];
                                             }
                                         }
-                                        [defaults synchronize];
                                         [DYYYUtils showToast:@"插件设置已清除，请重启应用"];
                                       }];
           }];
@@ -3487,7 +3484,7 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
     aboutSection.itemArray = aboutItems;
 
     viewModel.sectionDataArray = @[ mainSection, cleanupSection, backupSection, aboutSection ];
-    objc_setAssociatedObject(settingsVC, kViewModelKey, viewModel, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    objc_setAssociatedObject(settingsVC, &kViewModelKey, viewModel, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     [rootVC.navigationController pushViewController:(UIViewController *)settingsVC animated:YES];
 }
 

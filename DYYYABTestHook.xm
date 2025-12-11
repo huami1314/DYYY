@@ -287,7 +287,6 @@ static void DYYYQueueSync(dispatch_block_t block) {
                                                                      }
                                                                      if ([DYYYABTestHook isRemoteMode]) {
                                                                          [[NSUserDefaults standardUserDefaults] setBool:YES forKey:DYYY_REMOTE_CONFIG_FLAG_KEY];
-                                                                         [[NSUserDefaults standardUserDefaults] synchronize];
                                                                          [[NSNotificationCenter defaultCenter] postNotificationName:DYYY_REMOTE_CONFIG_CHANGED_NOTIFICATION object:nil];
                                                                      }
                                                                  }

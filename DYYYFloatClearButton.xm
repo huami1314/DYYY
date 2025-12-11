@@ -312,7 +312,6 @@ void initTargetClassNames(void) {
         
         [defaults setFloat:centerXPercent forKey:@"DYYYHideButtonCenterXPercent"];
         [defaults setFloat:centerYPercent forKey:@"DYYYHideButtonCenterYPercent"];
-        [defaults synchronize];
     }
 }
 
@@ -336,7 +335,6 @@ void initTargetClassNames(void) {
 
 - (void)saveLockState {
     [[NSUserDefaults standardUserDefaults] setBool:self.isLocked forKey:@"DYYYHideUIButtonLockState"];
-    [[NSUserDefaults standardUserDefaults] synchronize];
 }
 
 - (void)loadLockState {

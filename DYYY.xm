@@ -1359,7 +1359,6 @@ static NSString *const kDYYYLongPressCopyEnabledKey = @"DYYYLongPressCopyTextEna
     if (![[NSUserDefaults standardUserDefaults] objectForKey:kDYYYLongPressCopyEnabledKey]) {
         longPressCopyEnabled = NO;
         [[NSUserDefaults standardUserDefaults] setBool:NO forKey:kDYYYLongPressCopyEnabledKey];
-        [[NSUserDefaults standardUserDefaults] synchronize];
     }
 
     UIGestureRecognizer *existingGesture = objc_getAssociatedObject(self, &kLongPressGestureKey);
@@ -2061,13 +2060,13 @@ static BOOL hasChangedSpeed = NO;
 
 %hook AWECommentMediaDownloadConfigLivePhoto
 
-bool commentLivePhotoNotWaterMark = DYYYGetBool(@"DYYYCommentLivePhotoNotWaterMark");
+BOOL commentLivePhotoNotWaterMark = DYYYGetBool(@"DYYYCommentLivePhotoNotWaterMark");
 
-- (bool)needClientWaterMark {
+- (BOOL)needClientWaterMark {
     return commentLivePhotoNotWaterMark ? 0 : %orig;
 }
 
-- (bool)needClientEndWaterMark {
+- (BOOL)needClientEndWaterMark {
     return commentLivePhotoNotWaterMark ? 0 : %orig;
 }
 
@@ -4418,7 +4417,7 @@ static NSHashTable *processedParentViews = nil;
     %orig(extras);
 }
 
-- (bool)preventDownload {
+- (BOOL)preventDownload {
     return NO;
 }
 

@@ -107,7 +107,13 @@
 }
 
 - (void)show {
-    UIWindow *window = [UIApplication sharedApplication].keyWindow;
+    UIWindow *window = [DYYYUtils getActiveWindow];
+    if (!window) {
+        window = UIApplication.sharedApplication.windows.firstObject;
+    }
+    if (!window) {
+        return;
+    }
     [window addSubview:self];
 
     [UIView animateWithDuration:0.12

@@ -11,14 +11,13 @@
 @implementation DYYYSettingsHelper
 
 // 获取用户默认设置
-+ (bool)getUserDefaults:(NSString *)key {
++ (BOOL)getUserDefaults:(NSString *)key {
     return [[NSUserDefaults standardUserDefaults] boolForKey:key];
 }
 
 // 设置用户默认设置
 + (void)setUserDefaults:(id)object forKey:(NSString *)key {
     [[NSUserDefaults standardUserDefaults] setObject:object forKey:key];
-    [[NSUserDefaults standardUserDefaults] synchronize];
 }
 
 // 显示自定义关于弹窗
@@ -140,7 +139,7 @@ static void collectSettingsVCs(UIViewController *vc, NSMutableArray *array) {
 static NSArray *allSettingsViewControllers(void) {
     UIWindow *window = [DYYYUtils getActiveWindow];
     if (!window) {
-        window = [UIApplication sharedApplication].keyWindow;
+        window = [UIApplication sharedApplication].windows.firstObject;
     }
     NSMutableArray *result = [NSMutableArray array];
     if (window.rootViewController) {
