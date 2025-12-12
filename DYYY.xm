@@ -2087,6 +2087,7 @@ BOOL commentLivePhotoNotWaterMark = DYYYGetBool(@"DYYYCommentLivePhotoNotWaterMa
 
 %group EnableStickerSaveMenu
 static __weak YYAnimatedImageView *targetStickerView = nil;
+static BOOL dyyyShouldUseLastStickerURL = NO;
 
 %hook _TtCV28AWECommentPanelListSwiftImpl6NEWAPI27CommentCellStickerComponent
 
@@ -2101,6 +2102,57 @@ static __weak YYAnimatedImageView *targetStickerView = nil;
     }
 
     %orig;
+}
+
+%end
+
+%hook _TtC33AWECommentLongPressPanelSwiftImpl37CommentLongPressPanelSaveImageElement
+
+- (BOOL)elementShouldShow {
+    BOOL shouldShow = %orig;
+    if (!DYYYGetBool(@"DYYYForceDownloadEmotion")) {
+        return shouldShow;
+    }
+    AWECommentLongPressPanelContext *context = [self commentPageContext];
+    AWECommentModel *selected = [context selectdComment] ?: [[context params] selectdComment];
+    AWEIMStickerModel *sticker = [selected sticker];
+    NSArray *originURLList = sticker.staticURLModel.originURLList;
+    if (originURLList.count > 0) {
+        return YES;
+    }
+    return shouldShow;
+}
+
+- (void)elementTapped {
+    if (!DYYYGetBool(@"DYYYForceDownloadEmotion")) {
+        %orig;
+        return;
+    }
+    AWECommentLongPressPanelContext *context = [self commentPageContext];
+    AWECommentModel *selected = [context selectdComment] ?: [[context params] selectdComment];
+    AWEIMStickerModel *sticker = [selected sticker];
+    NSArray *originURLList = sticker.staticURLModel.originURLList;
+    if (originURLList.count == 0) {
+        %orig;
+        return;
+    }
+
+    NSString *urlString = dyyyShouldUseLastStickerURL ? originURLList.lastObject : originURLList.firstObject;
+    dyyyShouldUseLastStickerURL = NO;
+    NSURL *heifURL = [NSURL URLWithString:urlString];
+    if (!heifURL) {
+        %orig;
+        return;
+    }
+
+    [DYYYManager downloadMedia:heifURL
+                     mediaType:MediaTypeHeic
+                         audio:nil
+                    completion:^(BOOL success) {
+                      if (!success && originURLList.count > 1) {
+                          dyyyShouldUseLastStickerURL = YES;
+                      }
+                    }];
 }
 
 %end
@@ -2232,44 +2284,137 @@ static __weak YYAnimatedImageView *targetStickerView = nil;
 
 %end
 
-static AWEIMReusableCommonCell *currentCell;
-
-%hook AWEIMCustomMenuComponent
-- (void)msg_showMenuForBubbleFrameInScreen:(CGRect)bubbleFrame tapLocationInScreen:(CGPoint)tapLocation menuItemList:(id)menuItems moreEmoticon:(BOOL)moreEmoticon onCell:(id)cell extra:(id)extra {
-    if (!DYYYGetBool(@"DYYYForceDownloadIMEmotion")) {
-        %orig(bubbleFrame, tapLocation, menuItems, moreEmoticon, cell, extra);
-        return;
+static NSString *DYYYIMMessageStringValue(id object, NSString *selectorName) {
+    if (!object || selectorName.length == 0) {
+        return nil;
     }
-    NSArray *originalMenuItems = menuItems;
-
-    NSMutableArray *newMenuItems = [originalMenuItems mutableCopy];
-    currentCell = (AWEIMReusableCommonCell *)cell;
-
-    AWEIMCustomMenuModel *newMenuItem1 = [%c(AWEIMCustomMenuModel) new];
-    newMenuItem1.title = @"保存表情";
-    newMenuItem1.imageName = @"im_emoticon_interactive_tab_new";
-    newMenuItem1.willPerformMenuActionSelectorBlock = ^(id arg1) {
-      AWEIMMessageComponentContext *context = (AWEIMMessageComponentContext *)currentCell.currentContext;
-      if ([context.message isKindOfClass:%c(AWEIMGiphyMessage)]) {
-          AWEIMGiphyMessage *giphyMessage = (AWEIMGiphyMessage *)context.message;
-          if (giphyMessage.giphyURL && giphyMessage.giphyURL.originURLList.count > 0) {
-              NSURL *url = [NSURL URLWithString:giphyMessage.giphyURL.originURLList.firstObject];
-              [DYYYManager downloadMedia:url
-                               mediaType:MediaTypeHeic
-                                   audio:nil
-                              completion:^(BOOL success){
-                              }];
-          }
-      }
-    };
-    newMenuItem1.trackerName = @"保存表情";
-    AWEIMMessageComponentContext *context = (AWEIMMessageComponentContext *)currentCell.currentContext;
-    if ([context.message isKindOfClass:%c(AWEIMGiphyMessage)]) {
-        [newMenuItems addObject:newMenuItem1];
+    SEL selector = NSSelectorFromString(selectorName);
+    if (!selector || ![object respondsToSelector:selector]) {
+        return nil;
     }
-    %orig(bubbleFrame, tapLocation, newMenuItems, moreEmoticon, cell, extra);
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
+    id value = [object performSelector:selector];
+#pragma clang diagnostic pop
+    if ([value isKindOfClass:[NSString class]] && [value length] > 0) {
+        return value;
+    }
+    return nil;
 }
 
+static NSURL *DYYYIMEmotionDownloadURLFromMessage(AWEIMGiphyMessage *giphyMessage) {
+    if (!giphyMessage) {
+        return nil;
+    }
+    NSString *urlString = nil;
+    if (giphyMessage.giphyURL.originURLList.count > 0) {
+        urlString = giphyMessage.giphyURL.originURLList.firstObject;
+    }
+    if (urlString.length == 0) {
+        NSString *animateURL = DYYYIMMessageStringValue(giphyMessage, @"animateURL");
+        if (animateURL.length > 0) {
+            urlString = animateURL;
+        }
+    }
+    if (urlString.length == 0) {
+        NSString *displayIconURL = DYYYIMMessageStringValue(giphyMessage, @"displayIconURL");
+        if (displayIconURL.length > 0) {
+            urlString = displayIconURL;
+        }
+    }
+    if (urlString.length == 0) {
+        return nil;
+    }
+    return [NSURL URLWithString:urlString];
+}
+
+static AWEIMCustomMenuModel *DYYYIMCreateDownloadMenuItem(AWEIMReusableCommonCell *cell) {
+    if (!cell) {
+        return nil;
+    }
+    __weak AWEIMReusableCommonCell *weakCell = cell;
+    AWEIMCustomMenuModel *menuItem = [%c(AWEIMCustomMenuModel) new];
+    menuItem.title = @"保存表情";
+    menuItem.imageName = @"im_emoticon_interactive_tab_new";
+    menuItem.trackerName = @"保存表情";
+    menuItem.willPerformMenuActionSelectorBlock = ^(id arg1) {
+      AWEIMReusableCommonCell *strongCell = weakCell;
+      if (!strongCell) {
+          [DYYYUtils showToast:@"无法获取表情包信息"];
+          return;
+      }
+      AWEIMMessageComponentContext *context = (AWEIMMessageComponentContext *)strongCell.currentContext;
+      if (!context || ![context.message isKindOfClass:%c(AWEIMGiphyMessage)]) {
+          [DYYYUtils showToast:@"无法获取表情包信息"];
+          return;
+      }
+      NSURL *downloadURL = DYYYIMEmotionDownloadURLFromMessage((AWEIMGiphyMessage *)context.message);
+      if (!downloadURL) {
+          [DYYYUtils showToast:@"无法获取表情包链接"];
+          return;
+      }
+      [DYYYManager downloadMedia:downloadURL
+                       mediaType:MediaTypeHeic
+                           audio:nil
+                      completion:^(BOOL success){
+                      }];
+    };
+    return menuItem;
+}
+
+static NSArray *DYYYIMMenuItemsByAddingDownloadAction(NSArray *menuItems, id cell) {
+    if (!DYYYGetBool(@"DYYYForceDownloadIMEmotion")) {
+        return menuItems;
+    }
+    if (!menuItems || !cell) {
+        return menuItems;
+    }
+    AWEIMReusableCommonCell *commonCell = [cell isKindOfClass:%c(AWEIMReusableCommonCell)] ? (AWEIMReusableCommonCell *)cell : nil;
+    if (!commonCell) {
+        return menuItems;
+    }
+    AWEIMMessageComponentContext *context = (AWEIMMessageComponentContext *)commonCell.currentContext;
+    if (!context || ![context.message isKindOfClass:%c(AWEIMGiphyMessage)]) {
+        return menuItems;
+    }
+    for (AWEIMCustomMenuModel *item in menuItems) {
+        if ([item isKindOfClass:%c(AWEIMCustomMenuModel)] && [item.title isEqualToString:@"保存表情"]) {
+            return menuItems;
+        }
+    }
+    NSMutableArray *newMenuItems = [menuItems mutableCopy];
+    AWEIMCustomMenuModel *downloadItem = DYYYIMCreateDownloadMenuItem(commonCell);
+    if (downloadItem) {
+        [newMenuItems addObject:downloadItem];
+    }
+    return newMenuItems ?: menuItems;
+}
+
+%group DYYYIMMenuLegacyGroup
+%hook AWEIMCustomMenuComponent
+- (void)msg_showMenuForBubbleFrameInScreen:(CGRect)bubbleFrame tapLocationInScreen:(CGPoint)tapLocation menuItemList:(NSArray *)menuItems moreEmoticon:(BOOL)moreEmoticon onCell:(id)cell extra:(id)extra {
+    NSArray *updatedMenuItems = DYYYIMMenuItemsByAddingDownloadAction(menuItems, cell);
+    %orig(bubbleFrame, tapLocation, updatedMenuItems, moreEmoticon, cell, extra);
+}
+%end
+%end
+
+%group DYYYIMMenuTapLocationGroup
+%hook AWEIMCustomMenuComponent
+- (void)msg_showMenuForBubbleFrameInScreen:(CGRect)bubbleFrame tapLocationInScreen:(CGPoint)tapLocation menuItemList:(NSArray *)menuItems menuPanelOptions:(unsigned long long)menuPanelOptions moreEmoticon:(BOOL)moreEmoticon onCell:(id)cell extra:(id)extra {
+    NSArray *updatedMenuItems = DYYYIMMenuItemsByAddingDownloadAction(menuItems, cell);
+    %orig(bubbleFrame, tapLocation, updatedMenuItems, menuPanelOptions, moreEmoticon, cell, extra);
+}
+%end
+%end
+
+%group DYYYIMMenuHighLowGroup
+%hook AWEIMCustomMenuComponent
+- (void)msg_showMenuForBubbleFrameInScreen:(CGRect)bubbleFrame highLocationInScreen:(CGPoint)highLocation lowLocationInScreen:(CGPoint)lowLocation tryHighLocationFirst:(BOOL)tryHighLocationFirst menuItemList:(NSArray *)menuItems menuPanelOptions:(unsigned long long)menuPanelOptions onCell:(id)cell extra:(id)extra {
+    NSArray *updatedMenuItems = DYYYIMMenuItemsByAddingDownloadAction(menuItems, cell);
+    %orig(bubbleFrame, highLocation, lowLocation, tryHighLocationFirst, updatedMenuItems, menuPanelOptions, cell, extra);
+}
+%end
 %end
 
 %hook AWEFeedTabJumpGuideView
@@ -7406,6 +7551,22 @@ static void findTargetViewInView(UIView *view) {
 }
 
 %ctor {
+    Class imMenuComponentClass = objc_getClass("AWEIMCustomMenuComponent");
+    if (imMenuComponentClass) {
+        SEL legacySelector = NSSelectorFromString(@"msg_showMenuForBubbleFrameInScreen:tapLocationInScreen:menuItemList:moreEmoticon:onCell:extra:");
+        SEL tapLocationSelector = NSSelectorFromString(@"msg_showMenuForBubbleFrameInScreen:tapLocationInScreen:menuItemList:menuPanelOptions:moreEmoticon:onCell:extra:");
+        SEL highLowSelector = NSSelectorFromString(@"msg_showMenuForBubbleFrameInScreen:highLocationInScreen:lowLocationInScreen:tryHighLocationFirst:menuItemList:menuPanelOptions:onCell:extra:");
+        if (legacySelector && class_getInstanceMethod(imMenuComponentClass, legacySelector)) {
+            %init(DYYYIMMenuLegacyGroup);
+        }
+        if (tapLocationSelector && class_getInstanceMethod(imMenuComponentClass, tapLocationSelector)) {
+            %init(DYYYIMMenuTapLocationGroup);
+        }
+        if (highLowSelector && class_getInstanceMethod(imMenuComponentClass, highLowSelector)) {
+            %init(DYYYIMMenuHighLowGroup);
+        }
+    }
+
     if (!DYYYGetBool(@"DYYYDisableSettingsGesture")) {
         %init(DYYYSettingsGesture);
     }
