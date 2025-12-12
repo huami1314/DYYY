@@ -23,31 +23,6 @@
 - (YYImageFrame *)frameAtIndex:(NSUInteger)index decodeForDisplay:(BOOL)decodeForDisplay;
 @end
 
-#ifndef kCGImagePropertyHEIFDictionary
-#define kCGImagePropertyHEIFDictionary CFSTR("HEIFDictionary")
-#endif
-#ifndef kCGImagePropertyHEIFDelayTime
-#define kCGImagePropertyHEIFDelayTime CFSTR("DelayTime")
-#endif
-#ifndef kCGImagePropertyHEIFUnclampedDelayTime
-#define kCGImagePropertyHEIFUnclampedDelayTime CFSTR("UnclampedDelayTime")
-#endif
-#ifndef kCGImagePropertyHEICSDictionary
-#define kCGImagePropertyHEICSDictionary CFSTR("HEICSDictionary")
-#endif
-#ifndef kCGImagePropertyHEICSDelayTime
-#define kCGImagePropertyHEICSDelayTime CFSTR("DelayTime")
-#endif
-#ifndef kCGImagePropertyHEICSUnclampedDelayTime
-#define kCGImagePropertyHEICSUnclampedDelayTime CFSTR("UnclampedDelayTime")
-#endif
-#ifndef kUTTypeHEIC
-#define kUTTypeHEIC CFSTR("public.heic")
-#endif
-#ifndef kUTTypeWebP
-#define kUTTypeWebP CFSTR("public.webp")
-#endif
-
 #import "DYYYToast.h"
 #import "DYYYUtils.h"
 
@@ -60,56 +35,6 @@ static inline CGFloat DYYYNormalizedDelay(CGFloat delay) {
     return delay;
 }
 
-static inline CGFloat DYYYDelayValueFromDictionary(CFDictionaryRef dictionary, CFStringRef unclampedKey, CFStringRef delayKey) {
-    if (!dictionary) {
-        return 0.0f;
-    }
-
-    CGFloat delay = 0.0f;
-    if (unclampedKey) {
-        CFNumberRef unclampedDelay = CFDictionaryGetValue(dictionary, unclampedKey);
-        if (unclampedDelay) {
-            CFNumberGetValue(unclampedDelay, kCFNumberFloatType, &delay);
-        }
-    }
-
-    if (delay <= 0.0f && delayKey) {
-        CFNumberRef delayValue = CFDictionaryGetValue(dictionary, delayKey);
-        if (delayValue) {
-            CFNumberGetValue(delayValue, kCFNumberFloatType, &delay);
-        }
-    }
-
-    return delay;
-}
-
-static inline CGFloat DYYYFrameDelayForProperties(CFDictionaryRef properties) {
-    if (!properties) {
-        return kDYYYDefaultFrameDelay;
-    }
-
-    CGFloat delayTime = 0.0f;
-
-    CFDictionaryRef gifDict = CFDictionaryGetValue(properties, kCGImagePropertyGIFDictionary);
-    delayTime = DYYYDelayValueFromDictionary(gifDict, kCGImagePropertyGIFUnclampedDelayTime, kCGImagePropertyGIFDelayTime);
-
-    if (delayTime <= 0.0f) {
-        CFDictionaryRef pngDict = CFDictionaryGetValue(properties, kCGImagePropertyPNGDictionary);
-        delayTime = DYYYDelayValueFromDictionary(pngDict, kCGImagePropertyAPNGUnclampedDelayTime, kCGImagePropertyAPNGDelayTime);
-    }
-
-    if (delayTime <= 0.0f) {
-        CFDictionaryRef heicsDict = CFDictionaryGetValue(properties, kCGImagePropertyHEICSDictionary);
-        delayTime = DYYYDelayValueFromDictionary(heicsDict, kCGImagePropertyHEICSUnclampedDelayTime, kCGImagePropertyHEICSDelayTime);
-    }
-
-    if (delayTime <= 0.0f) {
-        CFDictionaryRef heifDict = CFDictionaryGetValue(properties, kCGImagePropertyHEIFDictionary);
-        delayTime = DYYYDelayValueFromDictionary(heifDict, kCGImagePropertyHEIFUnclampedDelayTime, kCGImagePropertyHEIFDelayTime);
-    }
-
-    return DYYYNormalizedDelay(delayTime);
-}
 
 @interface DYYYManager () {
     AVAssetExportSession *session;
@@ -458,46 +383,6 @@ static BOOL DYYYWriteGIFUsingYYDecoder(YYImageDecoder *decoder, NSURL *gifURL) {
     return success;
 }
 
-static BOOL DYYYWriteGIFUsingImageSource(CGImageSourceRef src, NSURL *gifURL) {
-    if (!src) {
-        return NO;
-    }
-
-    size_t count = CGImageSourceGetCount(src);
-    if (count == 0) {
-        return NO;
-    }
-
-    CGImageDestinationRef dest = CGImageDestinationCreateWithURL((__bridge CFURLRef)gifURL, kUTTypeGIF, count, NULL);
-    if (!dest) {
-        return NO;
-    }
-
-    NSDictionary *gifProperties = @{(__bridge NSString *)kCGImagePropertyGIFDictionary : @{(__bridge NSString *)kCGImagePropertyGIFLoopCount : @0}};
-    CGImageDestinationSetProperties(dest, (__bridge CFDictionaryRef)gifProperties);
-
-    BOOL hasFrame = NO;
-    for (size_t i = 0; i < count; i++) {
-        CGImageRef imgRef = CGImageSourceCreateImageAtIndex(src, i, NULL);
-        if (!imgRef) {
-            continue;
-        }
-        CFDictionaryRef properties = CGImageSourceCopyPropertiesAtIndex(src, i, NULL);
-        CGFloat delayTime = DYYYFrameDelayForProperties(properties);
-        if (properties) {
-            CFRelease(properties);
-        }
-        NSDictionary *frameProps = @{(__bridge NSString *)kCGImagePropertyGIFDictionary : @{(__bridge NSString *)kCGImagePropertyGIFDelayTime : @(delayTime)}};
-        CGImageDestinationAddImage(dest, imgRef, (__bridge CFDictionaryRef)frameProps);
-        CGImageRelease(imgRef);
-        hasFrame = YES;
-    }
-
-    BOOL success = hasFrame ? CGImageDestinationFinalize(dest) : NO;
-    CFRelease(dest);
-    return success;
-}
-
 static BOOL DYYYConvertAnimatedDataWithYYDecoder(NSData *data, NSURL *gifURL, CGFloat scale) {
     YYImageDecoder *decoder = DYYYCreateYYDecoderWithData(data, scale);
     if (!decoder) {
@@ -621,6 +506,48 @@ static BOOL DYYYWriteStaticImageToGIF(UIImage *image, NSURL *gifURL) {
         }
       });
     });
+}
+
++ (BOOL)framesFromAnimatedData:(NSData *)data scale:(CGFloat)scale images:(NSArray<UIImage *> *_Nullable *)images totalDuration:(CGFloat *_Nullable)totalDuration {
+    if (images) {
+        *images = nil;
+    }
+    if (totalDuration) {
+        *totalDuration = 0;
+    }
+    if (!data.length) {
+        return NO;
+    }
+
+    CGFloat resolvedScale = scale > 0 ? scale : 1.0f;
+    YYImageDecoder *decoder = DYYYCreateYYDecoderWithData(data, resolvedScale);
+    if (!decoder || decoder.frameCount == 0) {
+        return NO;
+    }
+
+    NSMutableArray<UIImage *> *decodedFrames = [NSMutableArray arrayWithCapacity:decoder.frameCount];
+    CGFloat durationAccumulator = 0;
+    for (NSUInteger i = 0; i < decoder.frameCount; i++) {
+        YYImageFrame *frame = [decoder frameAtIndex:i decodeForDisplay:YES];
+        if (!frame || !frame.image) {
+            continue;
+        }
+        [decodedFrames addObject:frame.image];
+        durationAccumulator += DYYYNormalizedDelay(frame.duration);
+    }
+
+    if (decodedFrames.count == 0) {
+        return NO;
+    }
+
+    if (images) {
+        *images = [decodedFrames copy];
+    }
+    if (totalDuration) {
+        *totalDuration = durationAccumulator > 0 ? durationAccumulator : decodedFrames.count * kDYYYDefaultFrameDelay;
+    }
+
+    return YES;
 }
 
 + (void)downloadLivePhoto:(NSURL *)imageURL videoURL:(NSURL *)videoURL completion:(void (^)(void))completion {

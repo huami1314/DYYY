@@ -346,38 +346,17 @@ void initTargetClassNames(void) {
     NSString *iconPath = [documentsPath stringByAppendingPathComponent:@"DYYY/qingping.gif"];
     NSData *gifData = [NSData dataWithContentsOfFile:iconPath];
 
-    if (gifData) {
-        CGImageSourceRef source = CGImageSourceCreateWithData((__bridge CFDataRef)gifData, NULL);
-        size_t imageCount = CGImageSourceGetCount(source);
+    NSArray<UIImage *> *frames = nil;
+    CGFloat totalDuration = 0.0;
+    BOOL hasFrames = gifData.length > 0 &&
+                     [DYYYManager framesFromAnimatedData:gifData
+                                                  scale:[UIScreen mainScreen].scale
+                                                 images:&frames
+                                          totalDuration:&totalDuration];
 
-        NSMutableArray<UIImage *> *imageArray = [NSMutableArray arrayWithCapacity:imageCount];
-        NSTimeInterval totalDuration = 0.0;
-
-        for (size_t i = 0; i < imageCount; i++) {
-            CGImageRef imageRef = CGImageSourceCreateImageAtIndex(source, i, NULL);
-            UIImage *image = [UIImage imageWithCGImage:imageRef];
-            [imageArray addObject:image];
-            CFRelease(imageRef);
-
-            CFDictionaryRef properties = CGImageSourceCopyPropertiesAtIndex(source, i, NULL);
-            if (properties) {
-                CFDictionaryRef gifProperties = (CFDictionaryRef)CFDictionaryGetValue(properties, kCGImagePropertyGIFDictionary);
-                if (gifProperties) {
-                    NSNumber *frameDuration = (__bridge NSNumber *)CFDictionaryGetValue(gifProperties, kCGImagePropertyGIFUnclampedDelayTime);
-                    if (!frameDuration) {
-                        frameDuration = (__bridge NSNumber *)CFDictionaryGetValue(gifProperties, kCGImagePropertyGIFDelayTime);
-                    }
-                    if (frameDuration) {
-                        totalDuration += frameDuration.doubleValue;
-                    }
-                }
-                CFRelease(properties);
-            }
-        }
-        CFRelease(source);
-
+    if (hasFrames && frames.count > 0) {
         UIImageView *animatedImageView = [[UIImageView alloc] initWithFrame:self.bounds];
-        animatedImageView.animationImages = imageArray;
+        animatedImageView.animationImages = frames;
         animatedImageView.animationDuration = totalDuration;
         animatedImageView.animationRepeatCount = 0;
         [self addSubview:animatedImageView];
@@ -389,11 +368,12 @@ void initTargetClassNames(void) {
         ]];
 
         [animatedImageView startAnimating];
-    } else {
-        [self setTitle:@"隐藏" forState:UIControlStateNormal];
-        [self setTitle:@"显示" forState:UIControlStateSelected];
-        self.titleLabel.font = [UIFont systemFontOfSize:10];
+        return;
     }
+
+    [self setTitle:@"隐藏" forState:UIControlStateNormal];
+    [self setTitle:@"显示" forState:UIControlStateSelected];
+    self.titleLabel.font = [UIFont systemFontOfSize:10];
 }
 
 - (void)handleTouchDown {

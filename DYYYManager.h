@@ -149,6 +149,18 @@
  */
 + (void)convertWebpToGifSafely:(NSURL *)webpURL completion:(void (^)(NSURL *gifURL, BOOL success))completion;
 
+/**
+ * 使用 YYImage 解码动图数据，返回帧图像和总时长
+ * @param data 动图数据
+ * @param scale 目标缩放
+ * @param images 输出帧数组
+ * @param totalDuration 输出总时长
+ */
++ (BOOL)framesFromAnimatedData:(NSData *)data
+                          scale:(CGFloat)scale
+                         images:(NSArray<UIImage *> *_Nullable *)images
+                  totalDuration:(CGFloat *_Nullable)totalDuration;
+
 // 动画贴纸和GIF相关方法
 + (void)saveAnimatedSticker:(YYAnimatedImageView *)targetStickerView;
 + (BOOL)isBDImageWithHeifURL:(UIImage *)image;
