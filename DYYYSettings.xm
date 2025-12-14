@@ -2959,6 +2959,29 @@ speedSettingsItem.detail = trimmedText;
 
       [speedButtonItems addObject:speedSettingsItem];
 
+      NSMutableArray<AWESettingItemModel *> *speedDependentItems = [NSMutableArray array];
+      for (AWESettingItemModel *item in speedButtonItems) {
+          if (item != enableSpeedButton) {
+              [speedDependentItems addObject:item];
+          }
+      }
+      void (^refreshSpeedDependentItems)(void) = ^{
+        for (AWESettingItemModel *item in speedDependentItems) {
+            [DYYYSettingsHelper applyDependencyRulesForItem:item];
+            [item refreshCell];
+        }
+      };
+
+      refreshSpeedDependentItems();
+
+      void (^originalSpeedSwitchChangedBlock)(void) = enableSpeedButton.switchChangedBlock;
+      enableSpeedButton.switchChangedBlock = ^{
+        if (originalSpeedSwitchChangedBlock) {
+            originalSpeedSwitchChangedBlock();
+        }
+        refreshSpeedDependentItems();
+      };
+
       // 一键清屏section
       NSMutableArray<AWESettingItemModel *> *clearButtonItems = [NSMutableArray array];
 
