@@ -2868,8 +2868,25 @@ static NSArray *DYYYIMMenuItemsByAddingDownloadAction(NSArray *menuItems, id cel
 %end
 
 %hook AWELeftSideBarEntranceView
+
+- (void)setRedDot:(id)redDot {
+    %orig(nil);
+}
+
+- (void)setNumericalRedDot:(id)numericalRedDot {
+    %orig(nil);
+}
+
 - (void)layoutSubviews {
     %orig;
+
+    // 隐藏左侧边栏的 badge
+    for (UIView *subview in self.subviews) {
+        if ([subview isKindOfClass:%c(DUXBadge)]) {
+            subview.hidden = YES;
+            break;
+        }
+    }
 
     UIResponder *responder = self;
     UIViewController *parentVC = nil;
@@ -4002,18 +4019,6 @@ static NSHashTable *processedParentViews = nil;
 }
 %end
 
-%hook AWELeftSideBarEntranceView
-
-- (void)setRedDot:(id)redDot {
-    %orig(nil);
-}
-
-- (void)setNumericalRedDot:(id)numericalRedDot {
-    %orig(nil);
-}
-
-%end
-
 // 隐藏搜同款
 %hook ACCStickerContainerView
 - (void)layoutSubviews {
@@ -4397,12 +4402,16 @@ static NSHashTable *processedParentViews = nil;
     BOOL skipLive = DYYYGetBool(@"DYYYSkipLive");
     BOOL skipAllLive = DYYYGetBool(@"DYYYSkipAllLive");
     BOOL skipHotSpot = DYYYGetBool(@"DYYYSkipHotSpot");
+    BOOL skipPhoto = DYYYGetBool(@"DYYYSkipPhoto");
+    BOOL skipPhotoText = DYYYGetBool(@"DYYYSkipPhotoText");
     BOOL filterHDR = DYYYGetBool(@"DYYYFilterFeedHDR");
 
     BOOL shouldFilterAds = noAds && (self.isAds);
     BOOL shouldFilterHotSpot = skipHotSpot && self.hotSpotLynxCardModel;
     BOOL shouldFilterRecLive = skipLive && (self.cellRoom != nil);
     BOOL shouldFilterAllLive = skipAllLive && [self.videoFeedTag isEqualToString:@"直播中"];
+    BOOL shouldskipPhoto = skipPhoto && (self.awemeType == 68) && self.shareRecExtra;
+    BOOL shouldskipPhotoText = skipPhotoText && self.isNewTextMode && self.shareRecExtra;
     BOOL shouldFilterHDR = NO;
     BOOL shouldFilterLowLikes = NO;
     BOOL shouldFilterKeywords = NO;
@@ -4521,7 +4530,7 @@ static NSHashTable *processedParentViews = nil;
             }
         }
     }
-    return shouldFilterAds || shouldFilterRecLive || shouldFilterAllLive || shouldFilterHotSpot || shouldFilterHDR || shouldFilterLowLikes || shouldFilterKeywords || shouldFilterProp ||
+    return shouldFilterAds || shouldFilterRecLive || shouldFilterAllLive || shouldFilterHotSpot || shouldskipPhoto || shouldskipPhotoText || shouldFilterHDR || shouldFilterLowLikes || shouldFilterKeywords || shouldFilterProp ||
            shouldFilterTime || shouldFilterUser;
 }
 

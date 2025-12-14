@@ -124,6 +124,7 @@ typedef NS_ENUM(NSUInteger, DYEdgeMode) {
 @property(nonatomic, assign) BOOL isAds;
 @property(nonatomic, assign) BOOL isLive;
 @property(nonatomic, assign) BOOL isLivePhoto;
+@property(nonatomic, assign) BOOL isNewTextMode;  // 文字图文专有属性
 @property(nonatomic, strong) NSString *shareURL;
 @property(nonatomic, strong) id hotSpotLynxCardModel;
 @property(nonatomic, strong) AWELiveFollowFeedCellModel *cellRoom;
