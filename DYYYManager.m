@@ -277,6 +277,116 @@ static inline CGFloat DYYYNormalizedDelay(CGFloat delay) {
     return @"unknown";
 }
 
+static uint32_t DYYYReadUInt32BigEndian(const uint8_t *bytes) {
+    return ((uint32_t)bytes[0] << 24) | ((uint32_t)bytes[1] << 16) | ((uint32_t)bytes[2] << 8) | (uint32_t)bytes[3];
+}
+
+static uint64_t DYYYReadUInt64BigEndian(const uint8_t *bytes) {
+    uint64_t value = 0;
+    for (NSUInteger i = 0; i < 8; i++) {
+        value = (value << 8) | (uint64_t)bytes[i];
+    }
+    return value;
+}
+
+static NSTimeInterval DYYYParseMVHDDuration(const uint8_t *bytes, NSUInteger length) {
+    NSUInteger position = 0;
+    while (position + 8 <= length) {
+        uint64_t rawSize = DYYYReadUInt32BigEndian(bytes + position);
+        NSUInteger header = 8;
+
+        if (rawSize == 1) {
+            if (position + 16 > length) {
+                break;
+            }
+            rawSize = DYYYReadUInt64BigEndian(bytes + position + 8);
+            header = 16;
+        } else if (rawSize == 0) {
+            rawSize = length - position;
+        }
+
+        if (rawSize < header || position + rawSize > length) {
+            break;
+        }
+
+        const uint8_t *typePtr = bytes + position + 4;
+        if (typePtr[0] == 'm' && typePtr[1] == 'v' && typePtr[2] == 'h' && typePtr[3] == 'd') {
+            const uint8_t *payload = bytes + position + header;
+            NSUInteger payloadLength = (NSUInteger)rawSize - header;
+            if (payloadLength < 20) {
+                break;
+            }
+
+            uint8_t version = payload[0];
+            if (version == 0) {
+                if (payloadLength < 20) {
+                    break;
+                }
+                uint32_t timescale = DYYYReadUInt32BigEndian(payload + 12);
+                uint32_t duration = DYYYReadUInt32BigEndian(payload + 16);
+                if (timescale > 0) {
+                    return (NSTimeInterval)duration / (NSTimeInterval)timescale;
+                }
+            } else if (version == 1) {
+                if (payloadLength < 32) {
+                    break;
+                }
+                uint32_t timescale = DYYYReadUInt32BigEndian(payload + 20);
+                uint64_t duration = DYYYReadUInt64BigEndian(payload + 24);
+                if (timescale > 0) {
+                    return (NSTimeInterval)duration / (NSTimeInterval)timescale;
+                }
+            }
+        }
+
+        position += (NSUInteger)rawSize;
+    }
+
+    return 0;
+}
+
+static NSTimeInterval DYYYParseHEIFDuration(const uint8_t *bytes, NSUInteger length) {
+    NSUInteger position = 0;
+    while (position + 8 <= length) {
+        uint64_t rawSize = DYYYReadUInt32BigEndian(bytes + position);
+        NSUInteger header = 8;
+
+        if (rawSize == 1) {
+            if (position + 16 > length) {
+                break;
+            }
+            rawSize = DYYYReadUInt64BigEndian(bytes + position + 8);
+            header = 16;
+        } else if (rawSize == 0) {
+            rawSize = length - position;
+        }
+
+        if (rawSize < header || position + rawSize > length) {
+            break;
+        }
+
+        const uint8_t *typePtr = bytes + position + 4;
+        if (typePtr[0] == 'm' && typePtr[1] == 'o' && typePtr[2] == 'o' && typePtr[3] == 'v') {
+            NSTimeInterval duration = DYYYParseMVHDDuration(bytes + position + header, (NSUInteger)rawSize - header);
+            if (duration > 0) {
+                return duration;
+            }
+        }
+
+        position += (NSUInteger)rawSize;
+    }
+
+    return 0;
+}
+
+static NSTimeInterval DYYYHEIFDurationFromData(NSData *data) {
+    if (!data || data.length < 16) {
+        return 0;
+    }
+    const uint8_t *bytes = (const uint8_t *)data.bytes;
+    return DYYYParseHEIFDuration(bytes, data.length);
+}
+
 // 保存GIF到相册的方法
 + (void)saveGifToPhotoLibrary:(NSURL *)gifURL mediaType:(MediaType)mediaType completion:(void (^)(BOOL success))completion {
     (void)mediaType;
@@ -349,12 +459,16 @@ static CGFloat DYYYTotalDurationFromYYDecoder(YYImageDecoder *decoder) {
     return totalDuration;
 }
 
-static BOOL DYYYWriteGIFUsingYYDecoder(YYImageDecoder *decoder, NSURL *gifURL) {
+static BOOL DYYYWriteGIFUsingYYDecoder(YYImageDecoder *decoder, NSURL *gifURL, NSTimeInterval fallbackTotalDuration) {
     if (!decoder || decoder.frameCount == 0) {
         return NO;
     }
 
     NSUInteger frameCount = (NSUInteger)decoder.frameCount;
+    CGFloat fallbackFrameDuration = 0;
+    if (fallbackTotalDuration > 0 && frameCount > 0) {
+        fallbackFrameDuration = fallbackTotalDuration / frameCount;
+    }
     CGImageDestinationRef dest = CGImageDestinationCreateWithURL((__bridge CFURLRef)gifURL, kUTTypeGIF, frameCount, NULL);
     if (!dest) {
         return NO;
@@ -372,7 +486,11 @@ static BOOL DYYYWriteGIFUsingYYDecoder(YYImageDecoder *decoder, NSURL *gifURL) {
             continue;
         }
 
-        CGFloat delay = DYYYNormalizedDelay(frame.duration);
+        CGFloat frameDuration = frame.duration;
+        if ((!isfinite(frameDuration) || frameDuration <= 0) && fallbackFrameDuration > 0) {
+            frameDuration = fallbackFrameDuration;
+        }
+        CGFloat delay = DYYYNormalizedDelay(frameDuration);
         NSDictionary *frameProps = @{(__bridge NSString *)kCGImagePropertyGIFDictionary : @{(__bridge NSString *)kCGImagePropertyGIFDelayTime : @(delay)}};
         CGImageDestinationAddImage(dest, imageRef, (__bridge CFDictionaryRef)frameProps);
         hasFrame = YES;
@@ -388,7 +506,7 @@ static BOOL DYYYConvertAnimatedDataWithYYDecoder(NSData *data, NSURL *gifURL, CG
     if (!decoder) {
         return NO;
     }
-    return DYYYWriteGIFUsingYYDecoder(decoder, gifURL);
+    return DYYYWriteGIFUsingYYDecoder(decoder, gifURL, 0);
 }
 
 static BOOL DYYYWriteStaticImageToGIF(UIImage *image, NSURL *gifURL) {
@@ -471,6 +589,7 @@ static BOOL DYYYWriteStaticImageToGIF(UIImage *image, NSURL *gifURL) {
     }
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
       NSData *heicData = [NSData dataWithContentsOfURL:heicURL options:NSDataReadingMappedIfSafe error:nil];
+      NSTimeInterval heifDuration = DYYYHEIFDurationFromData(heicData);
       NSURL *gifURL = DYYYTemporaryGIFURLForSourceURL(heicURL);
       [[NSFileManager defaultManager] removeItemAtURL:gifURL error:nil];
 
@@ -486,7 +605,7 @@ static BOOL DYYYWriteStaticImageToGIF(UIImage *image, NSURL *gifURL) {
           } else if (decoder.frameCount == 0) {
               failureReason = @"YYImageDecoder未解析到任何帧，HEIC资源可能不是动图";
           } else {
-              success = DYYYWriteGIFUsingYYDecoder(decoder, gifURL);
+              success = DYYYWriteGIFUsingYYDecoder(decoder, gifURL, heifDuration);
               if (!success) {
                   failureReason = @"YYImageDecoder写入GIF失败，可能是图像数据损坏或磁盘空间不足";
               }
