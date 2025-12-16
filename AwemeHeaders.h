@@ -525,8 +525,15 @@ typedef NS_ENUM(NSUInteger, DYEdgeMode) {
 @property(nonatomic, copy) NSString *accessibilityLabel;
 @end
 
+// 评论区实况照片模型
+@interface AWECommentLivePhotoModel : NSObject
+@property(nonatomic, copy) NSArray *videoUrl;
+@end
+
 @interface AWECommentImageModel : NSObject
-@property(nonatomic, copy) NSString *originUrl;
+@property(nonatomic, strong) AWEURLModel *originUrl;
+@property(nonatomic, strong) AWEURLModel *mediumUrl;
+@property(nonatomic, strong) AWECommentLivePhotoModel *livePhotoModel;
 @end
 
 @class AWECommentModel;
@@ -541,11 +548,13 @@ typedef NS_ENUM(NSUInteger, DYEdgeMode) {
 
 @interface AWECommentLongPressPanelParam : NSObject
 - (AWECommentModel *)selectdComment;
+- (NSDictionary *)extraParams;
 @end
 
 @interface AWECommentModel : NSObject
 - (AWEIMStickerModel *)sticker;
 - (NSString *)content;
+- (NSArray<AWECommentImageModel *> *)imageList;
 @end
 
 @interface AWEIMStickerModel : NSObject

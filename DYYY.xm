@@ -2642,6 +2642,91 @@ static NSArray *DYYYIMMenuItemsByAddingDownloadAction(NSArray *menuItems, id cel
 }
 %end
 %end
+%group CommentLongPressPanelSaveImageElementGroup
+%hook AWECommentLongPressPanelSwiftImpl_CommentLongPressPanelSaveImageElement
+- (void)elementTapped {
+    @try {
+        AWECommentLongPressPanelContext *context = [self commentPageContext];
+        AWECommentLongPressPanelParam *params = [context params];
+        AWECommentModel *comment = [context selectdComment];
+        if (!comment) {
+            comment = [params selectdComment];
+        }
+        
+        if (!comment) {
+            [DYYYUtils showToast:@"未找到评论数据"];
+            return;
+        }
+        
+        // 获取 imageList
+        NSArray *imageList = nil;
+        if ([comment respondsToSelector:@selector(imageList)]) {
+            imageList = [comment imageList];
+        }
+        
+        if (!imageList || imageList.count == 0) {
+            [DYYYUtils showToast:@"未找到评论图片"];
+            return;
+        }
+        
+        // 检查 is_pic_inflow 判断是保存全部还是单张
+        // is_pic_inflow = 1: 点开具体图片后长按 -> 只保存当前图片
+        // is_pic_inflow = 0: 直接在评论区长按 -> 保存全部图片
+        NSDictionary *extraParams = [params extraParams];
+        BOOL isPicInflow = NO;
+        if (extraParams && [extraParams isKindOfClass:[NSDictionary class]]) {
+            id isPicInflowValue = extraParams[@"is_pic_inflow"];
+            if (isPicInflowValue) {
+                isPicInflow = [isPicInflowValue integerValue] == 1;
+            }
+        }
+        
+        NSInteger currentIndex = -1; // -1 表示保存全部
+        
+        if (isPicInflow) {
+            // 使用 DYYYUtils 封装的方法查找目标控制器
+            UIViewController *topVC = [DYYYUtils topView];
+            
+            // 获取 Ivar 定义的类和目标控制器类
+            Class ivarClass = NSClassFromString(@"AWECommentMediaFeedSwfitImpl.CommentMediaFeedCellViewController");
+            Class targetClass = NSClassFromString(@"AWECommentMediaFeedSwfitImpl.CommentMediaFeedCommonImageCellViewController");
+            
+            if (ivarClass && targetClass && topVC) {
+                Ivar multiIndexIvar = class_getInstanceVariable(ivarClass, "currentIndexInMultiImageList");
+                if (multiIndexIvar) {
+                    UIViewController *cellVC = [DYYYUtils findViewControllerOfClass:targetClass inViewController:topVC];
+                    if (cellVC) {
+                        ptrdiff_t offset = ivar_getOffset(multiIndexIvar);
+                        NSInteger *ptr = (NSInteger *)((char *)(__bridge void *)cellVC + offset);
+                        currentIndex = *ptr;
+                    }
+                }
+            }
+        }
+        
+        NSString *hint = (currentIndex >= 0) ? @"正在保存当前图片..." : 
+            [NSString stringWithFormat:@"正在保存 %lu 张图片...", (unsigned long)imageList.count];
+        [DYYYUtils showToast:hint];
+        
+        [DYYYManager saveCommentImages:imageList
+                          currentIndex:currentIndex
+                            completion:^(NSInteger successCount, NSInteger livePhotoCount, NSInteger failedCount) {
+            NSMutableString *message = [NSMutableString stringWithFormat:@"成功保存 %ld 张", (long)successCount];
+            if (livePhotoCount > 0) {
+                [message appendFormat:@"\n(含 %ld 张实况照片)", (long)livePhotoCount];
+            }
+            if (failedCount > 0) {
+                [message appendFormat:@"\n失败 %ld 张", (long)failedCount];
+            }
+            [DYYYUtils showToast:message];
+        }];
+        
+    } @catch (NSException *e) {
+        [DYYYUtils showToast:[NSString stringWithFormat:@"保存失败: %@", e.reason]];
+    }
+}
+%end
+%end
 
 // 去除隐藏大家都在搜后的留白
 %hook AWESearchAnchorListModel
@@ -7624,6 +7709,11 @@ static void findTargetViewInView(UIView *view) {
         Class tipsVCClass = objc_getClass("AWECommentPanelListSwiftImpl.CommentBottomTipsContainerViewController");
         if (tipsVCClass) {
             %init(CommentBottomTipsVCGroup, AWECommentPanelListSwiftImpl_CommentBottomTipsContainerViewController = tipsVCClass);
+        }
+
+        Class longPressSaveImageModel = objc_getClass("AWECommentLongPressPanelSwiftImpl.CommentLongPressPanelSaveImageElement");
+        if (longPressSaveImageModel) {
+            %init(CommentLongPressPanelSaveImageElementGroup, AWECommentLongPressPanelSwiftImpl_CommentLongPressPanelSaveImageElement = longPressSaveImageModel)
         }
 
         NSNotificationCenter *center = [NSNotificationCenter defaultCenter];

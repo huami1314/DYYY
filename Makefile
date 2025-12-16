@@ -5,6 +5,8 @@
 #  Channel: @huamidev
 #  Created on: 2024/10/04
 #
+# 本地配置文件（可选）
+-include Makefile.local
 
 TARGET = iphone:clang:latest:14.0
 ARCHS = arm64 arm64e

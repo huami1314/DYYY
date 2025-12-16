@@ -1806,6 +1806,130 @@ static BOOL DYYYWriteStaticImageToGIF(UIImage *image, NSURL *gifURL) {
     }
 }
 
+#pragma mark - 评论区图片保存
+
++ (void)saveCommentImages:(NSArray *)imageModels
+             currentIndex:(NSInteger)currentIndex
+               completion:(void (^)(NSInteger successCount, NSInteger livePhotoCount, NSInteger failedCount))completion {
+    if (!imageModels || imageModels.count == 0) {
+        if (completion) completion(0, 0, 0);
+        return;
+    }
+    
+    // 确定要保存的图片
+    NSArray *imagesToSave = nil;
+    if (currentIndex >= 0 && currentIndex < (NSInteger)imageModels.count) {
+        imagesToSave = @[imageModels[currentIndex]];
+    } else {
+        imagesToSave = imageModels;
+    }
+    
+    // 分离普通图片和实况照片
+    NSMutableArray *normalImages = [NSMutableArray array];
+    NSMutableArray *livePhotos = [NSMutableArray array];
+    
+    for (id imageModel in imagesToSave) {
+        @try {
+            // 获取图片 URL - originUrl 和 mediumUrl 都是 AWEURLModel 类型
+            NSString *imageUrlStr = nil;
+            
+            // 首先尝试 originUrl
+            AWEURLModel *originUrlModel = [imageModel valueForKey:@"originUrl"];
+            if (originUrlModel) {
+                NSArray *urlList = [originUrlModel originURLList];
+                if (urlList && urlList.count > 0) {
+                    imageUrlStr = urlList.firstObject;
+                }
+            }
+            
+            // 如果 originUrl 没有获取到，尝试 mediumUrl
+            if (!imageUrlStr) {
+                AWEURLModel *mediumUrlModel = [imageModel valueForKey:@"mediumUrl"];
+                if (mediumUrlModel) {
+                    NSArray *urlList = [mediumUrlModel originURLList];
+                    if (urlList && urlList.count > 0) {
+                        imageUrlStr = urlList.firstObject;
+                    }
+                }
+            }
+            
+            NSLog(@"[DYYY] 评论图片URL: %@", imageUrlStr);
+            
+            if (!imageUrlStr || imageUrlStr.length == 0) {
+                NSLog(@"[DYYY] 无法获取图片URL，imageModel: %@", imageModel);
+                continue;
+            }
+            
+            // 检查是否是实况照片
+            id livePhotoModel = [imageModel valueForKey:@"livePhotoModel"];
+            if (livePhotoModel) {
+                NSArray *videoUrls = [livePhotoModel valueForKey:@"videoUrl"];
+                if (videoUrls && videoUrls.count > 0) {
+                    NSString *videoUrlStr = videoUrls.firstObject;
+                    if (videoUrlStr && videoUrlStr.length > 0) {
+                        // 传入字符串而不是 NSURL，与 downloadAllLivePhotosWithProgress 期望的格式一致
+                        [livePhotos addObject:@{
+                            @"imageURL": imageUrlStr,
+                            @"videoURL": videoUrlStr
+                        }];
+                        continue;
+                    }
+                }
+            }
+            
+            // 普通图片 - 存储字符串而不是 NSURL
+            [normalImages addObject:imageUrlStr];
+        } @catch (NSException *e) {
+            NSLog(@"[DYYY] 解析评论图片失败: %@", e);
+        }
+    }
+    
+    NSLog(@"[DYYY] 解析完成: 普通图片=%lu, 实况照片=%lu", (unsigned long)normalImages.count, (unsigned long)livePhotos.count);
+    
+    // 如果都没有解析到有效URL，直接返回失败
+    if (normalImages.count == 0 && livePhotos.count == 0) {
+        if (completion) completion(0, 0, (NSInteger)imagesToSave.count);
+        return;
+    }
+    
+    __block NSInteger successCount = 0;
+    __block NSInteger livePhotoCount = 0;
+    __block NSInteger failedCount = 0;
+    
+    dispatch_group_t group = dispatch_group_create();
+    
+    // 保存普通图片
+    if (normalImages.count > 0) {
+        dispatch_group_enter(group);
+        [self downloadAllImagesWithProgress:[normalImages mutableCopy]
+                                   progress:nil
+                                 completion:^(NSInteger imgSuccess, NSInteger imgTotal) {
+            successCount += imgSuccess;
+            failedCount += (imgTotal - imgSuccess);
+            dispatch_group_leave(group);
+        }];
+    }
+    
+    // 保存实况照片
+    if (livePhotos.count > 0) {
+        dispatch_group_enter(group);
+        [self downloadAllLivePhotosWithProgress:livePhotos
+                                       progress:nil
+                                     completion:^(NSInteger lpSuccess, NSInteger lpTotal) {
+            successCount += lpSuccess;
+            livePhotoCount = lpSuccess;
+            failedCount += (lpTotal - lpSuccess);
+            dispatch_group_leave(group);
+        }];
+    }
+    
+    dispatch_group_notify(group, dispatch_get_main_queue(), ^{
+        if (completion) {
+            completion(successCount, livePhotoCount, failedCount);
+        }
+    });
+}
+
 + (void)downloadAllLivePhotos:(NSArray<NSDictionary *> *)livePhotos {
     if (livePhotos.count == 0) {
         return;

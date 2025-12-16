@@ -86,6 +86,16 @@
                                completion:(void (^)(NSInteger successCount, NSInteger totalCount))completion;
 
 /**
+ * 保存评论区图片（支持普通图片和实况照片）
+ * @param imageModels 评论图片模型数组（AWECommentImageModel）
+ * @param currentIndex 当前图片索引（-1 表示保存全部）
+ * @param completion 完成回调
+ */
++ (void)saveCommentImages:(NSArray *)imageModels
+             currentIndex:(NSInteger)currentIndex
+               completion:(void (^)(NSInteger successCount, NSInteger livePhotoCount, NSInteger failedCount))completion;
+
+/**
  * 批量下载图片
  * @param imageURLs 图片URL数组
  */
