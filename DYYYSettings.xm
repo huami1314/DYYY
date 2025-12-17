@@ -1957,6 +1957,14 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
             @"cellType" : @6,
             @"imageName" : @"ic_removeimage_outlined_20"},
         @{
+            @"identifier" : @"DYYYForceDownloadCommentImage",
+            @"title" : @"保存评论区图片",
+            @"subTitle" : @"长按评论可保存所有实况和图片",
+            @"detail" : @"",
+            @"cellType" : @37,
+            @"imageName" : @"ic_image_outlined"
+        },
+        @{
             @"identifier" : @"DYYYForceDownloadEmotion",
             @"title" : @"保存评论区表情包",
             @"subTitle" : @"长按评论或者长按表情包",
