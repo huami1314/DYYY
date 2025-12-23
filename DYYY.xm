@@ -36,6 +36,8 @@ static CGFloat originalTabBarHeight = kInvalidHeight;
 static NSString *const kDYYYGlobalTransparencyKey = @"DYYYGlobalTransparency";
 static NSString *const kDYYYGlobalTransparencyDidChangeNotification = @"DYYYGlobalTransparencyDidChangeNotification";
 static NSString *const kDYYYTabBarHeightKey = @"DYYYTabBarHeight";
+static char kDYYYGlobalTransparencyBaseAlphaKey;
+static NSInteger dyyyGlobalTransparencyMutationDepth = 0;
 
 static void updateGlobalTransparencyCache() {
     NSString *transparentValue = DYYYGetString(kDYYYGlobalTransparencyKey);
@@ -5999,10 +6001,24 @@ static void *DYYYTabBarHeightContext = &DYYYTabBarHeightContext;
 - (void)dyyy_applyGlobalTransparency {
     if ([NSThread isMainThread]) {
         if (self.window && self.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG) {
-            if (gGlobalTransparency != kInvalidAlpha && fabs(self.alpha - gGlobalTransparency) >= 0.01) {
+            NSNumber *stored = objc_getAssociatedObject(self, &kDYYYGlobalTransparencyBaseAlphaKey);
+            CGFloat baseAlpha = stored ? stored.floatValue : self.alpha;
+            if (!stored) {
+                objc_setAssociatedObject(self, &kDYYYGlobalTransparencyBaseAlphaKey, @(baseAlpha), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+            }
+            CGFloat finalAlpha = baseAlpha;
+            if (gGlobalTransparency != kInvalidAlpha) {
+                CGFloat clampedAlpha = MIN(MAX(baseAlpha, 0.0), 1.0);
+                finalAlpha = clampedAlpha * gGlobalTransparency;
+            }
+            if (fabs(self.alpha - finalAlpha) >= 0.01) {
                 [UIView animateWithDuration:0.2
                                  animations:^{
-                                   self.alpha = gGlobalTransparency;
+                                   dyyyGlobalTransparencyMutationDepth++;
+                                   self.alpha = finalAlpha;
+                                   if (dyyyGlobalTransparencyMutationDepth > 0) {
+                                       dyyyGlobalTransparencyMutationDepth--;
+                                   }
                                  }];
             }
         }
@@ -6646,6 +6662,11 @@ static Class TagViewClass = nil;
 %hook AWEElementStackView
 
 - (void)setAlpha:(CGFloat)alpha {
+    BOOL isApplyingGlobal = (dyyyGlobalTransparencyMutationDepth > 0);
+    if (!isApplyingGlobal) {
+        objc_setAssociatedObject(self, &kDYYYGlobalTransparencyBaseAlphaKey, @(alpha), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    }
+
     // 纯净模式功能
     static AWMSafeDispatchTimer *pureModeTimer = nil;
     static int attempts = 0;
@@ -6701,7 +6722,7 @@ static Class TagViewClass = nil;
 
     // 倍速和清屏按钮的状态控制
     BOOL hasFloatingButtons = (speedButton && isFloatSpeedButtonEnabled) || hideButton;
-    if (hasFloatingButtons && !dyyyIsPerformingFloatClearOperation) {
+    if (!isApplyingGlobal && hasFloatingButtons && !dyyyIsPerformingFloatClearOperation) {
         const CGFloat threshold = 0.01f;
         if (alpha <= threshold) {
             dyyyCommentViewVisible = YES;
@@ -6714,8 +6735,9 @@ static Class TagViewClass = nil;
 
     // 值守全局透明度
     CGFloat finalAlpha = alpha;
-    if (alpha > 0 && self.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG && gGlobalTransparency != kInvalidAlpha) {
-        finalAlpha = gGlobalTransparency;
+    if (!isApplyingGlobal && self.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG && gGlobalTransparency != kInvalidAlpha) {
+        CGFloat clampedAlpha = MIN(MAX(alpha, 0.0), 1.0);
+        finalAlpha = clampedAlpha * gGlobalTransparency;
     }
 
     // 统一应用透明度
@@ -6898,7 +6920,12 @@ static Class TagViewClass = nil;
 }
 
 - (void)setAlpha:(CGFloat)alpha {
-    if (speedButton && isFloatSpeedButtonEnabled) {
+    BOOL isApplyingGlobal = (dyyyGlobalTransparencyMutationDepth > 0);
+    if (!isApplyingGlobal) {
+        objc_setAssociatedObject(self, &kDYYYGlobalTransparencyBaseAlphaKey, @(alpha), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    }
+
+    if (!isApplyingGlobal && speedButton && isFloatSpeedButtonEnabled) {
         if (alpha == 0) {
             dyyyCommentViewVisible = YES;
         } else if (alpha == 1) {
@@ -6909,8 +6936,9 @@ static Class TagViewClass = nil;
     }
 
     CGFloat finalAlpha = alpha;
-    if (alpha > 0 && self.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG && gGlobalTransparency != kInvalidAlpha) {
-        finalAlpha = gGlobalTransparency;
+    if (!isApplyingGlobal && self.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG && gGlobalTransparency != kInvalidAlpha) {
+        CGFloat clampedAlpha = MIN(MAX(alpha, 0.0), 1.0);
+        finalAlpha = clampedAlpha * gGlobalTransparency;
     }
 
     if (fabs(self.alpha - finalAlpha) >= 0.01) {
@@ -7178,9 +7206,15 @@ static Class TagViewClass = nil;
 %hook AWELandscapeFeedEntryView
 
 - (void)setAlpha:(CGFloat)alpha {
+    BOOL isApplyingGlobal = (dyyyGlobalTransparencyMutationDepth > 0);
+    if (!isApplyingGlobal) {
+        objc_setAssociatedObject(self, &kDYYYGlobalTransparencyBaseAlphaKey, @(alpha), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    }
+
     CGFloat finalAlpha = alpha;
-    if (alpha > 0 && self.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG && gGlobalTransparency != kInvalidAlpha) {
-        finalAlpha = gGlobalTransparency;
+    if (!isApplyingGlobal && self.tag != DYYY_IGNORE_GLOBAL_ALPHA_TAG && gGlobalTransparency != kInvalidAlpha) {
+        CGFloat clampedAlpha = MIN(MAX(alpha, 0.0), 1.0);
+        finalAlpha = clampedAlpha * gGlobalTransparency;
     }
 
     if (fabs(self.alpha - finalAlpha) >= 0.01) {
