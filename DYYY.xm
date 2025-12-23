@@ -2126,35 +2126,98 @@ static BOOL dyyyShouldUseLastStickerURL = NO;
 }
 
 - (void)elementTapped {
-    if (!DYYYGetBool(@"DYYYForceDownloadEmotion")) {
-        %orig;
-        return;
-    }
     AWECommentLongPressPanelContext *context = [self commentPageContext];
-    AWECommentModel *selected = [context selectdComment] ?: [[context params] selectdComment];
-    AWEIMStickerModel *sticker = [selected sticker];
-    NSArray *originURLList = sticker.staticURLModel.originURLList;
-    if (originURLList.count == 0) {
-        %orig;
+    AWECommentLongPressPanelParam *params = [context params];
+    AWECommentModel *comment = [context selectdComment] ?: [params selectdComment];
+    
+    // 判断是表情包还是图片
+    AWEIMStickerModel *sticker = [comment sticker];
+    NSArray *stickerURLList = sticker.staticURLModel.originURLList;
+    BOOL hasSticker = (stickerURLList.count > 0);
+    
+    NSArray *imageList = nil;
+    if ([comment respondsToSelector:@selector(imageList)]) {
+        imageList = [comment imageList];
+    }
+    BOOL hasImages = (imageList && imageList.count > 0);
+    
+    // 表情包保存逻辑
+    if (hasSticker && DYYYGetBool(@"DYYYForceDownloadEmotion")) {
+        NSString *urlString = dyyyShouldUseLastStickerURL ? stickerURLList.lastObject : stickerURLList.firstObject;
+        dyyyShouldUseLastStickerURL = NO;
+        NSURL *stickerURL = [NSURL URLWithString:urlString];
+        
+        if (stickerURL) {
+            [DYYYManager downloadMedia:stickerURL
+                             mediaType:MediaTypeHeic
+                                 audio:nil
+                            completion:^(BOOL success) {
+                              if (!success && stickerURLList.count > 1) {
+                                  dyyyShouldUseLastStickerURL = YES;
+                              }
+                            }];
+            return;
+        }
+    }
+    
+    // 图片保存逻辑
+    if (hasImages && DYYYGetBool(@"DYYYForceDownloadCommentImage")) {
+        // 检查 is_pic_inflow 判断是保存全部还是单张
+        // is_pic_inflow = 1: 点开具体图片后长按 -> 只保存当前图片
+        // is_pic_inflow = 0: 直接在评论区长按 -> 保存全部图片
+        NSDictionary *extraParams = [params extraParams];
+        BOOL isPicInflow = NO;
+        if (extraParams && [extraParams isKindOfClass:[NSDictionary class]]) {
+            id isPicInflowValue = extraParams[@"is_pic_inflow"];
+            if (isPicInflowValue) {
+                isPicInflow = [isPicInflowValue integerValue] == 1;
+            }
+        }
+        
+        NSInteger currentIndex = -1; // -1 表示保存全部
+        
+        if (isPicInflow) {
+            // 使用 DYYYUtils 封装的方法查找目标控制器
+            UIViewController *topVC = [DYYYUtils topView];
+            
+            // 获取 Ivar 定义的类和目标控制器类
+            Class ivarClass = NSClassFromString(@"AWECommentMediaFeedSwfitImpl.CommentMediaFeedCellViewController");
+            Class targetClass = NSClassFromString(@"AWECommentMediaFeedSwfitImpl.CommentMediaFeedCommonImageCellViewController");
+            
+            if (ivarClass && targetClass && topVC) {
+                Ivar multiIndexIvar = class_getInstanceVariable(ivarClass, "currentIndexInMultiImageList");
+                if (multiIndexIvar) {
+                    UIViewController *cellVC = [DYYYUtils findViewControllerOfClass:targetClass inViewController:topVC];
+                    if (cellVC) {
+                        ptrdiff_t offset = ivar_getOffset(multiIndexIvar);
+                        NSInteger *ptr = (NSInteger *)((char *)(__bridge void *)cellVC + offset);
+                        currentIndex = *ptr;
+                    }
+                }
+            }
+        }
+        
+        NSString *hint = (currentIndex >= 0) ? @"正在保存当前图片..." : 
+            [NSString stringWithFormat:@"正在保存 %lu 张图片...", (unsigned long)imageList.count];
+        [DYYYUtils showToast:hint];
+        
+        [DYYYManager saveCommentImages:imageList
+                            currentIndex:currentIndex
+                            completion:^(NSInteger successCount, NSInteger livePhotoCount, NSInteger failedCount) {
+            NSMutableString *message = [NSMutableString stringWithFormat:@"成功保存 %ld 张", (long)successCount];
+            if (livePhotoCount > 0) {
+                [message appendFormat:@"\n(含 %ld 张实况照片)", (long)livePhotoCount];
+            }
+            if (failedCount > 0) {
+                [message appendFormat:@"\n失败 %ld 张", (long)failedCount];
+            }
+            [DYYYUtils showToast:message];
+        }];
         return;
     }
-
-    NSString *urlString = dyyyShouldUseLastStickerURL ? originURLList.lastObject : originURLList.firstObject;
-    dyyyShouldUseLastStickerURL = NO;
-    NSURL *heifURL = [NSURL URLWithString:urlString];
-    if (!heifURL) {
-        %orig;
-        return;
-    }
-
-    [DYYYManager downloadMedia:heifURL
-                     mediaType:MediaTypeHeic
-                         audio:nil
-                    completion:^(BOOL success) {
-                      if (!success && originURLList.count > 1) {
-                          dyyyShouldUseLastStickerURL = YES;
-                      }
-                    }];
+    
+    // 默认行为
+    %orig;
 }
 
 %end
