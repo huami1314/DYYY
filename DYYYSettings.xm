@@ -97,17 +97,7 @@ static void DYYYRemoveRemoteConfigObserver(void) {
         dyyyBtn.accessibilityLabel = @"DYYYSettingsButton";
         [dyyyBtn setTitle:@"DYYY" forState:UIControlStateNormal];
 
-        UIColor *titleColor;
-        if (@available(iOS 13.0, *)) {
-            UIUserInterfaceStyle style = self.traitCollection.userInterfaceStyle;
-            if (style == UIUserInterfaceStyleDark) {
-                titleColor = [UIColor whiteColor];
-            } else {
-                titleColor = [UIColor blackColor];
-            }
-        } else {
-            titleColor = [UIColor blackColor];
-        }
+        UIColor *titleColor = [DYYYUtils isDarkMode] ? [UIColor whiteColor] : [UIColor blackColor];
         [dyyyBtn setTitleColor:titleColor forState:UIControlStateNormal];
 
         dyyyBtn.titleLabel.font = [UIFont boldSystemFontOfSize:15];
