@@ -1177,6 +1177,11 @@ typedef NS_ENUM(NSUInteger, DYEdgeMode) {
 - (void)setVideoControllerPlaybackRate:(double)arg0;
 @end
 
+@interface AWEDPlayerViewController_Merge : UIViewController
+@property(nonatomic) UIView *contentView;
+- (void)setVideoControllerPlaybackRate:(double)arg0;
+@end
+
 @interface AWEPlayInteractionElementMaskView : UIView
 @end
 @interface AWEGradientView : UIView
@@ -1374,6 +1379,10 @@ typedef NS_ENUM(NSUInteger, DYEdgeMode) {
 @end
 
 @interface AWEDPlayerFeedPlayerViewController (SpeedControl)
+- (void)adjustPlaybackSpeed:(float)speed;
+@end
+
+@interface AWEDPlayerViewController_Merge (SpeedControl)
 - (void)adjustPlaybackSpeed:(float)speed;
 @end
 

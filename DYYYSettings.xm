@@ -59,70 +59,64 @@ static void DYYYRemoveRemoteConfigObserver(void) {
 }
 %end
 
+// 隐藏掉天气Label
 %hook AWELeftSideBarWeatherLabel
 - (id)initWithFrame:(CGRect)frame {
     id orig = %orig;
-    self.userInteractionEnabled = YES;
-    UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:[UIView class] action:@selector(openDYYYSettingsFromSender:)];
-    objc_setAssociatedObject(tapGesture, "targetView", self, OBJC_ASSOCIATION_ASSIGN);
-    [self addGestureRecognizer:tapGesture];
+    self.hidden = YES;
     return orig;
 }
 
 - (void)drawTextInRect:(CGRect)rect {
-    NSString *originalText = self.text;
-    self.text = @" ";
-    %orig;
-    self.text = originalText;
-
-    CGContextRef context = UIGraphicsGetCurrentContext();
-    CGContextClearRect(context, rect);
-
-    UIFont *font = self.font ?: [UIFont systemFontOfSize:16.0];
-    if (self.font) {
-        font = [self.font fontWithSize:16.0];
-    }
-
-    NSDictionary *attributes = @{NSFontAttributeName : font, NSForegroundColorAttributeName : self.textColor ?: [UIColor blackColor]};
-
-    NSString *displayText = @"DYYY";
-    CGSize textSize = [displayText sizeWithAttributes:attributes];
-    CGFloat centerY = (rect.size.height - textSize.height) / 2.0;
-    CGRect centeredRect = CGRectMake(0, centerY, rect.size.width, textSize.height);
-
-    [displayText drawInRect:centeredRect withAttributes:attributes];
+    // 不做任何绘制，彻底隐藏
 }
 %end
 
 %hook AWELeftSideBarWeatherView
 - (void)layoutSubviews {
     %orig;
-    self.userInteractionEnabled = YES;
-    if (!objc_getAssociatedObject(self, &kDYYYWeatherViewGestureInstalledKey)) {
-        UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:[UIView class] action:@selector(openDYYYSettingsFromSender:)];
-        objc_setAssociatedObject(tapGesture, "targetView", self, OBJC_ASSOCIATION_ASSIGN);
-        [self addGestureRecognizer:tapGesture];
-        objc_setAssociatedObject(self, &kDYYYWeatherViewGestureInstalledKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-    }
+    self.hidden = YES;
+}
+%end
 
-    for (UIView *subview in self.subviews) {
-        subview.userInteractionEnabled = YES;
-        if (!objc_getAssociatedObject(subview, &kDYYYWeatherSubviewGestureInstalledKey)) {
-            UITapGestureRecognizer *subTapGesture = [[UITapGestureRecognizer alloc] initWithTarget:[UIView class] action:@selector(openDYYYSettingsFromSender:)];
-            objc_setAssociatedObject(subTapGesture, "targetView", self, OBJC_ASSOCIATION_ASSIGN);
-            [subview addGestureRecognizer:subTapGesture];
-            objc_setAssociatedObject(subview, &kDYYYWeatherSubviewGestureInstalledKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+@interface AWELeftSideBarTopRightLayoutView : UIView
+@end
+
+%hook AWELeftSideBarTopRightLayoutView
+
+- (void)layoutSubviews {
+    %orig;
+    NSString *accessibilityLabel = self.accessibilityLabel;
+    if (![accessibilityLabel isEqualToString:@"设置"]) {
+        return;
+    }
+    if (![self viewWithTag:232323]) {
+        UIButton *dyyyBtn = [UIButton buttonWithType:UIButtonTypeSystem];
+        dyyyBtn.tag = 232323;
+        [dyyyBtn setTitle:@"DYYY" forState:UIControlStateNormal];
+        [dyyyBtn setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
+        dyyyBtn.titleLabel.font = [UIFont boldSystemFontOfSize:15];
+        dyyyBtn.frame = CGRectMake(self.bounds.size.width - 60 - 10 - 150, 0, 60, 32);
+        dyyyBtn.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin;
+        dyyyBtn.layer.cornerRadius = 8;
+        dyyyBtn.clipsToBounds = YES;
+        [dyyyBtn addTarget:self action:@selector(dyyyButtonTapped) forControlEvents:UIControlEventTouchUpInside];
+        [self addSubview:dyyyBtn];
+    }
+}
+
+%new
+- (void)dyyyButtonTapped {
+    UIViewController *targetVC = [DYYYSettingsHelper findViewController:self];
+    if (!targetVC) {
+        UIWindow *activeWindow = [DYYYUtils getActiveWindow];
+        targetVC = activeWindow.rootViewController ?: [DYYYUtils topView];
+        while (targetVC.presentedViewController) {
+            targetVC = targetVC.presentedViewController;
         }
-
-        [subview.subviews enumerateObjectsUsingBlock:^(UIView *childView, NSUInteger idx, BOOL *stop) {
-          if (![childView isKindOfClass:%c(AWELeftSideBarWeatherLabel)]) {
-              [childView removeFromSuperview];
-          } else {
-              CGRect parentFrame = childView.superview.bounds;
-              childView.frame = parentFrame;
-          }
-        }];
     }
+    BOOL hasAgreed = [DYYYSettingsHelper getUserDefaults:@"DYYYUserAgreementAccepted"];
+    showDYYYSettingsVC(targetVC, hasAgreed);
 }
 %end
 

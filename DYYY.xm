@@ -6078,18 +6078,21 @@ static void *DYYYTabBarHeightContext = &DYYYTabBarHeightContext;
         return;
     }
 
-    BOOL enableBlur = DYYYGetBool(@"DYYYEnableCommentBlur");
+    // BOOL enableBlur = DYYYGetBool(@"DYYYEnableCommentBlur");
     BOOL enableFS = DYYYGetBool(@"DYYYEnableFullScreen");
 
     UIViewController *vc = [DYYYUtils firstAvailableViewControllerFromView:self];
     Class DetailVCClass = NSClassFromString(@"AWEMixVideoPanelDetailTableViewController");
     Class PlayVCClass1 = NSClassFromString(@"AWEAwemePlayVideoViewController");
     Class PlayVCClass2 = NSClassFromString(@"AWEDPlayerFeedPlayerViewController");
+    Class PlayVCClass3 = NSClassFromString(@"AWEDPlayerViewController_Merge");
 
     BOOL isDetailVC = (DetailVCClass && [vc isKindOfClass:DetailVCClass]);
-    BOOL isPlayVC = ((PlayVCClass1 && [vc isKindOfClass:PlayVCClass1]) || (PlayVCClass2 && [vc isKindOfClass:PlayVCClass2]));
+    BOOL isPlayVC = ((PlayVCClass1 && [vc isKindOfClass:PlayVCClass1]) ||
+                     (PlayVCClass2 && [vc isKindOfClass:PlayVCClass2]) ||
+                     (PlayVCClass3 && [vc isKindOfClass:PlayVCClass3]));
 
-    if (isPlayVC && enableBlur) {
+    if (isPlayVC) {
         if (frame.origin.x != 0) {
             return;
         }
@@ -6477,6 +6480,73 @@ static void *DYYYTabBarHeightContext = &DYYYTabBarHeightContext;
 %end
 
 %hook AWEDPlayerFeedPlayerViewController
+
+- (void)viewDidLayoutSubviews {
+    %orig;
+    if (DYYYGetBool(@"DYYYEnableFullScreen")) {
+        UIView *contentView = self.contentView;
+        if (contentView && contentView.superview) {
+            CGRect frame = contentView.frame;
+            CGFloat parentHeight = contentView.superview.frame.size.height;
+
+            if (frame.size.height == parentHeight - gCurrentTabBarHeight) {
+                frame.size.height = parentHeight;
+                contentView.frame = frame;
+            } else if (frame.size.height == parentHeight - (gCurrentTabBarHeight * 2)) {
+                frame.size.height = parentHeight - gCurrentTabBarHeight;
+                contentView.frame = frame;
+            }
+        }
+    }
+}
+
+- (void)setIsAutoPlay:(BOOL)arg0 {
+    %orig(arg0);
+    if (!DYYYShouldHandleSpeedFeatures()) {
+        return;
+    }
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+      if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYUserAgreementAccepted"]) {
+          float defaultSpeed = [[NSUserDefaults standardUserDefaults] floatForKey:@"DYYYDefaultSpeed"];
+          if (defaultSpeed > 0 && defaultSpeed != 1) {
+              dispatch_async(dispatch_get_main_queue(), ^{
+                [self setVideoControllerPlaybackRate:defaultSpeed];
+              });
+          }
+      }
+      float speed = getCurrentSpeed();
+      if (speed != 1.0) {
+          dispatch_async(dispatch_get_main_queue(), ^{
+            [self adjustPlaybackSpeed:speed];
+          });
+      }
+    });
+}
+
+- (void)prepareForDisplay {
+    %orig;
+    if (!DYYYShouldHandleSpeedFeatures()) {
+        return;
+    }
+    BOOL autoRestoreSpeed = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYAutoRestoreSpeed"];
+    if (autoRestoreSpeed) {
+        setCurrentSpeedIndex(0);
+    }
+    float speed = getCurrentSpeed();
+    if (speed != 1.0) {
+        [self adjustPlaybackSpeed:speed];
+    }
+    updateSpeedButtonUI();
+}
+
+%new
+- (void)adjustPlaybackSpeed:(float)speed {
+    [self setVideoControllerPlaybackRate:speed];
+}
+
+%end
+
+%hook AWEDPlayerViewController_Merge
 
 - (void)viewDidLayoutSubviews {
     %orig;
