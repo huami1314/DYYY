@@ -90,18 +90,34 @@ static void DYYYRemoveRemoteConfigObserver(void) {
     if (![accessibilityLabel isEqualToString:@"设置"]) {
         return;
     }
-    if (![self viewWithTag:232323]) {
+    UIView *targetSuperView = self.superview.superview.superview ?: self;
+    if (![targetSuperView viewWithTag:232323]) {
         UIButton *dyyyBtn = [UIButton buttonWithType:UIButtonTypeSystem];
         dyyyBtn.tag = 232323;
+        dyyyBtn.accessibilityLabel = @"DYYYSettingsButton";
         [dyyyBtn setTitle:@"DYYY" forState:UIControlStateNormal];
-        [dyyyBtn setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
+
+        UIColor *titleColor;
+        if (@available(iOS 13.0, *)) {
+            UIUserInterfaceStyle style = self.traitCollection.userInterfaceStyle;
+            if (style == UIUserInterfaceStyleDark) {
+                titleColor = [UIColor whiteColor];
+            } else {
+                titleColor = [UIColor blackColor];
+            }
+        } else {
+            titleColor = [UIColor blackColor];
+        }
+        [dyyyBtn setTitleColor:titleColor forState:UIControlStateNormal];
+
         dyyyBtn.titleLabel.font = [UIFont boldSystemFontOfSize:15];
-        dyyyBtn.frame = CGRectMake(self.bounds.size.width - 60 - 10 - 150, 0, 60, 32);
+        CGRect frame = self.frame;
+        dyyyBtn.frame = CGRectMake(frame.origin.x + frame.size.width - 60 - 10 - 2, 8, 60, 32);
         dyyyBtn.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin;
         dyyyBtn.layer.cornerRadius = 8;
         dyyyBtn.clipsToBounds = YES;
         [dyyyBtn addTarget:self action:@selector(dyyyButtonTapped) forControlEvents:UIControlEventTouchUpInside];
-        [self addSubview:dyyyBtn];
+        [targetSuperView addSubview:dyyyBtn];
     }
 }
 
