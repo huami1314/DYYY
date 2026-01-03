@@ -6396,8 +6396,8 @@ static void *DYYYTabBarHeightContext = &DYYYTabBarHeightContext;
             [(AWEDPlayerFeedPlayerViewController *)vc setVideoControllerPlaybackRate:newSpeed];
             speedApplied = YES;
         }
-        if ([vc isKindOfClass:%c(AWEDPlayerViewController_Merge)]) {
-            [(AWEDPlayerViewController_Merge *)vc setVideoControllerPlaybackRate:newSpeed];
+        if ([vc isKindOfClass:objc_getClass("AWEDPlayerViewController_Merge")]) {
+            [(AWEAwemePlayVideoViewController *)vc setVideoControllerPlaybackRate:newSpeed];
             speedApplied = YES;
         }
     }
