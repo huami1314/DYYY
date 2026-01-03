@@ -1988,6 +1988,9 @@ static NSArray<NSString *> *dyyy_qualityRank = nil;
 %hook AWEPlayInteractionSpeedController
 
 static BOOL hasChangedSpeed = NO;
+static CGFloat currentLongPressSpeed = 0;
+static CGFloat initialTouchX = 0;
+static BOOL isGestureActive = NO;
 
 - (CGFloat)longPressFastSpeedValue {
     float longPressSpeed = DYYYGetFloat(@"DYYYLongPressSpeed");
@@ -1999,6 +2002,11 @@ static BOOL hasChangedSpeed = NO;
 
 - (void)changeSpeed:(double)speed {
     float longPressSpeed = DYYYGetFloat(@"DYYYLongPressSpeed");
+
+    if (isGestureActive && currentLongPressSpeed > 0) {
+        %orig(currentLongPressSpeed);
+        return;
+    }
 
     if (speed == 2.0) {
         if (!hasChangedSpeed) {
@@ -2020,6 +2028,52 @@ static BOOL hasChangedSpeed = NO;
     }
 }
 
+- (void)handleLongPressFastSpeed:(UILongPressGestureRecognizer *)gesture {
+    %orig;
+
+    if (!DYYYGetBool(@"DYYYEnableLongPressSpeedGesture")) {
+        return;
+    }
+
+    CGPoint location = [gesture locationInView:gesture.view];
+
+    static CGFloat initialTouchY = 0;
+
+    if (gesture.state == UIGestureRecognizerStateBegan) {
+        initialTouchY = location.y;
+        isGestureActive = YES;
+
+        float longPressSpeed = DYYYGetFloat(@"DYYYLongPressSpeed");
+        if (longPressSpeed == 0) {
+            longPressSpeed = 2.0;
+        }
+        currentLongPressSpeed = longPressSpeed;
+    }
+    else if (gesture.state == UIGestureRecognizerStateChanged && isGestureActive) {
+        CGFloat deltaY = location.y - initialTouchY;
+        CGFloat threshold = 10.0;
+
+        if (fabs(deltaY) > threshold) {
+            CGFloat speedChange;
+            speedChange = (deltaY > 0) ? 0.25 : -0.25;
+
+            CGFloat newSpeed = currentLongPressSpeed + speedChange;
+            newSpeed = MAX(0.5, MIN(3.0, newSpeed));
+
+            if (newSpeed != currentLongPressSpeed) {
+                currentLongPressSpeed = newSpeed;
+                initialTouchY = location.y;
+                [self changeSpeed:currentLongPressSpeed];
+            }
+        }
+    }
+    else if (gesture.state == UIGestureRecognizerStateEnded ||
+             gesture.state == UIGestureRecognizerStateCancelled) {
+        isGestureActive = NO;
+        currentLongPressSpeed = 0;
+        initialTouchY = 0;
+    }
+}
 %end
 
 %hook UILabel
@@ -2028,12 +2082,12 @@ static BOOL hasChangedSpeed = NO;
     UIView *superview = self.superview;
 
     if ([superview isKindOfClass:%c(AFDFastSpeedView)] && text) {
-        float longPressSpeed = DYYYGetFloat(@"DYYYLongPressSpeed");
-        if (longPressSpeed == 0) {
-            longPressSpeed = 2.0;
+        CGFloat displaySpeed = isGestureActive && currentLongPressSpeed > 0 ? currentLongPressSpeed : DYYYGetFloat(@"DYYYLongPressSpeed");
+        if (displaySpeed == 0) {
+            displaySpeed = 2.0;
         }
 
-        NSString *speedString = [NSString stringWithFormat:@"%.2f", longPressSpeed];
+        NSString *speedString = [NSString stringWithFormat:@"%.2f", displaySpeed];
         if ([speedString hasSuffix:@".00"]) {
             speedString = [speedString substringToIndex:speedString.length - 3];
         } else if ([speedString hasSuffix:@"0"] && [speedString containsString:@"."]) {

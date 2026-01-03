@@ -707,7 +707,7 @@ static void showIconOptionsDialog(NSString *title, UIImage *previewImage, NSStri
 + (void)showUserAgreementAlert {
     [self showTextInputAlert:@"用户协议"
         defaultText:@""
-        placeholder:@""
+        placeholder:@"我已阅读并同意继续使用"
         onConfirm:^(NSString *text) {
           if ([text isEqualToString:@"我已阅读并同意继续使用"]) {
               [self setUserDefaults:@"YES" forKey:@"DYYYUserAgreementAccepted"];

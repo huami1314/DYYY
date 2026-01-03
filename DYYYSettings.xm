@@ -309,6 +309,14 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
             @"detail" : @"",
             @"cellType" : @26,
             @"imageName" : @"ic_speed_outlined_20"},
+          @{
+              @"identifier" : @"DYYYEnableLongPressSpeedGesture",
+              @"title" : @"启用长按倍速手势",
+              @"subTitle" : @"长按时可通过上下滑动调整倍速",
+              @"detail" : @"",
+              @"cellType" : @37,
+              @"imageName" : @"ic_speed_outlined_20"
+          },
           @{@"identifier" : @"DYYYEnableArea",
             @"title" : @"时间属地显示",
             @"detail" : @"",
