@@ -74,7 +74,7 @@
                     NSString *descString = viewModel.describeString;
                     // 根据描述字符串判断按钮类型并决定是否保留
                     BOOL shouldHide = NO;
-                    if (([descString isEqualToString:@"转发到日常"] || [descString isEqualToString:@"或者分享到日常"]) && hideDaily) {
+                    if (([descString isEqualToString:@"转发到日常"] || [descString isEqualToString:@"分享到日常"]) && hideDaily) {
                         shouldHide = YES;
                     } else if (([descString isEqualToString:@"推荐"] || [descString isEqualToString:@"取消推荐"]) && hideRecommend) {
                         shouldHide = YES;

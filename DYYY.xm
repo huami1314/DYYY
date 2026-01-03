@@ -7697,6 +7697,40 @@ static NSString *const kHideRecentUsersKey = @"DYYYHideSidebarRecentUsers";
 
 %end
 
+@interface UIDropShadowView : UIView
+@end
+
+// 修复 ios26 模态透明效果
+%hook UIDropShadowView
+
+- (void)didMoveToSuperview {
+    %orig;
+
+    if (@available(iOS 26.0, *)) {
+        self.backgroundColor = UIColor.clearColor;
+        self.opaque = NO;
+    }
+}
+
+- (void)layoutSubviews {
+    %orig;
+
+    if (@available(iOS 26.0, *)) {
+        self.backgroundColor = UIColor.clearColor;
+        self.opaque = NO;
+    }
+}
+
+- (void)setBackgroundColor:(UIColor *)color {
+    if (@available(iOS 26.0, *)) {
+        %orig(UIColor.clearColor);
+        return;
+    }
+    %orig;
+}
+
+%end
+
 %hook AFDViewedBottomView
 - (void)layoutSubviews {
     %orig;
