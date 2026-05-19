@@ -8845,9 +8845,9 @@ static NSString *const kHideRecentUsersKey = @"DYYYHideSidebarRecentUsers";
         if ([subview isMemberOfClass:[UIView class]]) {
             UIColor *bgColor = subview.backgroundColor;
             if (bgColor) {
-                CGFloat r, g, b, a;
-                if ([bgColor getRed:&r green:&g blue:&b alpha:&a]) {
-                    if (r == 0 && g == 0 && b == 0) {
+                CGFloat h, s, v, a;
+                if ([bgColor getHue:&h saturation:&s brightness:&v alpha:&a]) {
+                    if (v < 0.2) {
                         subview.backgroundColor = [UIColor clearColor];
                     }
                 }
