@@ -11,6 +11,7 @@
 #import <math.h>
 #import <objc/runtime.h>
 #import <substrate.h>
+#import <syslog.h>
 
 #import "AwemeHeaders.h"
 #import "CityManager.h"
@@ -8076,8 +8077,27 @@ static Class TagViewClass = nil;
     }
 
     if ([viewController isKindOfClass:%c(AWEPlayInteractionViewController)]) {
+        NSString *label = self.accessibilityLabel ?: @"";
+        BOOL hasAnchor = [DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEFeedAnchorContainerView") inContainer:self];
+        BOOL hasAvatar = [DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEPlayInteractionUserAvatarView") inContainer:self];
+
+        BOOL isRightStack = ([label isEqualToString:@"right"] || hasAvatar);
+        if (!isRightStack) {
+            NSArray *subviews = [self.subviews copy];
+            for (NSInteger i = (NSInteger)subviews.count - 1; i >= 0; i--) {
+                UIView *sub = subviews[i];
+                if ([sub respondsToSelector:@selector(elementClassName)]) {
+                    NSString *elementClassName = [sub performSelector:@selector(elementClassName)];
+                    if ([elementClassName isEqualToString:@"AWEPlayInteractionUserAvatarOptElementElement"]) {
+                        isRightStack = YES;
+                        break;
+                    }
+                }
+            }
+        }
+
         // 右侧元素的处理逻辑
-        if ([self.accessibilityLabel isEqualToString:@"right"] || [DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEPlayInteractionUserAvatarView") inContainer:self]) {
+        if (isRightStack) {
             NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYElementScale"];
             self.transform = CGAffineTransformIdentity;
             if (scaleValue.length > 0) {
@@ -8098,7 +8118,7 @@ static Class TagViewClass = nil;
             }
         }
         // 左侧元素的处理逻辑
-        else if ([self.accessibilityLabel isEqualToString:@"left"] || [DYYYUtils containsSubviewOfClass:NSClassFromString(@"AWEFeedAnchorContainerView") inContainer:self]) {
+        else if ([label isEqualToString:@"left"] || hasAnchor) {
             NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
             if (scaleValue.length > 0) {
                 CGFloat scale = [scaleValue floatValue];
