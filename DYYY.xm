@@ -6710,6 +6710,15 @@ static Class tabBarButtonClass = nil;
 }
 %end
 
+%hook AWENormalModeTabBarGeneralPlusInnerButton
++ (id)buttonWithParams:(id)arg1 {
+    if (DYYYGetBool(@"DYYYHidePlusButton")) {
+        return nil;
+    }
+    return %orig;
+}
+%end
+
 %hook AWENormalModeTabBarTextView
 
 - (void)layoutSubviews {
