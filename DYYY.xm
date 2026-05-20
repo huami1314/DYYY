@@ -8105,6 +8105,21 @@ static Class TagViewClass = nil;
             }
         }
 
+        BOOL isLeftStack = ([label isEqualToString:@"left"] || hasAnchor);
+        if (!isLeftStack) {
+            NSArray *subviews = [self.subviews copy];
+            for (NSInteger i = (NSInteger)subviews.count - 1; i >= 0; i--) {
+                UIView *sub = subviews[i];
+                if ([sub respondsToSelector:@selector(elementClassName)]) {
+                    NSString *elementClassName = [sub performSelector:@selector(elementClassName)];
+                    if ([elementClassName isEqualToString:@"AWEPlayInteractionDescriptionElement"]) {
+                        isLeftStack = YES;
+                        break;
+                    }
+                }
+            }
+        }
+
         // 右侧元素的处理逻辑
         if (isRightStack) {
             NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYElementScale"];
@@ -8127,7 +8142,7 @@ static Class TagViewClass = nil;
             }
         }
         // 左侧元素的处理逻辑
-        else if ([label isEqualToString:@"left"] || hasAnchor) {
+        else if (isLeftStack) {
             NSString *scaleValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYNicknameScale"];
             if (scaleValue.length > 0) {
                 CGFloat scale = [scaleValue floatValue];
