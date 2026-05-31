@@ -7,6 +7,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class YYAnimatedImageView;
+@class AVAssetTrack;
 
 @interface DYYYUtils : NSObject
 
@@ -116,6 +117,105 @@ NS_ASSUME_NONNULL_BEGIN
  * 在缓存目录下生成指定文件名的完整路径
  */
 + (NSString *)cachePathForFilename:(NSString *)filename;
+
+#pragma mark - Public Media Helper Methods (公共媒体工具方法)
+
+/**
+ * 根据文件头判断媒体格式（webp/heic/heif/gif/png/jpeg）
+ */
++ (NSString *)detectFileFormat:(NSURL *)fileURL;
+
+/**
+ * 媒体类型文案
+ */
++ (NSString *)mediaTypeDescription:(MediaType)mediaType;
+
+/**
+ * 缩放图片到指定尺寸
+ */
++ (UIImage *)resizeImage:(UIImage *)image toSize:(CGSize)size;
+
+/**
+ * 计算图片在容器内按比例居中的绘制区域
+ */
++ (CGRect)rectForImageAspectFit:(CGSize)imageSize inSize:(CGSize)containerSize;
+
+/**
+ * 计算视频轨道在目标尺寸下的等比变换
+ */
++ (CGAffineTransform)transformForAssetTrack:(AVAssetTrack *)track targetSize:(CGSize)targetSize;
+
+/**
+ * 计算图片在目标尺寸下的等比变换
+ */
++ (CGAffineTransform)transformForImage:(UIImage *)image targetSize:(CGSize)targetSize;
+
+/**
+ * 判断图片是否为带 heif/heic URL 的 BDImage
+ */
++ (BOOL)isBDImageWithHeifURL:(UIImage *)image;
+
+/**
+ * 从 YYAnimatedImageView 提取帧数组
+ */
++ (NSArray *)getImagesFromYYAnimatedImageView:(YYAnimatedImageView *)imageView;
+
+/**
+ * 获取 YYAnimatedImageView 动图总时长
+ */
++ (CGFloat)getDurationFromYYAnimatedImageView:(YYAnimatedImageView *)imageView;
+
+/**
+ * 使用 YYImage 解码动图数据，返回帧图像和总时长
+ */
++ (BOOL)framesFromAnimatedData:(NSData *)data
+                         scale:(CGFloat)scale
+                        images:(NSArray<UIImage *> *_Nullable *)images
+                 totalDuration:(CGFloat *_Nullable)totalDuration;
+
+/**
+ * 根据帧数组生成 GIF 文件
+ */
++ (BOOL)createGIFWithImages:(NSArray *)images duration:(CGFloat)duration path:(NSString *)path progress:(void (^)(float progress))progressBlock;
+
+/**
+ * 保存 GIF 到相册并清理临时文件
+ */
++ (void)saveGIFToPhotoLibrary:(NSString *)path completion:(void (^)(BOOL success, NSError *error))completion;
+
+/**
+ * 保存 GIF(URL) 到相册并删除源文件
+ */
++ (void)saveGifToPhotoLibrary:(NSURL *)gifURL completion:(void (^)(BOOL success))completion;
+
+/**
+ * 判断视频是否包含音频轨道
+ */
++ (BOOL)videoHasAudio:(NSURL *)videoURL;
+
+/**
+ * 下载音频并合并到视频
+ */
++ (void)downloadAudioAndMergeWithVideo:(NSURL *)videoURL
+                              audioURL:(NSURL *)audioURL
+                            completion:(void (^)(BOOL success, NSURL *mergedURL))completion;
+
+/**
+ * 合并视频和音频
+ */
++ (void)mergeVideo:(NSURL *)videoURL
+         withAudio:(NSURL *)audioURL
+        completion:(void (^)(BOOL success, NSURL *mergedURL))completion;
+
+/**
+ * 将 WebP 转换为 GIF
+ */
++ (void)convertWebpToGifSafely:(NSURL *)webpURL completion:(void (^)(NSURL *gifURL, BOOL success))completion;
+
+/**
+ * 将 HEIC/HEIF 转换为 GIF
+ */
++ (void)convertHeicToGif:(NSURL *)heicURL completion:(void (^)(NSURL *gifURL, BOOL success))completion;
 
 #pragma mark - Public Color Scheme Methods (公共颜色方案方法)
 

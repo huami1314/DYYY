@@ -6,7 +6,6 @@
  */
 #import "DYYYFloatSpeedButton.h"
 #import "DYYYFloatClearButton.h"
-#import "DYYYManager.h"
 #import "DYYYUtils.h"
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
@@ -156,7 +155,7 @@ static void forceResetAllUIElements(void) {
             findViewsOfClassHelper(window, viewClass, views);
             for (UIView *view in views) {
                 if ([view isKindOfClass:StackViewClass]) {
-                    view.alpha = DYGetGlobalAlpha();
+                    view.alpha = 1.0; // 基础透明度交给全局透明度处理，避免重复乘
                 } else {
                     view.alpha = 1.0; // 恢复透明度
                 }
@@ -180,6 +179,7 @@ void initTargetClassNames(void) {
     }
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideDanmaku"]) {
         [list addObject:@"AWEVideoPlayDanmakuContainerView"];
+        [list addObject:@"AWEDanmakuContainerView"];
     }
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideSlider"]) {
         [list addObject:@"AWEStoryProgressSlideView"];
@@ -349,10 +349,10 @@ void initTargetClassNames(void) {
     NSArray<UIImage *> *frames = nil;
     CGFloat totalDuration = 0.0;
     BOOL hasFrames = gifData.length > 0 &&
-                     [DYYYManager framesFromAnimatedData:gifData
-                                                  scale:[UIScreen mainScreen].scale
-                                                 images:&frames
-                                          totalDuration:&totalDuration];
+                     [DYYYUtils framesFromAnimatedData:gifData
+                                                scale:[UIScreen mainScreen].scale
+                                               images:&frames
+                                        totalDuration:&totalDuration];
 
     if (hasFrames && frames.count > 0) {
         UIImageView *animatedImageView = [[UIImageView alloc] initWithFrame:self.bounds];

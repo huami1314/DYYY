@@ -1,16 +1,118 @@
 #import "DYYYUtils.h"
+#import <AVFoundation/AVFoundation.h>
+#import <ImageIO/ImageIO.h>
 #import <MobileCoreServices/UTCoreTypes.h>
 #import <UIKit/UIKit.h>
 #import <math.h>
 #import <os/lock.h>
+#import <os/log.h>
 #import <stdatomic.h>
+#import <stdarg.h>
+#import <unistd.h>
+#import <objc/message.h>
 #import <objc/runtime.h>
 #import "AwemeHeaders.h"
-#import "DYYYManager.h"
 #import "DYYYToast.h"
 #import "DYYYConstants.h"
 
+@class YYImageDecoder;
+@class YYImageFrame;
+
+@interface YYImageFrame : NSObject
+@property(nonatomic, strong) UIImage *image;
+@property(nonatomic) CGFloat duration;
+@end
+
+@interface YYImageDecoder : NSObject
+@property(nonatomic, readonly) NSUInteger frameCount;
++ (instancetype)decoderWithData:(NSData *)data scale:(CGFloat)scale;
+- (YYImageFrame *)frameAtIndex:(NSUInteger)index decodeForDisplay:(BOOL)decodeForDisplay;
+@end
+
 static const void *kLabelColorStateKey = &kLabelColorStateKey;
+static const NSTimeInterval kDYYYUtilsDefaultFrameDelay = 0.1f;
+
+static NSString *DYYYRuntimeLogFilePath(void) {
+    static NSString *logPath = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+      NSString *logsDirectory = [NSTemporaryDirectory() stringByAppendingPathComponent:@"DYYYLogs"];
+      [[NSFileManager defaultManager] createDirectoryAtPath:logsDirectory
+                                withIntermediateDirectories:YES
+                                                 attributes:nil
+                                                      error:nil];
+      logPath = [logsDirectory stringByAppendingPathComponent:@"runtime.log"];
+    });
+    return logPath;
+}
+
+void DYYYNSLog(NSString *format, ...) {
+    if (format.length == 0) {
+        return;
+    }
+
+    va_list args;
+    va_start(args, format);
+    NSString *message = [[NSString alloc] initWithFormat:format arguments:args];
+    va_end(args);
+
+    if (message.length == 0) {
+        return;
+    }
+
+    static os_log_t dyyyLogger = nil;
+    static dispatch_once_t loggerOnceToken;
+    dispatch_once(&loggerOnceToken, ^{
+      dyyyLogger = os_log_create("com.dyyy.tweak", "runtime");
+    });
+    os_log_with_type(dyyyLogger, OS_LOG_TYPE_DEFAULT, "%{public}@", message);
+
+    const char *stderrMessage = message.UTF8String;
+    if (stderrMessage) {
+        fprintf(stderr, "%s\n", stderrMessage);
+        fflush(stderr);
+    }
+
+    static dispatch_queue_t logQueue = nil;
+    static dispatch_once_t queueOnceToken;
+    dispatch_once(&queueOnceToken, ^{
+      logQueue = dispatch_queue_create("com.dyyy.runtime-log.queue", DISPATCH_QUEUE_SERIAL);
+    });
+
+    dispatch_async(logQueue, ^{
+      @autoreleasepool {
+          NSString *line = [NSString stringWithFormat:@"[%@][pid:%d] %@\n", [NSDate date], getpid(), message];
+          NSData *lineData = [line dataUsingEncoding:NSUTF8StringEncoding];
+          if (lineData.length == 0) {
+              return;
+          }
+
+          NSString *logPath = DYYYRuntimeLogFilePath();
+          NSFileManager *fileManager = [NSFileManager defaultManager];
+          if (![fileManager fileExistsAtPath:logPath]) {
+              [fileManager createFileAtPath:logPath contents:nil attributes:nil];
+          }
+
+          NSFileHandle *fileHandle = [NSFileHandle fileHandleForWritingAtPath:logPath];
+          if (!fileHandle) {
+              return;
+          }
+          @try {
+              [fileHandle seekToEndOfFile];
+              [fileHandle writeData:lineData];
+          } @catch (NSException *exception) {
+          }
+          [fileHandle closeFile];
+      }
+    });
+}
+
+static inline CGFloat DYYYUtilsNormalizedDelay(CGFloat delay) {
+    if (!isfinite(delay) || delay < 0.01f) {
+        return kDYYYUtilsDefaultFrameDelay;
+    }
+    return delay;
+}
 
 @interface DYYYLabelColorState : NSObject
 @property(nonatomic, copy) NSString *textSignature;
@@ -47,6 +149,233 @@ static BOOL DYYYColorKeyIsDynamic(NSString *normalizedKey) {
     }
     NSString *key = [normalizedKey hasPrefix:@"#"] ? [normalizedKey substringFromIndex:1] : normalizedKey;
     return [key isEqualToString:@"random"] || [key isEqualToString:@"random_gradient"] || [key isEqualToString:@"rainbow_rotating"];
+}
+
+static YYImageDecoder *DYYYUtilsCreateYYDecoderWithData(NSData *data, CGFloat scale) {
+    if (!data || data.length == 0) {
+        return nil;
+    }
+
+    Class decoderClass = NSClassFromString(@"YYImageDecoder");
+    if (!decoderClass || ![decoderClass respondsToSelector:@selector(decoderWithData:scale:)]) {
+        return nil;
+    }
+
+    CGFloat resolvedScale = scale > 0 ? scale : 1.0f;
+    id decoderInstance = [(id)decoderClass decoderWithData:data scale:resolvedScale];
+    if (![decoderInstance isKindOfClass:decoderClass]) {
+        return nil;
+    }
+
+    return (YYImageDecoder *)decoderInstance;
+}
+
+static CGFloat DYYYUtilsTotalDurationFromYYDecoder(YYImageDecoder *decoder) {
+    if (!decoder || decoder.frameCount == 0) {
+        return 0;
+    }
+
+    CGFloat totalDuration = 0;
+    NSUInteger frameCount = decoder.frameCount;
+    for (NSUInteger i = 0; i < frameCount; i++) {
+        YYImageFrame *frame = [decoder frameAtIndex:i decodeForDisplay:NO];
+        if (!frame) {
+            continue;
+        }
+        CGFloat frameDuration = frame.duration > 0 ? frame.duration : kDYYYUtilsDefaultFrameDelay;
+        totalDuration += frameDuration;
+    }
+
+    return totalDuration;
+}
+
+static uint32_t DYYYUtilsReadUInt32BigEndian(const uint8_t *bytes) {
+    return ((uint32_t)bytes[0] << 24) | ((uint32_t)bytes[1] << 16) | ((uint32_t)bytes[2] << 8) | (uint32_t)bytes[3];
+}
+
+static uint64_t DYYYUtilsReadUInt64BigEndian(const uint8_t *bytes) {
+    uint64_t value = 0;
+    for (NSUInteger i = 0; i < 8; i++) {
+        value = (value << 8) | (uint64_t)bytes[i];
+    }
+    return value;
+}
+
+static NSTimeInterval DYYYUtilsParseMVHDDuration(const uint8_t *bytes, NSUInteger length) {
+    NSUInteger position = 0;
+    while (position + 8 <= length) {
+        uint64_t rawSize = DYYYUtilsReadUInt32BigEndian(bytes + position);
+        NSUInteger header = 8;
+
+        if (rawSize == 1) {
+            if (position + 16 > length) {
+                break;
+            }
+            rawSize = DYYYUtilsReadUInt64BigEndian(bytes + position + 8);
+            header = 16;
+        } else if (rawSize == 0) {
+            rawSize = length - position;
+        }
+
+        if (rawSize < header || position + rawSize > length) {
+            break;
+        }
+
+        const uint8_t *typePtr = bytes + position + 4;
+        if (typePtr[0] == 'm' && typePtr[1] == 'v' && typePtr[2] == 'h' && typePtr[3] == 'd') {
+            const uint8_t *payload = bytes + position + header;
+            NSUInteger payloadLength = (NSUInteger)rawSize - header;
+            if (payloadLength < 20) {
+                break;
+            }
+
+            uint8_t version = payload[0];
+            if (version == 0) {
+                uint32_t timescale = DYYYUtilsReadUInt32BigEndian(payload + 12);
+                uint32_t duration = DYYYUtilsReadUInt32BigEndian(payload + 16);
+                if (timescale > 0) {
+                    return (NSTimeInterval)duration / (NSTimeInterval)timescale;
+                }
+            } else if (version == 1) {
+                if (payloadLength < 32) {
+                    break;
+                }
+                uint32_t timescale = DYYYUtilsReadUInt32BigEndian(payload + 20);
+                uint64_t duration = DYYYUtilsReadUInt64BigEndian(payload + 24);
+                if (timescale > 0) {
+                    return (NSTimeInterval)duration / (NSTimeInterval)timescale;
+                }
+            }
+        }
+
+        position += (NSUInteger)rawSize;
+    }
+
+    return 0;
+}
+
+static NSTimeInterval DYYYUtilsParseHEIFDuration(const uint8_t *bytes, NSUInteger length) {
+    NSUInteger position = 0;
+    while (position + 8 <= length) {
+        uint64_t rawSize = DYYYUtilsReadUInt32BigEndian(bytes + position);
+        NSUInteger header = 8;
+
+        if (rawSize == 1) {
+            if (position + 16 > length) {
+                break;
+            }
+            rawSize = DYYYUtilsReadUInt64BigEndian(bytes + position + 8);
+            header = 16;
+        } else if (rawSize == 0) {
+            rawSize = length - position;
+        }
+
+        if (rawSize < header || position + rawSize > length) {
+            break;
+        }
+
+        const uint8_t *typePtr = bytes + position + 4;
+        if (typePtr[0] == 'm' && typePtr[1] == 'o' && typePtr[2] == 'o' && typePtr[3] == 'v') {
+            NSTimeInterval duration = DYYYUtilsParseMVHDDuration(bytes + position + header, (NSUInteger)rawSize - header);
+            if (duration > 0) {
+                return duration;
+            }
+        }
+
+        position += (NSUInteger)rawSize;
+    }
+
+    return 0;
+}
+
+static NSTimeInterval DYYYUtilsHEIFDurationFromData(NSData *data) {
+    if (!data || data.length < 16) {
+        return 0;
+    }
+    const uint8_t *bytes = (const uint8_t *)data.bytes;
+    return DYYYUtilsParseHEIFDuration(bytes, data.length);
+}
+
+static NSURL *DYYYUtilsTemporaryGIFURLForSourceURL(NSURL *sourceURL) {
+    NSString *baseName = sourceURL.lastPathComponent.stringByDeletingPathExtension;
+    if (baseName.length == 0) {
+        baseName = @"image";
+    }
+    NSString *fileName = [NSString stringWithFormat:@"%@_%@.gif", baseName, [[NSUUID UUID] UUIDString]];
+    NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent:fileName];
+    return [NSURL fileURLWithPath:path];
+}
+
+static BOOL DYYYUtilsWriteGIFUsingYYDecoder(YYImageDecoder *decoder, NSURL *gifURL, NSTimeInterval fallbackTotalDuration) {
+    if (!decoder || decoder.frameCount == 0) {
+        return NO;
+    }
+
+    NSUInteger frameCount = (NSUInteger)decoder.frameCount;
+    CGFloat fallbackFrameDuration = 0;
+    if (fallbackTotalDuration > 0 && frameCount > 0) {
+        fallbackFrameDuration = fallbackTotalDuration / frameCount;
+    }
+    CGImageDestinationRef dest = CGImageDestinationCreateWithURL((__bridge CFURLRef)gifURL, kUTTypeGIF, frameCount, NULL);
+    if (!dest) {
+        return NO;
+    }
+
+    NSDictionary *gifProperties = @{(__bridge NSString *)kCGImagePropertyGIFDictionary : @{(__bridge NSString *)kCGImagePropertyGIFLoopCount : @0}};
+    CGImageDestinationSetProperties(dest, (__bridge CFDictionaryRef)gifProperties);
+
+    BOOL hasFrame = NO;
+    for (NSUInteger i = 0; i < frameCount; i++) {
+        YYImageFrame *frame = [decoder frameAtIndex:i decodeForDisplay:YES];
+        UIImage *image = frame.image;
+        CGImageRef imageRef = image.CGImage;
+        if (!imageRef) {
+            continue;
+        }
+
+        CGFloat frameDuration = frame.duration;
+        if ((!isfinite(frameDuration) || frameDuration <= 0) && fallbackFrameDuration > 0) {
+            frameDuration = fallbackFrameDuration;
+        }
+        CGFloat delay = DYYYUtilsNormalizedDelay(frameDuration);
+        NSDictionary *frameProps = @{(__bridge NSString *)kCGImagePropertyGIFDictionary : @{(__bridge NSString *)kCGImagePropertyGIFDelayTime : @(delay)}};
+        CGImageDestinationAddImage(dest, imageRef, (__bridge CFDictionaryRef)frameProps);
+        hasFrame = YES;
+    }
+
+    BOOL success = hasFrame ? CGImageDestinationFinalize(dest) : NO;
+    CFRelease(dest);
+    return success;
+}
+
+static BOOL DYYYUtilsConvertAnimatedDataWithYYDecoder(NSData *data, NSURL *gifURL, CGFloat scale) {
+    YYImageDecoder *decoder = DYYYUtilsCreateYYDecoderWithData(data, scale);
+    if (!decoder) {
+        return NO;
+    }
+    return DYYYUtilsWriteGIFUsingYYDecoder(decoder, gifURL, 0);
+}
+
+static BOOL DYYYUtilsWriteStaticImageToGIF(UIImage *image, NSURL *gifURL) {
+    CGImageRef imageRef = image.CGImage;
+    if (!imageRef) {
+        return NO;
+    }
+
+    CGImageDestinationRef dest = CGImageDestinationCreateWithURL((__bridge CFURLRef)gifURL, kUTTypeGIF, 1, NULL);
+    if (!dest) {
+        return NO;
+    }
+
+    NSDictionary *gifProperties = @{(__bridge NSString *)kCGImagePropertyGIFDictionary : @{(__bridge NSString *)kCGImagePropertyGIFLoopCount : @0}};
+    CGImageDestinationSetProperties(dest, (__bridge CFDictionaryRef)gifProperties);
+
+    NSDictionary *frameProperties = @{(__bridge NSString *)kCGImagePropertyGIFDictionary : @{(__bridge NSString *)kCGImagePropertyGIFDelayTime : @(kDYYYUtilsDefaultFrameDelay)}};
+    CGImageDestinationAddImage(dest, imageRef, (__bridge CFDictionaryRef)frameProperties);
+
+    BOOL success = CGImageDestinationFinalize(dest);
+    CFRelease(dest);
+    return success;
 }
 
 @interface DYYYUtils ()
@@ -576,7 +905,38 @@ static void DYYYApplyDisplayLocationToLabel(UILabel *label, NSString *displayLoc
     if (!themeManagerClass) {
         return NO;
     }
-    return [themeManagerClass isLightTheme] ? NO : YES;
+
+    SEL isLightThemeSEL = NSSelectorFromString(@"isLightTheme");
+    if ([themeManagerClass respondsToSelector:isLightThemeSEL]) {
+        BOOL isLightTheme = ((BOOL (*)(id, SEL))objc_msgSend)(themeManagerClass, isLightThemeSEL);
+        return !isLightTheme;
+    }
+
+    id themeManager = nil;
+    SEL sharedManagerSEL = NSSelectorFromString(@"sharedManager");
+    SEL sharedInstanceSEL = NSSelectorFromString(@"sharedInstance");
+    if ([themeManagerClass respondsToSelector:sharedManagerSEL]) {
+        themeManager = [themeManagerClass performSelector:sharedManagerSEL];
+    } else if ([themeManagerClass respondsToSelector:sharedInstanceSEL]) {
+        themeManager = [themeManagerClass performSelector:sharedInstanceSEL];
+    }
+
+    if (themeManager) {
+        if ([themeManager respondsToSelector:isLightThemeSEL]) {
+            BOOL isLightTheme = ((BOOL (*)(id, SEL))objc_msgSend)(themeManager, isLightThemeSEL);
+            return !isLightTheme;
+        }
+
+        @try {
+            id lightThemeValue = [themeManager valueForKey:@"isLightTheme"];
+            if ([lightThemeValue respondsToSelector:@selector(boolValue)]) {
+                return ![lightThemeValue boolValue];
+            }
+        } @catch (NSException *exception) {
+        }
+    }
+
+    return NO;
 }
 
 #pragma mark - Public File Management (公共文件管理)
@@ -700,6 +1060,524 @@ static void DYYYApplyDisplayLocationToLabel(UILabel *label, NSString *displayLoc
 
 + (NSString *)cachePathForFilename:(NSString *)filename {
     return [[self cacheDirectory] stringByAppendingPathComponent:filename];
+}
+
+#pragma mark - Public Media Helper Methods (公共媒体工具方法)
+
++ (NSString *)detectFileFormat:(NSURL *)fileURL {
+    NSData *fileData = [NSData dataWithContentsOfURL:fileURL options:NSDataReadingMappedIfSafe error:nil];
+    if (!fileData || fileData.length < 12) {
+        return @"unknown";
+    }
+
+    const unsigned char *bytes = [fileData bytes];
+
+    if (bytes[0] == 'R' && bytes[1] == 'I' && bytes[2] == 'F' && bytes[3] == 'F' && bytes[8] == 'W' && bytes[9] == 'E' && bytes[10] == 'B' && bytes[11] == 'P') {
+        return @"webp";
+    }
+
+    if (bytes[4] == 'f' && bytes[5] == 't' && bytes[6] == 'y' && bytes[7] == 'p') {
+        if (fileData.length >= 16) {
+            if (bytes[8] == 'h' && bytes[9] == 'e' && bytes[10] == 'i' && bytes[11] == 'c') {
+                return @"heic";
+            }
+            if (bytes[8] == 'h' && bytes[9] == 'e' && bytes[10] == 'i' && bytes[11] == 'f') {
+                return @"heif";
+            }
+            return @"heif";
+        }
+    }
+
+    if (bytes[0] == 'G' && bytes[1] == 'I' && bytes[2] == 'F') {
+        return @"gif";
+    }
+
+    if (bytes[0] == 0x89 && bytes[1] == 'P' && bytes[2] == 'N' && bytes[3] == 'G') {
+        return @"png";
+    }
+
+    if (bytes[0] == 0xFF && bytes[1] == 0xD8) {
+        return @"jpeg";
+    }
+
+    return @"unknown";
+}
+
++ (NSString *)mediaTypeDescription:(MediaType)mediaType {
+    switch (mediaType) {
+        case MediaTypeVideo:
+            return @"视频";
+        case MediaTypeImage:
+            return @"图片";
+        case MediaTypeAudio:
+            return @"音频";
+        case MediaTypeHeic:
+            return @"表情包";
+        default:
+            return @"文件";
+    }
+}
+
++ (UIImage *)resizeImage:(UIImage *)image toSize:(CGSize)size {
+    if (!image || size.width <= 0 || size.height <= 0) {
+        return image;
+    }
+    UIGraphicsBeginImageContextWithOptions(size, NO, 0.0);
+    [image drawInRect:CGRectMake(0, 0, size.width, size.height)];
+    UIImage *resizedImage = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    return resizedImage ?: image;
+}
+
++ (CGRect)rectForImageAspectFit:(CGSize)imageSize inSize:(CGSize)containerSize {
+    if (imageSize.width <= 0 || imageSize.height <= 0 || containerSize.width <= 0 || containerSize.height <= 0) {
+        return CGRectZero;
+    }
+
+    CGFloat hScale = containerSize.width / imageSize.width;
+    CGFloat vScale = containerSize.height / imageSize.height;
+    CGFloat scale = MIN(hScale, vScale);
+
+    CGFloat newWidth = imageSize.width * scale;
+    CGFloat newHeight = imageSize.height * scale;
+
+    CGFloat x = (containerSize.width - newWidth) / 2.0;
+    CGFloat y = (containerSize.height - newHeight) / 2.0;
+
+    return CGRectMake(x, y, newWidth, newHeight);
+}
+
++ (CGAffineTransform)transformForAssetTrack:(AVAssetTrack *)track targetSize:(CGSize)targetSize {
+    if (!track || targetSize.width <= 0 || targetSize.height <= 0) {
+        return CGAffineTransformIdentity;
+    }
+
+    CGSize trackSize = CGSizeApplyAffineTransform(track.naturalSize, track.preferredTransform);
+    trackSize = CGSizeMake(fabs(trackSize.width), fabs(trackSize.height));
+    if (trackSize.width <= 0 || trackSize.height <= 0) {
+        return track.preferredTransform;
+    }
+
+    CGFloat xScale = targetSize.width / trackSize.width;
+    CGFloat yScale = targetSize.height / trackSize.height;
+    CGFloat scale = MIN(xScale, yScale);
+
+    CGAffineTransform transform = track.preferredTransform;
+    transform = CGAffineTransformConcat(transform, CGAffineTransformMakeScale(scale, scale));
+
+    CGFloat xOffset = (targetSize.width - trackSize.width * scale) / 2.0;
+    CGFloat yOffset = (targetSize.height - trackSize.height * scale) / 2.0;
+    transform = CGAffineTransformConcat(transform, CGAffineTransformMakeTranslation(xOffset, yOffset));
+
+    return transform;
+}
+
++ (CGAffineTransform)transformForImage:(UIImage *)image targetSize:(CGSize)targetSize {
+    if (!image || targetSize.width <= 0 || targetSize.height <= 0 || image.size.width <= 0 || image.size.height <= 0) {
+        return CGAffineTransformIdentity;
+    }
+
+    CGSize imageSize = image.size;
+    CGFloat xScale = targetSize.width / imageSize.width;
+    CGFloat yScale = targetSize.height / imageSize.height;
+    CGFloat scale = MIN(xScale, yScale);
+
+    CGAffineTransform transform = CGAffineTransformIdentity;
+    transform = CGAffineTransformScale(transform, scale, scale);
+
+    CGFloat xOffset = (targetSize.width - imageSize.width * scale) / 2.0;
+    CGFloat yOffset = (targetSize.height - imageSize.height * scale) / 2.0;
+    transform = CGAffineTransformTranslate(transform, xOffset / scale, yOffset / scale);
+
+    return transform;
+}
+
++ (BOOL)isBDImageWithHeifURL:(UIImage *)image {
+    if (!image) {
+        return NO;
+    }
+
+    if ([NSStringFromClass([image class]) containsString:@"BDImage"]) {
+        if ([image respondsToSelector:@selector(bd_webURL)]) {
+            NSURL *webURL = [image performSelector:@selector(bd_webURL)];
+            if (webURL) {
+                NSString *urlString = webURL.absoluteString;
+                return [urlString containsString:@".heif"] || [urlString containsString:@".heic"];
+            }
+        }
+    }
+
+    return NO;
+}
+
++ (NSArray *)getImagesFromYYAnimatedImageView:(YYAnimatedImageView *)imageView {
+    if (!imageView || !imageView.image) {
+        return nil;
+    }
+    if ([imageView.image respondsToSelector:@selector(images)]) {
+        return [imageView.image performSelector:@selector(images)];
+    }
+    return nil;
+}
+
++ (CGFloat)getDurationFromYYAnimatedImageView:(YYAnimatedImageView *)imageView {
+    if (!imageView || !imageView.image) {
+        return 0;
+    }
+
+    UIImage *image = imageView.image;
+
+    if (image.images.count > 0) {
+        NSTimeInterval builtInDuration = image.duration;
+        if (builtInDuration <= 0) {
+            builtInDuration = image.images.count * kDYYYUtilsDefaultFrameDelay;
+        }
+        return builtInDuration;
+    }
+
+    SEL frameCountSEL = NSSelectorFromString(@"animatedImageFrameCount");
+    SEL frameDurationSEL = NSSelectorFromString(@"animatedImageDurationAtIndex:");
+    if ([image respondsToSelector:frameCountSEL] && [image respondsToSelector:frameDurationSEL]) {
+        NSUInteger frameCount = ((NSUInteger(*)(id, SEL))objc_msgSend)(image, frameCountSEL);
+        if (frameCount > 0) {
+            CGFloat totalDuration = 0;
+            for (NSUInteger i = 0; i < frameCount; i++) {
+                CGFloat frameDuration = ((CGFloat(*)(id, SEL, NSUInteger))objc_msgSend)(image, frameDurationSEL, i);
+                totalDuration += frameDuration > 0 ? frameDuration : kDYYYUtilsDefaultFrameDelay;
+            }
+            if (totalDuration > 0) {
+                return totalDuration;
+            }
+        }
+    }
+
+    SEL dataSEL = NSSelectorFromString(@"animatedImageData");
+    NSData *animatedData = nil;
+    if ([image respondsToSelector:dataSEL]) {
+        animatedData = ((NSData *(*)(id, SEL))objc_msgSend)(image, dataSEL);
+    }
+    if (animatedData.length > 0) {
+        CGFloat scale = image.scale > 0 ? image.scale : 1.0f;
+        YYImageDecoder *decoder = DYYYUtilsCreateYYDecoderWithData(animatedData, scale);
+        CGFloat decoderDuration = DYYYUtilsTotalDurationFromYYDecoder(decoder);
+        if (decoderDuration > 0) {
+            return decoderDuration;
+        }
+    }
+
+    if ([image respondsToSelector:@selector(duration)]) {
+        NSTimeInterval duration = image.duration;
+        if (duration > 0) {
+            return duration;
+        }
+    }
+
+    id durationValue = [image valueForKey:@"duration"];
+    return [durationValue respondsToSelector:@selector(floatValue)] ? [durationValue floatValue] : 0;
+}
+
++ (BOOL)framesFromAnimatedData:(NSData *)data
+                         scale:(CGFloat)scale
+                        images:(NSArray<UIImage *> *_Nullable *)images
+                 totalDuration:(CGFloat *_Nullable)totalDuration {
+    if (images) {
+        *images = nil;
+    }
+    if (totalDuration) {
+        *totalDuration = 0;
+    }
+    if (!data.length) {
+        return NO;
+    }
+
+    CGFloat resolvedScale = scale > 0 ? scale : 1.0f;
+    YYImageDecoder *decoder = DYYYUtilsCreateYYDecoderWithData(data, resolvedScale);
+    if (!decoder || decoder.frameCount == 0) {
+        return NO;
+    }
+
+    NSMutableArray<UIImage *> *decodedFrames = [NSMutableArray arrayWithCapacity:decoder.frameCount];
+    CGFloat durationAccumulator = 0;
+    for (NSUInteger i = 0; i < decoder.frameCount; i++) {
+        YYImageFrame *frame = [decoder frameAtIndex:i decodeForDisplay:YES];
+        if (!frame || !frame.image) {
+            continue;
+        }
+        [decodedFrames addObject:frame.image];
+        durationAccumulator += DYYYUtilsNormalizedDelay(frame.duration);
+    }
+
+    if (decodedFrames.count == 0) {
+        return NO;
+    }
+
+    if (images) {
+        *images = [decodedFrames copy];
+    }
+    if (totalDuration) {
+        *totalDuration = durationAccumulator > 0 ? durationAccumulator : decodedFrames.count * kDYYYUtilsDefaultFrameDelay;
+    }
+
+    return YES;
+}
+
++ (BOOL)createGIFWithImages:(NSArray *)images duration:(CGFloat)duration path:(NSString *)path progress:(void (^)(float progress))progressBlock {
+    if (images.count == 0 || path.length == 0) {
+        return NO;
+    }
+
+    CGFloat safeDuration = duration > 0 ? duration : (0.1f * images.count);
+    float frameDuration = safeDuration / images.count;
+    CGImageDestinationRef destination = CGImageDestinationCreateWithURL((__bridge CFURLRef)[NSURL fileURLWithPath:path], kUTTypeGIF, images.count, NULL);
+    if (!destination) {
+        return NO;
+    }
+
+    NSDictionary *gifProperties = @{(__bridge NSString *)kCGImagePropertyGIFDictionary : @{(__bridge NSString *)kCGImagePropertyGIFLoopCount : @0}};
+    CGImageDestinationSetProperties(destination, (__bridge CFDictionaryRef)gifProperties);
+
+    for (NSUInteger i = 0; i < images.count; i++) {
+        UIImage *image = images[i];
+        NSDictionary *frameProperties = @{(__bridge NSString *)kCGImagePropertyGIFDictionary : @{(__bridge NSString *)kCGImagePropertyGIFDelayTime : @(frameDuration)}};
+        CGImageDestinationAddImage(destination, image.CGImage, (__bridge CFDictionaryRef)frameProperties);
+        if (progressBlock) {
+            progressBlock((float)(i + 1) / images.count);
+        }
+    }
+
+    BOOL success = CGImageDestinationFinalize(destination);
+    CFRelease(destination);
+    return success;
+}
+
++ (void)saveGIFToPhotoLibrary:(NSString *)path completion:(void (^)(BOOL success, NSError *error))completion {
+    NSURL *fileURL = [NSURL fileURLWithPath:path];
+    [[PHPhotoLibrary sharedPhotoLibrary]
+        performChanges:^{
+          PHAssetCreationRequest *request = [PHAssetCreationRequest creationRequestForAsset];
+          [request addResourceWithType:PHAssetResourceTypePhoto fileURL:fileURL options:nil];
+        }
+        completionHandler:^(BOOL success, NSError *_Nullable error) {
+          dispatch_async(dispatch_get_main_queue(), ^{
+            if (completion) {
+                completion(success, error);
+            }
+            NSError *removeError = nil;
+            [[NSFileManager defaultManager] removeItemAtPath:path error:&removeError];
+            if (removeError) {
+                NSLog(@"删除临时GIF文件失败: %@", removeError);
+            }
+          });
+        }];
+}
+
++ (void)saveGifToPhotoLibrary:(NSURL *)gifURL completion:(void (^)(BOOL success))completion {
+    [[PHPhotoLibrary sharedPhotoLibrary]
+        performChanges:^{
+          NSData *gifData = [NSData dataWithContentsOfURL:gifURL];
+          PHAssetCreationRequest *request = [PHAssetCreationRequest creationRequestForAsset];
+          PHAssetResourceCreationOptions *options = [[PHAssetResourceCreationOptions alloc] init];
+          options.uniformTypeIdentifier = @"com.compuserve.gif";
+          [request addResourceWithType:PHAssetResourceTypePhoto data:gifData options:options];
+        }
+        completionHandler:^(BOOL success, NSError *_Nullable error) {
+          dispatch_async(dispatch_get_main_queue(), ^{
+            if (!success) {
+                [DYYYUtils showToast:@"保存失败"];
+            }
+            [[NSFileManager defaultManager] removeItemAtPath:gifURL.path error:nil];
+            if (completion) {
+                completion(success);
+            }
+          });
+        }];
+}
+
++ (BOOL)videoHasAudio:(NSURL *)videoURL {
+    AVAsset *asset = [AVAsset assetWithURL:videoURL];
+    NSArray *audioTracks = [asset tracksWithMediaType:AVMediaTypeAudio];
+    return audioTracks.count > 0;
+}
+
++ (void)downloadAudioAndMergeWithVideo:(NSURL *)videoURL
+                              audioURL:(NSURL *)audioURL
+                            completion:(void (^)(BOOL success, NSURL *mergedURL))completion {
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+      NSData *audioData = [NSData dataWithContentsOfURL:audioURL];
+      if (!audioData) {
+          dispatch_async(dispatch_get_main_queue(), ^{
+            if (completion) {
+                completion(NO, nil);
+            }
+          });
+          return;
+      }
+
+      NSString *audioPath = [DYYYUtils cachePathForFilename:[NSString stringWithFormat:@"temp_%@", audioURL.lastPathComponent]];
+      NSURL *audioFile = [NSURL fileURLWithPath:audioPath];
+      if (![audioData writeToURL:audioFile atomically:YES]) {
+          dispatch_async(dispatch_get_main_queue(), ^{
+            if (completion) {
+                completion(NO, nil);
+            }
+          });
+          return;
+      }
+
+      [self mergeVideo:videoURL
+             withAudio:audioFile
+            completion:^(BOOL success, NSURL *mergedURL) {
+              [[NSFileManager defaultManager] removeItemAtURL:audioFile error:nil];
+              dispatch_async(dispatch_get_main_queue(), ^{
+                if (completion) {
+                    completion(success, mergedURL);
+                }
+              });
+            }];
+    });
+}
+
++ (void)mergeVideo:(NSURL *)videoURL
+         withAudio:(NSURL *)audioURL
+        completion:(void (^)(BOOL success, NSURL *mergedURL))completion {
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+      AVURLAsset *videoAsset = [AVURLAsset URLAssetWithURL:videoURL options:nil];
+      AVURLAsset *audioAsset = [AVURLAsset URLAssetWithURL:audioURL options:nil];
+      AVAssetTrack *videoTrack = [[videoAsset tracksWithMediaType:AVMediaTypeVideo] firstObject];
+      AVAssetTrack *audioTrack = [[audioAsset tracksWithMediaType:AVMediaTypeAudio] firstObject];
+      if (!videoTrack || !audioTrack) {
+          dispatch_async(dispatch_get_main_queue(), ^{
+            if (completion) {
+                completion(NO, nil);
+            }
+          });
+          return;
+      }
+
+      AVMutableComposition *composition = [AVMutableComposition composition];
+      AVMutableCompositionTrack *compVideoTrack = [composition addMutableTrackWithMediaType:AVMediaTypeVideo preferredTrackID:kCMPersistentTrackID_Invalid];
+      [compVideoTrack insertTimeRange:CMTimeRangeMake(kCMTimeZero, videoAsset.duration) ofTrack:videoTrack atTime:kCMTimeZero error:nil];
+
+      AVMutableCompositionTrack *compAudioTrack = [composition addMutableTrackWithMediaType:AVMediaTypeAudio preferredTrackID:kCMPersistentTrackID_Invalid];
+      [compAudioTrack insertTimeRange:CMTimeRangeMake(kCMTimeZero, videoAsset.duration) ofTrack:audioTrack atTime:kCMTimeZero error:nil];
+
+      NSString *outputPath = [DYYYUtils cachePathForFilename:[NSString stringWithFormat:@"merged_%@", videoURL.lastPathComponent]];
+      NSURL *outputURL = [NSURL fileURLWithPath:outputPath];
+      if ([[NSFileManager defaultManager] fileExistsAtPath:outputPath]) {
+          [[NSFileManager defaultManager] removeItemAtPath:outputPath error:nil];
+      }
+
+      AVAssetExportSession *exportSession = [[AVAssetExportSession alloc] initWithAsset:composition presetName:AVAssetExportPresetPassthrough];
+      exportSession.outputURL = outputURL;
+      exportSession.outputFileType = AVFileTypeMPEG4;
+      [exportSession exportAsynchronouslyWithCompletionHandler:^{
+        BOOL success = exportSession.status == AVAssetExportSessionStatusCompleted;
+        if (!success) {
+            NSLog(@"Merge export failed: %@", exportSession.error);
+        } else {
+            [[NSFileManager defaultManager] removeItemAtURL:videoURL error:nil];
+        }
+        dispatch_async(dispatch_get_main_queue(), ^{
+          if (completion) {
+              completion(success, success ? outputURL : nil);
+          }
+        });
+      }];
+    });
+}
+
++ (void)convertWebpToGifSafely:(NSURL *)webpURL completion:(void (^)(NSURL *gifURL, BOOL success))completion {
+    if (!webpURL) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+          if (completion) {
+              completion(nil, NO);
+          }
+        });
+        return;
+    }
+
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+      NSData *webpData = [NSData dataWithContentsOfURL:webpURL options:NSDataReadingMappedIfSafe error:nil];
+      if (!webpData) {
+          dispatch_async(dispatch_get_main_queue(), ^{
+            if (completion) {
+                completion(nil, NO);
+            }
+          });
+          return;
+      }
+
+      NSURL *gifURL = DYYYUtilsTemporaryGIFURLForSourceURL(webpURL);
+      [[NSFileManager defaultManager] removeItemAtURL:gifURL error:nil];
+
+      BOOL success = DYYYUtilsConvertAnimatedDataWithYYDecoder(webpData, gifURL, 1.0f);
+      if (!success) {
+          UIImage *fallbackImage = [UIImage imageWithData:webpData];
+          if (fallbackImage) {
+              success = DYYYUtilsWriteStaticImageToGIF(fallbackImage, gifURL);
+          }
+      }
+
+      if (!success) {
+          [[NSFileManager defaultManager] removeItemAtURL:gifURL error:nil];
+      }
+
+      dispatch_async(dispatch_get_main_queue(), ^{
+        if (completion) {
+            completion(success ? gifURL : nil, success);
+        }
+      });
+    });
+}
+
++ (void)convertHeicToGif:(NSURL *)heicURL completion:(void (^)(NSURL *gifURL, BOOL success))completion {
+    if (!heicURL) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+          if (completion) {
+              completion(nil, NO);
+          }
+        });
+        return;
+    }
+
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+      NSData *heicData = [NSData dataWithContentsOfURL:heicURL options:NSDataReadingMappedIfSafe error:nil];
+      NSTimeInterval heifDuration = DYYYUtilsHEIFDurationFromData(heicData);
+      NSURL *gifURL = DYYYUtilsTemporaryGIFURLForSourceURL(heicURL);
+      [[NSFileManager defaultManager] removeItemAtURL:gifURL error:nil];
+
+      BOOL success = NO;
+      NSString *failureReason = nil;
+
+      if (!heicData || heicData.length == 0) {
+          failureReason = @"读取HEIC数据失败或数据为空";
+      } else {
+          YYImageDecoder *decoder = DYYYUtilsCreateYYDecoderWithData(heicData, 1.0f);
+          if (!decoder) {
+              failureReason = @"无法通过YYImageDecoder解析HEIC数据，可能是资源不是动图或SDK不可用";
+          } else if (decoder.frameCount == 0) {
+              failureReason = @"YYImageDecoder未解析到任何帧，HEIC资源可能不是动图";
+          } else {
+              success = DYYYUtilsWriteGIFUsingYYDecoder(decoder, gifURL, heifDuration);
+              if (!success) {
+                  failureReason = @"YYImageDecoder写入GIF失败，可能是图像数据损坏或磁盘空间不足";
+              }
+          }
+      }
+
+      if (!success) {
+          [[NSFileManager defaultManager] removeItemAtURL:gifURL error:nil];
+          if (failureReason.length > 0) {
+              NSLog(@"[DYYY] convertHeicToGif失败: %@", failureReason);
+          }
+      }
+
+      dispatch_async(dispatch_get_main_queue(), ^{
+        if (completion) {
+            completion(success ? gifURL : nil, success);
+        }
+      });
+    });
 }
 
 #pragma mark - Public Color Scheme Methods (公共颜色方案方法)

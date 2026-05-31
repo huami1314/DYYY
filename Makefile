@@ -5,6 +5,7 @@
 #  Channel: @huamidev
 #  Created on: 2024/10/04
 #
+# 本地配置文件（可选）
 -include Makefile.local
 
 TARGET = iphone:clang:latest:14.0
@@ -22,6 +23,7 @@ else
     unexport THEOS_PACKAGE_SCHEME
 endif
 
+# 在GitHub Actions中运行时的特殊配置
 ifeq ($(GITHUB_ACTIONS),true)
     export INSTALL = 0
     export FINALPACKAGE = 1
@@ -49,16 +51,18 @@ export LOGOS_DEFAULT_GENERATOR=internal
 include $(THEOS_MAKE_PATH)/tweak.mk
 
 ifeq ($(shell whoami),huami)
-    THEOS_DEVICE_IP = 192.168.31.228
+    THEOS_DEVICE_IP = 192.168.31.227
 else
-    THEOS_DEVICE_IP = 192.168.15.105
+    THEOS_DEVICE_IP = 192.168.15.201
 endif
 THEOS_DEVICE_PORT = 22
 
+# 清理 packages 目录
 clean::
 	@echo -e "\033[31m==>\033[0m Cleaning packages…"
 	@rm -rf .theos packages
 
+# 编译并自动安装
 after-package::
 	@echo -e "\033[32m==>\033[0m Packaging complete."
 	@if [ "$(GITHUB_ACTIONS)" != "true" ] && [ "$(INSTALL)" = "1" ]; then \

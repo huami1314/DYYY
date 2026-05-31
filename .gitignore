@@ -1,3 +1,7 @@
 .theos
 packages
 .DS_Store
+Aweme
+Makefile.local
+headers
+.vscode/

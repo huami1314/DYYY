@@ -96,6 +96,15 @@
                completion:(void (^)(NSInteger successCount, NSInteger livePhotoCount, NSInteger failedCount))completion;
 
 /**
+ * 下载并分享评论区语音
+ * @param audioContent 语音内容 JSON 字符串
+ * @param userName 评论者用户名
+ * @param createTime 评论创建时间（NSNumber，秒级时间戳）
+ */
++ (void)downloadAndShareCommentAudio:(NSString *)audioContent
+                            userName:(NSString *)userName
+                          createTime:(NSNumber *)createTime;
+/**
  * 批量下载图片
  * @param imageURLs 图片URL数组
  */
@@ -145,39 +154,8 @@
                     progress:(void (^)(NSInteger current, NSInteger total, NSString *status))progressBlock
                   completion:(void (^)(BOOL success, NSString *message))completion;
 
-/**
- * 将HEIC格式转换为GIF格式
- * @param heicURL HEIC文件URL
- * @param completion 完成回调，返回GIF文件URL和是否成功
- */
-+ (void)convertHeicToGif:(NSURL *)heicURL completion:(void (^)(NSURL *gifURL, BOOL success))completion;
-
-/**
- * 将WebP格式转换为GIF格式
- * @param webpURL WebP文件URL
- * @param completion 完成回调，返回GIF文件URL和是否成功
- */
-+ (void)convertWebpToGifSafely:(NSURL *)webpURL completion:(void (^)(NSURL *gifURL, BOOL success))completion;
-
-/**
- * 使用 YYImage 解码动图数据，返回帧图像和总时长
- * @param data 动图数据
- * @param scale 目标缩放
- * @param images 输出帧数组
- * @param totalDuration 输出总时长
- */
-+ (BOOL)framesFromAnimatedData:(NSData *)data
-                          scale:(CGFloat)scale
-                         images:(NSArray<UIImage *> *_Nullable *)images
-                  totalDuration:(CGFloat *_Nullable)totalDuration;
-
 // 动画贴纸和GIF相关方法
 + (void)saveAnimatedSticker:(YYAnimatedImageView *)targetStickerView;
-+ (BOOL)isBDImageWithHeifURL:(UIImage *)image;
 + (void)saveHeifSticker:(YYAnimatedImageView *)stickerView;
-+ (NSArray *)getImagesFromYYAnimatedImageView:(YYAnimatedImageView *)imageView;
-+ (CGFloat)getDurationFromYYAnimatedImageView:(YYAnimatedImageView *)imageView;
-+ (BOOL)createGIFWithImages:(NSArray *)images duration:(CGFloat)duration path:(NSString *)path progress:(void (^)(float progress))progressBlock;
-+ (void)saveGIFToPhotoLibrary:(NSString *)path completion:(void (^)(BOOL success, NSError *error))completion;
 
 @end

@@ -5,35 +5,10 @@
 #import <MobileCoreServices/MobileCoreServices.h>
 #import <MobileCoreServices/UTCoreTypes.h>
 #import <Photos/Photos.h>
-#import <math.h>
-#import <objc/message.h>
 #import <objc/runtime.h>
-
-@class YYImageDecoder;
-@class YYImageFrame;
-
-@interface YYImageFrame : NSObject
-@property(nonatomic, strong) UIImage *image;
-@property(nonatomic) CGFloat duration;
-@end
-
-@interface YYImageDecoder : NSObject
-@property(nonatomic, readonly) NSUInteger frameCount;
-+ (instancetype)decoderWithData:(NSData *)data scale:(CGFloat)scale;
-- (YYImageFrame *)frameAtIndex:(NSUInteger)index decodeForDisplay:(BOOL)decodeForDisplay;
-@end
 
 #import "DYYYToast.h"
 #import "DYYYUtils.h"
-
-static const NSTimeInterval kDYYYDefaultFrameDelay = 0.1f;
-
-static inline CGFloat DYYYNormalizedDelay(CGFloat delay) {
-    if (!isfinite(delay) || delay < 0.01f) {
-        return kDYYYDefaultFrameDelay;
-    }
-    return delay;
-}
 
 
 @interface DYYYManager () {
@@ -132,15 +107,14 @@ static inline CGFloat DYYYNormalizedDelay(CGFloat delay) {
       };
 
       if (mediaType == MediaTypeHeic) {
-          NSString *actualFormat = [self detectFileFormat:mediaURL];
+          NSString *actualFormat = [DYYYUtils detectFileFormat:mediaURL];
 
           if ([actualFormat isEqualToString:@"webp"]) {
-              [self convertWebpToGifSafely:mediaURL
-                                completion:^(NSURL *gifURL, BOOL success) {
+              [DYYYUtils convertWebpToGifSafely:mediaURL
+                                     completion:^(NSURL *gifURL, BOOL success) {
                                   if (success && gifURL) {
-                                      [self saveGifToPhotoLibrary:gifURL
-                                                        mediaType:mediaType
-                                                       completion:^(BOOL gifSuccess) {
+                                      [DYYYUtils saveGifToPhotoLibrary:gifURL
+                                                            completion:^(BOOL gifSuccess) {
                                                          [[NSFileManager defaultManager] removeItemAtPath:mediaURL.path error:nil];
                                                          reportResult(gifSuccess);
                                                        }];
@@ -156,12 +130,11 @@ static inline CGFloat DYYYNormalizedDelay(CGFloat delay) {
           }
 
           if ([actualFormat isEqualToString:@"heic"] || [actualFormat isEqualToString:@"heif"]) {
-              [self convertHeicToGif:mediaURL
-                          completion:^(NSURL *gifURL, BOOL success) {
+              [DYYYUtils convertHeicToGif:mediaURL
+                               completion:^(NSURL *gifURL, BOOL success) {
                             if (success && gifURL) {
-                                [self saveGifToPhotoLibrary:gifURL
-                                                  mediaType:mediaType
-                                                 completion:^(BOOL gifSuccess) {
+                                [DYYYUtils saveGifToPhotoLibrary:gifURL
+                                                      completion:^(BOOL gifSuccess) {
                                                    [[NSFileManager defaultManager] removeItemAtPath:mediaURL.path error:nil];
                                                    reportResult(gifSuccess);
                                                  }];
@@ -177,9 +150,8 @@ static inline CGFloat DYYYNormalizedDelay(CGFloat delay) {
           }
 
           if ([actualFormat isEqualToString:@"gif"]) {
-              [self saveGifToPhotoLibrary:mediaURL
-                                mediaType:mediaType
-                               completion:^(BOOL gifSuccess) {
+              [DYYYUtils saveGifToPhotoLibrary:mediaURL
+                                    completion:^(BOOL gifSuccess) {
                                  reportResult(gifSuccess);
                                }];
               return;
@@ -225,448 +197,6 @@ static inline CGFloat DYYYNormalizedDelay(CGFloat delay) {
             });
           }];
     }];
-}
-
-// 检测文件格式的方法
-+ (NSString *)detectFileFormat:(NSURL *)fileURL {
-    // 读取文件的整个数据或足够的字节用于识别
-    NSData *fileData = [NSData dataWithContentsOfURL:fileURL options:NSDataReadingMappedIfSafe error:nil];
-    if (!fileData || fileData.length < 12) {
-        return @"unknown";
-    }
-
-    // 转换为字节数组以便检查
-    const unsigned char *bytes = [fileData bytes];
-
-    // 检查WebP格式："RIFF" + 4字节 + "WEBP"
-    if (bytes[0] == 'R' && bytes[1] == 'I' && bytes[2] == 'F' && bytes[3] == 'F' && bytes[8] == 'W' && bytes[9] == 'E' && bytes[10] == 'B' && bytes[11] == 'P') {
-        return @"webp";
-    }
-
-    // 检查HEIF/HEIC格式："ftyp" 在第4-7字节位置
-    if (bytes[4] == 'f' && bytes[5] == 't' && bytes[6] == 'y' && bytes[7] == 'p') {
-        if (fileData.length >= 16) {
-            // 检查HEIC品牌
-            if (bytes[8] == 'h' && bytes[9] == 'e' && bytes[10] == 'i' && bytes[11] == 'c') {
-                return @"heic";
-            }
-            // 检查HEIF品牌
-            if (bytes[8] == 'h' && bytes[9] == 'e' && bytes[10] == 'i' && bytes[11] == 'f') {
-                return @"heif";
-            }
-            // 可能是其他HEIF变体
-            return @"heif";
-        }
-    }
-
-    // 检查GIF格式："GIF87a"或"GIF89a"
-    if (bytes[0] == 'G' && bytes[1] == 'I' && bytes[2] == 'F') {
-        return @"gif";
-    }
-
-    // 检查PNG格式
-    if (bytes[0] == 0x89 && bytes[1] == 'P' && bytes[2] == 'N' && bytes[3] == 'G') {
-        return @"png";
-    }
-
-    // 检查JPEG格式
-    if (bytes[0] == 0xFF && bytes[1] == 0xD8) {
-        return @"jpeg";
-    }
-
-    return @"unknown";
-}
-
-static uint32_t DYYYReadUInt32BigEndian(const uint8_t *bytes) {
-    return ((uint32_t)bytes[0] << 24) | ((uint32_t)bytes[1] << 16) | ((uint32_t)bytes[2] << 8) | (uint32_t)bytes[3];
-}
-
-static uint64_t DYYYReadUInt64BigEndian(const uint8_t *bytes) {
-    uint64_t value = 0;
-    for (NSUInteger i = 0; i < 8; i++) {
-        value = (value << 8) | (uint64_t)bytes[i];
-    }
-    return value;
-}
-
-static NSTimeInterval DYYYParseMVHDDuration(const uint8_t *bytes, NSUInteger length) {
-    NSUInteger position = 0;
-    while (position + 8 <= length) {
-        uint64_t rawSize = DYYYReadUInt32BigEndian(bytes + position);
-        NSUInteger header = 8;
-
-        if (rawSize == 1) {
-            if (position + 16 > length) {
-                break;
-            }
-            rawSize = DYYYReadUInt64BigEndian(bytes + position + 8);
-            header = 16;
-        } else if (rawSize == 0) {
-            rawSize = length - position;
-        }
-
-        if (rawSize < header || position + rawSize > length) {
-            break;
-        }
-
-        const uint8_t *typePtr = bytes + position + 4;
-        if (typePtr[0] == 'm' && typePtr[1] == 'v' && typePtr[2] == 'h' && typePtr[3] == 'd') {
-            const uint8_t *payload = bytes + position + header;
-            NSUInteger payloadLength = (NSUInteger)rawSize - header;
-            if (payloadLength < 20) {
-                break;
-            }
-
-            uint8_t version = payload[0];
-            if (version == 0) {
-                if (payloadLength < 20) {
-                    break;
-                }
-                uint32_t timescale = DYYYReadUInt32BigEndian(payload + 12);
-                uint32_t duration = DYYYReadUInt32BigEndian(payload + 16);
-                if (timescale > 0) {
-                    return (NSTimeInterval)duration / (NSTimeInterval)timescale;
-                }
-            } else if (version == 1) {
-                if (payloadLength < 32) {
-                    break;
-                }
-                uint32_t timescale = DYYYReadUInt32BigEndian(payload + 20);
-                uint64_t duration = DYYYReadUInt64BigEndian(payload + 24);
-                if (timescale > 0) {
-                    return (NSTimeInterval)duration / (NSTimeInterval)timescale;
-                }
-            }
-        }
-
-        position += (NSUInteger)rawSize;
-    }
-
-    return 0;
-}
-
-static NSTimeInterval DYYYParseHEIFDuration(const uint8_t *bytes, NSUInteger length) {
-    NSUInteger position = 0;
-    while (position + 8 <= length) {
-        uint64_t rawSize = DYYYReadUInt32BigEndian(bytes + position);
-        NSUInteger header = 8;
-
-        if (rawSize == 1) {
-            if (position + 16 > length) {
-                break;
-            }
-            rawSize = DYYYReadUInt64BigEndian(bytes + position + 8);
-            header = 16;
-        } else if (rawSize == 0) {
-            rawSize = length - position;
-        }
-
-        if (rawSize < header || position + rawSize > length) {
-            break;
-        }
-
-        const uint8_t *typePtr = bytes + position + 4;
-        if (typePtr[0] == 'm' && typePtr[1] == 'o' && typePtr[2] == 'o' && typePtr[3] == 'v') {
-            NSTimeInterval duration = DYYYParseMVHDDuration(bytes + position + header, (NSUInteger)rawSize - header);
-            if (duration > 0) {
-                return duration;
-            }
-        }
-
-        position += (NSUInteger)rawSize;
-    }
-
-    return 0;
-}
-
-static NSTimeInterval DYYYHEIFDurationFromData(NSData *data) {
-    if (!data || data.length < 16) {
-        return 0;
-    }
-    const uint8_t *bytes = (const uint8_t *)data.bytes;
-    return DYYYParseHEIFDuration(bytes, data.length);
-}
-
-// 保存GIF到相册的方法
-+ (void)saveGifToPhotoLibrary:(NSURL *)gifURL mediaType:(MediaType)mediaType completion:(void (^)(BOOL success))completion {
-    (void)mediaType;
-    [[PHPhotoLibrary sharedPhotoLibrary]
-        performChanges:^{
-          NSData *gifData = [NSData dataWithContentsOfURL:gifURL];
-          PHAssetCreationRequest *request = [PHAssetCreationRequest creationRequestForAsset];
-          PHAssetResourceCreationOptions *options = [[PHAssetResourceCreationOptions alloc] init];
-          options.uniformTypeIdentifier = @"com.compuserve.gif";
-          [request addResourceWithType:PHAssetResourceTypePhoto data:gifData options:options];
-        }
-        completionHandler:^(BOOL success, NSError *_Nullable error) {
-          dispatch_async(dispatch_get_main_queue(), ^{
-            if (!success) {
-                [DYYYUtils showToast:@"保存失败"];
-            }
-            [[NSFileManager defaultManager] removeItemAtPath:gifURL.path error:nil];
-            if (completion) {
-                completion(success);
-            }
-          });
-        }];
-}
-
-static NSURL *DYYYTemporaryGIFURLForSourceURL(NSURL *sourceURL) {
-    NSString *baseName = sourceURL.lastPathComponent.stringByDeletingPathExtension;
-    if (baseName.length == 0) {
-        baseName = @"image";
-    }
-    NSString *fileName = [NSString stringWithFormat:@"%@_%@.gif", baseName, [[NSUUID UUID] UUIDString]];
-    NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent:fileName];
-    return [NSURL fileURLWithPath:path];
-}
-
-static YYImageDecoder *DYYYCreateYYDecoderWithData(NSData *data, CGFloat scale) {
-    if (!data || data.length == 0) {
-        return nil;
-    }
-
-    Class decoderClass = NSClassFromString(@"YYImageDecoder");
-    if (!decoderClass || ![decoderClass respondsToSelector:@selector(decoderWithData:scale:)]) {
-        return nil;
-    }
-
-    CGFloat resolvedScale = scale > 0 ? scale : 1.0f;
-    id decoderInstance = ((id(*)(id, SEL, NSData *, CGFloat))objc_msgSend)(decoderClass, @selector(decoderWithData:scale:), data, resolvedScale);
-    if (![decoderInstance isKindOfClass:decoderClass]) {
-        return nil;
-    }
-
-    return (YYImageDecoder *)decoderInstance;
-}
-
-static CGFloat DYYYTotalDurationFromYYDecoder(YYImageDecoder *decoder) {
-    if (!decoder || decoder.frameCount == 0) {
-        return 0;
-    }
-
-    CGFloat totalDuration = 0;
-    NSUInteger frameCount = decoder.frameCount;
-    for (NSUInteger i = 0; i < frameCount; i++) {
-        YYImageFrame *frame = [decoder frameAtIndex:i decodeForDisplay:NO];
-        if (!frame) {
-            continue;
-        }
-        CGFloat frameDuration = frame.duration > 0 ? frame.duration : kDYYYDefaultFrameDelay;
-        totalDuration += frameDuration;
-    }
-
-    return totalDuration;
-}
-
-static BOOL DYYYWriteGIFUsingYYDecoder(YYImageDecoder *decoder, NSURL *gifURL, NSTimeInterval fallbackTotalDuration) {
-    if (!decoder || decoder.frameCount == 0) {
-        return NO;
-    }
-
-    NSUInteger frameCount = (NSUInteger)decoder.frameCount;
-    CGFloat fallbackFrameDuration = 0;
-    if (fallbackTotalDuration > 0 && frameCount > 0) {
-        fallbackFrameDuration = fallbackTotalDuration / frameCount;
-    }
-    CGImageDestinationRef dest = CGImageDestinationCreateWithURL((__bridge CFURLRef)gifURL, kUTTypeGIF, frameCount, NULL);
-    if (!dest) {
-        return NO;
-    }
-
-    NSDictionary *gifProperties = @{(__bridge NSString *)kCGImagePropertyGIFDictionary : @{(__bridge NSString *)kCGImagePropertyGIFLoopCount : @0}};
-    CGImageDestinationSetProperties(dest, (__bridge CFDictionaryRef)gifProperties);
-
-    BOOL hasFrame = NO;
-    for (NSUInteger i = 0; i < frameCount; i++) {
-        YYImageFrame *frame = [decoder frameAtIndex:i decodeForDisplay:YES];
-        UIImage *image = frame.image;
-        CGImageRef imageRef = image.CGImage;
-        if (!imageRef) {
-            continue;
-        }
-
-        CGFloat frameDuration = frame.duration;
-        if ((!isfinite(frameDuration) || frameDuration <= 0) && fallbackFrameDuration > 0) {
-            frameDuration = fallbackFrameDuration;
-        }
-        CGFloat delay = DYYYNormalizedDelay(frameDuration);
-        NSDictionary *frameProps = @{(__bridge NSString *)kCGImagePropertyGIFDictionary : @{(__bridge NSString *)kCGImagePropertyGIFDelayTime : @(delay)}};
-        CGImageDestinationAddImage(dest, imageRef, (__bridge CFDictionaryRef)frameProps);
-        hasFrame = YES;
-    }
-
-    BOOL success = hasFrame ? CGImageDestinationFinalize(dest) : NO;
-    CFRelease(dest);
-    return success;
-}
-
-static BOOL DYYYConvertAnimatedDataWithYYDecoder(NSData *data, NSURL *gifURL, CGFloat scale) {
-    YYImageDecoder *decoder = DYYYCreateYYDecoderWithData(data, scale);
-    if (!decoder) {
-        return NO;
-    }
-    return DYYYWriteGIFUsingYYDecoder(decoder, gifURL, 0);
-}
-
-static BOOL DYYYWriteStaticImageToGIF(UIImage *image, NSURL *gifURL) {
-    CGImageRef imageRef = image.CGImage;
-    if (!imageRef) {
-        return NO;
-    }
-
-    CGImageDestinationRef dest = CGImageDestinationCreateWithURL((__bridge CFURLRef)gifURL, kUTTypeGIF, 1, NULL);
-    if (!dest) {
-        return NO;
-    }
-
-    NSDictionary *gifProperties = @{(__bridge NSString *)kCGImagePropertyGIFDictionary : @{(__bridge NSString *)kCGImagePropertyGIFLoopCount : @0}};
-    CGImageDestinationSetProperties(dest, (__bridge CFDictionaryRef)gifProperties);
-
-    NSDictionary *frameProperties = @{(__bridge NSString *)kCGImagePropertyGIFDictionary : @{(__bridge NSString *)kCGImagePropertyGIFDelayTime : @(kDYYYDefaultFrameDelay)}};
-    CGImageDestinationAddImage(dest, imageRef, (__bridge CFDictionaryRef)frameProperties);
-
-    BOOL success = CGImageDestinationFinalize(dest);
-    CFRelease(dest);
-    return success;
-}
-
-+ (void)convertWebpToGifSafely:(NSURL *)webpURL completion:(void (^)(NSURL *gifURL, BOOL success))completion {
-    if (!webpURL) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-          if (completion) {
-              completion(nil, NO);
-          }
-        });
-        return;
-    }
-
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-      NSData *webpData = [NSData dataWithContentsOfURL:webpURL options:NSDataReadingMappedIfSafe error:nil];
-      if (!webpData) {
-          dispatch_async(dispatch_get_main_queue(), ^{
-            if (completion) {
-                completion(nil, NO);
-            }
-          });
-          return;
-      }
-
-      NSURL *gifURL = DYYYTemporaryGIFURLForSourceURL(webpURL);
-      [[NSFileManager defaultManager] removeItemAtURL:gifURL error:nil];
-
-      // Use Aweme's bundled YYImageDecoder to handle animated WebP frames.
-      BOOL success = DYYYConvertAnimatedDataWithYYDecoder(webpData, gifURL, 1.0f);
-
-      if (!success) {
-          UIImage *fallbackImage = [UIImage imageWithData:webpData];
-          if (fallbackImage) {
-              success = DYYYWriteStaticImageToGIF(fallbackImage, gifURL);
-          }
-      }
-
-      if (!success) {
-          [[NSFileManager defaultManager] removeItemAtURL:gifURL error:nil];
-      }
-
-      dispatch_async(dispatch_get_main_queue(), ^{
-        if (completion) {
-            completion(success ? gifURL : nil, success);
-        }
-      });
-    });
-}
-
-// 将HEIC转换为GIF的方法
-+ (void)convertHeicToGif:(NSURL *)heicURL completion:(void (^)(NSURL *gifURL, BOOL success))completion {
-    if (!heicURL) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-          if (completion) {
-              completion(nil, NO);
-          }
-        });
-        return;
-    }
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-      NSData *heicData = [NSData dataWithContentsOfURL:heicURL options:NSDataReadingMappedIfSafe error:nil];
-      NSTimeInterval heifDuration = DYYYHEIFDurationFromData(heicData);
-      NSURL *gifURL = DYYYTemporaryGIFURLForSourceURL(heicURL);
-      [[NSFileManager defaultManager] removeItemAtURL:gifURL error:nil];
-
-      BOOL success = NO;
-      NSString *failureReason = nil;
-
-      if (!heicData || heicData.length == 0) {
-          failureReason = @"读取HEIC数据失败或数据为空";
-      } else {
-          YYImageDecoder *decoder = DYYYCreateYYDecoderWithData(heicData, 1.0f);
-          if (!decoder) {
-              failureReason = @"无法通过YYImageDecoder解析HEIC数据，可能是资源不是动图或SDK不可用";
-          } else if (decoder.frameCount == 0) {
-              failureReason = @"YYImageDecoder未解析到任何帧，HEIC资源可能不是动图";
-          } else {
-              success = DYYYWriteGIFUsingYYDecoder(decoder, gifURL, heifDuration);
-              if (!success) {
-                  failureReason = @"YYImageDecoder写入GIF失败，可能是图像数据损坏或磁盘空间不足";
-              }
-          }
-      }
-
-      if (!success) {
-          [[NSFileManager defaultManager] removeItemAtURL:gifURL error:nil];
-          if (failureReason.length > 0) {
-              NSLog(@"[DYYY] convertHeicToGif失败: %@", failureReason);
-          }
-      }
-
-      dispatch_async(dispatch_get_main_queue(), ^{
-        if (completion) {
-            completion(success ? gifURL : nil, success);
-        }
-      });
-    });
-}
-
-+ (BOOL)framesFromAnimatedData:(NSData *)data scale:(CGFloat)scale images:(NSArray<UIImage *> *_Nullable *)images totalDuration:(CGFloat *_Nullable)totalDuration {
-    if (images) {
-        *images = nil;
-    }
-    if (totalDuration) {
-        *totalDuration = 0;
-    }
-    if (!data.length) {
-        return NO;
-    }
-
-    CGFloat resolvedScale = scale > 0 ? scale : 1.0f;
-    YYImageDecoder *decoder = DYYYCreateYYDecoderWithData(data, resolvedScale);
-    if (!decoder || decoder.frameCount == 0) {
-        return NO;
-    }
-
-    NSMutableArray<UIImage *> *decodedFrames = [NSMutableArray arrayWithCapacity:decoder.frameCount];
-    CGFloat durationAccumulator = 0;
-    for (NSUInteger i = 0; i < decoder.frameCount; i++) {
-        YYImageFrame *frame = [decoder frameAtIndex:i decodeForDisplay:YES];
-        if (!frame || !frame.image) {
-            continue;
-        }
-        [decodedFrames addObject:frame.image];
-        durationAccumulator += DYYYNormalizedDelay(frame.duration);
-    }
-
-    if (decodedFrames.count == 0) {
-        return NO;
-    }
-
-    if (images) {
-        *images = [decodedFrames copy];
-    }
-    if (totalDuration) {
-        *totalDuration = durationAccumulator > 0 ? durationAccumulator : decodedFrames.count * kDYYYDefaultFrameDelay;
-    }
-
-    return YES;
 }
 
 + (void)downloadLivePhoto:(NSURL *)imageURL videoURL:(NSURL *)videoURL completion:(void (^)(void))completion {
@@ -930,10 +460,10 @@ static BOOL DYYYWriteStaticImageToGIF(UIImage *image, NSURL *gifURL) {
                                    });
                                } else {
                                    if (mediaType == MediaTypeVideo && audioURL) {
-                                       if (![self videoHasAudio:fileURL]) {
-                                           [self downloadAudioAndMergeWithVideo:fileURL
-                                                                       audioURL:audioURL
-                                                                     completion:^(BOOL mergeSuccess, NSURL *mergedURL) {
+                                       if (![DYYYUtils videoHasAudio:fileURL]) {
+                                           [DYYYUtils downloadAudioAndMergeWithVideo:fileURL
+                                                                            audioURL:audioURL
+                                                                          completion:^(BOOL mergeSuccess, NSURL *mergedURL) {
                                                                        if (mergeSuccess) {
                                                                            [[DYYYManager shared] replaceFileURL:fileURL withFileURL:mergedURL];
                                                                            [[NSFileManager defaultManager] removeItemAtURL:fileURL error:nil];
@@ -1003,108 +533,6 @@ static BOOL DYYYWriteStaticImageToGIF(UIImage *image, NSURL *gifURL) {
 
       // 开始下载
       [downloadTask resume];
-    });
-}
-
-+ (NSString *)getMediaTypeDescription:(MediaType)mediaType {
-    switch (mediaType) {
-        case MediaTypeVideo:
-            return @"视频";
-        case MediaTypeImage:
-            return @"图片";
-        case MediaTypeAudio:
-            return @"音频";
-        case MediaTypeHeic:
-            return @"表情包";
-        default:
-            return @"文件";
-    }
-}
-
-// 判断视频是否包含音频轨道
-+ (BOOL)videoHasAudio:(NSURL *)videoURL {
-    AVAsset *asset = [AVAsset assetWithURL:videoURL];
-    NSArray *audioTracks = [asset tracksWithMediaType:AVMediaTypeAudio];
-    return audioTracks.count > 0;
-}
-
-// 下载音频并与视频合并
-+ (void)downloadAudioAndMergeWithVideo:(NSURL *)videoURL audioURL:(NSURL *)audioURL completion:(void (^)(BOOL success, NSURL *mergedURL))completion {
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-      NSData *audioData = [NSData dataWithContentsOfURL:audioURL];
-      if (!audioData) {
-          dispatch_async(dispatch_get_main_queue(), ^{
-            if (completion)
-                completion(NO, nil);
-          });
-          return;
-      }
-
-      NSString *audioPath = [DYYYUtils cachePathForFilename:[NSString stringWithFormat:@"temp_%@", audioURL.lastPathComponent]];
-      NSURL *audioFile = [NSURL fileURLWithPath:audioPath];
-      if (![audioData writeToURL:audioFile atomically:YES]) {
-          dispatch_async(dispatch_get_main_queue(), ^{
-            if (completion)
-                completion(NO, nil);
-          });
-          return;
-      }
-
-      [self mergeVideo:videoURL
-             withAudio:audioFile
-            completion:^(BOOL success, NSURL *merged) {
-              [[NSFileManager defaultManager] removeItemAtURL:audioFile error:nil];
-              dispatch_async(dispatch_get_main_queue(), ^{
-                if (completion)
-                    completion(success, merged);
-              });
-            }];
-    });
-}
-
-// 合并视频和音频
-+ (void)mergeVideo:(NSURL *)videoURL withAudio:(NSURL *)audioURL completion:(void (^)(BOOL success, NSURL *mergedURL))completion {
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-      AVURLAsset *videoAsset = [AVURLAsset URLAssetWithURL:videoURL options:nil];
-      AVURLAsset *audioAsset = [AVURLAsset URLAssetWithURL:audioURL options:nil];
-      AVAssetTrack *videoTrack = [[videoAsset tracksWithMediaType:AVMediaTypeVideo] firstObject];
-      AVAssetTrack *audioTrack = [[audioAsset tracksWithMediaType:AVMediaTypeAudio] firstObject];
-      if (!videoTrack || !audioTrack) {
-          dispatch_async(dispatch_get_main_queue(), ^{
-            if (completion)
-                completion(NO, nil);
-          });
-          return;
-      }
-
-      AVMutableComposition *composition = [AVMutableComposition composition];
-      AVMutableCompositionTrack *compVideoTrack = [composition addMutableTrackWithMediaType:AVMediaTypeVideo preferredTrackID:kCMPersistentTrackID_Invalid];
-      [compVideoTrack insertTimeRange:CMTimeRangeMake(kCMTimeZero, videoAsset.duration) ofTrack:videoTrack atTime:kCMTimeZero error:nil];
-
-      AVMutableCompositionTrack *compAudioTrack = [composition addMutableTrackWithMediaType:AVMediaTypeAudio preferredTrackID:kCMPersistentTrackID_Invalid];
-      [compAudioTrack insertTimeRange:CMTimeRangeMake(kCMTimeZero, videoAsset.duration) ofTrack:audioTrack atTime:kCMTimeZero error:nil];
-
-      NSString *outputPath = [DYYYUtils cachePathForFilename:[NSString stringWithFormat:@"merged_%@", videoURL.lastPathComponent]];
-      NSURL *outputURL = [NSURL fileURLWithPath:outputPath];
-      if ([[NSFileManager defaultManager] fileExistsAtPath:outputPath]) {
-          [[NSFileManager defaultManager] removeItemAtPath:outputPath error:nil];
-      }
-
-      AVAssetExportSession *exportSession = [[AVAssetExportSession alloc] initWithAsset:composition presetName:AVAssetExportPresetPassthrough];
-      exportSession.outputURL = outputURL;
-      exportSession.outputFileType = AVFileTypeMPEG4;
-      [exportSession exportAsynchronouslyWithCompletionHandler:^{
-        BOOL success = exportSession.status == AVAssetExportSessionStatusCompleted;
-        if (!success) {
-            NSLog(@"Merge export failed: %@", exportSession.error);
-        } else {
-            [[NSFileManager defaultManager] removeItemAtURL:videoURL error:nil];
-        }
-        dispatch_async(dispatch_get_main_queue(), ^{
-          if (completion)
-              completion(success, success ? outputURL : nil);
-        });
-      }];
     });
 }
 
@@ -3207,7 +2635,7 @@ static BOOL DYYYWriteStaticImageToGIF(UIImage *image, NSURL *gifURL) {
           AVMutableVideoCompositionLayerInstruction *layerInstruction = [AVMutableVideoCompositionLayerInstruction videoCompositionLayerInstructionWithAssetTrack:videoTrack];
 
           // 计算适当的视频变换
-          CGAffineTransform transform = [self transformForAssetTrack:assetVideoTrack targetSize:videoSize];
+          CGAffineTransform transform = [DYYYUtils transformForAssetTrack:assetVideoTrack targetSize:videoSize];
           [layerInstruction setTransform:transform atTime:currentTime];
 
           instruction.layerInstructions = @[ layerInstruction ];
@@ -3394,7 +2822,7 @@ static BOOL DYYYWriteStaticImageToGIF(UIImage *image, NSURL *gifURL) {
     CGContextFillRect(context, CGRectMake(0, 0, videoSize.width, videoSize.height));
 
     // 居中绘制图像，保持原始比例
-    CGRect drawRect = [self rectForImageAspectFit:image.size inSize:videoSize];
+    CGRect drawRect = [DYYYUtils rectForImageAspectFit:image.size inSize:videoSize];
     CGContextDrawImage(context, drawRect, image.CGImage);
 
     CGColorSpaceRelease(rgbColorSpace);
@@ -3442,68 +2870,6 @@ static BOOL DYYYWriteStaticImageToGIF(UIImage *image, NSURL *gifURL) {
     });
 }
 
-// 缩放图片到指定尺寸
-+ (UIImage *)resizeImage:(UIImage *)image toSize:(CGSize)size {
-    UIGraphicsBeginImageContextWithOptions(size, NO, 0.0);
-    [image drawInRect:CGRectMake(0, 0, size.width, size.height)];
-    UIImage *resizedImage = UIGraphicsGetImageFromCurrentImageContext();
-    UIGraphicsEndImageContext();
-    return resizedImage ?: image;
-}
-
-+ (CGRect)rectForImageAspectFit:(CGSize)imageSize inSize:(CGSize)containerSize {
-    CGFloat hScale = containerSize.width / imageSize.width;
-    CGFloat vScale = containerSize.height / imageSize.height;
-    CGFloat scale = MIN(hScale, vScale);  // 使用MIN而不是MAX来保持原始比例
-
-    CGFloat newWidth = imageSize.width * scale;
-    CGFloat newHeight = imageSize.height * scale;
-
-    CGFloat x = (containerSize.width - newWidth) / 2.0;
-    CGFloat y = (containerSize.height - newHeight) / 2.0;
-
-    return CGRectMake(x, y, newWidth, newHeight);
-}
-
-// 计算视频轨道的变换（保持原始比例）
-+ (CGAffineTransform)transformForAssetTrack:(AVAssetTrack *)track targetSize:(CGSize)targetSize {
-    CGSize trackSize = CGSizeApplyAffineTransform(track.naturalSize, track.preferredTransform);
-    trackSize = CGSizeMake(fabs(trackSize.width), fabs(trackSize.height));
-
-    CGFloat xScale = targetSize.width / trackSize.width;
-    CGFloat yScale = targetSize.height / trackSize.height;
-    CGFloat scale = MIN(xScale, yScale);  // 使用MIN而不是MAX来保持原始比例
-
-    CGAffineTransform transform = track.preferredTransform;
-    transform = CGAffineTransformConcat(transform, CGAffineTransformMakeScale(scale, scale));
-
-    // 居中显示
-    CGFloat xOffset = (targetSize.width - trackSize.width * scale) / 2.0;
-    CGFloat yOffset = (targetSize.height - trackSize.height * scale) / 2.0;
-    transform = CGAffineTransformConcat(transform, CGAffineTransformMakeTranslation(xOffset, yOffset));
-
-    return transform;
-}
-
-// 计算图片的变换（保持原始比例）
-+ (CGAffineTransform)transformForImage:(UIImage *)image targetSize:(CGSize)targetSize {
-    CGSize imageSize = image.size;
-
-    CGFloat xScale = targetSize.width / imageSize.width;
-    CGFloat yScale = targetSize.height / imageSize.height;
-    CGFloat scale = MIN(xScale, yScale);
-
-    CGAffineTransform transform = CGAffineTransformIdentity;
-    transform = CGAffineTransformScale(transform, scale, scale);
-
-    // 居中显示
-    CGFloat xOffset = (targetSize.width - imageSize.width * scale) / 2.0;
-    CGFloat yOffset = (targetSize.height - imageSize.height * scale) / 2.0;
-    transform = CGAffineTransformTranslate(transform, xOffset / scale, yOffset / scale);
-
-    return transform;
-}
-
 // 动画贴纸和GIF相关方法迁移自 DYYYUtils.m
 + (void)saveAnimatedSticker:(YYAnimatedImageView *)targetStickerView {
     if (!targetStickerView) {
@@ -3516,13 +2882,13 @@ static BOOL DYYYWriteStaticImageToGIF(UIImage *image, NSURL *gifURL) {
             [DYYYUtils showToast:@"需要相册权限才能保存"];
             return;
         }
-        if ([self isBDImageWithHeifURL:targetStickerView.image]) {
+        if ([DYYYUtils isBDImageWithHeifURL:targetStickerView.image]) {
             [self saveHeifSticker:targetStickerView];
             return;
         }
         dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-          NSArray *images = [self getImagesFromYYAnimatedImageView:targetStickerView];
-          CGFloat duration = [self getDurationFromYYAnimatedImageView:targetStickerView];
+          NSArray *images = [DYYYUtils getImagesFromYYAnimatedImageView:targetStickerView];
+          CGFloat duration = [DYYYUtils getDurationFromYYAnimatedImageView:targetStickerView];
           if (!images || images.count == 0) {
               dispatch_async(dispatch_get_main_queue(), ^{
                 [DYYYUtils showToast:@"无法获取表情帧"];
@@ -3530,17 +2896,17 @@ static BOOL DYYYWriteStaticImageToGIF(UIImage *image, NSURL *gifURL) {
               return;
           }
           NSString *tempPath = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"sticker_%ld.gif", (long)[[NSDate date] timeIntervalSince1970]]];
-          BOOL success = [self createGIFWithImages:images
-                                          duration:duration
-                                              path:tempPath
-                                          progress:^(float progress){
-                                          }];
+          BOOL success = [DYYYUtils createGIFWithImages:images
+                                               duration:duration
+                                                   path:tempPath
+                                               progress:^(float progress){
+                                               }];
           dispatch_async(dispatch_get_main_queue(), ^{
             if (!success) {
                 return;
             }
-            [self saveGIFToPhotoLibrary:tempPath
-                             completion:^(BOOL saved, NSError *error) {
+            [DYYYUtils saveGIFToPhotoLibrary:tempPath
+                                  completion:^(BOOL saved, NSError *error) {
                                if (saved) {
                                    [DYYYToast showSuccessToastWithMessage:@"已保存到相册"];
                                } else {
@@ -3553,20 +2919,6 @@ static BOOL DYYYWriteStaticImageToGIF(UIImage *image, NSURL *gifURL) {
       });
     }];
 }
-+ (BOOL)isBDImageWithHeifURL:(UIImage *)image {
-    if (!image)
-        return NO;
-    if ([NSStringFromClass([image class]) containsString:@"BDImage"]) {
-        if ([image respondsToSelector:@selector(bd_webURL)]) {
-            NSURL *webURL = [image performSelector:@selector(bd_webURL)];
-            if (webURL) {
-                NSString *urlString = webURL.absoluteString;
-                return [urlString containsString:@".heif"] || [urlString containsString:@".heic"];
-            }
-        }
-    }
-    return NO;
-}
 + (void)saveHeifSticker:(YYAnimatedImageView *)stickerView {
     UIImage *image = stickerView.image;
     NSURL *heifURL = [image performSelector:@selector(bd_webURL)];
@@ -3574,8 +2926,8 @@ static BOOL DYYYWriteStaticImageToGIF(UIImage *image, NSURL *gifURL) {
         [DYYYUtils showToast:@"无法获取表情URL"];
         return;
     }
-    [DYYYManager convertHeicToGif:heifURL
-                       completion:^(NSURL *gifURL, BOOL success) {
+    [DYYYUtils convertHeicToGif:heifURL
+                     completion:^(NSURL *gifURL, BOOL success) {
                          if (!success || !gifURL) {
                              [DYYYUtils showToast:@"表情转换失败"];
                              return;
@@ -3602,109 +2954,139 @@ static BOOL DYYYWriteStaticImageToGIF(UIImage *image, NSURL *gifURL) {
                              }];
                        }];
 }
-+ (NSArray *)getImagesFromYYAnimatedImageView:(YYAnimatedImageView *)imageView {
-    if (!imageView || !imageView.image) {
-        return nil;
++ (void)downloadAndShareCommentAudio:(NSString *)audioContent
+                            userName:(NSString *)userName
+                          createTime:(NSNumber *)createTime {
+    if (!audioContent || audioContent.length == 0) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [DYYYUtils showToast:@"语音内容为空"];
+        });
+        return;
     }
-    if ([imageView.image respondsToSelector:@selector(images)]) {
-        return [imageView.image performSelector:@selector(images)];
+    
+    NSData *jsonData = [audioContent dataUsingEncoding:NSUTF8StringEncoding];
+    NSError *error = nil;
+    NSDictionary *audioDict = [NSJSONSerialization JSONObjectWithData:jsonData options:0 error:&error];
+    
+    if (error || !audioDict) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [DYYYUtils showToast:@"语音数据解析失败"];
+        });
+        NSLog(@"[DYYY] 解析语音 JSON 失败: %@", error);
+        return;
     }
-    return nil;
-}
-+ (CGFloat)getDurationFromYYAnimatedImageView:(YYAnimatedImageView *)imageView {
-    if (!imageView || !imageView.image) {
-        return 0;
+    
+    NSArray *videoList = audioDict[@"video_list"];
+    if (!videoList || videoList.count == 0) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [DYYYUtils showToast:@"未找到语音URL"];
+        });
+        return;
     }
-
-    UIImage *image = imageView.image;
-
-    if (image.images.count > 0) {
-        NSTimeInterval builtInDuration = image.duration;
-        if (builtInDuration <= 0) {
-            builtInDuration = image.images.count * kDYYYDefaultFrameDelay;
+    
+    NSDictionary *videoInfo = videoList.firstObject;
+    NSString *audioURLString = videoInfo[@"main_url"];
+    if (!audioURLString || audioURLString.length == 0) {
+        audioURLString = videoInfo[@"backup_url"];
+    }
+    
+    if (!audioURLString || audioURLString.length == 0) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [DYYYUtils showToast:@"语音URL无效"];
+        });
+        return;
+    }
+    
+    NSURL *audioURL = [NSURL URLWithString:audioURLString];
+    if (!audioURL) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [DYYYUtils showToast:@"语音URL格式错误"];
+        });
+        return;
+    }
+    
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [DYYYUtils showToast:@"正在下载语音..."];
+    });
+    
+    NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
+    NSURLSession *session = [NSURLSession sessionWithConfiguration:config];
+    
+    NSURLSessionDownloadTask *downloadTask = [session downloadTaskWithURL:audioURL completionHandler:^(NSURL *location, NSURLResponse *response, NSError *error) {
+        if (error) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [DYYYUtils showToast:[NSString stringWithFormat:@"下载失败: %@", error.localizedDescription]];
+            });
+            NSLog(@"[DYYY] 下载语音失败: %@", error);
+            return;
         }
-        return builtInDuration;
-    }
-
-    SEL frameCountSEL = NSSelectorFromString(@"animatedImageFrameCount");
-    SEL frameDurationSEL = NSSelectorFromString(@"animatedImageDurationAtIndex:");
-    if ([image respondsToSelector:frameCountSEL] && [image respondsToSelector:frameDurationSEL]) {
-        NSUInteger frameCount = ((NSUInteger(*)(id, SEL))objc_msgSend)(image, frameCountSEL);
-        if (frameCount > 0) {
-            CGFloat totalDuration = 0;
-            for (NSUInteger i = 0; i < frameCount; i++) {
-                CGFloat frameDuration = ((CGFloat(*)(id, SEL, NSUInteger))objc_msgSend)(image, frameDurationSEL, i);
-                totalDuration += frameDuration > 0 ? frameDuration : kDYYYDefaultFrameDelay;
+        
+        if (!location) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [DYYYUtils showToast:@"下载失败：无效的文件"];
+            });
+            return;
+        }
+        
+        NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+        formatter.dateFormat = @"yyyy-MM-dd HH:mm:ss";
+        NSTimeInterval timestamp = (createTime && [createTime doubleValue] > 0) ? [createTime doubleValue] : [[NSDate date] timeIntervalSince1970];
+        NSDate *commentDate = [NSDate dateWithTimeIntervalSince1970:timestamp];
+        NSString *timeString = [formatter stringFromDate:commentDate];
+        timeString = [timeString stringByReplacingOccurrencesOfString:@":" withString:@"-"];
+        timeString = [timeString stringByReplacingOccurrencesOfString:@" " withString:@"_"];
+        
+        NSString *safeUserName = userName ?: @"未知用户";
+        safeUserName = [safeUserName stringByReplacingOccurrencesOfString:@"/" withString:@"_"];
+        safeUserName = [safeUserName stringByReplacingOccurrencesOfString:@"\\" withString:@"_"];
+        
+        NSString *fileName = [NSString stringWithFormat:@"%@_%@.m4a", safeUserName, timeString];
+        NSString *tempDir = NSTemporaryDirectory();
+        NSString *targetPath = [tempDir stringByAppendingPathComponent:fileName];
+        
+        NSError *moveError = nil;
+        [[NSFileManager defaultManager] removeItemAtPath:targetPath error:nil];
+        [[NSFileManager defaultManager] moveItemAtPath:location.path toPath:targetPath error:&moveError];
+        
+        if (moveError) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [DYYYUtils showToast:@"文件保存失败"];
+            });
+            NSLog(@"[DYYY] 移动文件失败: %@", moveError);
+            return;
+        }
+        
+        NSURL *fileURL = [NSURL fileURLWithPath:targetPath];
+        
+        dispatch_async(dispatch_get_main_queue(), ^{
+            UIViewController *topVC = [DYYYUtils topView];
+            if (!topVC) {
+                [DYYYUtils showToast:@"无法显示分享界面"];
+                return;
             }
-            if (totalDuration > 0) {
-                return totalDuration;
+            
+            UIActivityViewController *activityVC = [[UIActivityViewController alloc] initWithActivityItems:@[fileURL] applicationActivities:nil];
+            
+            activityVC.completionWithItemsHandler = ^(UIActivityType activityType, BOOL completed, NSArray *returnedItems, NSError *activityError) {
+                [[NSFileManager defaultManager] removeItemAtPath:targetPath error:nil];
+                
+                if (completed) {
+                    [DYYYUtils showToast:@"分享成功"];
+                } else if (activityError) {
+                    [DYYYUtils showToast:@"分享失败"];
+                }
+            };
+            
+            if ([activityVC respondsToSelector:@selector(popoverPresentationController)]) {
+                activityVC.popoverPresentationController.sourceView = topVC.view;
+                activityVC.popoverPresentationController.sourceRect = CGRectMake(topVC.view.bounds.size.width / 2, topVC.view.bounds.size.height / 2, 0, 0);
             }
-        }
-    }
-
-    SEL dataSEL = NSSelectorFromString(@"animatedImageData");
-    NSData *animatedData = nil;
-    if ([image respondsToSelector:dataSEL]) {
-        animatedData = ((NSData *(*)(id, SEL))objc_msgSend)(image, dataSEL);
-    }
-    if (animatedData.length > 0) {
-        CGFloat scale = image.scale > 0 ? image.scale : 1.0f;
-        YYImageDecoder *decoder = DYYYCreateYYDecoderWithData(animatedData, scale);
-        CGFloat decoderDuration = DYYYTotalDurationFromYYDecoder(decoder);
-        if (decoderDuration > 0) {
-            return decoderDuration;
-        }
-    }
-
-    if ([image respondsToSelector:@selector(duration)]) {
-        NSTimeInterval duration = image.duration;
-        if (duration > 0) {
-            return duration;
-        }
-    }
-
-    id durationValue = [image valueForKey:@"duration"];
-    return [durationValue respondsToSelector:@selector(floatValue)] ? [durationValue floatValue] : 0;
+            
+            [topVC presentViewController:activityVC animated:YES completion:nil];
+        });
+    }];
+    
+    [downloadTask resume];
 }
-+ (BOOL)createGIFWithImages:(NSArray *)images duration:(CGFloat)duration path:(NSString *)path progress:(void (^)(float progress))progressBlock {
-    if (images.count == 0)
-        return NO;
-    float frameDuration = duration / images.count;
-    CGImageDestinationRef destination = CGImageDestinationCreateWithURL((__bridge CFURLRef)[NSURL fileURLWithPath:path], kUTTypeGIF, images.count, NULL);
-    if (!destination)
-        return NO;
-    NSDictionary *gifProperties = @{(__bridge NSString *)kCGImagePropertyGIFDictionary : @{(__bridge NSString *)kCGImagePropertyGIFLoopCount : @0}};
-    CGImageDestinationSetProperties(destination, (__bridge CFDictionaryRef)gifProperties);
-    for (NSUInteger i = 0; i < images.count; i++) {
-        UIImage *image = images[i];
-        NSDictionary *frameProperties = @{(__bridge NSString *)kCGImagePropertyGIFDictionary : @{(__bridge NSString *)kCGImagePropertyGIFDelayTime : @(frameDuration)}};
-        CGImageDestinationAddImage(destination, image.CGImage, (__bridge CFDictionaryRef)frameProperties);
-        if (progressBlock) {
-            progressBlock((float)(i + 1) / images.count);
-        }
-    }
-    BOOL success = CGImageDestinationFinalize(destination);
-    CFRelease(destination);
-    return success;
-}
-+ (void)saveGIFToPhotoLibrary:(NSString *)path completion:(void (^)(BOOL success, NSError *error))completion {
-    NSURL *fileURL = [NSURL fileURLWithPath:path];
-    [[PHPhotoLibrary sharedPhotoLibrary]
-        performChanges:^{
-          PHAssetCreationRequest *request = [PHAssetCreationRequest creationRequestForAsset];
-          [request addResourceWithType:PHAssetResourceTypePhoto fileURL:fileURL options:nil];
-        }
-        completionHandler:^(BOOL success, NSError *_Nullable error) {
-          dispatch_async(dispatch_get_main_queue(), ^{
-            if (completion) {
-                completion(success, error);
-            }
-            NSError *removeError = nil;
-            [[NSFileManager defaultManager] removeItemAtPath:path error:&removeError];
-            if (removeError) {
-                NSLog(@"删除临时GIF文件失败: %@", removeError);
-            }
-          });
-        }];
-}
+
 @end

@@ -1,0 +1,8 @@
+BasedOnStyle: Google
+IndentWidth: 4
+UseTab: Never
+BreakBeforeBraces: Attach
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: false
+ColumnLimit: 200
+SpaceBeforeParens: ControlStatements
