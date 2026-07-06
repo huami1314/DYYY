@@ -162,6 +162,9 @@ typedef NS_ENUM(NSUInteger, DYEdgeMode) {
 @property(nonatomic, assign) BOOL isShowLandscapeEntryView;
 - (BOOL)isLive;
 - (BOOL)contentFilter;
+- (BOOL)checkIsAd;
+- (BOOL)isHardAdModel;
+- (BOOL)isHardAd;
 - (BOOL)awe_enableHDR;
 - (id)awe_HDRValueFor:(long long)value enableHDR:(BOOL)enableHDR;
 - (AWESearchAwemeExtraModel *)searchExtraModel;
@@ -170,6 +173,20 @@ typedef NS_ENUM(NSUInteger, DYEdgeMode) {
 @interface AWEHotListDataController : NSObject
 - (NSNumber *)dyyy_numberValueForLowLikesFilter:(id)rawValue;
 - (NSNumber *)dyyy_resolvedDiggCountForAweme:(AWEAwemeModel *)aweme;
+@end
+
+@interface AWEListDataController : NSObject
+@property(nonatomic, strong) NSMutableArray *dataSource;
+@property(nonatomic, strong) NSMutableArray *filteredDataSource;
+@end
+
+@interface AWEMixVideoListDataController : AWEListDataController
+@end
+
+@interface AWEMixVideoDetailPlayListDataController : AWEListDataController
+@end
+
+@interface AWEMixVideoRelatedListDataController : AWEMixVideoListDataController
 @end
 
 @interface AWEFeedCommentConfigModel : NSObject
@@ -216,6 +233,8 @@ typedef NS_ENUM(NSUInteger, DYEdgeMode) {
 @property(nonatomic, strong) AWEAwemeModel *model;
 - (BOOL)enableHDR;
 - (void)setEnableHDR:(BOOL)enableHDR;
+- (BOOL)awe_isCurrentVideoHDR;
+- (void)setPlayerLutFilter:(id)lutFilter HDRLutImage:(id)HDRLutImage;
 @end
 
 @interface AWELongPressPanelViewGroupModel : NSObject
@@ -1042,8 +1061,10 @@ typedef NS_ENUM(NSUInteger, DYEdgeMode) {
 @interface DUXContentSheet : UIViewController
 - (void)showOnViewController:(id)arg1 completion:(id)arg2;
 - (instancetype)initWithRootViewController:(UIViewController *)controller withTopType:(NSInteger)topType withSheetAligment:(NSInteger)alignment;
+- (instancetype)initWithRootViewController:(UIViewController *)controller withTopType:(NSInteger)topType withHeight:(CGFloat)height;
 - (void)setAutoAlignmentCenter:(BOOL)center;
 - (void)setSheetCornerRadius:(CGFloat)radius;
+@property(nonatomic, strong) UIColor *contentColor;
 @property(retain, nonatomic) UIView *fullScreenView;
 @end
 
@@ -1223,7 +1244,28 @@ typedef NS_ENUM(NSUInteger, DYEdgeMode) {
 @interface AWEFeedRootViewController : UIViewController
 - (BOOL)prefersStatusBarHidden;
 @end
+@interface AWELiveAudienceContainerController : NSObject
+@property(nonatomic, strong) id roomModel;
+@property(nonatomic, strong) UIViewController *audienceVC;
+- (UIViewController *)audienceViewController;
+@end
+
+@interface AWELiveAudienceViewController : NSObject
+@property(nonatomic, strong) id roomModel;
+@property(nonatomic, strong) UIViewController *audienceViewController;
+@end
+
+@interface IESLiveInnerFeedLiveRoomCell : UICollectionViewCell
+@property(nonatomic, strong) id itemModel;
+@property(nonatomic, strong) id roomAisle;
+@property(nonatomic, strong) UIViewController *audienceVC;
+@end
+
 @interface IESLiveAudienceViewController : UIViewController
+@property(nonatomic, strong) id containerContext;
+@property(nonatomic, strong) id roomDI;
+@property(nonatomic, strong) id roomConfig;
+@property(nonatomic, strong) id roomAisle;
 - (BOOL)prefersStatusBarHidden;
 @end
 @interface AWEAwemeDetailTableViewController : UIViewController
@@ -1370,6 +1412,23 @@ typedef NS_ENUM(NSUInteger, DYEdgeMode) {
 @end
 
 @interface AWEPlayInteractionUserAvatarView : UIView
+@property(retain, nonatomic) UIView *followPromptView;
+@property(retain, nonatomic) UIView *followAnimationView;
+@property(retain, nonatomic) UIView *unfollowAnimationView;
+@property(retain, nonatomic) UIView *staticFollowAnimationView;
+@property(retain, nonatomic) UIView *sendMessageView;
+@property(retain, nonatomic) UIView *sendMessageGuideView;
+@property(nonatomic, weak) UIImageView *avatarSendMessageImageView;
+@property(retain, nonatomic) UIView *enterStoreView;
+@property(retain, nonatomic) UIView *enterStoreGuideView;
+@property(nonatomic, weak) UIImageView *avatarEnterStoreImageView;
+@property(retain, nonatomic) UIView *linkIconContainerView;
+@property(retain, nonatomic) UIImageView *userAvatarLinkIcon;
+- (void)updateRightContainerElement;
+- (void)p_resetFollowAnimation;
+- (void)playFollowAnimation:(id)completion;
+- (void)playUnFollowAnimation;
+- (void)changeSendMessageViewWithFlag:(BOOL)flag;
 @end
 
 @interface AWEPlayInteractionStaticFollowAnimationView : UIView
@@ -1402,7 +1461,10 @@ typedef NS_ENUM(NSUInteger, DYEdgeMode) {
 @property(nonatomic) AWEURLModel *playAddr;
 @end
 
-@interface AWENormalModeTabBarGeneralPlusButton : UIView
+@interface AWENormalModeTabBarPlusButton : UIView
+@end
+
+@interface AWENormalModeTabBarGeneralPlusButton : AWENormalModeTabBarPlusButton
 @end
 
 @interface AWEMixVideoPanelMoreView : UIView
@@ -1414,7 +1476,10 @@ typedef NS_ENUM(NSUInteger, DYEdgeMode) {
 
 @interface AWEPlayInteractionUserAvatarContext : NSObject
 @property(retain, nonatomic) AWEAwemeModel *model;
+@property(nonatomic, weak) UIView *elementView;
+@property(nonatomic, weak) UIView *avatarPicContainerView;
 @property(nonatomic, weak) UIView *avatarPicView;
+@property(nonatomic, weak) UIView *avatarPicAvatarButton;
 @end
 
 @interface AWEPlayInteractionUserAvatarFollowController : UIViewController
@@ -1423,9 +1488,26 @@ typedef NS_ENUM(NSUInteger, DYEdgeMode) {
 
 @interface AWEPlayInteractionUserAvatarFollowPromptController : NSObject
 @property(retain, nonatomic) AWEPlayInteractionUserAvatarContext *userAvatarContext;
+@property(retain, nonatomic) UIView *followPromptView;
+@property(retain, nonatomic) UIView *followAddView;
+@property(retain, nonatomic) UIView *followAnimationView;
+@property(retain, nonatomic) UIView *unfollowAnimationView;
+@property(retain, nonatomic) AWEPlayInteractionStaticFollowAnimationView *staticFollowAnimationView;
 - (void)onFollowViewClicked:(id)gesture;
+- (void)onUnFollowViewClicked:(id)arg1;
+- (void)followPromptViewClicked:(id)arg1;
 - (void)layoutElementView;
 - (void)showFollowAddView:(BOOL)show;
+- (BOOL)shouldShowFollowAddWithModel:(id)arg1;
+- (BOOL)shouldShowSpecialFollowWithModel:(id)arg1;
+- (void)viewController_willDisplay;
+- (void)viewController_viewDidAppear;
+- (void)updateFollowStatus;
+- (void)followStatusChanged:(id)arg1;
+- (void)playFollowAnimation;
+- (void)playFollowAnimation:(id)completion;
+- (void)playUnFollowAnimation;
+- (void)_ensureStaticFollowAnimationView;
 @end
 
 @interface AWEPlayInteractionUserAvatarMainBusinessController : NSObject
@@ -1437,12 +1519,88 @@ typedef NS_ENUM(NSUInteger, DYEdgeMode) {
 @interface AWEPlayInteractionUserAvatarOptElementElement : NSObject
 @property(retain, nonatomic) AWEPlayInteractionUserAvatarContext *userAvatarContext;
 - (void)layoutElementView;
+- (void)viewController_willDisplay;
+- (void)viewController_viewDidAppear;
+- (void)setAppear:(BOOL)appear;
 @end
 
 @interface AWEPlayInteractionUserAvatarStoryController : NSObject
 @property(nonatomic, weak) UIView *colorRingView;
 - (void)layoutElementView;
 - (void)showStory25RingView;
+@end
+
+@interface AWEPlayInteractionUserAvatarDecorationController : NSObject
+@property(retain, nonatomic) AWEPlayInteractionUserAvatarContext *userAvatarContext;
+@property(retain, nonatomic) UIImageView *decorationView;
+- (void)layoutElementView;
+- (void)viewController_willDisplay;
+- (void)setDecorationStyle:(long long)style;
+@end
+
+@interface AWEPlayInteractionUserAvatarSendMessageController : NSObject
+- (id)userAvatarView;
+- (void)controllerViewDidLayout;
+- (void)controllerStartConfigAvatarView:(id)view;
+- (void)controllerWillDisplay;
+- (void)controllerPlay;
+- (void)controllerReset;
+- (void)updateSendMessageView:(BOOL)show;
+- (void)p_updateSendMessageView:(BOOL)show;
+- (void)p_showSendMessageView:(id)view shouldShowSendMessageView:(BOOL)show animated:(BOOL)animated completion:(id)completion;
+- (BOOL)shouldShowSendMessageView;
+- (BOOL)shouldShowSendMessageGuideAnimation;
+- (void)playSendMessageGuideAnimationIfNeeded;
+- (void)onSendMessageViewClicked:(id)arg1;
+@end
+
+@interface AWEPlayInteractionUserAvatarSendMsgController : NSObject
+@property(retain, nonatomic) AWEPlayInteractionUserAvatarContext *userAvatarContext;
+@property(retain, nonatomic) UIView *sendMessageView;
+@property(retain, nonatomic) UIView *sendMessageGuideView;
+@property(retain, nonatomic) UIImageView *avatarSendMessageImageView;
+- (void)layoutElementView;
+- (void)viewController_willDisplay;
+- (void)viewController_viewDidDisappear;
+- (void)play;
+- (void)reset;
+- (void)changeSendMessageViewWithFlag:(BOOL)flag;
+- (void)showSendMessageView:(id)view show:(BOOL)show animated:(BOOL)animated completion:(id)completion;
+- (void)showSendMessageViewWithAnimation:(BOOL)animated;
+- (BOOL)shouldShowSendMessageView:(id)arg1;
+- (BOOL)shouldShowSendMessageGuideAnimation;
+- (void)updateSendMsgWithFollowShow:(BOOL)show animation:(BOOL)animated;
+- (void)handleAvatarFollowStatusChange:(id)arg1;
+- (void)playSendMessageGuideAnimationIfNeeded;
+- (void)onSendMessageViewClicked:(id)arg1;
+@end
+
+@interface AWEPlayInteractionUserAvatarEnterStoreController : NSObject
+@property(retain, nonatomic) AWEPlayInteractionUserAvatarContext *userAvatarContext;
+@property(retain, nonatomic) UIView *enterStoreView;
+@property(retain, nonatomic) UIView *enterStoreGuideView;
+- (void)layoutElementView;
+- (void)viewController_willDisplay;
+- (void)viewController_viewDidAppear;
+- (void)play;
+- (void)reset;
+- (void)showEnterStore;
+- (void)hideEnterStore;
+- (BOOL)shouldShowEnterStoreView;
+- (BOOL)shouldShowEnterStoreGuideAnimation;
+- (void)playEnterStoreGuideAnimationIfNeeded;
+- (void)handleAvatarFollowStatusChange:(id)arg1;
+- (void)onEnterStoreViewClicked:(id)arg1;
+@end
+
+@interface AWEPlayInteractionUserAvatarAdLinkController : NSObject
+@property(retain, nonatomic) AWEPlayInteractionUserAvatarContext *userAvatarContext;
+@property(retain, nonatomic) UIView *linkIconContainerView;
+@property(retain, nonatomic) UIImageView *userAvatarLinkIcon;
+- (void)layoutElementView;
+- (void)reset;
+- (void)updateCommerceHotSplashLinkIconImageIfNeeded:(id)arg1;
+- (void)onLinkIconContainerViewClicked:(id)arg1;
 @end
 
 @interface AWECodeGenCommonAnchorBasicInfoModel : UIViewController

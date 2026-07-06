@@ -17,6 +17,8 @@ BOOL isFloatSpeedButtonEnabled = NO;
 BOOL speedButtonForceHidden = NO;
 BOOL dyyyInteractionViewVisible = NO;
 
+static NSString *const kDYYYDefaultSpeedSettingsString = @"0.75,1.0,1.25,1.5,2.0,2.5,3.0";
+
 static void DYYYApplySpeedButtonHiddenState(UIView *button, BOOL hidden) {
     if (!button) {
         return;
@@ -61,8 +63,36 @@ static BOOL DYYYShouldHideSpeedButton(void) {
     return NO;
 }
 
-NSArray *getSpeedOptions() {
-    NSString *speedConfig = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYSpeedSettings"] ?: @"1.0,1.25,1.5,2.0";
+static NSString *DYYYFormatSpeedOption(double speed) {
+    NSString *speedString = [NSString stringWithFormat:@"%.2f", speed];
+    while ([speedString containsString:@"."] && [speedString hasSuffix:@"0"]) {
+        speedString = [speedString substringToIndex:speedString.length - 1];
+    }
+    if ([speedString hasSuffix:@"."]) {
+        speedString = [speedString substringToIndex:speedString.length - 1];
+    }
+    return speedString;
+}
+
+static BOOL DYYYSpeedValuesMatch(double lhs, double rhs) {
+    return fabs(lhs - rhs) <= 0.001;
+}
+
+NSString *DYYYDefaultSpeedSettingsString(void) {
+    return kDYYYDefaultSpeedSettingsString;
+}
+
+static NSString *DYYYSpeedSettingsStringFromValue(id value) {
+    if ([value isKindOfClass:[NSString class]]) {
+        return [(NSString *)value stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    }
+    if ([value respondsToSelector:@selector(stringValue)]) {
+        return [[value stringValue] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    }
+    return nil;
+}
+
+static NSArray<NSString *> *DYYYParsedSpeedOptionsFromString(NSString *speedConfig) {
     NSMutableArray<NSString *> *validSpeeds = [NSMutableArray array];
     NSCharacterSet *whitespace = [NSCharacterSet whitespaceAndNewlineCharacterSet];
 
@@ -75,11 +105,72 @@ NSArray *getSpeedOptions() {
         NSScanner *scanner = [NSScanner scannerWithString:trimmedValue];
         double speed = 0.0;
         if ([scanner scanDouble:&speed] && scanner.isAtEnd && isfinite(speed) && speed > 0.0) {
-            [validSpeeds addObject:trimmedValue];
+            [validSpeeds addObject:DYYYFormatSpeedOption(speed)];
         }
     }
+    return validSpeeds;
+}
 
-    return validSpeeds.count > 0 ? validSpeeds : @[ @"1.0", @"1.25", @"1.5", @"2.0" ];
+static double DYYYSpeedPreferenceValue(NSString *key, double fallback) {
+    id value = [[NSUserDefaults standardUserDefaults] objectForKey:key];
+    double speed = [value respondsToSelector:@selector(doubleValue)] ? [value doubleValue] : fallback;
+    if (!isfinite(speed) || speed <= 0.0) {
+        return fallback;
+    }
+    return speed;
+}
+
+static BOOL DYYYSpeedOptionsContainSpeed(NSArray<NSString *> *speedOptions, double speed) {
+    if (!isfinite(speed) || speed <= 0.0) {
+        return YES;
+    }
+
+    for (NSString *speedString in speedOptions) {
+        if (DYYYSpeedValuesMatch([speedString doubleValue], speed)) {
+            return YES;
+        }
+    }
+    return NO;
+}
+
+static BOOL DYYYSpeedOptionsCoverRequiredPlaybackSpeeds(NSArray<NSString *> *speedOptions) {
+    double defaultSpeed = DYYYSpeedPreferenceValue(@"DYYYDefaultSpeed", 1.0);
+    double longPressSpeed = DYYYSpeedPreferenceValue(@"DYYYLongPressSpeed", 2.0);
+    return DYYYSpeedOptionsContainSpeed(speedOptions, defaultSpeed) &&
+           DYYYSpeedOptionsContainSpeed(speedOptions, longPressSpeed);
+}
+
+BOOL DYYYNormalizeSpeedSettingsForRequiredSpeeds(void) {
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    NSString *speedConfig = DYYYSpeedSettingsStringFromValue([defaults objectForKey:@"DYYYSpeedSettings"]);
+    NSArray<NSString *> *validSpeeds = DYYYParsedSpeedOptionsFromString(speedConfig ?: @"");
+    BOOL shouldUseDefaultSettings = speedConfig.length == 0 ||
+                                    validSpeeds.count == 0 ||
+                                    !DYYYSpeedOptionsCoverRequiredPlaybackSpeeds(validSpeeds);
+
+    if (!shouldUseDefaultSettings) {
+        return NO;
+    }
+
+    if (![speedConfig isEqualToString:kDYYYDefaultSpeedSettingsString]) {
+        [defaults setObject:kDYYYDefaultSpeedSettingsString forKey:@"DYYYSpeedSettings"];
+        return YES;
+    }
+    return NO;
+}
+
+NSArray *getSpeedOptions() {
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    DYYYNormalizeSpeedSettingsForRequiredSpeeds();
+
+    NSString *speedConfig = DYYYSpeedSettingsStringFromValue([defaults objectForKey:@"DYYYSpeedSettings"]) ?: kDYYYDefaultSpeedSettingsString;
+    NSArray<NSString *> *validSpeeds = DYYYParsedSpeedOptionsFromString(speedConfig);
+    if (validSpeeds.count == 0) {
+        [defaults setObject:kDYYYDefaultSpeedSettingsString forKey:@"DYYYSpeedSettings"];
+        validSpeeds = DYYYParsedSpeedOptionsFromString(kDYYYDefaultSpeedSettingsString);
+    }
+
+    return validSpeeds;
 }
 
 NSInteger getCurrentSpeedIndex() {
@@ -115,6 +206,21 @@ void setCurrentSpeedIndex(NSInteger index) {
     }
 
     [[NSUserDefaults standardUserDefaults] setInteger:index forKey:@"DYYYCurrentSpeedIndex"];
+}
+
+BOOL setCurrentSpeedValue(float speed) {
+    if (!isfinite(speed) || speed <= 0.0f) {
+        return NO;
+    }
+
+    NSArray *speeds = getSpeedOptions();
+    for (NSInteger index = 0; index < speeds.count; index++) {
+        if (DYYYSpeedValuesMatch([speeds[index] floatValue], speed)) {
+            setCurrentSpeedIndex(index);
+            return YES;
+        }
+    }
+    return NO;
 }
 
 void updateSpeedButtonUI() {
@@ -304,6 +410,11 @@ void updateSpeedButtonVisibility() {
                              self.transform = CGAffineTransformIdentity;
                            }];
         }];
+
+    id currentController = DYYYCurrentSpeedInteractionController();
+    if (currentController) {
+        self.interactionController = currentController;
+    }
 
     if (self.interactionController) {
         @try {
@@ -504,21 +615,7 @@ void updateSpeedButtonVisibility() {
     }
 
     if (!self.interactionController) {
-        UIWindow *win = [DYYYUtils getActiveWindow];
-        UIViewController *topVC = win.rootViewController;
-        while (topVC && topVC.presentedViewController) {
-            topVC = topVC.presentedViewController;
-        }
-
-        if (topVC) {
-            Class PlayVCClass = NSClassFromString(@"AWEPlayInteractionViewController");
-            for (UIViewController *vc in findViewControllersInHierarchy(topVC)) {
-                if (PlayVCClass && [vc isKindOfClass:PlayVCClass]) {
-                    self.interactionController = vc;
-                    break;
-                }
-            }
-        }
+        self.interactionController = DYYYCurrentSpeedInteractionController();
     }
 }
 

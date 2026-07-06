@@ -1,0 +1,13 @@
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g mask="url(#mask0_liveactivityslash_20)">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M5.95 5.25H14.05C16.6457 5.25 18.75 7.35426 18.75 9.95V10.05C18.75 12.6457 16.6457 14.75 14.05 14.75H5.95C3.35426 14.75 1.25 12.6457 1.25 10.05V9.95C1.25 7.35426 3.35426 5.25 5.95 5.25ZM5.95 6.75C4.18269 6.75 2.75 8.18269 2.75 9.95V10.05C2.75 11.8173 4.18269 13.25 5.95 13.25H14.05C15.8173 13.25 17.25 11.8173 17.25 10.05V9.95C17.25 8.18269 15.8173 6.75 14.05 6.75H5.95Z" fill="#161823"/>
+<path d="M8.05 7.438C8.05 6.97219 8.55983 6.68648 8.95682 6.93014L13.2548 9.56814C13.6332 9.80046 13.6332 10.1995 13.2548 10.4319L8.95682 13.0699C8.55983 13.3135 8.05 13.0278 8.05 12.562V7.438Z" fill="#161823"/>
+</g>
+<path d="M3.6 2.65L16.4 17.35" stroke="#161823" stroke-width="1.5" stroke-linecap="round"/>
+<defs>
+<mask id="mask0_liveactivityslash_20" maskUnits="userSpaceOnUse" x="0" y="0" width="20" height="20">
+<rect width="20" height="20" fill="white"/>
+<path d="M3.6 2.65L16.4 17.35" stroke="black" stroke-width="2.35" stroke-linecap="round"/>
+</mask>
+</defs>
+</svg>

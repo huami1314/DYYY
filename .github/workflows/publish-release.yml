@@ -1,0 +1,261 @@
+name: publish release
+
+on:
+  workflow_run:
+    workflows:
+      - build deb
+    types:
+      - completed
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: '来源 build run ID（含 artifact 的那次 Actions run）'
+        required: true
+        type: string
+      artifact_name:
+        description: 'Artifact 名称（留空则自动取该 run 的第一个 artifact）'
+        required: false
+        type: string
+        default: ''
+      skip_cooldown:
+        description: '跳过 12 小时 Release 冷却'
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  source:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    outputs:
+      has_artifact: ${{ steps.resolve.outputs.has_artifact }}
+      run_id: ${{ steps.resolve.outputs.run_id }}
+      head_sha: ${{ steps.resolve.outputs.head_sha }}
+      head_branch: ${{ steps.resolve.outputs.head_branch }}
+      run_number: ${{ steps.resolve.outputs.run_number }}
+      artifact_name: ${{ steps.resolve.outputs.artifact_name }}
+
+    steps:
+      - name: Resolve source run metadata
+        id: resolve
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN_ID: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.id || inputs.source_run_id }}
+          ARTIFACT_NAME_INPUT: ${{ inputs.artifact_name }}
+        run: |
+          set -euo pipefail
+
+          run_json=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}")
+          workflow_path=$(jq -r '.path' <<< "$run_json")
+          if [[ "$workflow_path" != ".github/workflows/build.yml" ]]; then
+            echo "Run ${SOURCE_RUN_ID} belongs to ${workflow_path}, not build.yml" >&2
+            exit 1
+          fi
+
+          status=$(jq -r '.status' <<< "$run_json")
+          conclusion=$(jq -r '.conclusion // empty' <<< "$run_json")
+          if [[ "$status" != "completed" || "$conclusion" != "success" ]]; then
+            echo "Build run ${SOURCE_RUN_ID} is ${status}/${conclusion:-unknown}; only successful completed runs can be published." >&2
+            exit 1
+          fi
+
+          echo "run_id=${SOURCE_RUN_ID}" >> "$GITHUB_OUTPUT"
+          echo "head_sha=$(jq -r '.head_sha' <<< "$run_json")" >> "$GITHUB_OUTPUT"
+          echo "head_branch=$(jq -r '.head_branch' <<< "$run_json")" >> "$GITHUB_OUTPUT"
+          echo "run_number=$(jq -r '.run_number' <<< "$run_json")" >> "$GITHUB_OUTPUT"
+
+          if [[ -n "$ARTIFACT_NAME_INPUT" ]]; then
+            artifact_name="$ARTIFACT_NAME_INPUT"
+          else
+            artifact_name=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}/artifacts" \
+              --jq '[.artifacts[] | select(.expired == false)][0].name')
+          fi
+
+          if [[ -z "$artifact_name" || "$artifact_name" == "null" ]]; then
+            if [[ "$GITHUB_EVENT_NAME" == "workflow_run" ]]; then
+              echo "has_artifact=false" >> "$GITHUB_OUTPUT"
+              echo "Build run ${SOURCE_RUN_ID} produced no artifact; nothing to publish."
+              exit 0
+            fi
+            echo "Unable to resolve artifact name for run ${SOURCE_RUN_ID}" >&2
+            exit 1
+          fi
+
+          echo "has_artifact=true" >> "$GITHUB_OUTPUT"
+          echo "artifact_name=${artifact_name}" >> "$GITHUB_OUTPUT"
+          echo "Using artifact: ${artifact_name}"
+
+  publish:
+    needs: source
+    if: needs.source.outputs.has_artifact == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Download release package artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.source.outputs.artifact_name }}
+          run-id: ${{ needs.source.outputs.run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Prepare packages directory
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          mkdir -p packages
+          for file in *.deb *.dylib; do
+            [ -f "$file" ] && mv "$file" packages/
+          done
+          for file in packages/*/*.deb packages/*/*.dylib; do
+            [ -f "$file" ] && mv "$file" packages/
+          done
+
+          deb_files=(packages/*.deb)
+          if [ "${#deb_files[@]}" -eq 0 ]; then
+            echo "No .deb files found after downloading artifact" >&2
+            find . -maxdepth 3 -type f | sed 's/^/  /'
+            exit 1
+          fi
+
+          printf 'Downloaded release assets:\n'
+          printf '  %s\n' packages/*
+
+      - name: Prepare release metadata
+        id: release
+        env:
+          BUILD_RUN_NUMBER: ${{ needs.source.outputs.run_number }}
+          SOURCE_HEAD_SHA: ${{ needs.source.outputs.head_sha }}
+        run: |
+          set -euo pipefail
+          if ! git cat-file -e "${SOURCE_HEAD_SHA}^{commit}" 2>/dev/null; then
+            git fetch --no-tags origin "$SOURCE_HEAD_SHA"
+          fi
+          version=$(git show "${SOURCE_HEAD_SHA}:control" | awk -F': ' '$1 == "Version" { print $2; exit }')
+          if [ -z "$version" ]; then
+            echo "Unable to read package version from ${SOURCE_HEAD_SHA}:control" >&2
+            exit 1
+          fi
+          release_name="DYYY_${version}#${BUILD_RUN_NUMBER}"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=$release_name" >> "$GITHUB_OUTPUT"
+          echo "title=$release_name" >> "$GITHUB_OUTPUT"
+
+      - name: Verify release assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+
+          deb_files=(packages/*.deb)
+          dylib_files=(packages/*.dylib)
+          if [ "${#deb_files[@]}" -ne 3 ]; then
+            echo "Expected 3 Deb packages, found ${#deb_files[@]}:" >&2
+            printf '  %s\n' "${deb_files[@]}" >&2
+            exit 1
+          fi
+          if [ "${#dylib_files[@]}" -ne 1 ]; then
+            echo "Expected 1 dylib, found ${#dylib_files[@]}:" >&2
+            printf '  %s\n' "${dylib_files[@]}" >&2
+            exit 1
+          fi
+
+          for scheme in rootful rootless roothide; do
+            scheme_files=(packages/*-"${scheme}".deb)
+            if [ "${#scheme_files[@]}" -ne 1 ]; then
+              echo "Expected exactly one ${scheme} package, found ${#scheme_files[@]}" >&2
+              exit 1
+            fi
+          done
+
+          printf 'Release asset: %s\n' "${deb_files[@]}" "${dylib_files[@]}"
+
+      - name: Coordinate Release publication
+        id: release_gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW_FILE: build.yml
+          SOURCE_BUILD_RUN_ID: ${{ needs.source.outputs.run_id }}
+          SOURCE_BUILD_RUN_NUMBER: ${{ needs.source.outputs.run_number }}
+          SOURCE_BUILD_SHA: ${{ needs.source.outputs.head_sha }}
+          SOURCE_BUILD_BRANCH: ${{ needs.source.outputs.head_branch }}
+          SKIP_COOLDOWN: ${{ inputs.skip_cooldown }}
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" && "$SKIP_COOLDOWN" == "true" ]]; then
+            export RELEASE_MIN_INTERVAL_SECONDS=0
+          else
+            export RELEASE_MIN_INTERVAL_SECONDS=43200
+          fi
+          .github/scripts/release-coordinator.sh
+
+      - name: Resolve safe Release target
+        id: release_target
+        if: steps.release_gate.outputs.should_publish == 'true'
+        env:
+          SOURCE_BUILD_SHA: ${{ needs.source.outputs.head_sha }}
+          SOURCE_BUILD_BRANCH: ${{ needs.source.outputs.head_branch }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "$SOURCE_BUILD_BRANCH" || "$SOURCE_BUILD_BRANCH" == "null" ]]; then
+            echo "Source build run has no branch; unable to create a Release tag safely." >&2
+            exit 1
+          fi
+
+          git fetch --no-tags origin \
+            "refs/heads/${SOURCE_BUILD_BRANCH}:refs/remotes/origin/${SOURCE_BUILD_BRANCH}"
+          target_sha=$(git rev-parse --verify \
+            "refs/remotes/origin/${SOURCE_BUILD_BRANCH}^{commit}")
+
+          if ! git merge-base --is-ancestor "$SOURCE_BUILD_SHA" "$target_sha"; then
+            echo "Source build ${SOURCE_BUILD_SHA} is not an ancestor of ${SOURCE_BUILD_BRANCH} (${target_sha})." >&2
+            exit 1
+          fi
+
+          if [[ "$SOURCE_BUILD_SHA" != "$target_sha" ]] &&
+             .github/scripts/build-relevance.sh range "$SOURCE_BUILD_SHA" "$target_sha"; then
+            echo "A newer build-relevant change reached ${SOURCE_BUILD_BRANCH}; this run will not publish a Release."
+            echo "should_publish=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Release tag will target ${SOURCE_BUILD_BRANCH} HEAD: ${target_sha}"
+          echo "should_publish=true" >> "$GITHUB_OUTPUT"
+          echo "sha=${target_sha}" >> "$GITHUB_OUTPUT"
+
+      - name: Generate release notes
+        if: >-
+          steps.release_gate.outputs.should_publish == 'true' &&
+          steps.release_target.outputs.should_publish == 'true'
+        env:
+          RELEASE_HEAD_SHA: ${{ needs.source.outputs.head_sha }}
+          RELEASE_TITLE: ${{ steps.release.outputs.title }}
+          GH_TOKEN: ${{ github.token }}
+        run: .github/scripts/generate-release-notes.sh
+
+      - name: Publish GitHub Release
+        if: >-
+          steps.release_gate.outputs.should_publish == 'true' &&
+          steps.release_target.outputs.should_publish == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          RELEASE_TITLE: ${{ steps.release.outputs.title }}
+          RELEASE_TARGET_SHA: ${{ steps.release_target.outputs.sha }}
+        run: |
+          gh release create "$RELEASE_TAG" packages/*.deb packages/*.dylib \
+            --target "$RELEASE_TARGET_SHA" \
+            --title "$RELEASE_TITLE" \
+            --notes-file release-notes.md \
+            --latest

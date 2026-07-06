@@ -11,6 +11,7 @@
 #import <UIKit/UIKit.h>
 #import <float.h>
 #import <math.h>
+#import <objc/runtime.h>
 #import <signal.h>
 
 void updateClearButtonVisibility(void);
@@ -54,11 +55,193 @@ HideUIButton *hideButton = nil;
 BOOL isAppInTransition = NO;
 NSArray *targetClassNames;
 static NSUInteger dyyyTargetClassConfiguration = NSUIntegerMax;
-static CGFloat DYGetGlobalAlpha(void) {
-    NSString *value = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYGlobalTransparency"];
-    CGFloat a = value.length ? value.floatValue : 1.0;
-    return (a >= 0.0 && a <= 1.0) ? a : 1.0;
+
+typedef NS_ENUM(NSInteger, DYYYClearProgressMode) {
+    DYYYClearProgressModeNone = 0,
+    DYYYClearProgressModeRemove,
+    DYYYClearProgressModeHide,
+};
+
+// 清屏隐藏状态栏：遍历所有 window 的 VC 层级，触发系统重新评估状态栏显隐
+static void DYYYRefreshStatusBarVisibility(void) {
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideStatusBarOnClear"] ||
+        [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideStatusbar"]) {
+        return;
+    }
+    for (UIWindow *window in [UIApplication sharedApplication].windows) {
+        UIViewController *rootVC = window.rootViewController;
+        if (!rootVC) continue;
+        [rootVC setNeedsStatusBarAppearanceUpdate];
+        for (UIViewController *child in rootVC.childViewControllers) {
+            [child setNeedsStatusBarAppearanceUpdate];
+        }
+    }
 }
+
+static char dyyyProgressModeKey;
+static char dyyyProgressOriginalHiddenKey;
+static char dyyyProgressOriginalInteractionKey;
+static char dyyyProgressOriginalLayerOpacityKey;
+char dyyyClearOriginalAlphaKey;
+static char dyyyClearOriginalHiddenKey;
+static char dyyyClearStateCapturedKey;
+
+// AWEAwemePlayVideoPauseIcon 的 alpha 由抖音业务层动态控制（播放=0、暂停=1），
+// 对这类视图使用 hidden 属性隐藏而非修改 alpha，避免与业务层 alpha 控制冲突。
+BOOL DYYYIsDynamicAlphaView(UIView *view) {
+    static Class pauseIconClass = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        pauseIconClass = NSClassFromString(@"AWEAwemePlayVideoPauseIcon");
+    });
+    return pauseIconClass && [view isKindOfClass:pauseIconClass];
+}
+
+static BOOL DYYYHasCapturedClearTargetViewState(UIView *view) {
+    return view && objc_getAssociatedObject(view, &dyyyClearStateCapturedKey) != nil;
+}
+
+static void DYYYCaptureClearTargetViewStateIfNeeded(UIView *view) {
+    if (!view || DYYYHasCapturedClearTargetViewState(view)) {
+        return;
+    }
+
+    objc_setAssociatedObject(view, &dyyyClearStateCapturedKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    objc_setAssociatedObject(view, &dyyyClearOriginalAlphaKey, @(view.alpha), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    objc_setAssociatedObject(view, &dyyyClearOriginalHiddenKey, @(view.hidden), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
+void DYYYApplyClearTargetViewHiddenState(UIView *view) {
+    if (!view) {
+        return;
+    }
+
+    DYYYCaptureClearTargetViewStateIfNeeded(view);
+    if (DYYYIsDynamicAlphaView(view)) {
+        view.hidden = YES;
+    } else {
+        view.alpha = 0.0;
+    }
+}
+
+void DYYYRestoreClearTargetViewStateIfNeeded(UIView *view) {
+    if (!view || !DYYYHasCapturedClearTargetViewState(view)) {
+        return;
+    }
+
+    NSNumber *originalHidden = objc_getAssociatedObject(view, &dyyyClearOriginalHiddenKey);
+    NSNumber *originalAlpha = objc_getAssociatedObject(view, &dyyyClearOriginalAlphaKey);
+    if (originalHidden) {
+        view.hidden = originalHidden.boolValue;
+    }
+    if (originalAlpha) {
+        view.alpha = originalAlpha.floatValue;
+    }
+
+    objc_setAssociatedObject(view, &dyyyClearOriginalHiddenKey, nil, OBJC_ASSOCIATION_ASSIGN);
+    objc_setAssociatedObject(view, &dyyyClearOriginalAlphaKey, nil, OBJC_ASSOCIATION_ASSIGN);
+    objc_setAssociatedObject(view, &dyyyClearStateCapturedKey, nil, OBJC_ASSOCIATION_ASSIGN);
+}
+
+static DYYYClearProgressMode DYYYCurrentClearProgressMode(void) {
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    if ([defaults boolForKey:@"DYYYRemoveTimeProgress"]) {
+        return DYYYClearProgressModeRemove;
+    }
+    if ([defaults boolForKey:@"DYYYHideTimeProgress"]) {
+        return DYYYClearProgressModeHide;
+    }
+    return DYYYClearProgressModeNone;
+}
+
+static BOOL DYYYIsClearProgressView(UIView *view) {
+    static NSArray<NSString *> *classNames;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+      classNames = @[
+          @"AWEPlayInteractionProgressContainerView",
+          @"AWEDPlayerProgressContainerView",
+          @"AWEFeedProgressSlider",
+          @"AWEFeedProgressSliderForLongPress",
+          @"AWEFakeProgressSliderView",
+          @"AWEProgressContainerView",
+          @"AWEProgressPlayBackSlider",
+      ];
+    });
+
+    for (NSString *className in classNames) {
+        Class progressClass = NSClassFromString(className);
+        if (progressClass && [view isKindOfClass:progressClass]) {
+            return YES;
+        }
+    }
+    return NO;
+}
+
+static void DYYYRestoreClearProgressViewState(UIView *view) {
+    NSNumber *appliedMode = objc_getAssociatedObject(view, &dyyyProgressModeKey);
+    if (!appliedMode) {
+        return;
+    }
+
+    NSNumber *originalLayerOpacity = objc_getAssociatedObject(view, &dyyyProgressOriginalLayerOpacityKey);
+    if (originalLayerOpacity) {
+        view.layer.opacity = originalLayerOpacity.floatValue;
+    }
+
+    if (appliedMode.integerValue == DYYYClearProgressModeRemove) {
+        NSNumber *originalHidden = objc_getAssociatedObject(view, &dyyyProgressOriginalHiddenKey);
+        NSNumber *originalInteraction = objc_getAssociatedObject(view, &dyyyProgressOriginalInteractionKey);
+        if (originalHidden) {
+            view.hidden = originalHidden.boolValue;
+        }
+        if (originalInteraction) {
+            view.userInteractionEnabled = originalInteraction.boolValue;
+        }
+    }
+
+    objc_setAssociatedObject(view, &dyyyProgressModeKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    objc_setAssociatedObject(view, &dyyyProgressOriginalHiddenKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    objc_setAssociatedObject(view, &dyyyProgressOriginalInteractionKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    objc_setAssociatedObject(view, &dyyyProgressOriginalLayerOpacityKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
+static void DYYYApplyClearProgressViewState(UIView *view, DYYYClearProgressMode mode) {
+    NSNumber *appliedMode = objc_getAssociatedObject(view, &dyyyProgressModeKey);
+    if (appliedMode && appliedMode.integerValue != mode) {
+        DYYYRestoreClearProgressViewState(view);
+        appliedMode = nil;
+    }
+
+    if (mode == DYYYClearProgressModeNone) {
+        DYYYRestoreClearProgressViewState(view);
+        return;
+    }
+
+    if (!appliedMode) {
+        objc_setAssociatedObject(view, &dyyyProgressModeKey, @(mode), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        objc_setAssociatedObject(view, &dyyyProgressOriginalLayerOpacityKey, @(view.layer.opacity), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        if (mode == DYYYClearProgressModeRemove) {
+            objc_setAssociatedObject(view, &dyyyProgressOriginalHiddenKey, @(view.hidden), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+            objc_setAssociatedObject(view, &dyyyProgressOriginalInteractionKey, @(view.userInteractionEnabled), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        }
+    }
+
+    view.layer.opacity = 0.0f;
+    if (mode == DYYYClearProgressModeRemove) {
+        view.hidden = YES;
+        view.userInteractionEnabled = NO;
+    }
+}
+
+void DYYYApplyFloatClearProgressStateToView(UIView *view) {
+    if (!view || !DYYYIsClearProgressView(view)) {
+        return;
+    }
+    DYYYClearProgressMode mode = hideButton.isElementsHidden ? DYYYCurrentClearProgressMode() : DYYYClearProgressModeNone;
+    DYYYApplyClearProgressViewState(view, mode);
+}
+
 static void findViewsOfClassHelper(UIView *view, Class viewClass, NSMutableArray *result) {
     if ([view isKindOfClass:viewClass]) {
         [result addObject:view];
@@ -152,7 +335,11 @@ void hideClearButton(void) {
 static void forceResetAllUIElements(void) {
     DYYYPerformClearButtonMutation(^{
         initTargetClassNames();
-        Class StackViewClass = NSClassFromString(@"AWEElementStackView");
+        NSArray<UIView *> *trackedViews = [hideButton.hiddenViewsList copy];
+        for (UIView *view in trackedViews) {
+            DYYYRestoreClearTargetViewStateIfNeeded(view);
+        }
+
         for (UIWindow *window in [UIApplication sharedApplication].windows) {
             for (NSString *className in targetClassNames) {
                 Class viewClass = NSClassFromString(className);
@@ -161,11 +348,7 @@ static void forceResetAllUIElements(void) {
                 NSMutableArray *views = [NSMutableArray array];
                 findViewsOfClassHelper(window, viewClass, views);
                 for (UIView *view in views) {
-                    if ([view isKindOfClass:StackViewClass]) {
-                        view.alpha = 1.0; // 基础透明度交给全局透明度处理，避免重复乘
-                    } else {
-                        view.alpha = 1.0; // 恢复透明度
-                    }
+                    DYYYRestoreClearTargetViewStateIfNeeded(view);
                 }
             }
         }
@@ -183,6 +366,7 @@ void initTargetClassNames(void) {
     configuration |= [defaults boolForKey:@"DYYYHideDanmaku"] ? (1U << 1) : 0;
     configuration |= [defaults boolForKey:@"DYYYHideSlider"] ? (1U << 2) : 0;
     configuration |= [defaults boolForKey:@"DYYYHideChapter"] ? (1U << 3) : 0;
+    configuration |= [defaults boolForKey:@"DYYYHidePauseVideoIcon"] ? (1U << 4) : 0;
     if (targetClassNames && dyyyTargetClassConfiguration == configuration) {
         return;
     }
@@ -205,6 +389,10 @@ void initTargetClassNames(void) {
     }
     if (configuration & (1U << 3)) {
         [list addObject:@"AWEDemaciaChapterProgressSlider"];
+    }
+    if (configuration & (1U << 4)) {
+        // 视频中央的播放/暂停图标
+        [list addObject:@"AWEAwemePlayVideoPauseIcon"];
     }
 
     targetClassNames = [list copy];
@@ -450,14 +638,23 @@ void reloadClearButtonConfiguration(void) {
 }
 
 - (void)handleTouchDown {
+    if ([self dyyy_isInSelfHiddenState]) {
+        return;
+    }
     [self resetFadeTimer];
 }
 
 - (void)handleTouchUpInside {
+    if ([self dyyy_isInSelfHiddenState]) {
+        return;
+    }
     [self resetFadeTimer];
 }
 
 - (void)handleTouchUpOutside {
+    if ([self dyyy_isInSelfHiddenState]) {
+        return;
+    }
     [self resetFadeTimer];
 }
 
@@ -491,10 +688,74 @@ void reloadClearButtonConfiguration(void) {
     }
 }
 
+- (BOOL)dyyy_shouldSelfHideOnClear {
+    return [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideClearButtonOnTap"];
+}
+
+- (BOOL)dyyy_isInSelfHiddenState {
+    return self.isElementsHidden && [self dyyy_shouldSelfHideOnClear];
+}
+
+- (void)dyyy_applySelfHiddenAlpha {
+    if (self.fadeTimer) {
+        [self.fadeTimer invalidate];
+        self.fadeTimer = nil;
+    }
+    // alpha 必须 > 0.01 才能继续接收 hit-test，0.02 在动态背景下几乎不可见
+    self.alpha = 0.02;
+    [self dyyy_showEdgeIndicator];
+}
+
+- (void)dyyy_showEdgeIndicator {
+    if (!self.superview) {
+        return;
+    }
+
+    CGFloat indicatorHeight = self.bounds.size.height;
+    CGFloat indicatorWidth = 2.0; // 2pt 宽度
+    CGFloat screenWidth = self.superview.bounds.size.width;
+    CGFloat centerY = self.center.y;
+
+    if (!self.edgeIndicatorView) {
+        self.edgeIndicatorView = [[UIView alloc] init];
+        self.edgeIndicatorView.backgroundColor = [UIColor blackColor];
+        // 左侧两角圆弧（右侧贴屏幕边缘无弧度），模拟扣在屏幕边缘的效果
+        self.edgeIndicatorView.layer.maskedCorners = kCALayerMinXMinYCorner | kCALayerMinXMaxYCorner;
+        self.edgeIndicatorView.layer.cornerRadius = indicatorWidth;
+        self.edgeIndicatorView.layer.masksToBounds = YES;
+        self.edgeIndicatorView.userInteractionEnabled = NO;
+    }
+
+    self.edgeIndicatorView.frame = CGRectMake(screenWidth - indicatorWidth,
+                                              centerY - indicatorHeight / 2.0,
+                                              indicatorWidth,
+                                              indicatorHeight);
+    self.edgeIndicatorView.layer.cornerRadius = indicatorWidth;
+    self.edgeIndicatorView.alpha = 1.0;
+    self.edgeIndicatorView.hidden = NO;
+
+    if (![self.edgeIndicatorView isDescendantOfView:self.superview]) {
+        [self.superview addSubview:self.edgeIndicatorView];
+    }
+}
+
+- (void)dyyy_hideEdgeIndicator {
+    if (self.edgeIndicatorView) {
+        self.edgeIndicatorView.hidden = YES;
+    }
+}
+
 - (void)handleTap {
     if (isAppInTransition)
         return;
-    [self resetFadeTimer];
+
+    BOOL selfHide = [self dyyy_shouldSelfHideOnClear];
+    BOOL willEnterHidden = !self.isElementsHidden;
+    // 仅在不会进入“按钮自隐藏”状态时才重置淡出动画
+    if (!(selfHide && willEnterHidden)) {
+        [self resetFadeTimer];
+    }
+
     if (!self.isElementsHidden) {
         initTargetClassNames();
         [self hideUIElements];
@@ -505,38 +766,50 @@ void reloadClearButtonConfiguration(void) {
         if (hideSpeed) {
             hideSpeedButton();
         }
+
+        if (selfHide) {
+            [self dyyy_applySelfHiddenAlpha];
+        }
+
+        // 清屏隐藏状态栏：触发系统重新评估状态栏显隐
+        DYYYRefreshStatusBarVisibility();
     } else {
+        self.isElementsHidden = NO;
         forceResetAllUIElements();
         [self restoreAWEPlayInteractionProgressContainerView];
-        self.isElementsHidden = NO;
         [self.hiddenViewsList removeAllObjects];
         self.selected = NO;
 
         BOOL hideSpeed = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideSpeed"];
         if (hideSpeed) {
             showSpeedButton();
+            // 退出清屏时主动刷新一次：清屏期间可能发生过 PlayInteractionVC 的 viewDidDisappear，
+            // 导致 dyyyInteractionViewVisible 被置 NO，此时仅靠 showSpeedButton() 无法让倍速按钮重新出现，
+            // 必须重新从当前可见 controller 备份状态。
+            DYYYRefreshFloatSpeedButton();
         }
+
+        // 退出清屏，恢复正常透明度并重启淡出
+        self.alpha = self.originalAlpha;
+        [self resetFadeTimer];
+        [self dyyy_hideEdgeIndicator];
+
+        // 清屏隐藏状态栏：触发系统重新评估状态栏显隐
+        DYYYRefreshStatusBarVisibility();
     }
 }
 
 - (void)restoreAWEPlayInteractionProgressContainerView {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYRemoveTimeProgress"] || [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTimeProgress"]) {
-        DYYYPerformClearButtonMutation(^{
-            for (UIWindow *window in [UIApplication sharedApplication].windows) {
-                [self recursivelyRestoreAWEPlayInteractionProgressContainerViewInView:window];
-            }
-        });
-    }
+    DYYYPerformClearButtonMutation(^{
+        for (UIWindow *window in [UIApplication sharedApplication].windows) {
+            [self recursivelyRestoreAWEPlayInteractionProgressContainerViewInView:window];
+        }
+    });
 }
 
 - (void)recursivelyRestoreAWEPlayInteractionProgressContainerViewInView:(UIView *)view {
-    if ([view isKindOfClass:NSClassFromString(@"AWEPlayInteractionProgressContainerView")]) {
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYRemoveTimeProgress"]) {
-            view.hidden = NO;
-        } else {
-            view.alpha = DYGetGlobalAlpha();
-        }
-        return;
+    if (DYYYIsClearProgressView(view)) {
+        DYYYRestoreClearProgressViewState(view);
     }
 
     for (UIView *subview in view.subviews) {
@@ -560,7 +833,6 @@ void reloadClearButtonConfiguration(void) {
 - (void)hideUIElements {
     DYYYPerformClearButtonMutation(^{
         initTargetClassNames();
-        [self.hiddenViewsList removeAllObjects];
         [self findAndHideViews:targetClassNames];
         [self hideAWEPlayInteractionProgressContainerView];
         self.isElementsHidden = YES;
@@ -573,23 +845,17 @@ void reloadClearButtonConfiguration(void) {
 }
 
 - (void)hideAWEPlayInteractionProgressContainerView {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYRemoveTimeProgress"] || [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYHideTimeProgress"]) {
-        for (UIWindow *window in [UIApplication sharedApplication].windows) {
-            [self recursivelyHideAWEPlayInteractionProgressContainerViewInView:window];
-        }
+    for (UIWindow *window in [UIApplication sharedApplication].windows) {
+        [self recursivelyHideAWEPlayInteractionProgressContainerViewInView:window];
     }
 }
 
 - (void)recursivelyHideAWEPlayInteractionProgressContainerViewInView:(UIView *)view {
-    if ([view isKindOfClass:NSClassFromString(@"AWEPlayInteractionProgressContainerView")]) {
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYRemoveTimeProgress"]) {
-            view.hidden = YES;
-        } else {
-            view.tag = DYYY_IGNORE_GLOBAL_ALPHA_TAG;
-            view.alpha = 0.0;
+    if (DYYYIsClearProgressView(view)) {
+        DYYYApplyClearProgressViewState(view, DYYYCurrentClearProgressMode());
+        if (![self.hiddenViewsList containsObject:view]) {
+            [self.hiddenViewsList addObject:view];
         }
-        [self.hiddenViewsList addObject:view];
-        return;
     }
 
     for (UIView *subview in view.subviews) {
@@ -614,17 +880,19 @@ void reloadClearButtonConfiguration(void) {
                             continue;
                         }
                     }
-                    [self.hiddenViewsList addObject:view];
-                    view.alpha = 0.0;
+                    DYYYApplyClearTargetViewHiddenState(view);
+                    if (![self.hiddenViewsList containsObject:view]) {
+                        [self.hiddenViewsList addObject:view];
+                    }
                 }
             }
         }
     }
 }
 - (void)safeResetState {
+    self.isElementsHidden = NO;
     forceResetAllUIElements();
     [self restoreAWEPlayInteractionProgressContainerView];
-    self.isElementsHidden = NO;
     [self.hiddenViewsList removeAllObjects];
     self.selected = NO;
 
@@ -636,8 +904,19 @@ void reloadClearButtonConfiguration(void) {
     if (hideSpeed) {
         showSpeedButton();
     }
+
+    // 切场景/重置状态时，确保按钮自隐藏 alpha 也被恢复，避免按钮一直处于近乎透明的状态
+    if (self.alpha < 0.1) {
+        self.alpha = self.originalAlpha;
+        [self resetFadeTimer];
+    }
+    [self dyyy_hideEdgeIndicator];
+
+    // 清屏隐藏状态栏：触发系统重新评估状态栏显隐
+    DYYYRefreshStatusBarVisibility();
 }
 - (void)dealloc {
     [self stopTimers];
+    [self.edgeIndicatorView removeFromSuperview];
 }
 @end
