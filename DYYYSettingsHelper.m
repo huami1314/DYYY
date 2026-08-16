@@ -61,7 +61,7 @@
               @"DYYYEnableFloatSpeedButton" : @[ @"DYYYAutoRestoreSpeed", @"DYYYSpeedButtonShowX", @"DYYYSpeedButtonSize", @"DYYYSpeedSettings" ],
               @"DYYYEnableFloatClearButton" : @[
                   @"DYYYClearButtonIcon", @"DYYYEnableFloatClearButtonSize", @"DYYYRemoveTimeProgress", @"DYYYHideTimeProgress", @"DYYYHideDanmaku", @"DYYYHideSlider", @"DYYYHideTabBar",
-                  @"DYYYHideSpeed", @"DYYYHideChapter"
+                  @"DYYYHideSpeed", @"DYYYHideClearButtonOnTap", @"DYYYHideChapter", @"DYYYHidePauseVideoIcon", @"DYYYHideStatusBarOnClear"
               ],
               @"DYYYEnableModernPanel" : @[ @"DYYYLongPressPanelBlur", @"DYYYLongPressPanelDark" ],
               @"DYYYEnableDoubleTapMenu" : @[ @"DYYYDoubleTapMenuSettings" ],
@@ -355,6 +355,8 @@ static NSArray *allSettingsViewControllers(void) {
     [self updateDependentItemsForSetting:identifier value:@(isEnabled)];
 }
 + (void)updateConflictingItemUIState:(NSString *)identifier withValue:(BOOL)value {
+    [self setUserDefaults:@(value) forKey:identifier];
+
     for (AWESettingBaseViewController *settingsVC in allSettingsViewControllers()) {
         AWESettingsViewModel *viewModel = (AWESettingsViewModel *)[settingsVC viewModel];
         if (!viewModel || ![viewModel respondsToSelector:@selector(sectionDataArray)])
@@ -371,7 +373,6 @@ static NSArray *allSettingsViewControllers(void) {
                 if ([item.identifier isEqualToString:identifier]) {
                     if (item.cellType == 6 || item.cellType == 37) {
                         item.isSwitchOn = value;
-                        [self setUserDefaults:@(value) forKey:identifier];
                     }
                     item.isEnable = value;
                     [item refreshCell];

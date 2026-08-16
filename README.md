@@ -70,6 +70,7 @@
   </tr>
   <tr>
     <td align="center"><a href="https://github.com/plplpmmmmh"><img src="https://github.com/plplpmmmmh.png?size=120" width="100px;" height="100px;" alt="plplpmmmmh"/></a><br /><sub><b>plplpmmmmh</b></sub></td>
+    <td align="center"><a href="https://github.com/zooah212"><img src="https://github.com/zooah212.png?size=120" width="100px;" height="100px;" alt="zooah212"/></a><br /><sub><b>zooah212</b></sub></td>
   </tr>
 </table>
 
@@ -208,6 +209,6 @@ GITHUB_ACTIONS=true make package
 ## Star 趋势
 
 <p align="center">
-    <a href="https://star-history.com/#Wtrwx/DYYY">
-        <img src="https://api.star-history.com/svg?repos=Wtrwx/DYYY&type=Date" width="75%" alt="Star History"></a>
+    <a href="https://star-history.dera.page/#Wtrwx/DYYY">
+        <img src="https://star-history.dera.page/svg?repos=Wtrwx/DYYY&type=Date" width="75%" alt="Star History"></a>
 </p>

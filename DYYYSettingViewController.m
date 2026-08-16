@@ -2,6 +2,8 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 #import "DYYYConstants.h"
+#import "DYYYFloatClearButton.h"
+#import "DYYYFloatSpeedButton.h"
 
 typedef NS_ENUM(NSInteger, DYYYSettingItemType) { DYYYSettingItemTypeSwitch, DYYYSettingItemTypeTextField, DYYYSettingItemTypePicker };
 
@@ -148,7 +150,7 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) { DYYYSettingItemTypeSwitch, DYY
             [DYYYSettingItem itemWithTitle:@"推荐过滤热点" key:@"DYYYSkipHotSpot" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"推荐过滤低赞" key:@"DYYYFilterLowLikes" type:DYYYSettingItemTypeTextField placeholder:@"填0关闭"],
             [DYYYSettingItem itemWithTitle:@"推荐视频时限" key:@"DYYYFilterTimeLimit" type:DYYYSettingItemTypeTextField placeholder:@"填0关闭，单位为天"],
-            [DYYYSettingItem itemWithTitle:@"推荐过滤HDR" key:@"DYYYFilterFeedHDR" type:DYYYSettingItemTypeSwitch],
+            [DYYYSettingItem itemWithTitle:@"全局HDR设置" key:@"DYYYHDRMode" type:DYYYSettingItemTypePicker],
             [DYYYSettingItem itemWithTitle:@"启用首页净化" key:@"DYYYEnablePure" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"启用首页全屏" key:@"DYYYEnableFullScreen" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"启用屏蔽广告" key:@"DYYYNoAds" type:DYYYSettingItemTypeSwitch],
@@ -210,7 +212,7 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) { DYYYSettingItemTypeSwitch, DYY
             [DYYYSettingItem itemWithTitle:@"隐藏点赞按钮" key:@"DYYYHideLikeButton" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"隐藏评论按钮" key:@"DYYYHideCommentButton" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"隐藏收藏按钮" key:@"DYYYHideCollectButton" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"隐藏头像按钮" key:@"DYYYHideAvatarButton" type:DYYYSettingItemTypeSwitch],
+            [DYYYSettingItem itemWithTitle:@"隐藏头像及周边" key:@"DYYYHideAvatarButton" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"隐藏音乐按钮" key:@"DYYYHideMusicButton" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"隐藏分享按钮" key:@"DYYYHideShareButton" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"隐藏视频定位" key:@"DYYYHideLocation" type:DYYYSettingItemTypeSwitch],
@@ -375,7 +377,7 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) { DYYYSettingItemTypeSwitch, DYY
             [DYYYSettingItem itemWithTitle:@"清屏隐藏时间进度" key:@"DYYYHideTimeProgress" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"清屏隐藏滑条" key:@"DYYYHideSlider" type:DYYYSettingItemTypeSwitch],
             [DYYYSettingItem itemWithTitle:@"清屏隐藏底栏" key:@"DYYYHideTabBar" type:DYYYSettingItemTypeSwitch],
-            [DYYYSettingItem itemWithTitle:@"清屏隐藏倍速" key:@"DYYYHideSpeed" type:DYYYSettingItemTypeSwitch]
+            [DYYYSettingItem itemWithTitle:@"清屏隐藏倍速按钮" key:@"DYYYHideSpeed" type:DYYYSettingItemTypeSwitch]
         ]
     ];
 }
@@ -432,6 +434,8 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) { DYYYSettingItemTypeSwitch, DYY
     } else if ([key isEqualToString:@"DYYYLiveQuality"]) {
         // 直播清晰度选项
         return @[ @"蓝光帧彩", @"蓝光", @"超清", @"高清", @"标清", @"自动" ];
+    } else if ([key isEqualToString:@"DYYYHDRMode"]) {
+        return @[ @"关闭", @"全局屏蔽HDR效果", @"全局过滤HDR作品" ];
     }
     return @[];
 }
@@ -444,6 +448,8 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) { DYYYSettingItemTypeSwitch, DYY
     } else if ([key isEqualToString:@"DYYYLiveQuality"]) {
         // 直播清晰度直接显示
         return value ?: @"自动";
+    } else if ([key isEqualToString:@"DYYYHDRMode"]) {
+        return value ?: @"关闭";
     }
     return [NSString stringWithFormat:@"%@", value];
 }
@@ -453,6 +459,8 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) { DYYYSettingItemTypeSwitch, DYY
         return @1.0;
     } else if ([key isEqualToString:@"DYYYLiveQuality"]) {
         return @"自动";
+    } else if ([key isEqualToString:@"DYYYHDRMode"]) {
+        return @"关闭";
     }
     return nil;
 }
@@ -728,13 +736,47 @@ typedef NS_ENUM(NSInteger, DYYYSettingItemType) { DYYYSettingItemTypeSwitch, DYY
 - (void)switchToggled:(UISwitch *)sender {
     NSIndexPath *indexPath = [NSIndexPath indexPathForRow:sender.tag % 1000 inSection:sender.tag / 1000];
     DYYYSettingItem *item = self.settingSections[indexPath.section][indexPath.row];
-    [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:item.key];
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    [defaults setBool:sender.isOn forKey:item.key];
+    if ([item.key isEqualToString:@"DYYYEnableFloatSpeedButton"] || [item.key isEqualToString:@"DYYYSpeedButtonShowX"]) {
+        [FloatingSpeedButton reloadConfiguration];
+    }
+    if ([item.key isEqualToString:@"DYYYEnableFloatClearButton"] ||
+        [item.key isEqualToString:@"DYYYHideDanmaku"] ||
+        [item.key isEqualToString:@"DYYYRemoveTimeProgress"] ||
+        [item.key isEqualToString:@"DYYYHideTimeProgress"] ||
+        [item.key isEqualToString:@"DYYYHideSlider"] ||
+        [item.key isEqualToString:@"DYYYHideTabBar"] ||
+        [item.key isEqualToString:@"DYYYHideSpeed"] ||
+        [item.key isEqualToString:@"DYYYHideChapter"]) {
+        reloadClearButtonConfiguration();
+    }
+
+    if (sender.isOn) {
+        NSString *conflictingKey = nil;
+        if ([item.key isEqualToString:@"DYYYHideLOTAnimationView"]) {
+            conflictingKey = @"DYYYHideFollowPromptView";
+        } else if ([item.key isEqualToString:@"DYYYHideFollowPromptView"]) {
+            conflictingKey = @"DYYYHideLOTAnimationView";
+        }
+
+        if (conflictingKey) {
+            [defaults setBool:NO forKey:conflictingKey];
+            [self.tableView reloadData];
+        }
+    }
 }
 
 - (void)textFieldDidChange:(UITextField *)textField {
     NSIndexPath *indexPath = [NSIndexPath indexPathForRow:textField.tag % 1000 inSection:textField.tag / 1000];
     DYYYSettingItem *item = self.settingSections[indexPath.section][indexPath.row];
     [[NSUserDefaults standardUserDefaults] setObject:textField.text forKey:item.key];
+    if ([item.key isEqualToString:@"DYYYSpeedSettings"] || [item.key isEqualToString:@"DYYYSpeedButtonSize"]) {
+        [FloatingSpeedButton reloadConfiguration];
+    }
+    if ([item.key isEqualToString:@"DYYYEnableFloatClearButtonSize"]) {
+        reloadClearButtonConfiguration();
+    }
 }
 
 - (void)headerTapped:(UIButton *)sender {

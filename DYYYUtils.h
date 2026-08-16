@@ -11,6 +11,20 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface DYYYUtils : NSObject
 
+#pragma mark - Public Model Filtering Utilities (公共模型过滤工具)
+
+/** 使用抖音模型自身的广告判定及明确广告字段识别广告作品。 */
++ (BOOL)isAdvertisementAwemeModel:(id)model;
+
+/** 识别作品模型或搜索结果包装模型中的广告。 */
++ (BOOL)isAdvertisementContainerModel:(id)model;
+
+/** 从列表中移除广告模型；未启用屏蔽广告时原样返回。 */
++ (NSArray *)arrayByRemovingAdvertisements:(id)array;
+
+/** 在作品模型字段尚未完成映射时，从原始响应中识别明确广告标记。 */
++ (BOOL)isAdvertisementRawData:(id)rawData;
+
 /**
  * @brief 处理并更新UILabel以显示IP属地。
  * 该函数包含国内地址直接解析和国外地址API请求及缓存的完整逻辑。
@@ -84,6 +98,11 @@ NS_ASSUME_NONNULL_BEGIN
  * 检查当前是否为暗黑模式
  */
 + (BOOL)isDarkMode;
+
+/**
+ * 检查当前抖音背景设置是否为浅色
+ */
++ (BOOL)usesDouyinLightBackground;
 
 #pragma mark - Public File Management (公共文件管理)
 
@@ -266,6 +285,17 @@ NS_ASSUME_NONNULL_BEGIN
  *         - 如果无法解析或 `frame` 无效，返回 `nil`。
  */
 + (CALayer *)layerFromSchemeHexString:(NSString *)hexString frame:(CGRect)frame;
+
+#pragma mark - Debug Utilities (调试工具)
+
+/**
+ * @brief 递归 dump 所有 UIWindow 的视图树到指定路径（后台线程写入）。
+ *        输出包含类名、地址、frame、alpha、hidden、userInteractionEnabled、
+ *        accessibilityLabel、tag 以及 UILabel.text 等字段，便于后续定位未知视图。
+ * @param filePath 输出文件路径，如 @"/var/mobile/douyin_view_tree.txt"。在沙盒环境下会自动
+ *                 fallback 到 Documents 目录。
+ */
++ (void)dumpAllWindowsViewTreeToFile:(NSString *)filePath;
 
 #pragma mark - Version Utilities
 

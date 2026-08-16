@@ -2,20 +2,76 @@ name: build deb
 
 on:
   push:
-    branches-ignore:
-      - dev
-  pull_request:
-    branches-ignore:
-      - dev
+    branches:
+      - main
+    paths:
+      - '*.h'
+      - '*.m'
+      - '*.mm'
+      - '*.x'
+      - '*.xm'
+      - '*.c'
+      - '*.cc'
+      - '*.cpp'
+      - '*.s'
+      - '*.S'
+      - 'DYYY.plist'
+      - 'control'
+      - 'Makefile'
+      - 'Resources/**'
+      - 'layout/**'
+  workflow_dispatch:
+    inputs:
+      scheme:
+        description: '打包方案（留空则全打）'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - rootful
+          - rootless
+          - roothide
+
+permissions:
+  actions: read
+  contents: read
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      should_build: ${{ steps.relevance.outputs.should_build }}
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Detect build-relevant changes
+        id: relevance
+        env:
+          PUSH_BEFORE: ${{ github.event.before }}
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]] ||
+             .github/scripts/build-relevance.sh range "$PUSH_BEFORE" "$GITHUB_SHA"; then
+            echo "should_build=true" >> "$GITHUB_OUTPUT"
+            echo "Build-relevant plugin, package, or Makefile changes detected."
+          else
+            echo "should_build=false" >> "$GITHUB_OUTPUT"
+            echo "Only non-build Makefile settings changed; skipping Deb build."
+          fi
+
   build:
+    needs: changes
+    if: needs.changes.outputs.should_build == 'true'
     runs-on: macos-latest
 
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@v6
         with:
           submodules: true
+          fetch-depth: 0
 
       - name: Check cache
         run: |
@@ -23,10 +79,24 @@ jobs:
 
       - name: Use cache
         id: cache
-        uses: actions/cache@v4.2.1
+        uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/theos
           key: ${{ runner.os }}-${{ env.upstream_heads }}
+
+      - name: Remove unused Homebrew taps
+        env:
+          HOMEBREW_NO_REQUIRE_TAP_TRUST: "1"
+          HOMEBREW_NO_AUTOREMOVE: "1"
+        run: |
+          if brew list --formula | grep -Fxq "bicep"; then
+            brew uninstall --formula --ignore-dependencies bicep
+          fi
+          for tap in aws/tap azure/bicep; do
+            if brew tap | grep -Fxq "$tap"; then
+              brew untap "$tap"
+            fi
+          done
 
       - name: Prepare Theos
         uses: huami1314/theos-action@main
@@ -35,15 +105,75 @@ jobs:
         run: |
           echo "$(brew --prefix)/opt/make/libexec/gnubin" >> $GITHUB_PATH
 
-      - name: Build package
+      - name: Clean packages dir
+        run: rm -rf packages && mkdir -p packages
+        
+      - name: Build Rootful
         run: |
-          rm -f packages/*
           make package FINALPACKAGE=1 -j$(sysctl -n hw.ncpu)
+          for f in packages/*.deb; do
+            [ -f "$f" ] && [[ "$f" != *"-root"*".deb" ]] && mv "$f" "${f%.deb}-rootful.deb"
+          done
+             
+      - name: Build Rootless
+        run: |
+          #make package FINALPACKAGE=1 -j$(sysctl -n hw.ncpu)
           make package THEOS_PACKAGE_SCHEME=rootless FINALPACKAGE=1 -j$(sysctl -n hw.ncpu)
+          for f in packages/*.deb; do
+            [ -f "$f" ] && [[ "$f" != *"-root"*".deb" ]] && mv "$f" "${f%.deb}-rootless.deb"
+          done
+          
+      - name: Build Roothide
+        run: |
           make package THEOS_PACKAGE_SCHEME=roothide FINALPACKAGE=1 -j$(sysctl -n hw.ncpu)
+          for f in packages/*.deb; do
+            [ -f "$f" ] && [[ "$f" != *"-root"*".deb" ]] && mv "$f" "${f%.deb}-roothide.deb"
+          done
+          
+      - name: Prepare package metadata
+        id: package
+        run: |
+          timestamp=$(TZ=Asia/Shanghai date +%Y%m%d%H%M%S)
+          version=$(awk -F': ' '$1 == "Version" { print $2; exit }' control)
+          if [ -z "$version" ]; then
+            echo "Unable to read package version from control" >&2
+            exit 1
+          fi
+          echo "timestamp=$timestamp" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
-      - name: Upload specific Deb packages
-        uses: actions/upload-artifact@v4.6.0
+      - name: Verify Deb packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+
+          deb_files=(packages/*.deb)
+          if [ "${#deb_files[@]}" -ne 3 ]; then
+            echo "Expected 3 Deb packages, found ${#deb_files[@]}:" >&2
+            printf '  %s\n' "${deb_files[@]}" >&2
+            exit 1
+          fi
+
+          for scheme in rootful rootless roothide; do
+            scheme_files=(packages/*-"${scheme}".deb)
+            if [ "${#scheme_files[@]}" -ne 1 ]; then
+              echo "Expected exactly one ${scheme} package, found ${#scheme_files[@]}" >&2
+              exit 1
+            fi
+          done
+
+          printf 'Package artifact: %s\n' "${deb_files[@]}"
+
+      - name: Extract arm64e dylib
+        env:
+          PACKAGE_VERSION: ${{ steps.package.outputs.version }}
+        run: .github/scripts/extract-release-dylib.sh
+
+      - name: Upload package artifacts
+        uses: actions/upload-artifact@v7
         with:
-          name: DYYY
-          path: ${{ github.workspace }}/packages/*.deb
+          name: DYYY-${{ steps.package.outputs.timestamp }}
+          path: |
+            ${{ github.workspace }}/packages/*.deb
+            ${{ github.workspace }}/packages/*.dylib
