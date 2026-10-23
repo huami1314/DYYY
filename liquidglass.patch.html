@@ -1,0 +1,200 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name=claude:viewport-fit-sides content=cover><style>:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-right:env(safe-area-inset-right,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}</style><style>.md-table{overflow-x:auto}@media print{.md-table{overflow-x:visible}}</style><style>:root{color-scheme:light dark;--md-bg:#fff;--md-text:rgba(0,0,0,.8);--md-muted:rgba(0,0,0,.6);--md-fill:rgba(0,0,0,.04);--md-fill-strong:rgba(0,0,0,.06);--md-rule:rgba(0,0,0,.1);--md-rule-strong:rgba(0,0,0,.16);--md-link:hsl(210 100% 45%)}@media (prefers-color-scheme:dark){:root:where(:not([data-theme="light"])){--md-bg:#0d0d0d;--md-text:rgba(255,255,255,.85);--md-muted:rgba(255,255,255,.6);--md-fill:rgba(255,255,255,.06);--md-fill-strong:rgba(255,255,255,.09);--md-rule:rgba(255,255,255,.14);--md-rule-strong:rgba(255,255,255,.22);--md-link:hsl(210 100% 72%)}}:root[data-theme="dark"]{color-scheme:dark;--md-bg:#0d0d0d;--md-text:rgba(255,255,255,.85);--md-muted:rgba(255,255,255,.6);--md-fill:rgba(255,255,255,.06);--md-fill-strong:rgba(255,255,255,.09);--md-rule:rgba(255,255,255,.14);--md-rule-strong:rgba(255,255,255,.22);--md-link:hsl(210 100% 72%)}:root[data-theme="light"]{color-scheme:light}@media print{:root,:root[data-theme="dark"]{color-scheme:light;--md-bg:#fff;--md-text:rgba(0,0,0,.8);--md-muted:rgba(0,0,0,.6);--md-fill:rgba(0,0,0,.04);--md-fill-strong:rgba(0,0,0,.06);--md-rule:rgba(0,0,0,.1);--md-rule-strong:rgba(0,0,0,.16);--md-link:hsl(210 100% 45%)}}body{background:var(--md-bg);color:var(--md-text);max-width:720px;margin:0 auto;padding:32px;display:flex;flex-direction:column;gap:10px;font:14px/1.55 -apple-system,BlinkMacSystemFont,'SF Pro','Segoe UI',sans-serif;overflow-wrap:break-word}body>:first-child{margin-top:0}h1,h2,h3,h4,h5,h6{margin:6px 0 0;line-height:1.25;font-weight:600;text-wrap:balance}h1{font-size:1.35em}h2{font-size:1.15em;color:var(--md-muted)}h3,h4,h5,h6{font-size:1em}p,ul,ol,blockquote,table,pre,hr{margin:0}strong{font-weight:600}a{color:var(--md-link);text-decoration:none}a:hover{text-decoration:underline}ul,ol{display:flex;flex-direction:column;gap:6px;padding-left:22px}ul{list-style:disc}ol{list-style:decimal}:is(li,td,th)>*+:is(p,ul,ol,blockquote){margin-top:6px}blockquote{display:flex;flex-direction:column;gap:10px;border-left:2px solid var(--md-rule);padding-left:10px;color:var(--md-muted)}:not(pre)>code{background:var(--md-fill);padding:1px 3px;border-radius:4px;font:.92em 'SF Mono',ui-monospace,Menlo,Consolas,monospace}a>code{background:none;color:inherit}pre{background:var(--md-fill);padding:10px 12px;border-radius:6px;overflow-x:auto;font:12px/1.5 'SF Mono',ui-monospace,Menlo,Consolas,monospace;margin-block:4px}pre code{background:none;padding:0;font:inherit}table{width:100%;border-collapse:separate;border-spacing:2px;font:inherit}th,td{padding:6px 8px;border-radius:3px;text-align:left;vertical-align:top}th{background:var(--md-fill-strong);font-weight:600}td{background:var(--md-fill)}:is(th,td) :not(pre)>code{background:transparent}hr{border:0;border-top:1px solid var(--md-rule-strong);margin-block:10px}img{max-width:100%;height:auto;border-radius:4px}</style>
+</head><body>
+<pre><code class="language-diff">diff --git a/DYYYLiquidGlass.xm b/DYYYLiquidGlass.xm
+new file mode 100644
+index 0000000..fc11b97
+--- /dev/null
++++ b/DYYYLiquidGlass.xm
+@@ -0,0 +1,155 @@
++// DYYYLiquidGlass.xm
++// 新增两个功能：
++//   1. 液态玻璃底栏（DYYYEnableLiquidGlass）
++//   2. 进度条流光动画（DYYYProgressShimmer）
++// 使用方法见文末注释。未在设备上编译测试，请先本地 make 验证。
++
++#import &lt;UIKit/UIKit.h&gt;
++#import &lt;QuartzCore/QuartzCore.h&gt;
++#import &#34;AwemeHeaders.h&#34;   // 提供 DYYYGetBool 以及 AWENormalModeTabBar / AWEFeedProgressSlider 声明
++
++static const NSInteger kDYYYGlassTag = 0xD1A55;
++static NSString *const kDYYYShimmerName = @&#34;dyyyShimmer&#34;;
++
++#pragma mark - 液态玻璃
++
++static UIVisualEffectView *DYYYMakeGlassView(void) {
++    UIVisualEffect *fx = nil;
++    // iOS 26+ 才有 UIGlassEffect，用运行时取类，旧 SDK 也能编译
++    Class glassCls = NSClassFromString(@&#34;UIGlassEffect&#34;);
++    if (glassCls) {
++        id obj = [[glassCls alloc] init];
++        if ([obj isKindOfClass:[UIVisualEffect class]]) {
++            fx = obj;
++            if ([obj respondsToSelector:NSSelectorFromString(@&#34;setInteractive:&#34;)]) {
++                [obj setValue:@YES forKey:@&#34;interactive&#34;];
++            }
++        }
++    }
++    if (!fx) {
++        fx = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemUltraThinMaterial];
++    }
++    UIVisualEffectView *v = [[UIVisualEffectView alloc] initWithEffect:fx];
++    v.userInteractionEnabled = NO;
++    v.clipsToBounds = YES;
++    v.tag = kDYYYGlassTag;
++    return v;
++}
++
++%hook AWENormalModeTabBar
++
++- (void)layoutSubviews {
++    %orig;
++
++    UIView *old = [self viewWithTag:kDYYYGlassTag];
++
++    if (!DYYYGetBool(@&#34;DYYYEnableLiquidGlass&#34;)) {
++        [old removeFromSuperview];
++        return;
++    }
++
++    UIVisualEffectView *glass = (UIVisualEffectView *)old;
++    if (!glass) {
++        glass = DYYYMakeGlassView();
++        [self insertSubview:glass atIndex:0];
++    }
++
++    // 悬浮胶囊：左右各留 12，上下各留 6
++    CGRect frame = CGRectInset(self.bounds, 12, 6);
++    // 底部安全区由原底栏高度承担，这里只包住按钮区域
++    CGFloat safeBottom = self.safeAreaInsets.bottom;
++    frame.size.height = MAX(44, frame.size.height - safeBottom);
++    glass.frame = frame;
++    glass.layer.cornerRadius = frame.size.height / 2.0;
++    if (@available(iOS 13.0, *)) {
++        glass.layer.cornerCurve = kCACornerCurveContinuous;
++    }
++    [self sendSubviewToBack:glass];
++
++    // 隐藏原底栏背景，避免和玻璃叠在一起
++    Class barBg = NSClassFromString(@&#34;_UIBarBackground&#34;);
++    for (UIView *sub in self.subviews) {
++        if (sub == glass) continue;
++        if (barBg &amp;&amp; [sub isKindOfClass:barBg]) {
++            sub.hidden = YES;
++        }
++    }
++}
++
++%end
++
++#pragma mark - 进度条流光
++
++static void DYYYUpdateShimmer(UIView *bar) {
++    CAGradientLayer *shimmer = nil;
++    for (CALayer *l in bar.layer.sublayers) {
++        if ([l.name isEqualToString:kDYYYShimmerName]) {
++            shimmer = (CAGradientLayer *)l;
++            break;
++        }
++    }
++
++    if (!DYYYGetBool(@&#34;DYYYProgressShimmer&#34;)) {
++        [shimmer removeFromSuperlayer];
++        return;
++    }
++
++    if (!shimmer) {
++        shimmer = [CAGradientLayer layer];
++        shimmer.name = kDYYYShimmerName;
++        shimmer.colors = @[
++            (id)[UIColor colorWithWhite:1 alpha:0].CGColor,
++            (id)[UIColor colorWithWhite:1 alpha:0.75].CGColor,
++            (id)[UIColor colorWithWhite:1 alpha:0].CGColor
++        ];
++        shimmer.startPoint = CGPointMake(0, 0.5);
++        shimmer.endPoint = CGPointMake(1, 0.5);
++        shimmer.locations = @[@-0.3, @-0.15, @0];
++        shimmer.userInteractionEnabled = NO;
++
++        CABasicAnimation *a = [CABasicAnimation animationWithKeyPath:@&#34;locations&#34;];
++        a.toValue = @[@1, @1.15, @1.3];
++        a.duration = 1.4;
++        a.repeatCount = HUGE_VALF;
++        a.removedOnCompletion = NO;
++        [shimmer addAnimation:a forKey:@&#34;shimmer&#34;];
++
++        [bar.layer addSublayer:shimmer];
++    }
++
++    // 关闭隐式动画，避免布局时 frame 跟着&#34;滑&#34;
++    [CATransaction begin];
++    [CATransaction setDisableActions:YES];
++    shimmer.frame = bar.bounds;
++    [CATransaction commit];
++}
++
++%hook AWEFeedProgressSlider
++
++- (void)layoutSubviews {
++    %orig;
++    DYYYUpdateShimmer(self);
++}
++
++%end
++
++/*
++ ========== 接入步骤 ==========
++
++ 1) Makefile 第 39 行的 DYYY_FILES 末尾加上：  DYYYLiquidGlass.xm
++
++ 2) DYYYSettings.xm 里，紧跟 DYYYEnableSheetBlur 那一项后面加两个开关：
++
++    @{@&#34;identifier&#34; : @&#34;DYYYEnableLiquidGlass&#34;,
++      @&#34;title&#34; : @&#34;液态玻璃底栏&#34;,
++      @&#34;detail&#34; : @&#34;&#34;,
++      @&#34;cellType&#34; : @6,
++      @&#34;imageName&#34; : @&#34;ic_list_outlined&#34;},
++    @{@&#34;identifier&#34; : @&#34;DYYYProgressShimmer&#34;,
++      @&#34;title&#34; : @&#34;进度条流光动画&#34;,
++      @&#34;detail&#34; : @&#34;&#34;,
++      @&#34;cellType&#34; : @6,
++      @&#34;imageName&#34; : @&#34;ic_eye_outlined_20&#34;},
++
++ 3) make clean package 编译。
++*/
+diff --git a/DYYYSettings.xm b/DYYYSettings.xm
+index 4504333..c09ad68 100644
+--- a/DYYYSettings.xm
++++ b/DYYYSettings.xm
+@@ -2011,6 +2011,16 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
+             @&#34;detail&#34; : @&#34;&#34;,
+             @&#34;cellType&#34; : @6,
+             @&#34;imageName&#34; : @&#34;ic_list_outlined&#34;},
++          @{@&#34;identifier&#34; : @&#34;DYYYEnableLiquidGlass&#34;,
++            @&#34;title&#34; : @&#34;液态玻璃底栏&#34;,
++            @&#34;detail&#34; : @&#34;&#34;,
++            @&#34;cellType&#34; : @6,
++            @&#34;imageName&#34; : @&#34;ic_list_outlined&#34;},
++          @{@&#34;identifier&#34; : @&#34;DYYYProgressShimmer&#34;,
++            @&#34;title&#34; : @&#34;进度条流光动画&#34;,
++            @&#34;detail&#34; : @&#34;&#34;,
++            @&#34;cellType&#34; : @6,
++            @&#34;imageName&#34; : @&#34;ic_eye_outlined_20&#34;},
+           @{@&#34;identifier&#34; : @&#34;DYYYSheetBlurTransparent&#34;,
+             @&#34;title&#34; : @&#34;面板毛玻璃透明度&#34;,
+             @&#34;detail&#34; : @&#34;0-1小数&#34;,
+diff --git a/Makefile b/Makefile
+index 33c8935..ad66008 100644
+--- a/Makefile
++++ b/Makefile
+@@ -36,7 +36,7 @@ include $(THEOS)/makefiles/common.mk
+ 
+ TWEAK_NAME = DYYY
+ 
+-DYYY_FILES = DYYY.xm DYYYFloatClearButton.xm DYYYFloatSpeedButton.m DYYYSettings.xm DYYYABTestHook.xm DYYYLongPressPanel.xm DYYYSettingsHelper.m DYYYImagePickerDelegate.m DYYYBackupPickerDelegate.m DYYYSettingViewController.m DYYYBottomAlertView.m DYYYCustomInputView.m DYYYOptionsSelectionView.m DYYYIconOptionsDialogView.m DYYYAboutDialogView.m DYYYKeywordListView.m DYYYFilterSettingsView.m DYYYConfirmCloseView.m DYYYToast.m DYYYManager.m DYYYUtils.m CityManager.m AWMSafeDispatchTimer.m
++DYYY_FILES = DYYY.xm DYYYFloatClearButton.xm DYYYFloatSpeedButton.m DYYYSettings.xm DYYYABTestHook.xm DYYYLongPressPanel.xm DYYYSettingsHelper.m DYYYImagePickerDelegate.m DYYYBackupPickerDelegate.m DYYYSettingViewController.m DYYYBottomAlertView.m DYYYCustomInputView.m DYYYOptionsSelectionView.m DYYYIconOptionsDialogView.m DYYYAboutDialogView.m DYYYKeywordListView.m DYYYFilterSettingsView.m DYYYConfirmCloseView.m DYYYToast.m DYYYManager.m DYYYUtils.m CityManager.m AWMSafeDispatchTimer.m DYYYLiquidGlass.xm
+ DYYY_CFLAGS = -fobjc-arc -w
+ DYYY_LDFLAGS = -weak_framework AVFAudio
+ DYYY_FRAMEWORKS = CoreAudio
+</code></pre>
+
+</body></html>

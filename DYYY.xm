@@ -6,6 +6,7 @@
 //  Created on: 2024/10/04
 //
 #import <QuartzCore/QuartzCore.h>
+#import <ImageIO/ImageIO.h>
 #import <UIKit/UIKit.h>
 #import <float.h>
 #import <math.h>
@@ -25,6 +26,7 @@
 #import "DYYYSettingViewController.h"
 #import "DYYYToast.h"
 #import "DYYYUtils.h"
+#import "DYYYFeatureTools.h"
 
 static CGFloat gStartY = 0.0;
 static CGFloat gStartVal = 0.0;
@@ -1337,6 +1339,83 @@ static BOOL DYYYShouldHandleSpeedFeatures(void) {
 
 %hook AWEFeedProgressSlider
 
+%new
+- (void)dyyy_updateProgressGIFWithCurrentTime:(CGFloat)currentTime totalDuration:(CGFloat)totalDuration {
+    objc_setAssociatedObject(self, @selector(dyyy_updateProgressGIFWithCurrentTime:totalDuration:),
+                             @{ @"currentTime": @(MAX(0, currentTime)), @"duration": @(MAX(0, totalDuration)) },
+                             OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    [self setNeedsLayout];
+}
+
+// Update the GIF position from manual slider touches as well as playback callbacks.
+%new
+- (void)dyyy_updateProgressGIFFromTouch:(NSSet<UITouch *> *)touches {
+    UITouch *touch = touches.anyObject;
+    if (!touch || CGRectGetWidth(self.bounds) <= 0) return;
+    NSDictionary *progress = objc_getAssociatedObject(self, @selector(dyyy_updateProgressGIFWithCurrentTime:totalDuration:));
+    CGFloat duration = [progress[@"duration"] doubleValue];
+    if (duration <= 0) return;
+    CGPoint point = [touch locationInView:self];
+    CGFloat fraction = MIN(1.0, MAX(0.0, point.x / CGRectGetWidth(self.bounds)));
+    [self dyyy_updateProgressGIFWithCurrentTime:(fraction * duration) totalDuration:duration];
+}
+
+- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    %orig;
+    [self dyyy_updateProgressGIFFromTouch:touches];
+}
+
+- (void)touchesMoved:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    %orig;
+    [self dyyy_updateProgressGIFFromTouch:touches];
+}
+
+- (void)touchesEnded:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    %orig;
+    [self dyyy_updateProgressGIFFromTouch:touches];
+}
+
+- (void)layoutSubviews {
+    %orig;
+    static NSInteger const kDYYYGIFOverlayTag = 927441;
+    UIImageView *overlay = (UIImageView *)[self viewWithTag:kDYYYGIFOverlayTag];
+    BOOL enabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"DYYYEnableProgressAnimation"];
+    NSString *path = [[NSUserDefaults standardUserDefaults] stringForKey:@"DYYYProgressAnimationPath"];
+    if (!enabled || path.length == 0 || ![[NSFileManager defaultManager] fileExistsAtPath:path]) {
+        [overlay removeFromSuperview];
+        return;
+    }
+    if (!overlay || ![overlay isKindOfClass:[UIImageView class]]) {
+        [overlay removeFromSuperview];
+        overlay = [[UIImageView alloc] initWithFrame:CGRectZero];
+        overlay.tag = kDYYYGIFOverlayTag;
+        overlay.contentMode = UIViewContentModeScaleAspectFit;
+        overlay.userInteractionEnabled = NO;
+        overlay.clipsToBounds = NO;
+        [self addSubview:overlay];
+    }
+    NSString *cachedPath = objc_getAssociatedObject(overlay, @selector(layoutSubviews));
+    if (![cachedPath isEqualToString:path] || !overlay.image) {
+        UIImage *gifImage = DYYYAnimatedImageFromGIFPath(path);
+        overlay.image = gifImage;
+        if (gifImage.images.count > 1) [overlay startAnimating];
+        else [overlay stopAnimating];
+        objc_setAssociatedObject(overlay, @selector(layoutSubviews), path, OBJC_ASSOCIATION_COPY_NONATOMIC);
+    }
+    NSDictionary *progress = objc_getAssociatedObject(self, @selector(dyyy_updateProgressGIFWithCurrentTime:totalDuration:));
+    CGFloat currentTime = [progress[@"currentTime"] doubleValue];
+    CGFloat duration = [progress[@"duration"] doubleValue];
+    CGFloat fraction = duration > 0 ? MIN(1.0, MAX(0.0, currentTime / duration)) : 0.0;
+    CGFloat trackWidth = CGRectGetWidth(self.bounds);
+    CGFloat imageWidth = MIN(30.0, MAX(18.0, CGRectGetHeight(self.bounds) * 2.2));
+    CGFloat imageHeight = MIN(30.0, MAX(18.0, CGRectGetHeight(self.bounds) * 2.2));
+    CGFloat centerX = fraction * trackWidth;
+    centerX = MIN(MAX(centerX, imageWidth / 2.0), MAX(imageWidth / 2.0, trackWidth - imageWidth / 2.0));
+    overlay.bounds = CGRectMake(0, 0, imageWidth, imageHeight);
+    overlay.center = CGPointMake(centerX, CGRectGetMidY(self.bounds));
+    [self bringSubviewToFront:overlay];
+}
+
 - (void)setAlpha:(CGFloat)alpha {
     if (DYYYGetBool(@"DYYYShowScheduleDisplay")) {
         if (DYYYGetBool(@"DYYYHideVideoProgress")) {
@@ -1742,6 +1821,10 @@ static BOOL DYYYShouldHandleSpeedFeatures(void) {
 - (void)updateProgressSliderWithTime:(CGFloat)arg1 totalDuration:(CGFloat)arg2 {
     %orig;
     [self dyyy_syncScheduleLabelsWithCurrentTime:arg1 totalDuration:arg2];
+    id slider = self.progressSlider;
+    if ([slider respondsToSelector:@selector(dyyy_updateProgressGIFWithCurrentTime:totalDuration:)]) {
+        [slider dyyy_updateProgressGIFWithCurrentTime:arg1 totalDuration:arg2];
+    }
 }
 
 %end
@@ -1772,6 +1855,10 @@ static BOOL DYYYShouldHandleSpeedFeatures(void) {
 - (void)updateProgressSliderWithTime:(CGFloat)arg1 totalDuration:(CGFloat)arg2 {
     %orig;
     [self dyyy_syncScheduleLabelsWithCurrentTime:arg1 totalDuration:arg2];
+    id slider = self.progressSlider;
+    if ([slider respondsToSelector:@selector(dyyy_updateProgressGIFWithCurrentTime:totalDuration:)]) {
+        [slider dyyy_updateProgressGIFWithCurrentTime:arg1 totalDuration:arg2];
+    }
 }
 
 %end

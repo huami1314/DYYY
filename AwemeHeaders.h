@@ -622,6 +622,10 @@ typedef NS_ENUM(NSUInteger, DYEdgeMode) {
 @property(nonatomic, strong) UIView *rightLabelUI;
 @property(nonatomic) AWEPlayInteractionProgressController *progressSliderDelegate;
 - (void)applyWidthPercentToSubviews:(CGFloat)widthPercent;
+// DYYY progress-GIF methods are added dynamically by Logos; declare them here
+// so calls from other hooked classes are visible to the compiler.
+- (void)dyyy_updateProgressGIFWithCurrentTime:(CGFloat)currentTime totalDuration:(CGFloat)totalDuration;
+- (void)dyyy_updateProgressGIFFromTouch:(NSSet<UITouch *> *)touches;
 @end
 
 @interface AWEFeedChannelObject : NSObject

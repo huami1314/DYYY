@@ -15,6 +15,7 @@
 
 #import "DYYYConstants.h"
 #import "DYYYSettingsHelper.h"
+#import "DYYYFeatureTools.h"
 #import "DYYYUtils.h"
 
 @class DYYYIconOptionsDialogView;
@@ -332,6 +333,23 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
             @"detail" : @"-12.5",
             @"cellType" : @26,
             @"imageName" : @"ic_playertime_outlined_20"},
+          @{
+              @"identifier" : @"DYYYEnableProgressAnimation",
+              @"title" : @"启用图片动图进度条",
+              @"subTitle" : @"启用后使用从系统文件选择器导入的 GIF 覆盖进度条区域",
+              @"detail" : @"",
+              @"cellType" : @37,
+              @"imageName" : @"ic_playertime_outlined_20"
+          },
+          @{
+              @"identifier" : @"DYYYProgressAnimationPath",
+              @"title" : @"进度条 GIF 路径",
+              @"subTitle" : @"点击选择 GIF 文件；自动复制到插件可访问的本地目录",
+              @"detail" : @"GIF 文件路径",
+              @"cellType" : @26,
+              @"imageName" : @"ic_playertime_outlined_20"
+          },
+
           @{@"identifier" : @"DYYYHideVideoProgress",
             @"title" : @"隐藏视频进度",
             @"subTitle" : @"隐藏视频进度条",
@@ -416,7 +434,22 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
       for (NSDictionary *dict in videoSettings) {
           AWESettingItemModel *item = [DYYYSettingsHelper createSettingItem:dict cellTapHandlers:cellTapHandlers];
 
-          if ([item.identifier isEqualToString:@"DYYYDefaultSpeed"]) {
+          if ([item.identifier isEqualToString:@"DYYYProgressAnimationPath"]) {
+              NSString *savedPath = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYProgressAnimationPath"];
+              item.detail = savedPath.length ? [savedPath lastPathComponent] : @"点击选择 GIF";
+              item.cellTappedBlock = ^{
+                  DYYYPresentProgressGIFPicker(topView(), ^(NSString *savedPath) {
+                      if (savedPath.length) {
+                          item.detail = [savedPath lastPathComponent];
+                          [DYYYUtils showToast:@"GIF 已导入"];
+                      } else {
+                          [DYYYUtils showToast:@"未选择 GIF 或导入失败"];
+                      }
+                      [item refreshCell];
+                  });
+              };
+          }
+          else if ([item.identifier isEqualToString:@"DYYYDefaultSpeed"]) {
               NSString *savedSpeed = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYDefaultSpeed"];
               item.detail = savedSpeed ?: @"1.0x";
 
@@ -1982,7 +2015,13 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
             @"title" : @"长按定时关闭抖音",
             @"detail" : @"",
             @"cellType" : @6,
-            @"imageName" : @"ic_c_alarm_outlined"}
+            @"imageName" : @"ic_c_alarm_outlined"},
+          @{ @"identifier" : @"DYYYLongPressVoiceFavorites",
+            @"title" : @"长按面板音频助手",
+            @"subTitle" : @"管理收藏音频和本地语音工具",
+            @"detail" : @"",
+            @"cellType" : @6,
+            @"imageName" : @"ic_playbackquaver_outlined"}
       ];
 
       for (NSDictionary *dict in longPressSettings) {
@@ -2865,7 +2904,8 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
                       @"detail" : @"",
                       @"cellType" : @6,
                       @"imageName" : @"ic_share_outlined"},
-                ];
+
+          ];
 
                 for (NSDictionary *dict in doubleTapFunctions) {
                     AWESettingItemModel *functionItem = [DYYYSettingsHelper createSettingItem:dict];
@@ -3614,6 +3654,8 @@ speedSettingsItem.detail = trimmedText;
                                 onConfirm:nil];
     };
     [aboutItems addObject:licenseItem];
+
+
     mainSection.itemArray = mainItems;
     aboutSection.itemArray = aboutItems;
 
