@@ -871,6 +871,39 @@ static void DYYYApplyDisplayLocationToLabel(UILabel *label, NSString *displayLoc
     }
 }
 
+static void DYYYAppendViewTree(UIView *view, NSMutableString *out, NSInteger depth) {
+    if (!view)
+        return;
+    for (NSInteger i = 0; i < depth; i++)
+        [out appendString:@"  "];
+    NSString *vc = @"";
+    UIResponder *next = [view nextResponder];
+    if ([next isKindOfClass:[UIViewController class]])
+        vc = [NSString stringWithFormat:@" [vc:%@]", NSStringFromClass([next class])];
+    NSString *bg = @"";
+    UIColor *c = view.backgroundColor;
+    if (c) {
+        CGFloat r = 0, g = 0, b = 0, a = 0;
+        if ([c getRed:&r green:&g blue:&b alpha:&a] && a > 0.01)
+            bg = [NSString stringWithFormat:@" bg=(%.2f,%.2f,%.2f,%.2f)", r, g, b, a];
+    }
+    CGRect f = view.frame;
+    [out appendFormat:@"%@%@ {%.0f,%.0f,%.0f,%.0f}%@%@%@%@\n",
+                      NSStringFromClass([view class]), vc,
+                      f.origin.x, f.origin.y, f.size.width, f.size.height, bg,
+                      (view.alpha < 0.99) ? [NSString stringWithFormat:@" a=%.2f", view.alpha] : @"",
+                      view.hidden ? @" HIDDEN" : @"",
+                      (view.tag != 0) ? [NSString stringWithFormat:@" tag=%ld", (long)view.tag] : @""];
+    for (UIView *sub in view.subviews)
+        DYYYAppendViewTree(sub, out, depth + 1);
+}
+
++ (NSString *)describeViewTree:(UIView *)root {
+    NSMutableString *out = [NSMutableString string];
+    DYYYAppendViewTree(root, out, 0);
+    return out;
+}
+
 + (void)clearBackgroundRecursivelyInView:(UIView *)view {
     if (!view)
         return;

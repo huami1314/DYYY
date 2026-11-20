@@ -529,6 +529,11 @@ void showDYYYSettingsVC(UIViewController *rootVC, BOOL hasAgreed) {
             @"title" : @"启用首页全屏",
             @"detail" : @"",
             @"cellType" : @6,
+            @"imageName" : @"ic_fullscreen_outlined_16"},
+          @{@"identifier" : @"DYYYShakeExportViewTree",
+            @"title" : @"摇一摇导出视图树",
+            @"detail" : @"",
+            @"cellType" : @6,
             @"imageName" : @"ic_fullscreen_outlined_16"}
       ];
 

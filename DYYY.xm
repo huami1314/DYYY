@@ -1173,6 +1173,18 @@ static BOOL DYYYShouldHandleSpeedFeatures(void) {
 %group DYYYSettingsGesture
 
 %hook UIWindow
+// 摇一摇导出当前视图树到剪贴板（调试用）
+- (void)motionEnded:(UIEventSubtype)motion withEvent:(UIEvent *)event {
+    %orig;
+    if (motion == UIEventSubtypeMotionShake && DYYYGetBool(@"DYYYShakeExportViewTree")) {
+        UIWindow *win = [DYYYUtils getActiveWindow] ?: self;
+        NSString *tree = [DYYYUtils describeViewTree:win];
+        if (tree.length > 0) {
+            [UIPasteboard generalPasteboard].string = tree;
+            [DYYYUtils showToast:[NSString stringWithFormat:@"视图树已复制（%lu 字）", (unsigned long)tree.length]];
+        }
+    }
+}
 - (instancetype)initWithFrame:(CGRect)frame {
     UIWindow *window = %orig(frame);
     if (window) {
@@ -1275,6 +1287,15 @@ static BOOL DYYYShouldHandleSpeedFeatures(void) {
 
         // 应用毛玻璃效果
         [DYYYUtils applyBlurEffectToView:self.view transparency:userTransparency blurViewTag:999];
+
+        // 清掉直接盖在模糊层上的那层不透明容器（最外层 UICollectionView 等），只清直接子 view，不碰深层
+        for (UIView *sub in self.view.subviews) {
+            if ([sub isKindOfClass:[UIVisualEffectView class]] || sub.tag == 999) continue;
+            UIColor *bg = sub.backgroundColor;
+            if (bg && CGColorGetAlpha(bg.CGColor) >= 0.99) {
+                sub.backgroundColor = [UIColor clearColor];
+            }
+        }
     }
 }
 %end
@@ -3214,6 +3235,33 @@ static NSArray *DYYYIMMenuItemsByAddingDownloadAction(NSArray *menuItems, id cel
             self.alpha = alphaValue;
         }
     }
+}
+%end
+
+// 隐藏头像按钮：右侧用户头像是 Element，走元素官方 setHide: 隐藏（覆盖普通/Opt 两种）
+%hook AWEPlayInteractionUserAvatarElement
+- (void)layoutElementView {
+    %orig;
+    if (DYYYGetBool(@"DYYYHideAvatarButton")) {
+        ((void (*)(id, SEL, BOOL))objc_msgSend)(self, @selector(setHide:), YES);
+    }
+}
+%end
+
+%hook AWEPlayInteractionUserAvatarOptElementElement
+- (void)layoutElementView {
+    %orig;
+    if (DYYYGetBool(@"DYYYHideAvatarButton")) {
+        ((void (*)(id, SEL, BOOL))objc_msgSend)(self, @selector(setHide:), YES);
+    }
+}
+%end
+
+// 41.x 首页右侧头像实际类：AWEPlayInteractionUserProfileContainerView（头像图+直播环+关注气泡整块）
+%hook AWEPlayInteractionUserProfileContainerView
+- (void)layoutSubviews {
+    %orig;
+    ((UIView *)self).hidden = DYYYGetBool(@"DYYYHideAvatarButton");
 }
 %end
 
@@ -7120,6 +7168,18 @@ static Class tabBarButtonClass = nil;
 %end
 
 // 开启评论区毛玻璃后滚动区域填满底部
+%group DYYYCommentBlurLabelGroup
+// 评论区黑底 label（用户名/时间/回复），毛玻璃开启时清掉它们的实色底
+%hook DYYYCommentInteractionBaseLabel
+- (void)layoutSubviews {
+    %orig;
+    if (DYYYGetBool(@"DYYYEnableCommentBlur")) {
+        ((UIView *)self).backgroundColor = [UIColor clearColor];
+    }
+}
+%end
+%end
+
 %hook AWEListKitMagicCollectionView
 
 - (void)layoutSubviews {
@@ -7127,6 +7187,19 @@ static Class tabBarButtonClass = nil;
 
     if (!DYYYGetBool(@"DYYYEnableCommentBlur")) {
         return;
+    }
+
+    ((UIView *)self).backgroundColor = [UIColor clearColor];
+
+    // 清掉同级的不透明填充（如底部 {0,572,440,200} 黑块）
+    UIView *magicSuper = ((UIView *)self).superview;
+    for (UIView *sib in magicSuper.subviews) {
+        if ([sib isMemberOfClass:[UIView class]]) {
+            UIColor *sbg = sib.backgroundColor;
+            if (sbg && CGColorGetAlpha(sbg.CGColor) >= 0.99) {
+                sib.backgroundColor = [UIColor clearColor];
+            }
+        }
     }
 
     UICollectionView *collectionView = (UICollectionView *)self;
@@ -7148,6 +7221,33 @@ static Class tabBarButtonClass = nil;
 }
 
 %end
+
+// 评论毛玻璃：清掉盖住模糊层的不透明层（分区背景 / 评论容器里的黑色填充），复用也保持
+%hook AWEBaseListSectionBackgroundView
+- (void)layoutSubviews {
+    %orig;
+    if (DYYYGetBool(@"DYYYEnableCommentBlur")) {
+        ((UIView *)self).backgroundColor = [UIColor clearColor];
+    }
+}
+%end
+
+%hook AWEListKitTabContentCollectionView
+- (void)layoutSubviews {
+    %orig;
+    if (DYYYGetBool(@"DYYYEnableCommentBlur")) {
+        UIView *selfView = (UIView *)self;
+        selfView.backgroundColor = [UIColor clearColor];
+        for (UIView *sub in selfView.subviews) {
+            UIColor *bg = sub.backgroundColor;
+            if ([sub isMemberOfClass:[UIView class]] && bg && CGColorGetAlpha(bg.CGColor) >= 0.99) {
+                sub.backgroundColor = [UIColor clearColor];
+            }
+        }
+    }
+}
+%end
+
 
 %hook UIView
 
@@ -8627,16 +8727,35 @@ static Class TagViewClass = nil;
 
 %hook AWEAwemeDetailTableView
 
+// 个人主页作品详情：表被约束成"少一个底栏高度"（如 956→873）。
+// 在 setFrame: 里就直接拉满到父视图高度，避免先显示矮一帧再纠正导致切视频抖动。
 - (void)setFrame:(CGRect)frame {
     if (DYYYGetBool(@"DYYYEnableFullScreen")) {
-        CGFloat screenHeight = [UIScreen mainScreen].bounds.size.height;
-
-        CGFloat remainder = fmod(frame.size.height, screenHeight);
-        if (remainder != 0) {
-            frame.size.height += (screenHeight - remainder);
+        UIView *sv = self.superview;
+        if (sv && sv.frame.size.height > frame.size.height + 0.5) {
+            frame.size.height = sv.frame.size.height;
+        } else {
+            CGFloat screenHeight = [UIScreen mainScreen].bounds.size.height;
+            CGFloat remainder = fmod(frame.size.height, screenHeight);
+            if (remainder != 0) {
+                frame.size.height += (screenHeight - remainder);
+            }
         }
     }
     %orig(frame);
+}
+
+// 兜底：若布局后仍矮于父视图，再拉满一次。
+- (void)layoutSubviews {
+    %orig;
+    if (DYYYGetBool(@"DYYYEnableFullScreen")) {
+        UIView *sv = self.superview;
+        if (sv && sv.frame.size.height > 0 && self.frame.size.height < sv.frame.size.height - 0.5) {
+            CGRect f = self.frame;
+            f.size.height = sv.frame.size.height;
+            self.frame = f;
+        }
+    }
 }
 
 %end
@@ -9108,5 +9227,12 @@ static void findTargetViewInView(UIView *view) {
                                                           }
                                                       }
                                                     }];
+    }
+}
+
+%ctor {
+    Class c = objc_getClass("AWECommentSwiftBizUI.CommentInteractionBaseLabel");
+    if (c) {
+        %init(DYYYCommentBlurLabelGroup, DYYYCommentInteractionBaseLabel = c);
     }
 }

@@ -79,6 +79,7 @@ NS_ASSUME_NONNULL_BEGIN
  * @param text 要显示的文本
  */
 + (void)showToast:(NSString *)text;
++ (NSString *)describeViewTree:(UIView *)root;
 
 /**
  * 检查当前是否为暗黑模式
