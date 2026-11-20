@@ -2503,10 +2503,59 @@ static NSArray<NSString *> *dyyy_qualityRank = nil;
 
 %group AutoPlay
 
+// 详情页行高/翻页基准全部来自 fixedCellHeight（= tableView.awe_height，静态 xref 确认：
+// cellHeightAtIndex: / contentOffsetYForCellAtIndex: / indexForContentOffsetY: / 翻页吸附都读它）。
+// 原生表高是"屏高 - 底栏"(873)，DYYY 全屏会把表拉到屏高，但拉之前量过的行仍是 873，
+// 于是出现 873/956 混排 + 交互层再减一次底栏 = 少一截。这里让基准高度从一开始就是屏高。
+static CGFloat DYYYDetailFullCellHeight(CGFloat orig) {
+    if (!DYYYGetBool(@"DYYYEnableFullScreen")) return orig;
+    CGFloat screenH = [UIScreen mainScreen].bounds.size.height;
+    CGFloat diff = screenH - orig;
+    return (orig > 1.0 && diff > 1.0 && diff < 160.0) ? screenH : orig;
+}
+
+// 接管架构下 tableView 的真实 delegate 链：AWEDetailFeedListContainer → UIContainer → 这个类
+%hook AWEDetailFeedScrollDelegateContainer
+- (CGFloat)fixedCellHeight {
+    return DYYYDetailFullCellHeight(%orig);
+}
+%end
+
+// 从直播间/带直播卡的主页进详情时，普通视频行高不走 fixedCellHeight，而是 originalTableViewHeight
+// （进页面时记下的原生表高 873；-[AWEAwemeDetailTableViewController cellHeightAtIndex:] 的
+// others_homepage + adLiveStreamShowCount>=1 分支，翻页偏移也按它算）。同样提到屏高。
+%hook AWEUserProfileAdDataLayer
+- (CGFloat)originalTableViewHeight { return DYYYDetailFullCellHeight(%orig); }
+- (void)setOriginalTableViewHeight:(CGFloat)height { %orig(DYYYDetailFullCellHeight(height)); }
+%end
+
+%hook AWEUserProFileAdVideoDataController
+- (CGFloat)originalTableViewHeight { return DYYYDetailFullCellHeight(%orig); }
+- (void)updateOriginalTableViewHeight:(CGFloat)height { %orig(DYYYDetailFullCellHeight(height)); }
+%end
+
+%hook AWELivePostWorkLiveCardLayoutController
+- (CGFloat)originalTableViewHeight { return DYYYDetailFullCellHeight(%orig); }
+- (void)setOriginalTableViewHeight:(CGFloat)height { %orig(DYYYDetailFullCellHeight(height)); }
+%end
+
+%hook AWELivePostWorkLiveCardLayoutDataLayer
+// 作者正在直播时，主页作品详情用这套"直播卡布局"算行高和翻页偏移：
+// normalHeight = normalTableViewHeightProvider() ?: originalTableViewHeight。
+// provider 是个 block（返回 屏高-底栏=873），所以只改 originalTableViewHeight 不生效，要改这里。
+- (CGFloat)normalHeight { return DYYYDetailFullCellHeight(%orig); }
+- (CGFloat)originalTableViewHeight { return DYYYDetailFullCellHeight(%orig); }
+- (void)setOriginalTableViewHeight:(CGFloat)height { %orig(DYYYDetailFullCellHeight(height)); }
+%end
+
 %hook AWEAwemeDetailTableViewController
 
 - (BOOL)hasIphoneAutoPlaySwitch {
     return YES;
+}
+
+- (CGFloat)fixedCellHeight {
+    return DYYYDetailFullCellHeight(%orig);
 }
 
 %end
@@ -3261,7 +3310,12 @@ static NSArray *DYYYIMMenuItemsByAddingDownloadAction(NSArray *menuItems, id cel
 %hook AWEPlayInteractionUserProfileContainerView
 - (void)layoutSubviews {
     %orig;
-    ((UIView *)self).hidden = DYYYGetBool(@"DYYYHideAvatarButton");
+    BOOL hide = DYYYGetBool(@"DYYYHideAvatarButton");
+    if (((UIView *)self).hidden != hide) ((UIView *)self).hidden = hide;
+}
+- (void)setHidden:(BOOL)hidden {
+    if (DYYYGetBool(@"DYYYHideAvatarButton")) hidden = YES;
+    %orig(hidden);
 }
 %end
 
@@ -3778,18 +3832,44 @@ static NSArray *DYYYIMMenuItemsByAddingDownloadAction(NSArray *menuItems, id cel
 
 %hook AWEPlayInteractionFollowPromptView
 
+// 41.x 加号是普通 UIImageView（不再是 LOTAnimationView），旧的 LOTAnimationView hook 匹配不到。
+// 两个开关语义不同：
+//   移除头像加号 (DYYYHideFollowPromptView / 隐藏头像按钮)：整块隐藏且不可点
+//   隐藏头像加号 (DYYYHideLOTAnimationView)：只把内容变透明，原位置仍可点
 - (void)layoutSubviews {
     %orig;
-
-    NSString *accessibilityLabel = self.accessibilityLabel;
-
-    if ([accessibilityLabel isEqualToString:@"关注"]) {
-        if (DYYYGetBool(@"DYYYHideAvatarButton") || DYYYGetBool(@"DYYYHideFollowPromptView")) {
-            self.userInteractionEnabled = NO;
-            self.hidden = YES;
-            return;
-        }
+    if (DYYYGetBool(@"DYYYHideAvatarButton") || DYYYGetBool(@"DYYYHideFollowPromptView")) {
+        self.userInteractionEnabled = NO;
+        self.hidden = YES;
+        return;
     }
+
+    static char kDYYYPlusAlphaTouchedKey;
+    BOOL hidePlus = DYYYGetBool(@"DYYYHideLOTAnimationView");
+    NSString *transparencyValue = [[NSUserDefaults standardUserDefaults] objectForKey:@"DYYYAvatarViewTransparency"];
+    CGFloat targetAlpha = -1;
+    if (hidePlus) {
+        targetAlpha = 0.0;
+    } else if (transparencyValue.length > 0) {
+        CGFloat v = [transparencyValue floatValue];
+        if (v >= 0.0 && v <= 1.0) targetAlpha = v;
+    }
+
+    if (targetAlpha >= 0) {
+        for (UIView *sub in self.subviews) {
+            if (fabs(sub.alpha - targetAlpha) > 0.01) sub.alpha = targetAlpha;
+        }
+        objc_setAssociatedObject(self, &kDYYYPlusAlphaTouchedKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    } else if (objc_getAssociatedObject(self, &kDYYYPlusAlphaTouchedKey)) {
+        // 开关被关掉后恢复
+        for (UIView *sub in self.subviews) sub.alpha = 1.0;
+        objc_setAssociatedObject(self, &kDYYYPlusAlphaTouchedKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    }
+}
+
+- (void)setHidden:(BOOL)hidden {
+    if (DYYYGetBool(@"DYYYHideAvatarButton") || DYYYGetBool(@"DYYYHideFollowPromptView")) hidden = YES;
+    %orig(hidden);
 }
 
 %end
@@ -7171,10 +7251,51 @@ static Class tabBarButtonClass = nil;
 %group DYYYCommentBlurLabelGroup
 // 评论区黑底 label（用户名/时间/回复），毛玻璃开启时清掉它们的实色底
 %hook DYYYCommentInteractionBaseLabel
+// 3.0.4 的截图里这些 label 是干净的；3.0.5 我把 setter 直接改成传 clear 之后才变黑（我引入的回归）。
+// 回到"先让它按原样设、再清掉"的顺序，并把 opaque 关掉（opaque 的层配透明底会渲染成黑块）。
 - (void)layoutSubviews {
     %orig;
     if (DYYYGetBool(@"DYYYEnableCommentBlur")) {
-        ((UIView *)self).backgroundColor = [UIColor clearColor];
+        UIView *v = (UIView *)self;
+        UIColor *bg = v.backgroundColor;
+        if (bg && CGColorGetAlpha(bg.CGColor) > 0.01) v.backgroundColor = [UIColor clearColor];
+        if (v.opaque || v.layer.opaque) {
+            v.opaque = NO;
+            v.layer.opaque = NO;
+            [v setNeedsDisplay];
+        }
+    }
+}
+- (void)setBackgroundColor:(UIColor *)color {
+    %orig(color);
+    if (DYYYGetBool(@"DYYYEnableCommentBlur") && color && CGColorGetAlpha(color.CGColor) > 0.01) {
+        %orig([UIColor clearColor]);
+        ((UIView *)self).opaque = NO;
+    }
+}
+- (void)setOpaque:(BOOL)opaque {
+    %orig(DYYYGetBool(@"DYYYEnableCommentBlur") ? NO : opaque);
+}
+%end
+
+// 「展开X条回复」footer 按钮的 UIButtonLabel 有 (0.09) 黑底，清掉
+%hook DYYYCommentBaseFooterView
+- (void)layoutSubviews {
+    %orig;
+    if (DYYYGetBool(@"DYYYEnableCommentBlur")) {
+        for (UIView *sub in ((UIView *)self).subviews) {
+            if ([sub isKindOfClass:[UIButton class]]) {
+                UILabel *tl = ((UIButton *)sub).titleLabel;
+                tl.backgroundColor = [UIColor clearColor];
+                tl.layer.backgroundColor = [UIColor clearColor].CGColor;
+            }
+            CGColorRef lbg = sub.layer.backgroundColor;
+            if ((sub.backgroundColor && CGColorGetAlpha(sub.backgroundColor.CGColor) >= 0.99) ||
+                (lbg && CGColorGetAlpha(lbg) >= 0.99)) {
+                sub.backgroundColor = [UIColor clearColor];
+                sub.layer.backgroundColor = [UIColor clearColor].CGColor;
+            }
+        }
     }
 }
 %end
@@ -7551,6 +7672,12 @@ static Class tabBarButtonClass = nil;
         if (shouldRestoreChat.boolValue) {
             useFullHeight = YES;
         }
+    }
+
+    // 父容器本身已经比屏幕矮一个底栏（底栏在容器外面）时，不能再减一次，否则文案悬空（873-83=790）
+    if (!useFullHeight && gCurrentTabBarHeight > 0 &&
+        [UIScreen mainScreen].bounds.size.height - superviewHeight >= gCurrentTabBarHeight - 1.0) {
+        useFullHeight = YES;
     }
 
     if (useFullHeight) {
@@ -9232,7 +9359,36 @@ static void findTargetViewInView(UIView *view) {
 
 %ctor {
     Class c = objc_getClass("AWECommentSwiftBizUI.CommentInteractionBaseLabel");
-    if (c) {
-        %init(DYYYCommentBlurLabelGroup, DYYYCommentInteractionBaseLabel = c);
+    Class fc = objc_getClass("AWECommentPanelListSwiftImpl.CommentBaseFooterView");
+    if (c || fc) {
+        %init(DYYYCommentBlurLabelGroup, DYYYCommentInteractionBaseLabel = c, DYYYCommentBaseFooterView = fc);
+    }
+}
+
+#pragma mark - 阻止信息流视频占用控制中心/灵动岛（保留听音乐）
+// 41.x：抖音「后台播放/听视频」会给信息流每条视频写 MPNowPlayingInfoCenter，
+// 导致看视频也进控制中心/灵动岛。只 no-op 两个信息流类的 now-playing 方法，
+// AWEMusicService（听音乐/听抖音）完全不动。
+%group DYYYFeedNowPlayingGroup
+
+%hook AWEFeedBackgroundPlayManager
+- (void)updateNowPlayingInfoPlayback { /* 默认拦截：信息流视频不写控制中心 */ return; }
+- (void)refreshNowPlayingInfo { /* 默认拦截：信息流视频不写控制中心 */ return; }
+- (void)refreshNowPlayingInfoIsForce:(BOOL)force { return; }
+- (void)setNowPlayingInfo:(id)info { return; }
+%end
+
+%hook AWEAwemeBackgroundPlayModule
+- (void)refreshNowPlayingInfoIfNeeded { /* 默认拦截：信息流视频不写控制中心 */ return; }
+- (void)updateNowPlayingInfoAfterSetModel { /* 默认拦截：信息流视频不写控制中心 */ return; }
+- (void)updateNowPlayingInfoPlayback { /* 默认拦截：信息流视频不写控制中心 */ return; }
+- (void)updateNowPlayingInfoWhenResiginActive { /* 默认拦截：信息流视频不写控制中心 */ return; }
+%end
+
+%end
+
+%ctor {
+    if (objc_getClass("AWEFeedBackgroundPlayManager") || objc_getClass("AWEAwemeBackgroundPlayModule")) {
+        %init(DYYYFeedNowPlayingGroup);
     }
 }
