@@ -606,7 +606,7 @@ typedef NS_ENUM(NSUInteger, DYEdgeMode) {
 - (AWECommentLongPressPanelContext *)commentPageContext;
 @end
 
-@interface _TtC21AWEIncentiveSwiftImpl29IncentivePendantContainerView : UIView
+@interface _TtC21AWEIncentiveSwiftImpl20PendantContainerView : UIView
 @end
 
 @interface AWECommentLongPressPanelSwiftImpl_CommentLongPressPanelReportElement : NSObject
@@ -1217,7 +1217,7 @@ typedef NS_ENUM(NSUInteger, DYEdgeMode) {
 @interface AWEAwemeHotSpotTableViewController : UIViewController
 - (BOOL)prefersStatusBarHidden;
 @end
-@interface AWEFullPageFeedNewContainerViewController : UIViewController
+@interface AWEFullPageFeedContainerViewController : UIViewController
 - (BOOL)prefersStatusBarHidden;
 @end
 @interface AFDPureModePageContainerViewController : UIViewController

@@ -1,213 +1,97 @@
-<p align="center">
-  <img src="Screenshots/DYYY_poster.png" alt="DYYY Poster" />
-</p>
+# DYYY3
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Platform-iOS%2014.0%2B-black?style=flat&labelColor=black" />
-  <img src="https://img.shields.io/badge/App-%E6%8A%96%E9%9F%B3%2036.5.0-black?style=flat&labelColor=black" />
-</p>
+基于 Theos / Logos 的抖音 UI 调整 Tweak，适配 **抖音 41.2.0**，当前版本 `3.0`。
 
-# DYYY
+> 仅供学习交流，禁止用于任何商业用途，请在下载后 24 小时内自行删除。
 
-用于调整抖音 UI 的 Theos/Logos Tweak，仅在 **36.5.0 版本** 中测试。  
-**仅供学习交流，禁止用于商业用途。**
+- 支持方案：rootless / roothide
+- 系统要求：iOS 14.0+
+- 进入设置：抖音内 **双指长按**，或在 **抖音「设置」页** 找到 DYYY 入口
+
+## 说明
+
+41.x 之后抖音大量界面迁移到 Swift 模块，并改用新的播放架构，旧版本的不少功能因此失效。本版针对 41.2.0 重新适配，并将部分 UI 逻辑下沉到数据层，以提升稳定性与抗改版能力。
 
 ## 目录
-- [功能亮点](#功能亮点)
-- [使用方式](#使用方式)
-- [贡献者](#贡献者)
+
+- [构建与打包](#构建与打包)
 - [远程配置](#远程配置)
 - [解析下载接口](#解析下载接口)
-- [构建与打包](#构建与打包)
 - [许可证](#许可证)
 
-## 功能亮点
-- 通过 **双指长按** 或 **抖音设置** 进入设置界面
-- 支持远程 JSON 批量下发配置
-- 解析多种下载接口字段（视频、图片、音频、封面）
+## 构建与打包
 
-## 使用方式
-- 打开抖音后 **双指长按** 进入设置
-- 或在 **抖音设置** 中找到 DYYY 入口
+需先配置 [Theos](https://github.com/roothide/theos)（roothide 分支）及对应 iOS SDK。
 
-## 贡献者
+```bash
+# roothide 方案打包
+make package SCHEME=roothide FINALPACKAGE=1
 
-<table>
-  <tr>
-    <td align="center"><a href="https://github.com/huami1314"><img src="https://github.com/huami1314.png?size=120" width="100px;" height="100px;" alt="huami1314"/></a><br /><sub><b>huami1314</b></sub></td>
-    <td align="center"><a href="https://github.com/Wtrwx"><img src="https://github.com/Wtrwx.png?size=120" width="100px;" height="100px;" alt="Wtrwx"/></a><br /><sub><b>Wtrwx</b></sub></td>
-    <td align="center"><a href="https://github.com/lihebgyee"><img src="https://github.com/lihebgyee.png?size=120" width="100px;" height="100px;" alt="lihebgyee"/></a><br /><sub><b>lihebgyee</b></sub></td>
-    <td align="center"><a href="https://github.com/wahha2003"><img src="https://github.com/wahha2003.png?size=120" width="100px;" height="100px;" alt="wahha2003"/></a><br /><sub><b>wahha2003</b></sub></td>
-    <td align="center"><a href="https://github.com/Nathalie-Annis"><img src="https://github.com/Nathalie-Annis.png?size=120" width="100px;" height="100px;" alt="Nathalie-Annis"/></a><br /><sub><b>Nathalie-Annis</b></sub></td>
-  </tr>
-  <tr>
-    <td align="center"><a href="https://github.com/PaTTeeL"><img src="https://github.com/PaTTeeL.png?size=120" width="100px;" height="100px;" alt="PaTTeeL"/></a><br /><sub><b>PaTTeeL</b></sub></td>
-    <td align="center"><a href="https://github.com/lihyee"><img src="https://github.com/lihyee.png?size=120" width="100px;" height="100px;" alt="lihyee"/></a><br /><sub><b>lihyee</b></sub></td>
-    <td align="center"><a href="https://github.com/wwg135"><img src="https://github.com/wwg135.png?size=120" width="100px;" height="100px;" alt="wwg135"/></a><br /><sub><b>wwg135</b></sub></td>
-    <td align="center"><a href="https://github.com/CW-1024"><img src="https://github.com/CW-1024.png?size=120" width="100px;" height="100px;" alt="CW-1024"/></a><br /><sub><b>CW-1024</b></sub></td>
-    <td align="center"><a href="https://github.com/Wangin1996"><img src="https://github.com/Wangin1996.png?size=120" width="100px;" height="100px;" alt="Wangin1996"/></a><br /><sub><b>Wangin1996</b></sub></td>
-  </tr>
-  <tr>
-    <td align="center"><a href="https://github.com/Patickhuang"><img src="https://github.com/Patickhuang.png?size=120" width="100px;" height="100px;" alt="Patickhuang"/></a><br /><sub><b>Patickhuang</b></sub></td>
-    <td align="center"><a href="https://github.com/zhaoyuedong"><img src="https://github.com/zhaoyuedong.png?size=120" width="100px;" height="100px;" alt="zhaoyuedong"/></a><br /><sub><b>zhaoyuedong</b></sub></td>
-    <td align="center"><a href="https://github.com/Huangbai233"><img src="https://github.com/Huangbai233.png?size=120" width="100px;" height="100px;" alt="Huangbai233"/></a><br /><sub><b>Huangbai233</b></sub></td>
-    <td align="center"><a href="https://github.com/fries0710"><img src="https://github.com/fries0710.png?size=120" width="100px;" height="100px;" alt="fries0710"/></a><br /><sub><b>fries0710</b></sub></td>
-    <td align="center"><a href="https://github.com/msm8976"><img src="https://github.com/msm8976.png?size=120" width="100px;" height="100px;" alt="msm8976"/></a><br /><sub><b>msm8976</b></sub></td>
-  </tr>
-  <tr>
-    <td align="center"><a href="https://github.com/xiangfeidexiaohuo"><img src="https://github.com/xiangfeidexiaohuo.png?size=120" width="100px;" height="100px;" alt="xiangfeidexiaohuo"/></a><br /><sub><b>xiangfeidexiaohuo</b></sub></td>
-    <td align="center"><a href="https://github.com/Mieing"><img src="https://github.com/Mieing.png?size=120" width="100px;" height="100px;" alt="Mieing"/></a><br /><sub><b>Mieing</b></sub></td>
-    <td align="center"><a href="https://github.com/invalidunit"><img src="https://github.com/invalidunit.png?size=120" width="100px;" height="100px;" alt="invalidunit"/></a><br /><sub><b>invalidunit</b></sub></td>
-    <td align="center"><a href="https://github.com/ways0210"><img src="https://github.com/ways0210.png?size=120" width="100px;" height="100px;" alt="ways0210"/></a><br /><sub><b>ways0210</b></sub></td>
-    <td align="center"><a href="https://github.com/woqunimaxr"><img src="https://github.com/woqunimaxr.png?size=120" width="100px;" height="100px;" alt="woqunimaxr"/></a><br /><sub><b>woqunimaxr</b></sub></td>
-  </tr>
-  <tr>
-    <td align="center"><a href="https://github.com/Sini921"><img src="https://github.com/Sini921.png?size=120" width="100px;" height="100px;" alt="Sini921"/></a><br /><sub><b>Sini921</b></sub></td>
-    <td align="center"><a href="https://github.com/cbjn"><img src="https://github.com/cbjn.png?size=120" width="100px;" height="100px;" alt="cbjn"/></a><br /><sub><b>cbjn</b></sub></td>
-    <td align="center"><a href="https://github.com/huami1214"><img src="https://github.com/huami1214.png?size=120" width="100px;" height="100px;" alt="huami1214"/></a><br /><sub><b>huami1214</b></sub></td>
-    <td align="center"><a href="https://github.com/wangliang12138"><img src="https://github.com/wangliang12138.png?size=120" width="100px;" height="100px;" alt="wangliang12138"/></a><br /><sub><b>wangliang12138</b></sub></td>
-    <td align="center"><a href="https://github.com/jiuwei95"><img src="https://github.com/jiuwei95.png?size=120" width="100px;" height="100px;" alt="jiuwei95"/></a><br /><sub><b>jiuwei95</b></sub></td>
-  </tr>
-  <tr>
-    <td align="center"><a href="https://github.com/plplpmmmmh"><img src="https://github.com/plplpmmmmh.png?size=120" width="100px;" height="100px;" alt="plplpmmmmh"/></a><br /><sub><b>plplpmmmmh</b></sub></td>
-  </tr>
-</table>
+# rootless 方案
+make package SCHEME=rootless FINALPACKAGE=1
+
+# 安装到设备（需配置 THEOS_DEVICE_IP）
+make package INSTALL=1
+
+# CI / 无人值守
+GITHUB_ACTIONS=true make package
+```
+
+产物输出到 `packages/`。建议用 `Makefile.local` 覆盖 `THEOS_DEVICE_IP` 等本地配置，不要直接改主 `Makefile`。
 
 ## 远程配置
 
-DYYY 可以通过远程 JSON 文件批量应用设置。默认下载地址在 `DYYYConstants.h` 中的 `DYYY_REMOTE_CONFIG_URL`。配置文件示例：
+可通过远程 JSON 批量下发设置，默认地址见 `DYYYConstants.h` 的 `DYYY_REMOTE_CONFIG_URL`：
 
 ```json
 {
-    "mode": "DYYY_MODE_PATCH",
-    "data": {
-        "ExampleKey": true
-    }
+  "mode": "DYYY_MODE_PATCH",
+  "data": {
+    "ExampleKey": true
+  }
 }
 ```
 
-`mode` 字段可选，支持 `DYYY_MODE_PATCH` 和 `DYYY_MODE_REPLACE`，若省略则默认为补丁模式 (`DYYY_MODE_PATCH`)。
+`mode` 可选 `DYYY_MODE_PATCH`（补丁，默认）或 `DYYY_MODE_REPLACE`（覆盖）。
 
 ## 解析下载接口
 
-### 示例1：多清晰度视频（含音频和封面）
+自定义下载接口返回 JSON 时，按以下字段解析视频、图片、音频与封面。
+
 ```json
 {
   "code": 200,
   "msg": "success",
   "data": {
     "video_list": [
-      {"url": "https://video.com/hd.mp4", "level": "高清"},
-      {"url": "https://video.com/sd.mp4", "level": "标清"}
+      { "url": "https://video.com/hd.mp4", "level": "高清" },
+      { "url": "https://video.com/sd.mp4", "level": "标清" }
     ],
+    "video_url": "https://video.com/main.mp4",
     "cover": "https://image.com/cover.jpg",
     "music": "https://audio.com/bgm.mp3",
     "images": [
-      "https://image.com/extra1.jpg",
-      "https://image.com/extra2.jpg"
-    ]
-  }
-}
-```
-
-### 示例2：单个视频资源（含封面）
-```json
-{
-  "code": 200,
-  "msg": "success",
-  "data": {
-    "video_url": "https://video.com/main.mp4",
-    "cover": "https://image.com/thumbnail.jpg",
-    "music_url": "https://audio.com/soundtrack.mp3"
-  }
-}
-```
-
-### 示例3：纯图片资源
-```json
-{
-  "code": 200,
-  "msg": "success",
-  "data": {
-    "images": [
       "https://image.com/photo1.jpg",
       "https://image.com/photo2.jpg"
-    ],
-    "pics": "https://image.com/cover.png",
-    "img": [
-      "https://image.com/additional.jpg"
     ]
   }
 }
 ```
 
-### 示例4：混合资源（视频+图片）
-```json
-{
-  "code": 200,
-  "msg": "success",
-  "data": {
-    "url": "https://video.com/short.mp4",
-    "videos": [
-      "https://video.com/extra.mp4"
-    ],
-    "cover": "https://image.com/poster.jpg",
-    "images": [
-      "https://image.com/screenshot1.png",
-      "https://image.com/screenshot2.png"
-    ]
-  }
-}
-```
-
-### 字段说明
-| 字段名       | 类型       | 说明                               |
-| ------------ | ---------- | ---------------------------------- |
-| `video_list` | 对象数组   | 多清晰度选项，含`url`和`level`字段 |
-| `videos`     | 字符串数组 | 多个视频资源的URL集合              |
-| `video_url`  | 字符串     | 单个视频资源URL（优先使用字段）    |
-| `video`      | 字符串     | 单个视频资源URL（备用字段）        |
-| `url`        | 字符串     | 通用资源URL（视频优先）            |
-| `cover`      | 字符串     | 封面图URL（主字段）                |
-| `pics`       | 字符串     | 封面图URL（备用字段）              |
-| `music`      | 字符串     | 背景音乐URL（主字段）              |
-| `music_url`  | 字符串     | 背景音乐URL（备用字段）            |
-| `images`     | 字符串数组 | 附加图片资源集合                   |
-| `img`        | 字符串数组 | 附加图片资源集合（备用字段）       |
-
-## 构建与打包
-
-- 本地验证：
-
-```bash
-make clean package
-```
-
-- 安装到设备（需要配置 `THEOS_DEVICE_IP`）：
-
-```bash
-make package INSTALL=1
-```
-
-- 切换不同包方案（示例 rootless）：
-
-```bash
-make package SCHEME=rootless
-```
-
-- CI/无人值守：
-
-```bash
-GITHUB_ACTIONS=true make package
-```
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `video_list` | 对象数组 | 多清晰度选项，含 `url` 与 `level` |
+| `videos` | 字符串数组 | 多个视频 URL |
+| `video_url` | 字符串 | 单个视频 URL（优先） |
+| `video` | 字符串 | 单个视频 URL（备用） |
+| `url` | 字符串 | 通用资源 URL（视频优先） |
+| `cover` | 字符串 | 封面图 URL（主） |
+| `pics` | 字符串 | 封面图 URL（备用） |
+| `music` | 字符串 | 背景音乐 URL（主） |
+| `music_url` | 字符串 | 背景音乐 URL（备用） |
+| `images` | 字符串数组 | 附加图片集合 |
+| `img` | 字符串数组 | 附加图片集合（备用） |
 
 ## 许可证
 
-详见 `LICENSE`。
-
-## Star 趋势
-
-<p align="center">
-    <a href="https://star-history.com/#Wtrwx/DYYY">
-        <img src="https://api.star-history.com/svg?repos=Wtrwx/DYYY&type=Date" width="75%" alt="Star History"></a>
-</p>
+详见 [`LICENSE`](LICENSE)。
